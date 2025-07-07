@@ -1,0 +1,158 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Status {
+    Vulnerable,
+    Strength,
+    Brutality,
+    DemonForm,
+    Weak,
+}
+
+impl Status {
+    pub fn decays(&self) -> bool {
+        use Status::*;
+        matches!(self, Vulnerable | Weak)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Status::*;
+    use crate::{
+        actions::damage::DamageAction,
+        cards::{CardClass, card},
+        game::{CreatureRef, GameBuilder, Move},
+        monsters::test::{ApplyVulnerableMonster, NoopMonster},
+    };
+
+    #[test]
+    fn test_strength() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Strength, 2)
+            .build();
+
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.run_action(DamageAction::from_player(
+            6,
+            &g.player,
+            &g.monsters[0].creature,
+            CreatureRef::monster(0),
+        ));
+
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 8);
+    }
+
+    #[test]
+    fn test_vulnerable() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Vulnerable, 2)
+            .build();
+        g.set_debug();
+
+        assert_eq!(g.monsters[0].creature.statuses.get(&Vulnerable), Some(&2));
+
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.run_action(DamageAction::from_player(
+            6,
+            &g.player,
+            &g.monsters[0].creature,
+            CreatureRef::monster(0),
+        ));
+
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 9);
+
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.monsters[0].creature.statuses.get(&Vulnerable), Some(&1));
+
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.monsters[0].creature.statuses.get(&Vulnerable), None);
+    }
+
+    #[test]
+    fn test_vulnerable2() {
+        let mut g = GameBuilder::default()
+            .add_monster(ApplyVulnerableMonster())
+            .add_monster(NoopMonster())
+            .add_card(card(CardClass::DebugKill))
+            .build();
+
+        assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
+
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&2));
+
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&3));
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&2));
+
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&1));
+
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
+    }
+
+    #[test]
+    fn test_vulnerable3() {
+        let mut g = GameBuilder::default()
+            .add_monster(ApplyVulnerableMonster())
+            .add_monster(ApplyVulnerableMonster())
+            .build();
+
+        assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
+
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&4));
+    }
+
+    #[test]
+    fn test_weak() {
+        let mut g = GameBuilder::default().add_player_status(Weak, 2).build();
+
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.run_action(DamageAction::from_player(
+            6,
+            &g.player,
+            &g.monsters[0].creature,
+            CreatureRef::monster(0),
+        ));
+
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 4);
+    }
+
+    #[test]
+    fn test_multiple() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Weak, 2)
+            .add_player_status(Strength, 4)
+            .add_monster_status(Vulnerable, 2)
+            .build();
+
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.run_action(DamageAction::from_player(
+            10,
+            &g.player,
+            &g.monsters[0].creature,
+            CreatureRef::monster(0),
+        ));
+
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 15);
+    }
+}
