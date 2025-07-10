@@ -28,7 +28,7 @@ mod tests {
     fn test_strength() {
         let mut g = GameBuilder::default()
             .add_player_status(Strength, 2)
-            .build();
+            .build_combat();
 
         let hp = g.monsters[0].creature.cur_hp;
 
@@ -46,8 +46,7 @@ mod tests {
     fn test_vulnerable() {
         let mut g = GameBuilder::default()
             .add_monster_status(Vulnerable, 2)
-            .build();
-        g.set_debug();
+            .build_combat();
 
         assert_eq!(g.monsters[0].creature.statuses.get(&Vulnerable), Some(&2));
 
@@ -77,7 +76,7 @@ mod tests {
             .add_monster(ApplyVulnerableMonster())
             .add_monster(NoopMonster())
             .add_card(card(CardClass::DebugKill))
-            .build();
+            .build_combat();
 
         assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
 
@@ -111,7 +110,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_monster(ApplyVulnerableMonster())
             .add_monster(ApplyVulnerableMonster())
-            .build();
+            .build_combat();
 
         assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
 
@@ -122,7 +121,9 @@ mod tests {
 
     #[test]
     fn test_weak() {
-        let mut g = GameBuilder::default().add_player_status(Weak, 2).build();
+        let mut g = GameBuilder::default()
+            .add_player_status(Weak, 2)
+            .build_combat();
 
         let hp = g.monsters[0].creature.cur_hp;
 
@@ -142,7 +143,7 @@ mod tests {
             .add_player_status(Weak, 2)
             .add_player_status(Strength, 4)
             .add_monster_status(Vulnerable, 2)
-            .build();
+            .build_combat();
 
         let hp = g.monsters[0].creature.cur_hp;
 

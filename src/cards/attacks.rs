@@ -83,7 +83,7 @@ mod tests {
     fn test_strike() {
         let mut g = GameBuilder::default()
             .add_card(card(CardClass::Strike))
-            .build();
+            .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -100,7 +100,7 @@ mod tests {
     fn test_upgraded_strike() {
         let mut g = GameBuilder::default()
             .add_card(upgraded_card(CardClass::Strike))
-            .build();
+            .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -116,7 +116,7 @@ mod tests {
     fn test_bash() {
         let mut g = GameBuilder::default()
             .add_card(card(CardClass::Bash))
-            .build();
+            .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -139,7 +139,7 @@ mod tests {
         for _ in 0..10 {
             gb = gb.add_card(upgraded_card(CardClass::PommelStrike));
         }
-        let mut g = gb.build();
+        let mut g = gb.build_combat();
         assert_eq!(g.draw_pile.len(), 5);
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.hand.len(), 5);
@@ -158,7 +158,7 @@ mod tests {
         for _ in 0..10 {
             gb = gb.add_card(card(CardClass::PommelStrike));
         }
-        let mut g = gb.build();
+        let mut g = gb.build_combat();
         assert_eq!(g.draw_pile.len(), 5);
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.hand.len(), 5);
@@ -178,7 +178,7 @@ mod tests {
             for _ in 0..upgrade_count {
                 c.borrow_mut().upgrade();
             }
-            let mut g = GameBuilder::default().add_card(c).build();
+            let mut g = GameBuilder::default().add_card(c).build_combat();
             let hp = g.monsters[0].creature.cur_hp;
             g.make_move(Move::PlayCard {
                 card_index: 0,
@@ -192,7 +192,7 @@ mod tests {
     fn test_debug_kill() {
         let mut g = GameBuilder::default()
             .add_card(card(CardClass::DebugKill))
-            .build();
+            .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: Some(0),

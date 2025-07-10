@@ -10,11 +10,7 @@ pub struct HealAction {
 
 impl Action for HealAction {
     fn run(&self, game: &mut Game) {
-        let c = game.get_creature_mut(self.target);
-        c.cur_hp += self.amount;
-        if c.cur_hp > c.max_hp {
-            c.cur_hp = c.max_hp;
-        }
+        game.heal(self.target, self.amount);
     }
 }
 

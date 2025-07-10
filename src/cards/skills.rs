@@ -29,7 +29,7 @@ mod tests {
     fn test_defend() {
         let mut g = GameBuilder::default()
             .add_card(card(CardClass::Defend))
-            .build();
+            .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,
@@ -44,7 +44,7 @@ mod tests {
     fn test_upgraded_defend() {
         let mut g = GameBuilder::default()
             .add_card(upgraded_card(CardClass::Defend))
-            .build();
+            .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,
@@ -59,7 +59,7 @@ mod tests {
     fn test_impervious() {
         let mut g = GameBuilder::default()
             .add_card(card(CardClass::Impervious))
-            .build();
+            .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,

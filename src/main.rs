@@ -1,5 +1,6 @@
 mod action;
 mod actions;
+mod blessings;
 mod card;
 mod cards;
 mod creature;
@@ -95,6 +96,9 @@ fn print_state(g: &Game) {
     for (mi, m) in g.valid_moves().iter().enumerate() {
         print!(" {mi}: ");
         match m {
+            Move::ChooseBlessing(b) => {
+                print!("choose blessing {b:?}");
+            }
             Move::EndTurn => print!("end turn"),
             Move::PlayCard {
                 card_index: i,

@@ -7,6 +7,12 @@ pub struct Player {
 }
 
 impl Player {
+    pub fn add_relic<R: Relic + 'static>(&mut self, r: R) {
+        self.relics.push(Box::new(r));
+    }
+    pub fn add_relic2(&mut self, r: Box<dyn Relic>) {
+        self.relics.push(r);
+    }
     pub fn trigger_relics_pre_combat(&mut self, queue: &mut ActionQueue) {
         for r in &mut self.relics {
             r.pre_combat(queue);

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::action::Action;
 use crate::actions::draw::DrawAction;
 use crate::actions::play_card::PlayCardAction;
+use crate::blessings::Blessing;
 use crate::card::CardPile;
 #[cfg(test)]
 use crate::card::CardRef;
@@ -46,6 +47,7 @@ impl std::fmt::Debug for CreatureRef {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Move {
+    ChooseBlessing(Blessing),
     EndTurn,
     PlayCard {
         card_index: usize,
@@ -61,6 +63,8 @@ pub enum GameResult {
 
 #[derive(PartialEq, Eq, Debug)]
 enum GameState {
+    Blessing,
+    RollCombat,
     CombatBegin,
     PlayerTurnBegin,
     PlayerTurn,
@@ -78,6 +82,7 @@ pub struct GameBuilder {
     monster_statuses: HashMap<Status, i32>,
     player_statuses: HashMap<Status, i32>,
     relics: Vec<Box<dyn Relic>>,
+    player_hp: Option<i32>,
     rng: Rand,
 }
 
@@ -129,6 +134,22 @@ impl GameBuilder {
         self.relics.push(Box::new(relic));
         self
     }
+    #[cfg(test)]
+    pub fn set_player_hp(mut self, amount: i32) -> Self {
+        self.player_hp = Some(amount);
+        self
+    }
+    #[cfg(test)]
+    pub fn build_combat(self) -> Game {
+        let monster_statuses = self.monster_statuses.clone();
+        let mut g = self.build();
+        g.state = GameState::RollCombat;
+        g.run();
+        for m in &mut g.monsters {
+            m.creature.statuses = monster_statuses.clone();
+        }
+        g
+    }
     pub fn build(mut self) -> Game {
         if self.monsters.is_empty() {
             self = self.add_monster(NoopMonster());
@@ -136,16 +157,16 @@ impl GameBuilder {
         let mut g = Game::new(self.rng, self.master_deck, self.monsters);
         g.player.creature.statuses = self.player_statuses;
         g.player.relics = self.relics;
-        for m in &mut g.monsters {
-            m.creature.statuses = self.monster_statuses.clone();
+        if let Some(hp) = self.player_hp {
+            g.player.creature.cur_hp = hp;
         }
-        g.run();
         g
     }
 }
 
 pub struct Game {
     pub player: Player,
+    pub combat_monsters_queue: Vec<Vec<Monster>>,
     pub monsters: Vec<Monster>,
     pub energy: i32,
     pub draw_pile: CardPile,
@@ -165,14 +186,15 @@ impl Game {
                 master_deck,
                 relics: vec![],
             },
+            combat_monsters_queue: vec![monsters],
+            monsters: Default::default(),
             energy: 0,
-            monsters,
             draw_pile: Default::default(),
             hand: Default::default(),
             discard_pile: Default::default(),
             exhaust_pile: Default::default(),
             action_queue: Default::default(),
-            state: GameState::CombatBegin,
+            state: GameState::Blessing,
             rng,
         };
 
@@ -207,6 +229,14 @@ impl Game {
 
     fn run_once(&mut self) {
         match self.state {
+            GameState::RollCombat => {
+                if let Some(m) = self.combat_monsters_queue.pop() {
+                    self.monsters = m;
+                    self.state = GameState::CombatBegin;
+                } else {
+                    self.state = GameState::Victory;
+                }
+            }
             GameState::CombatBegin => {
                 self.setup_combat_draw_pile();
 
@@ -283,7 +313,7 @@ impl Game {
             GameState::PlayerTurn => {
                 self.run_actions_until_empty();
             }
-            GameState::Victory | GameState::Defeat => unreachable!(),
+            GameState::Victory | GameState::Defeat | GameState::Blessing => unreachable!(),
         }
     }
 
@@ -371,8 +401,16 @@ impl Game {
     }
 
     pub fn make_move(&mut self, m: Move) {
-        assert_eq!(self.state, GameState::PlayerTurn);
+        assert!(matches!(
+            self.state,
+            GameState::Blessing | GameState::PlayerTurn
+        ));
         match m {
+            Move::ChooseBlessing(b) => {
+                b.run(self);
+                self.state = GameState::RollCombat;
+                self.run();
+            }
             Move::EndTurn => {
                 self.state = GameState::PlayerTurnEnd;
                 self.run();
@@ -388,29 +426,39 @@ impl Game {
     }
 
     pub fn valid_moves(&self) -> Vec<Move> {
-        assert_eq!(self.state, GameState::PlayerTurn);
         let mut moves = Vec::new();
-        moves.push(Move::EndTurn);
-        for (ci, c) in self.hand.iter().enumerate() {
-            let c = c.borrow_mut();
-            if self.energy < c.cost {
-                continue;
+        match self.state {
+            GameState::Blessing => {
+                moves.push(Move::ChooseBlessing(Blessing::GainMaxHPSmall));
+                moves.push(Move::ChooseBlessing(Blessing::CommonRelic));
             }
-            if c.has_target {
-                for (mi, m) in self.monsters.iter().enumerate() {
-                    if !m.creature.is_alive() {
+            GameState::PlayerTurn => {
+                moves.push(Move::EndTurn);
+                for (ci, c) in self.hand.iter().enumerate() {
+                    let c = c.borrow_mut();
+                    if self.energy < c.cost {
                         continue;
                     }
-                    moves.push(Move::PlayCard {
-                        card_index: ci,
-                        target: Some(mi),
-                    });
+                    if c.has_target {
+                        for (mi, m) in self.monsters.iter().enumerate() {
+                            if !m.creature.is_alive() {
+                                continue;
+                            }
+                            moves.push(Move::PlayCard {
+                                card_index: ci,
+                                target: Some(mi),
+                            });
+                        }
+                    } else {
+                        moves.push(Move::PlayCard {
+                            card_index: ci,
+                            target: None,
+                        });
+                    }
                 }
-            } else {
-                moves.push(Move::PlayCard {
-                    card_index: ci,
-                    target: None,
-                });
+            }
+            _ => {
+                unreachable!();
             }
         }
         assert!(!moves.is_empty());
@@ -434,7 +482,9 @@ impl Game {
             self.state = GameState::Defeat;
             return true;
         }
-        if self.monsters.iter().all(|m| !m.creature.is_alive()) {
+        if self.combat_monsters_queue.is_empty()
+            && self.monsters.iter().all(|m| !m.creature.is_alive())
+        {
             self.state = GameState::Victory;
             self.player
                 .trigger_relics_combat_finish(&mut self.action_queue);
@@ -448,6 +498,20 @@ impl Game {
         MonsterInfo {
             num_monsters: self.monsters.len(),
         }
+    }
+
+    pub fn heal(&mut self, c: CreatureRef, amount: i32) {
+        if amount == 0 {
+            return;
+        }
+        // check player healing relics
+        self.get_creature_mut(c).heal(amount);
+        // trigger player on heal relics
+    }
+
+    pub fn increase_max_hp(&mut self, amount: i32) {
+        self.player.creature.increase_max_hp(amount);
+        self.heal(CreatureRef::player(), amount);
     }
 
     fn run_actions_until_empty(&mut self) {

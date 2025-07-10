@@ -31,6 +31,17 @@ impl Creature {
         self.cur_hp > 0
     }
 
+    pub fn heal(&mut self, amount: i32) {
+        self.cur_hp += amount;
+        if self.cur_hp > self.max_hp {
+            self.cur_hp = self.max_hp;
+        }
+    }
+
+    pub fn increase_max_hp(&mut self, amount: i32) {
+        self.max_hp += amount;
+    }
+
     pub fn trigger_statuses_turn_begin(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
         if let Some(v) = self.statuses.get(&Status::DemonForm) {
             queue.push_bot(GainStatusAction {

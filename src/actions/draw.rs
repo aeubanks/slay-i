@@ -53,7 +53,7 @@ mod tests {
         for _ in 0..12 {
             gb = gb.add_card(card(CardClass::Strike));
         }
-        let mut g = gb.build();
+        let mut g = gb.build_combat();
 
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.discard_pile.len(), 0);

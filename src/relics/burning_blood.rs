@@ -24,8 +24,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_card(card(CardClass::DebugKill))
             .add_relic(BurningBlood {})
-            .build();
-        g.set_debug();
+            .build_combat();
         let hp = g.player.creature.cur_hp;
         g.make_move(Move::PlayCard {
             card_index: 0,
