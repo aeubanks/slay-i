@@ -1,7 +1,9 @@
 pub mod block;
 pub mod damage;
 pub mod discard_card;
+pub mod discard_hand;
 pub mod draw;
+pub mod end_of_turn_discard;
 pub mod exhaust_card;
 pub mod gain_status;
 pub mod heal;

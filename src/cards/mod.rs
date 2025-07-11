@@ -8,14 +8,30 @@ use crate::card::{Card, CardBehavior, CardRarity, CardRef, CardType};
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[allow(dead_code)]
 pub enum CardClass {
+    // Basic
     Strike,
     Defend,
     Bash,
+    // Common
     PommelStrike,
     Clothesline,
+    // Uncommon
     SearingBlow,
+    GhostlyArmor,
+    // Rare
     Impervious,
+    // Other
     DebugKill,
+}
+
+impl CardClass {
+    pub fn is_ethereal(&self) -> bool {
+        use CardClass::*;
+        matches!(self, GhostlyArmor)
+    }
+    pub fn can_upgrade_forever(&self) -> bool {
+        matches!(self, CardClass::SearingBlow)
+    }
 }
 
 pub fn card(class: CardClass) -> CardRef {
@@ -57,6 +73,14 @@ pub fn card(class: CardClass) -> CardRef {
             attacks::searing_blow_behavior,
             false,
         ),
+        GhostlyArmor => (
+            Skill,
+            Uncommon,
+            1,
+            false,
+            skills::ghostly_armor_behavior,
+            false,
+        ),
         Impervious => (Skill, Rare, 2, false, skills::impervious_behavior, true),
         DebugKill => (
             Attack,
@@ -74,7 +98,6 @@ pub fn card(class: CardClass) -> CardRef {
         rarity,
         upgrade_count: 0,
         upgrade_fn: None,
-        can_upgrade_forever: class == SearingBlow,
         has_target,
         cost,
         behavior,

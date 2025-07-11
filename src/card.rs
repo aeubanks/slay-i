@@ -36,13 +36,13 @@ pub struct CardPlayInfo {
 pub type CardBehavior = fn(&mut Game, Option<CreatureRef>, CardPlayInfo);
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct Card {
     pub class: CardClass,
     pub ty: CardType,
     pub rarity: CardRarity,
     pub upgrade_count: i32,
     pub upgrade_fn: Option<fn(&mut i32)>,
-    pub can_upgrade_forever: bool,
     pub cost: i32,
     pub has_target: bool,
     pub exhaust: bool,
@@ -52,7 +52,7 @@ pub struct Card {
 #[cfg(test)]
 impl Card {
     pub fn can_upgrade(&self) -> bool {
-        self.upgrade_count == 0 || self.can_upgrade_forever
+        self.upgrade_count == 0 || self.class.can_upgrade_forever()
     }
     pub fn upgrade(&mut self) {
         assert!(self.can_upgrade());
@@ -76,3 +76,7 @@ impl std::fmt::Debug for Card {
 
 pub type CardRef = Rc<RefCell<Card>>;
 pub type CardPile = Vec<CardRef>;
+
+pub fn clone_card(c: &CardRef) -> CardRef {
+    Rc::new(RefCell::new(c.borrow().clone()))
+}

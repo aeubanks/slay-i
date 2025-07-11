@@ -3,6 +3,7 @@ use std::collections::HashMap;
 #[cfg(test)]
 use crate::action::Action;
 use crate::actions::draw::DrawAction;
+use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::blessings::Blessing;
 use crate::card::CardPile;
@@ -100,6 +101,15 @@ impl GameBuilder {
     #[cfg(test)]
     pub fn add_card(mut self, c: CardRef) -> Self {
         self.master_deck.push(c);
+        self
+    }
+    #[cfg(test)]
+    pub fn add_cards(mut self, c: CardRef, amount: i32) -> Self {
+        for _ in 0..amount {
+            use crate::card::clone_card;
+
+            self.master_deck.push(clone_card(&c));
+        }
         self
     }
     pub fn add_monster<M: MonsterBehavior + 'static>(mut self, m: M) -> Self {
@@ -274,6 +284,7 @@ impl Game {
             }
             GameState::PlayerTurnEnd => {
                 self.player_end_of_turn();
+                self.run_actions_until_empty();
                 if self.finished() {
                     return;
                 }
@@ -335,9 +346,7 @@ impl Game {
         self.player
             .creature
             .trigger_statuses_turn_end(CreatureRef::player(), &mut self.action_queue);
-        while let Some(c) = self.hand.pop() {
-            self.discard_pile.push(c);
-        }
+        self.action_queue.push_bot(EndOfTurnDiscardAction());
     }
 
     fn monsters_roll_move(&mut self) {

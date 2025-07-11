@@ -11,6 +11,13 @@ pub fn defend_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayIn
     });
 }
 
+pub fn ghostly_armor_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    game.action_queue.push_bot(BlockAction {
+        target: CreatureRef::player(),
+        amount: if info.upgraded { 13 } else { 10 },
+    });
+}
+
 pub fn impervious_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
     game.action_queue.push_bot(BlockAction {
         target: CreatureRef::player(),
