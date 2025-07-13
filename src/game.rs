@@ -232,6 +232,16 @@ impl Game {
         }
     }
 
+    pub fn get_alive_monsters(&self) -> Vec<CreatureRef> {
+        let mut ret = Vec::new();
+        for (i, m) in self.monsters.iter().enumerate() {
+            if m.creature.is_alive() {
+                ret.push(CreatureRef::monster(i));
+            }
+        }
+        ret
+    }
+
     fn setup_combat_draw_pile(&mut self) {
         self.draw_pile = self.player.master_deck.clone();
         self.draw_pile.shuffle(&mut self.rng);

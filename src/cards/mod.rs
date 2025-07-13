@@ -15,6 +15,8 @@ pub enum CardClass {
     // Common
     PommelStrike,
     Clothesline,
+    Cleave,
+    Thunderclap,
     // Uncommon
     SearingBlow,
     GhostlyArmor,
@@ -63,6 +65,15 @@ pub fn card(class: CardClass) -> CardRef {
             2,
             true,
             attacks::clothesline_behavior,
+            false,
+        ),
+        Cleave => (Attack, Common, 1, false, attacks::cleave_behavior, false),
+        Thunderclap => (
+            Attack,
+            Common,
+            1,
+            false,
+            attacks::thunderclap_behavior,
             false,
         ),
         SearingBlow => (

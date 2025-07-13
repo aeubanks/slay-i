@@ -64,11 +64,17 @@ impl DamageAction {
 impl Action for DamageAction {
     fn run(&self, game: &mut Game) {
         let c = game.get_creature_mut(self.target);
+        if !c.is_alive() {
+            return;
+        }
         if c.block >= self.amount {
             c.block -= self.amount;
         } else {
             c.cur_hp += c.block;
             c.cur_hp -= self.amount;
+            if c.cur_hp < 0 {
+                c.cur_hp = 0;
+            }
             c.block = 0;
         }
     }

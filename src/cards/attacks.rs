@@ -24,6 +24,38 @@ fn push_damage(
     ));
 }
 
+fn push_aoe_damage(
+    game: &mut Game,
+    info: CardPlayInfo,
+    unupgraded_base_damage: i32,
+    upgraded_base_damage: i32,
+) {
+    let monsters = game.get_alive_monsters();
+    for m in monsters {
+        game.action_queue.push_bot(DamageAction::from_player(
+            if info.upgraded {
+                upgraded_base_damage
+            } else {
+                unupgraded_base_damage
+            },
+            &game.player,
+            game.get_creature(m),
+            m,
+        ));
+    }
+}
+
+pub fn push_aoe_status(game: &mut Game, status: Status, amount: i32) {
+    let monsters = game.get_alive_monsters();
+    for m in monsters {
+        game.action_queue.push_bot(GainStatusAction {
+            status,
+            amount,
+            target: m,
+        });
+    }
+}
+
 pub fn strike_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
     push_damage(game, target, info, 6, 9);
 }
@@ -52,6 +84,15 @@ pub fn clothesline_behavior(game: &mut Game, target: Option<CreatureRef>, info: 
     });
 }
 
+pub fn cleave_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    push_aoe_damage(game, info, 8, 11);
+}
+
+pub fn thunderclap_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    push_aoe_damage(game, info, 4, 7);
+    push_aoe_status(game, Status::Vulnerable, 1);
+}
+
 pub fn searing_blow_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
     let n = info.upgrade_count;
     game.action_queue.push_bot(DamageAction::from_player(
@@ -76,6 +117,7 @@ mod tests {
     use crate::{
         cards::{CardClass, card, upgraded_card},
         game::{GameBuilder, Move},
+        monsters::test::NoopMonster,
         status::Status,
     };
 
@@ -169,6 +211,51 @@ mod tests {
         assert_eq!(g.draw_pile.len(), 4);
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.hand.len(), 5);
+    }
+
+    #[test]
+    fn test_cleave() {
+        let mut g = GameBuilder::default()
+            .add_cards(card(CardClass::Cleave), 2)
+            .add_monster(NoopMonster())
+            .add_monster(NoopMonster())
+            .build_combat();
+        let hp0 = g.monsters[0].creature.cur_hp;
+        g.monsters[1].creature.cur_hp = 4;
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8);
+        assert_eq!(g.monsters[1].creature.cur_hp, 0);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 16);
+        assert_eq!(g.monsters[1].creature.cur_hp, 0);
+    }
+
+    #[test]
+    fn test_thunderclap() {
+        let mut g = GameBuilder::default()
+            .add_cards(card(CardClass::Thunderclap), 2)
+            .add_monster(NoopMonster())
+            .add_monster(NoopMonster())
+            .build_combat();
+        let hp0 = g.monsters[0].creature.cur_hp;
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 4);
+        assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 4);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 10);
+        assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 10);
     }
 
     #[test]
