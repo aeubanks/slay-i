@@ -148,9 +148,6 @@ mod tests {
             card_index: 0,
             target: Some(0),
         });
-        assert_eq!(g.discard_pile.len(), 1);
-        assert_eq!(g.exhaust_pile.len(), 0);
-        assert_eq!(g.draw_pile.len(), 0);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 9);
     }
 
@@ -164,9 +161,6 @@ mod tests {
             card_index: 0,
             target: Some(0),
         });
-        assert_eq!(g.discard_pile.len(), 1);
-        assert_eq!(g.exhaust_pile.len(), 0);
-        assert_eq!(g.draw_pile.len(), 0);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8);
         assert_eq!(g.monsters[0].creature.statuses.len(), 1);
         assert_eq!(

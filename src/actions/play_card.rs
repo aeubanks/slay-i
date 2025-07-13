@@ -1,7 +1,7 @@
 use crate::{
     action::Action,
     actions::exhaust_card::ExhaustCardAction,
-    card::{CardPlayInfo, CardRef},
+    card::{CardPlayInfo, CardRef, CardType},
     game::{CreatureRef, Game},
 };
 
@@ -24,6 +24,9 @@ impl Action for PlayCardAction {
             played_count: 0,
         };
         (c.behavior)(game, self.target, info);
+        if c.ty == CardType::Power {
+            return;
+        }
         let exhaust = c.exhaust;
         drop(c);
         if exhaust {
@@ -45,5 +48,63 @@ impl std::fmt::Debug for PlayCardAction {
             write!(f, " on {t:?}")?
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        cards::{CardClass, card},
+        game::{GameBuilder, Move},
+    };
+
+    #[test]
+    fn test_play_attack_skill() {
+        let mut g = GameBuilder::default()
+            .add_card(card(CardClass::TestAttack))
+            .add_card(card(CardClass::TestSkill))
+            .build_combat();
+
+        assert_eq!(g.hand.len(), 2);
+        assert_eq!(g.discard_pile.len(), 0);
+        assert_eq!(g.draw_pile.len(), 0);
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.draw_pile.len(), 0);
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+
+        assert_eq!(g.hand.len(), 0);
+        assert_eq!(g.discard_pile.len(), 2);
+        assert_eq!(g.draw_pile.len(), 0);
+    }
+
+    #[test]
+    fn test_play_power() {
+        let mut g = GameBuilder::default()
+            .add_card(card(CardClass::TestPower))
+            .build_combat();
+
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.discard_pile.len(), 0);
+        assert_eq!(g.draw_pile.len(), 0);
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+
+        assert_eq!(g.hand.len(), 0);
+        assert_eq!(g.discard_pile.len(), 0);
+        assert_eq!(g.draw_pile.len(), 0);
     }
 }

@@ -1,4 +1,5 @@
 mod attacks;
+mod powers;
 mod skills;
 
 use std::{cell::RefCell, rc::Rc};
@@ -12,18 +13,24 @@ pub enum CardClass {
     Strike,
     Defend,
     Bash,
-    // Common
+    // Common attacks
     PommelStrike,
     Clothesline,
     Cleave,
     Thunderclap,
-    // Uncommon
+    // Uncommon attacks
     SearingBlow,
+    // Uncommon skills
     GhostlyArmor,
-    // Rare
+    // Uncommon powers
+    Inflame,
+    // Rare skills
     Impervious,
     // Other
     DebugKill,
+    TestAttack,
+    TestSkill,
+    TestPower,
 }
 
 impl CardClass {
@@ -92,6 +99,7 @@ pub fn card(class: CardClass) -> CardRef {
             skills::ghostly_armor_behavior,
             false,
         ),
+        Inflame => (Power, Uncommon, 1, false, powers::inflame_behavior, false),
         Impervious => (Skill, Rare, 2, false, skills::impervious_behavior, true),
         DebugKill => (
             Attack,
@@ -101,6 +109,9 @@ pub fn card(class: CardClass) -> CardRef {
             attacks::debug_kill_behavior,
             false,
         ),
+        TestAttack => (Attack, Special, 1, false, |_, _, _| (), false),
+        TestSkill => (Skill, Special, 1, false, |_, _, _| (), false),
+        TestPower => (Power, Special, 1, false, |_, _, _| (), false),
     };
 
     Rc::new(RefCell::new(Card {
