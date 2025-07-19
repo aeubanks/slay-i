@@ -5,6 +5,7 @@ pub mod discard_hand;
 pub mod draw;
 pub mod end_of_turn_discard;
 pub mod exhaust_card;
+pub mod gain_energy;
 pub mod gain_status;
 pub mod heal;
 pub mod lose_hp;

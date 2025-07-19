@@ -22,7 +22,7 @@ use rand::seq::SliceRandom;
 
 pub type Rand = rand::rngs::ThreadRng;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct CreatureRef(usize);
 
 impl CreatureRef {
@@ -261,11 +261,16 @@ impl Game {
         if !c.is_alive() {
             return;
         }
-        if c.block >= amount {
-            c.block -= amount;
-        } else {
-            amount -= c.block;
-            c.block = 0;
+        if ty != DamageType::HPLoss {
+            if c.block >= amount {
+                c.block -= amount;
+                amount = 0;
+            } else {
+                amount -= c.block;
+                c.block = 0;
+            }
+        }
+        if amount != 0 {
             c.cur_hp -= amount;
             if c.cur_hp < 0 {
                 c.cur_hp = 0;

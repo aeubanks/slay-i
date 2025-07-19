@@ -6,10 +6,11 @@ use crate::{
     status::Status,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum DamageType {
     Attack { source: CreatureRef },
     Thorns,
+    HPLoss,
 }
 
 pub struct DamageAction {

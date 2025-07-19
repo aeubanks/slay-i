@@ -23,6 +23,7 @@ pub enum CardClass {
     SearingBlow,
     // Uncommon skills
     GhostlyArmor,
+    Bloodletting,
     // Uncommon powers
     Inflame,
     // Rare skills
@@ -106,6 +107,14 @@ pub fn card(class: CardClass) -> CardRef {
             1,
             false,
             skills::ghostly_armor_behavior,
+            false,
+        ),
+        Bloodletting => (
+            Skill,
+            Uncommon,
+            0,
+            false,
+            skills::bloodletting_behavior,
             false,
         ),
         Inflame => (Power, Uncommon, 1, false, powers::inflame_behavior, false),
