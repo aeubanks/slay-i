@@ -15,6 +15,7 @@ pub enum CardClass {
     Bash,
     // Common attacks
     PommelStrike,
+    TwinStrike,
     Clothesline,
     Cleave,
     Thunderclap,
@@ -64,6 +65,14 @@ pub fn card(class: CardClass) -> CardRef {
             1,
             true,
             attacks::pommel_strike_behavior,
+            false,
+        ),
+        TwinStrike => (
+            Attack,
+            Common,
+            1,
+            true,
+            attacks::twin_strike_behavior,
             false,
         ),
         Clothesline => (

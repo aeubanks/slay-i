@@ -6,10 +6,16 @@ use crate::{
     status::Status,
 };
 
+#[derive(Clone, Copy)]
+pub enum DamageType {
+    Attack { source: CreatureRef },
+    Thorns,
+}
+
 pub struct DamageAction {
-    // source: CreatureRef,
-    target: CreatureRef,
-    amount: i32,
+    pub target: CreatureRef,
+    pub amount: i32,
+    pub ty: DamageType,
 }
 
 pub fn calculate_damage(
@@ -47,36 +53,30 @@ impl DamageAction {
         Self {
             target: target_ref,
             amount,
+            ty: DamageType::Attack {
+                source: CreatureRef::player(),
+            },
         }
     }
     pub fn from_monster(
         base_amount: i32,
         player: &Player,
         source: &Creature,
-        _source_ref: CreatureRef,
+        source_ref: CreatureRef,
     ) -> Self {
         let target = CreatureRef::player();
         let amount = calculate_damage(base_amount, false, source, player);
-        Self { target, amount }
+        Self {
+            target,
+            amount,
+            ty: DamageType::Attack { source: source_ref },
+        }
     }
 }
 
 impl Action for DamageAction {
     fn run(&self, game: &mut Game) {
-        let c = game.get_creature_mut(self.target);
-        if !c.is_alive() {
-            return;
-        }
-        if c.block >= self.amount {
-            c.block -= self.amount;
-        } else {
-            c.cur_hp += c.block;
-            c.cur_hp -= self.amount;
-            if c.cur_hp < 0 {
-                c.cur_hp = 0;
-            }
-            c.block = 0;
-        }
+        game.damage(self.target, self.amount, self.ty);
     }
 }
 

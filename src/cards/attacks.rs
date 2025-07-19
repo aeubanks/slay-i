@@ -75,6 +75,12 @@ pub fn pommel_strike_behavior(game: &mut Game, target: Option<CreatureRef>, info
         .push_bot(DrawAction(if info.upgraded { 2 } else { 1 }));
 }
 
+pub fn twin_strike_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
+    for _ in 0..2 {
+        push_damage(game, target, info, 5, 7);
+    }
+}
+
 pub fn clothesline_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
     push_damage(game, target, info, 12, 14);
     game.action_queue.push_bot(GainStatusAction {

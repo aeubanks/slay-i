@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 #[cfg(test)]
 use crate::action::Action;
+use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::play_card::PlayCardAction;
@@ -240,6 +241,36 @@ impl Game {
             }
         }
         ret
+    }
+
+    pub fn damage(&mut self, target: CreatureRef, mut amount: i32, ty: DamageType) {
+        if !self.get_creature(target).is_alive() {
+            return;
+        }
+        if let DamageType::Attack { source } = ty {
+            let c = self.get_creature_mut(target);
+            if let Some(a) = c.statuses.get(&Status::Thorns).map(|v| DamageAction {
+                target: source,
+                amount: *v,
+                ty: DamageType::Thorns,
+            }) {
+                self.action_queue.push_top(a);
+            }
+        }
+        let c = self.get_creature_mut(target);
+        if !c.is_alive() {
+            return;
+        }
+        if c.block >= amount {
+            c.block -= amount;
+        } else {
+            amount -= c.block;
+            c.block = 0;
+            c.cur_hp -= amount;
+            if c.cur_hp < 0 {
+                c.cur_hp = 0;
+            }
+        }
     }
 
     fn setup_combat_draw_pile(&mut self) {

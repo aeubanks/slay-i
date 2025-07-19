@@ -5,6 +5,7 @@ pub enum Status {
     Brutality,
     DemonForm,
     Weak,
+    Thorns,
 }
 
 impl Status {
@@ -18,7 +19,7 @@ impl Status {
 mod tests {
     use super::Status::*;
     use crate::{
-        actions::damage::DamageAction,
+        actions::{block::BlockAction, damage::DamageAction, set_hp::SetHPAction},
         cards::{CardClass, card},
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::{ApplyVulnerableMonster, NoopMonster},
@@ -155,5 +156,66 @@ mod tests {
         ));
 
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 15);
+    }
+
+    #[test]
+    fn test_thorns() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Thorns, 2)
+            .add_cards(card(CardClass::Strike), 5)
+            .build_combat();
+
+        let hp = g.player.creature.cur_hp;
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+
+        assert_eq!(g.player.creature.cur_hp, hp - 2);
+
+        g.run_action(BlockAction {
+            target: CreatureRef::player(),
+            amount: 3,
+        });
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.player.creature.block, 1);
+        assert_eq!(g.player.creature.cur_hp, hp - 2);
+
+        g.run_action(SetHPAction {
+            target: CreatureRef::monster(0),
+            hp: 3,
+        });
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+
+        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.creature.cur_hp, hp - 3);
+    }
+
+    #[test]
+    fn test_thorns2() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Thorns, 2)
+            .add_cards(card(CardClass::TwinStrike), 5)
+            .build_combat();
+
+        let hp = g.player.creature.cur_hp;
+
+        g.run_action(SetHPAction {
+            target: CreatureRef::monster(0),
+            hp: 3,
+        });
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+
+        assert_eq!(g.player.creature.cur_hp, hp - 2);
     }
 }
