@@ -14,7 +14,7 @@ impl Blessing {
                 game.increase_max_hp(8);
             }
             CommonRelic => {
-                game.player.add_relic2(random_relic(&mut game.rng));
+                game.player.add_relic(random_relic(&mut game.rng));
             }
         }
     }

@@ -83,6 +83,7 @@ pub enum GameState {
 }
 
 #[derive(Default)]
+#[allow(unused)]
 pub struct GameBuilder {
     master_deck: CardPile,
     monsters: Vec<Monster>,
