@@ -8,9 +8,9 @@ use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
-use crate::card::CardPile;
 use crate::card::CardRef;
-use crate::cards::{CardClass, card};
+use crate::card::{Card, CardPile};
+use crate::cards::{CardClass, CardCost, card};
 use crate::creature::Creature;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
@@ -103,6 +103,7 @@ impl GameBuilder {
             self.master_deck.push(card(CardClass::Defend));
         }
         self.master_deck.push(card(CardClass::Bash));
+        self.master_deck.push(card(CardClass::AscendersBane));
         self
     }
     pub fn add_card(mut self, c: CardRef) -> Self {
@@ -479,6 +480,7 @@ impl Game {
             }
             Move::PlayCard { card_index, target } => {
                 assert_eq!(self.state, GameState::PlayerTurn);
+                assert!(self.can_play_card(&self.hand[card_index].borrow()));
                 self.action_queue.push_bot(PlayCardAction {
                     card: self.hand.remove(card_index),
                     target: target.map(CreatureRef::monster),
@@ -495,6 +497,13 @@ impl Game {
         }
     }
 
+    fn can_play_card(&self, c: &Card) -> bool {
+        match c.cost {
+            CardCost::None => false,
+            CardCost::Cost(cost) => self.energy >= cost,
+        }
+    }
+
     pub fn valid_moves(&self) -> Vec<Move> {
         let mut moves = Vec::new();
         match self.state {
@@ -505,8 +514,8 @@ impl Game {
             GameState::PlayerTurn => {
                 moves.push(Move::EndTurn);
                 for (ci, c) in self.hand.iter().enumerate() {
-                    let c = c.borrow_mut();
-                    if self.energy < c.cost {
+                    let c = c.borrow();
+                    if !self.can_play_card(&c) {
                         continue;
                     }
                     if c.class.has_target() {

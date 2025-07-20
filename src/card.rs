@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::cards::CardClass;
+use crate::cards::{CardClass, CardCost, CardType};
 
 #[derive(Clone, Copy)]
 pub struct CardPlayInfo {
@@ -12,13 +12,14 @@ pub struct CardPlayInfo {
 pub struct Card {
     pub class: CardClass,
     pub upgrade_count: i32,
-    pub cost: i32,
+    pub cost: CardCost,
     pub exhaust: bool,
 }
 
 impl Card {
     pub fn can_upgrade(&self) -> bool {
-        self.upgrade_count == 0 || self.class.can_upgrade_forever()
+        (self.upgrade_count == 0 || self.class.can_upgrade_forever())
+            && !matches!(self.class.ty(), CardType::Status | CardType::Curse)
     }
     pub fn upgrade(&mut self) {
         assert!(self.can_upgrade());
@@ -35,7 +36,10 @@ impl std::fmt::Debug for Card {
         for _ in 0..(self.upgrade_count) {
             write!(f, "+")?;
         }
-        write!(f, ", {} cost", self.cost)?;
+        match self.cost {
+            CardCost::None => {}
+            CardCost::Cost(cost) => write!(f, ", {} cost", cost)?,
+        }
         Ok(())
     }
 }

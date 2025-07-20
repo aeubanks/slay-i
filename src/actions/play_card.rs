@@ -2,7 +2,7 @@ use crate::{
     action::Action,
     actions::exhaust_card::ExhaustCardAction,
     card::{CardPlayInfo, CardRef},
-    cards::CardType,
+    cards::{CardCost, CardType},
     game::{CreatureRef, Game},
 };
 
@@ -16,7 +16,10 @@ pub struct PlayCardAction {
 impl Action for PlayCardAction {
     fn run(&self, game: &mut Game) {
         let c = self.card.borrow_mut();
-        let energy = c.cost;
+        let energy = match c.cost {
+            CardCost::None => 0,
+            CardCost::Cost(cost) => cost,
+        };
         assert!(energy <= game.energy);
         game.energy -= energy;
         let info = CardPlayInfo {

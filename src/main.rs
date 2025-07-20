@@ -17,7 +17,6 @@ mod status;
 use game::Game;
 
 use crate::{
-    card::CardRef,
     cards::CardClass,
     creature::Creature,
     game::{GameBuilder, GameStatus, Move},
@@ -26,23 +25,6 @@ use crate::{
     player::Player,
     relics::burning_blood::BurningBlood,
 };
-
-fn card_str(c: &CardRef) -> String {
-    use std::fmt::Write;
-
-    let mut s = String::new();
-    let c = c.borrow();
-    write!(s, "{:?}", c.class).unwrap();
-    for _ in 0..(c.upgrade_count) {
-        write!(s, "+").unwrap();
-    }
-    write!(s, " ({}", c.cost).unwrap();
-    if c.exhaust {
-        write!(s, ",x").unwrap();
-    }
-    write!(s, ")").unwrap();
-    s
-}
 
 fn creature_str(c: &Creature) -> String {
     let mut s = format!("{}: {}/{}, {} block", c.name, c.cur_hp, c.max_hp, c.block);
@@ -79,19 +61,19 @@ fn print_state(g: &Game) {
     }
     println!("hand:");
     for c in &g.hand {
-        println!(" {}", card_str(c));
+        println!(" {:?}", c.borrow());
     }
     println!("draw pile:");
     for c in &g.draw_pile {
-        println!(" {}", card_str(c));
+        println!(" {:?}", c.borrow());
     }
     println!("discard pile:");
     for c in &g.discard_pile {
-        println!(" {}", card_str(c));
+        println!(" {:?}", c.borrow());
     }
     println!("exhaust pile:");
     for c in &g.exhaust_pile {
-        println!(" {}", card_str(c));
+        println!(" {:?}", c.borrow());
     }
     println!("moves:");
     for (mi, m) in g.valid_moves().iter().enumerate() {
@@ -105,7 +87,7 @@ fn print_state(g: &Game) {
                 card_index: i,
                 target: t,
             } => {
-                print!("play card {} ({})", i, card_str(&g.hand[*i]));
+                print!("play card {} ({:?})", i, g.hand[*i].borrow());
                 if let Some(t) = t {
                     print!(
                         " on monster {} ({})",
@@ -115,7 +97,7 @@ fn print_state(g: &Game) {
                 }
             }
             Move::Armaments { card_index: i } => {
-                print!("upgrade card {} ({})", i, card_str(&g.hand[*i]));
+                print!("upgrade card {} ({:?})", i, g.hand[*i].borrow());
             }
         }
         println!();

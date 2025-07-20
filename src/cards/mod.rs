@@ -1,6 +1,8 @@
 mod attacks;
+mod curses;
 mod powers;
 mod skills;
+mod statuses;
 
 use std::{cell::RefCell, rc::Rc};
 
@@ -54,6 +56,12 @@ pub enum CardClass {
     // Rare skills
     LimitBreak,
     Impervious,
+    // Statuses
+    Wound,
+    Dazed,
+    Slimed,
+    // Curses
+    AscendersBane,
     // Other
     DebugKill,
     TestAttack,
@@ -63,10 +71,16 @@ pub enum CardClass {
 
 pub type CardBehavior = fn(&mut Game, Option<CreatureRef>, CardPlayInfo);
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum CardCost {
+    Cost(i32),
+    None,
+}
+
 impl CardClass {
     pub fn is_ethereal(&self) -> bool {
         use CardClass::*;
-        matches!(self, GhostlyArmor)
+        matches!(self, GhostlyArmor | Dazed | AscendersBane)
     }
     pub fn can_upgrade_forever(&self) -> bool {
         matches!(self, CardClass::SearingBlow)
@@ -80,7 +94,8 @@ impl CardClass {
             PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap | Armaments => Common,
             SearingBlow | GhostlyArmor | Bloodletting | Inflame => Uncommon,
             Impervious | LimitBreak => Rare,
-            DebugKill | TestAttack | TestSkill | TestPower => Special,
+            DebugKill | TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed
+            | AscendersBane => Special,
         }
     }
     pub fn ty(&self) -> CardType {
@@ -92,6 +107,8 @@ impl CardClass {
             Defend | Armaments | GhostlyArmor | Bloodletting | Impervious | LimitBreak
             | TestSkill => Skill,
             Inflame | TestPower => Power,
+            Dazed | Wound | Slimed => Status,
+            AscendersBane => Curse,
         }
     }
     pub fn has_target(&self) -> bool {
@@ -120,26 +137,28 @@ impl CardClass {
             Impervious => skills::impervious_behavior,
             LimitBreak => skills::limit_break_behavior,
             DebugKill => attacks::debug_kill_behavior,
-            TestAttack => |_, _, _| (),
-            TestSkill => |_, _, _| (),
-            TestPower => |_, _, _| (),
+            TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | AscendersBane => {
+                |_, _, _| ()
+            }
         }
     }
-    pub fn base_cost(&self) -> i32 {
+    pub fn base_cost(&self) -> CardCost {
         use CardClass::*;
+        use CardCost::*;
         match self {
-            Bloodletting | DebugKill | TestAttack | TestSkill | TestPower => 0,
+            Bloodletting | DebugKill | TestAttack | TestSkill | TestPower => Cost(0),
             Strike | Defend | PommelStrike | TwinStrike | Cleave | Thunderclap | Armaments
-            | GhostlyArmor | Inflame | LimitBreak => 1,
-            Bash | Clothesline | SearingBlow | Impervious => 2,
+            | GhostlyArmor | Inflame | LimitBreak | Slimed => Cost(1),
+            Bash | Clothesline | SearingBlow | Impervious => Cost(2),
+            Dazed | Wound | AscendersBane => None,
         }
     }
     pub fn base_exhaust(&self) -> bool {
         use CardClass::*;
-        matches!(self, Impervious | LimitBreak)
+        matches!(self, Impervious | LimitBreak | Slimed)
     }
     // Change (cost, exhaust)
-    pub fn upgrade_fn(&self) -> Option<fn(&mut i32, &mut bool)> {
+    pub fn upgrade_fn(&self) -> Option<fn(&mut CardCost, &mut bool)> {
         use CardClass::*;
         match self {
             LimitBreak => Some(|_, exhaust| *exhaust = false),
