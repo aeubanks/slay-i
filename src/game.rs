@@ -6,9 +6,9 @@ use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::play_card::PlayCardAction;
+use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
 use crate::card::CardPile;
-#[cfg(test)]
 use crate::card::CardRef;
 use crate::cards::{CardClass, card};
 use crate::creature::Creature;
@@ -47,7 +47,7 @@ impl std::fmt::Debug for CreatureRef {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Move {
     ChooseBlessing(Blessing),
     EndTurn,
@@ -55,16 +55,20 @@ pub enum Move {
         card_index: usize,
         target: Option<usize>,
     },
+    Armaments {
+        card_index: usize,
+    },
 }
 
-pub enum GameResult {
+pub enum GameStatus {
     Defeat,
     Victory,
-    Ongoing,
+    Combat,
+    Armaments,
 }
 
 #[derive(PartialEq, Eq, Debug)]
-enum GameState {
+pub enum GameState {
     Blessing,
     RollCombat,
     CombatBegin,
@@ -73,6 +77,7 @@ enum GameState {
     PlayerTurnEnd,
     MonsterTurn,
     EndOfRound,
+    Armaments,
     Defeat,
     Victory,
 }
@@ -99,7 +104,6 @@ impl GameBuilder {
         self.master_deck.push(card(CardClass::Bash));
         self
     }
-    #[cfg(test)]
     pub fn add_card(mut self, c: CardRef) -> Self {
         self.master_deck.push(c);
         self
@@ -185,8 +189,8 @@ pub struct Game {
     pub discard_pile: CardPile,
     pub exhaust_pile: CardPile,
     pub action_queue: ActionQueue,
-    state: GameState,
     pub rng: Rand,
+    pub state: GameState,
 }
 
 impl Game {
@@ -205,8 +209,8 @@ impl Game {
             discard_pile: Default::default(),
             exhaust_pile: Default::default(),
             action_queue: Default::default(),
-            state: GameState::Blessing,
             rng,
+            state: GameState::Blessing,
         };
 
         g.player.creature.cur_hp = (g.player.creature.cur_hp as f32 * 0.9) as i32;
@@ -370,7 +374,9 @@ impl Game {
             GameState::PlayerTurn => {
                 self.run_actions_until_empty();
             }
-            GameState::Victory | GameState::Defeat | GameState::Blessing => unreachable!(),
+            GameState::Victory | GameState::Defeat | GameState::Blessing | GameState::Armaments => {
+                unreachable!()
+            }
         }
     }
 
@@ -382,6 +388,7 @@ impl Game {
         while self.state != GameState::PlayerTurn
             && self.state != GameState::Victory
             && self.state != GameState::Defeat
+            && self.state != GameState::Armaments
         {
             self.run_once();
         }
@@ -447,34 +454,41 @@ impl Game {
         self.run_actions_until_empty();
     }
 
-    pub fn result(&self) -> GameResult {
+    pub fn result(&self) -> GameStatus {
         match self.state {
-            GameState::Victory => GameResult::Victory,
-            GameState::Defeat => GameResult::Defeat,
-            _ => GameResult::Ongoing,
+            GameState::Victory => GameStatus::Victory,
+            GameState::Defeat => GameStatus::Defeat,
+            GameState::Armaments => GameStatus::Armaments,
+            _ => GameStatus::Combat,
         }
     }
 
     pub fn make_move(&mut self, m: Move) {
-        assert!(matches!(
-            self.state,
-            GameState::Blessing | GameState::PlayerTurn
-        ));
         match m {
             Move::ChooseBlessing(b) => {
+                assert_eq!(self.state, GameState::Blessing);
                 b.run(self);
                 self.state = GameState::RollCombat;
                 self.run();
             }
             Move::EndTurn => {
+                assert_eq!(self.state, GameState::PlayerTurn);
                 self.state = GameState::PlayerTurnEnd;
                 self.run();
             }
             Move::PlayCard { card_index, target } => {
+                assert_eq!(self.state, GameState::PlayerTurn);
                 self.action_queue.push_bot(PlayCardAction {
                     card: self.hand.remove(card_index),
                     target: target.map(CreatureRef::monster),
                 });
+                self.run();
+            }
+            Move::Armaments { card_index } => {
+                assert_eq!(self.state, GameState::Armaments);
+                self.action_queue
+                    .push_top(UpgradeOneCardInHandAction(self.hand[card_index].clone()));
+                self.state = GameState::PlayerTurn;
                 self.run();
             }
         }
@@ -509,6 +523,13 @@ impl Game {
                             card_index: ci,
                             target: None,
                         });
+                    }
+                }
+            }
+            GameState::Armaments => {
+                for (i, c) in self.hand.iter().enumerate() {
+                    if c.borrow().can_upgrade() {
+                        moves.push(Move::Armaments { card_index: i });
                     }
                 }
             }
@@ -572,6 +593,9 @@ impl Game {
     fn run_actions_until_empty(&mut self) {
         while let Some(a) = self.action_queue.pop() {
             a.run(self);
+            if self.state == GameState::Armaments {
+                break;
+            }
         }
     }
 }

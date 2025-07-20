@@ -19,6 +19,8 @@ pub enum CardClass {
     Clothesline,
     Cleave,
     Thunderclap,
+    // Common skills
+    Armaments,
     // Uncommon attacks
     SearingBlow,
     // Uncommon skills
@@ -93,6 +95,7 @@ pub fn card(class: CardClass) -> CardRef {
             attacks::thunderclap_behavior,
             false,
         ),
+        Armaments => (Skill, Common, 1, false, skills::armaments_behavior, false),
         SearingBlow => (
             Attack,
             Uncommon,

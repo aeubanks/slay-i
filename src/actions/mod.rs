@@ -1,4 +1,5 @@
 pub mod block;
+pub mod choose_upgrade_one_card_in_hand;
 pub mod damage;
 pub mod discard_card;
 pub mod discard_hand;
@@ -13,3 +14,5 @@ pub mod play_card;
 pub mod set_hp;
 pub mod set_status;
 pub mod shuffle_discard_on_top_of_draw;
+pub mod upgrade_all_cards_in_hand;
+pub mod upgrade_one_card_in_hand;

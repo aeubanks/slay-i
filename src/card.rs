@@ -49,7 +49,6 @@ pub struct Card {
     pub behavior: CardBehavior,
 }
 
-#[cfg(test)]
 impl Card {
     pub fn can_upgrade(&self) -> bool {
         self.upgrade_count == 0 || self.class.can_upgrade_forever()

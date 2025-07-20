@@ -18,8 +18,9 @@ use game::Game;
 
 use crate::{
     card::CardRef,
+    cards::CardClass,
     creature::Creature,
-    game::{GameBuilder, GameResult, Move},
+    game::{GameBuilder, GameStatus, Move},
     monster::Monster,
     monsters::jawworm::JawWorm,
     player::Player,
@@ -113,6 +114,9 @@ fn print_state(g: &Game) {
                     );
                 }
             }
+            Move::Armaments { card_index: i } => {
+                print!("upgrade card {} ({})", i, card_str(&g.hand[*i]));
+            }
         }
         println!();
     }
@@ -137,20 +141,21 @@ fn read_int_from_stdin(max: usize) -> usize {
 fn main() {
     let mut game = GameBuilder::default()
         .ironclad_starting_deck()
+        .add_card(cards::card(CardClass::Armaments))
         .add_relic(BurningBlood {})
         .add_monster(JawWorm::new())
         .build();
     loop {
         match game.result() {
-            GameResult::Defeat => {
+            GameStatus::Defeat => {
                 println!("defeat :(");
                 break;
             }
-            GameResult::Victory => {
+            GameStatus::Victory => {
                 println!("victory! :)");
                 break;
             }
-            GameResult::Ongoing => {
+            GameStatus::Combat | GameStatus::Armaments => {
                 print_state(&game);
                 let valid_moves = game.valid_moves();
                 let i = read_int_from_stdin(valid_moves.len());
