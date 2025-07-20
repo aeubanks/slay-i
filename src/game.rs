@@ -509,7 +509,7 @@ impl Game {
                     if self.energy < c.cost {
                         continue;
                     }
-                    if c.has_target {
+                    if c.class.has_target() {
                         for (mi, m) in self.monsters.iter().enumerate() {
                             if !m.creature.is_alive() {
                                 continue;

@@ -1,7 +1,8 @@
 use crate::{
     action::Action,
     actions::exhaust_card::ExhaustCardAction,
-    card::{CardPlayInfo, CardRef, CardType},
+    card::{CardPlayInfo, CardRef},
+    cards::CardType,
     game::{CreatureRef, Game},
 };
 
@@ -21,10 +22,9 @@ impl Action for PlayCardAction {
         let info = CardPlayInfo {
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
-            played_count: 0,
         };
-        (c.behavior)(game, self.target, info);
-        if c.ty == CardType::Power {
+        (c.class.behavior())(game, self.target, info);
+        if c.class.ty() == CardType::Power {
             return;
         }
         let exhaust = c.exhaust;

@@ -4,7 +4,30 @@ mod skills;
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::card::{Card, CardBehavior, CardRarity, CardRef, CardType};
+use crate::{
+    card::{Card, CardPlayInfo, CardRef},
+    game::{CreatureRef, Game},
+};
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[allow(dead_code)]
+pub enum CardType {
+    Attack,
+    Skill,
+    Power,
+    Status,
+    Curse,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[allow(dead_code)]
+pub enum CardRarity {
+    Basic,
+    Common,
+    Uncommon,
+    Rare,
+    Special,
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[allow(dead_code)]
@@ -37,6 +60,8 @@ pub enum CardClass {
     TestPower,
 }
 
+pub type CardBehavior = fn(&mut Game, Option<CreatureRef>, CardPlayInfo);
+
 impl CardClass {
     pub fn is_ethereal(&self) -> bool {
         use CardClass::*;
@@ -45,106 +70,82 @@ impl CardClass {
     pub fn can_upgrade_forever(&self) -> bool {
         matches!(self, CardClass::SearingBlow)
     }
+    #[allow(dead_code)]
+    pub fn rarity(&self) -> CardRarity {
+        use CardClass::*;
+        use CardRarity::*;
+        match self {
+            Strike | Defend | Bash => Basic,
+            PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap | Armaments => Common,
+            SearingBlow | GhostlyArmor | Bloodletting | Inflame => Uncommon,
+            Impervious => Rare,
+            DebugKill | TestAttack | TestSkill | TestPower => Special,
+        }
+    }
+    pub fn ty(&self) -> CardType {
+        use CardClass::*;
+        use CardType::*;
+        match self {
+            Strike | Bash | PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap
+            | SearingBlow | DebugKill | TestAttack => Attack,
+            Defend | Armaments | GhostlyArmor | Bloodletting | Impervious | TestSkill => Skill,
+            Inflame | TestPower => Power,
+        }
+    }
+    pub fn has_target(&self) -> bool {
+        use CardClass::*;
+        matches!(
+            self,
+            Strike | Bash | PommelStrike | TwinStrike | Clothesline | SearingBlow
+        )
+    }
+    pub fn behavior(&self) -> CardBehavior {
+        use CardClass::*;
+        match self {
+            Strike => attacks::strike_behavior,
+            Defend => skills::defend_behavior,
+            Bash => attacks::bash_behavior,
+            PommelStrike => attacks::pommel_strike_behavior,
+            TwinStrike => attacks::twin_strike_behavior,
+            Clothesline => attacks::clothesline_behavior,
+            Cleave => attacks::cleave_behavior,
+            Thunderclap => attacks::thunderclap_behavior,
+            Armaments => skills::armaments_behavior,
+            SearingBlow => attacks::searing_blow_behavior,
+            GhostlyArmor => skills::ghostly_armor_behavior,
+            Bloodletting => skills::bloodletting_behavior,
+            Inflame => powers::inflame_behavior,
+            Impervious => skills::impervious_behavior,
+            DebugKill => attacks::debug_kill_behavior,
+            TestAttack => |_, _, _| (),
+            TestSkill => |_, _, _| (),
+            TestPower => |_, _, _| (),
+        }
+    }
+    pub fn base_cost(&self) -> i32 {
+        use CardClass::*;
+        match self {
+            Bloodletting | DebugKill | TestAttack | TestSkill | TestPower => 0,
+            Strike | Defend | PommelStrike | TwinStrike | Cleave | Thunderclap | Armaments
+            | GhostlyArmor | Inflame => 1,
+            Bash | Clothesline | SearingBlow | Impervious => 2,
+        }
+    }
+    pub fn base_exhaust(&self) -> bool {
+        use CardClass::*;
+        matches!(self, Impervious)
+    }
+    pub fn upgrade_fn(&self) -> Option<fn(&mut i32)> {
+        None
+    }
 }
 
 pub fn card(class: CardClass) -> CardRef {
-    use CardClass::*;
-    use CardRarity::*;
-    use CardType::*;
-    let (ty, rarity, cost, has_target, behavior, exhaust): (
-        CardType,
-        CardRarity,
-        i32,
-        bool,
-        CardBehavior,
-        bool,
-    ) = match class {
-        Strike => (Attack, Basic, 1, true, attacks::strike_behavior, false),
-        Defend => (Skill, Basic, 1, false, skills::defend_behavior, false),
-        Bash => (Attack, Basic, 2, true, attacks::bash_behavior, false),
-        PommelStrike => (
-            Attack,
-            Common,
-            1,
-            true,
-            attacks::pommel_strike_behavior,
-            false,
-        ),
-        TwinStrike => (
-            Attack,
-            Common,
-            1,
-            true,
-            attacks::twin_strike_behavior,
-            false,
-        ),
-        Clothesline => (
-            Attack,
-            Common,
-            2,
-            true,
-            attacks::clothesline_behavior,
-            false,
-        ),
-        Cleave => (Attack, Common, 1, false, attacks::cleave_behavior, false),
-        Thunderclap => (
-            Attack,
-            Common,
-            1,
-            false,
-            attacks::thunderclap_behavior,
-            false,
-        ),
-        Armaments => (Skill, Common, 1, false, skills::armaments_behavior, false),
-        SearingBlow => (
-            Attack,
-            Uncommon,
-            2,
-            true,
-            attacks::searing_blow_behavior,
-            false,
-        ),
-        GhostlyArmor => (
-            Skill,
-            Uncommon,
-            1,
-            false,
-            skills::ghostly_armor_behavior,
-            false,
-        ),
-        Bloodletting => (
-            Skill,
-            Uncommon,
-            0,
-            false,
-            skills::bloodletting_behavior,
-            false,
-        ),
-        Inflame => (Power, Uncommon, 1, false, powers::inflame_behavior, false),
-        Impervious => (Skill, Rare, 2, false, skills::impervious_behavior, true),
-        DebugKill => (
-            Attack,
-            Special,
-            1,
-            true,
-            attacks::debug_kill_behavior,
-            false,
-        ),
-        TestAttack => (Attack, Special, 1, false, |_, _, _| (), false),
-        TestSkill => (Skill, Special, 1, false, |_, _, _| (), false),
-        TestPower => (Power, Special, 1, false, |_, _, _| (), false),
-    };
-
     Rc::new(RefCell::new(Card {
         class,
-        ty,
-        rarity,
         upgrade_count: 0,
-        upgrade_fn: None,
-        has_target,
-        cost,
-        behavior,
-        exhaust,
+        cost: class.base_cost(),
+        exhaust: class.base_exhaust(),
     }))
 }
 
