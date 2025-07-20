@@ -3,6 +3,7 @@ pub mod choose_upgrade_one_card_in_hand;
 pub mod damage;
 pub mod discard_card;
 pub mod discard_hand;
+pub mod double_strength;
 pub mod draw;
 pub mod end_of_turn_discard;
 pub mod exhaust_card;

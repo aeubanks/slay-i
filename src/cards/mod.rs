@@ -52,6 +52,7 @@ pub enum CardClass {
     // Uncommon powers
     Inflame,
     // Rare skills
+    LimitBreak,
     Impervious,
     // Other
     DebugKill,
@@ -78,7 +79,7 @@ impl CardClass {
             Strike | Defend | Bash => Basic,
             PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap | Armaments => Common,
             SearingBlow | GhostlyArmor | Bloodletting | Inflame => Uncommon,
-            Impervious => Rare,
+            Impervious | LimitBreak => Rare,
             DebugKill | TestAttack | TestSkill | TestPower => Special,
         }
     }
@@ -88,7 +89,8 @@ impl CardClass {
         match self {
             Strike | Bash | PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap
             | SearingBlow | DebugKill | TestAttack => Attack,
-            Defend | Armaments | GhostlyArmor | Bloodletting | Impervious | TestSkill => Skill,
+            Defend | Armaments | GhostlyArmor | Bloodletting | Impervious | LimitBreak
+            | TestSkill => Skill,
             Inflame | TestPower => Power,
         }
     }
@@ -116,6 +118,7 @@ impl CardClass {
             Bloodletting => skills::bloodletting_behavior,
             Inflame => powers::inflame_behavior,
             Impervious => skills::impervious_behavior,
+            LimitBreak => skills::limit_break_behavior,
             DebugKill => attacks::debug_kill_behavior,
             TestAttack => |_, _, _| (),
             TestSkill => |_, _, _| (),
@@ -127,16 +130,21 @@ impl CardClass {
         match self {
             Bloodletting | DebugKill | TestAttack | TestSkill | TestPower => 0,
             Strike | Defend | PommelStrike | TwinStrike | Cleave | Thunderclap | Armaments
-            | GhostlyArmor | Inflame => 1,
+            | GhostlyArmor | Inflame | LimitBreak => 1,
             Bash | Clothesline | SearingBlow | Impervious => 2,
         }
     }
     pub fn base_exhaust(&self) -> bool {
         use CardClass::*;
-        matches!(self, Impervious)
+        matches!(self, Impervious | LimitBreak)
     }
-    pub fn upgrade_fn(&self) -> Option<fn(&mut i32)> {
-        None
+    // Change (cost, exhaust)
+    pub fn upgrade_fn(&self) -> Option<fn(&mut i32, &mut bool)> {
+        use CardClass::*;
+        match self {
+            LimitBreak => Some(|_, exhaust| *exhaust = false),
+            _ => None,
+        }
     }
 }
 

@@ -24,7 +24,7 @@ impl Card {
         assert!(self.can_upgrade());
         self.upgrade_count += 1;
         if let Some(f) = self.class.upgrade_fn() {
-            f(&mut self.cost);
+            f(&mut self.cost, &mut self.exhaust);
         }
     }
 }
