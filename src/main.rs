@@ -122,7 +122,8 @@ fn read_int_from_stdin(max: usize) -> usize {
 fn main() {
     let mut game = GameBuilder::default()
         .ironclad_starting_deck()
-        .add_card(cards::new_card(CardClass::Armaments))
+        .add_card(CardClass::Armaments)
+        .add_card_upgraded(CardClass::Inflame)
         .add_relic(RelicClass::BurningBlood)
         .add_monster(JawWorm::new())
         .build();

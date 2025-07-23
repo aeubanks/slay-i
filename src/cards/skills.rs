@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn test_defend() {
         let mut g = GameBuilder::default()
-            .add_card(new_card(CardClass::Defend))
+            .add_card(CardClass::Defend)
             .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_upgraded_defend() {
         let mut g = GameBuilder::default()
-            .add_card(new_card_upgraded(CardClass::Defend))
+            .add_card_upgraded(CardClass::Defend)
             .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn test_bloodletting() {
         let mut g = GameBuilder::default()
-            .add_card(new_card(CardClass::Bloodletting))
+            .add_card(CardClass::Bloodletting)
             .build_combat();
         let hp = g.player.creature.cur_hp;
         g.run_action(BlockAction {
@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn test_impervious() {
         let mut g = GameBuilder::default()
-            .add_card(new_card(CardClass::Impervious))
+            .add_card(CardClass::Impervious)
             .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -211,7 +211,7 @@ mod tests {
         {
             let mut g = GameBuilder::default()
                 .add_player_status(Status::Strength, -3)
-                .add_card(new_card(CardClass::LimitBreak))
+                .add_card(CardClass::LimitBreak)
                 .build_combat();
             g.make_move(Move::PlayCard {
                 card_index: 0,

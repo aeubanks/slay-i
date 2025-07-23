@@ -57,15 +57,15 @@ impl std::fmt::Debug for PlayCardAction {
 #[cfg(test)]
 mod tests {
     use crate::{
-        cards::{CardClass, new_card},
+        cards::CardClass,
         game::{GameBuilder, Move},
     };
 
     #[test]
     fn test_play_attack_skill() {
         let mut g = GameBuilder::default()
-            .add_card(new_card(CardClass::TestAttack))
-            .add_card(new_card(CardClass::TestSkill))
+            .add_card(CardClass::TestAttack)
+            .add_card(CardClass::TestSkill)
             .build_combat();
 
         assert_eq!(g.hand.len(), 2);
@@ -94,7 +94,7 @@ mod tests {
     #[test]
     fn test_play_power() {
         let mut g = GameBuilder::default()
-            .add_card(new_card(CardClass::TestPower))
+            .add_card(CardClass::TestPower)
             .build_combat();
 
         assert_eq!(g.hand.len(), 1);

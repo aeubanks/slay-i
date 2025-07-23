@@ -8,9 +8,8 @@ use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
-use crate::card::CardRef;
 use crate::card::{Card, CardPile};
-use crate::cards::{CardClass, CardCost, new_card};
+use crate::cards::{CardClass, CardCost, new_card, new_card_upgraded};
 use crate::creature::Creature;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
@@ -106,16 +105,18 @@ impl GameBuilder {
         self.master_deck.push(new_card(CardClass::AscendersBane));
         self
     }
-    pub fn add_card(mut self, c: CardRef) -> Self {
-        self.master_deck.push(c);
+    pub fn add_card(mut self, c: CardClass) -> Self {
+        self.master_deck.push(new_card(c));
+        self
+    }
+    pub fn add_card_upgraded(mut self, c: CardClass) -> Self {
+        self.master_deck.push(new_card_upgraded(c));
         self
     }
     #[cfg(test)]
-    pub fn add_cards(mut self, c: CardRef, amount: i32) -> Self {
+    pub fn add_cards(mut self, c: CardClass, amount: i32) -> Self {
         for _ in 0..amount {
-            use crate::card::clone_card;
-
-            self.master_deck.push(clone_card(&c));
+            self.master_deck.push(new_card(c));
         }
         self
     }

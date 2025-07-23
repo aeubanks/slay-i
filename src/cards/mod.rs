@@ -176,7 +176,6 @@ pub fn new_card(class: CardClass) -> CardRef {
     }))
 }
 
-#[cfg(test)]
 pub fn new_card_upgraded(class: CardClass) -> CardRef {
     let c = new_card(class);
     c.borrow_mut().upgrade();

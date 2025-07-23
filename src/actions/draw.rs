@@ -41,17 +41,13 @@ impl std::fmt::Debug for DrawAction {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        actions::draw::DrawAction,
-        cards::{CardClass, new_card},
-        game::GameBuilder,
-    };
+    use crate::{actions::draw::DrawAction, cards::CardClass, game::GameBuilder};
 
     #[test]
     fn test_shuffle() {
         let mut gb = GameBuilder::default();
         for _ in 0..12 {
-            gb = gb.add_card(new_card(CardClass::Strike));
+            gb = gb.add_card(CardClass::Strike);
         }
         let mut g = gb.build_combat();
 

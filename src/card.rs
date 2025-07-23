@@ -46,8 +46,3 @@ impl std::fmt::Debug for Card {
 
 pub type CardRef = Rc<RefCell<Card>>;
 pub type CardPile = Vec<CardRef>;
-
-#[cfg(test)]
-pub fn clone_card(c: &CardRef) -> CardRef {
-    Rc::new(RefCell::new(c.borrow().clone()))
-}

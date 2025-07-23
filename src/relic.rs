@@ -109,14 +109,14 @@ pub fn random_relic(rng: &mut Rand) -> RelicClass {
 mod tests {
     use super::*;
     use crate::{
-        cards::{CardClass, new_card},
+        cards::CardClass,
         game::{GameBuilder, Move},
     };
 
     #[test]
     fn test_burning_blood() {
         let mut g = GameBuilder::default()
-            .add_card(new_card(CardClass::DebugKill))
+            .add_card(CardClass::DebugKill)
             .add_relic(RelicClass::BurningBlood)
             .build_combat();
         let hp = g.player.creature.cur_hp;

@@ -32,15 +32,15 @@ impl std::fmt::Debug for EndOfTurnDiscardAction {
 #[cfg(test)]
 mod tests {
     use crate::{
-        cards::{CardClass, new_card},
+        cards::CardClass,
         game::{GameBuilder, Move},
     };
 
     #[test]
     fn test_ethereal() {
         let mut g = GameBuilder::default()
-            .add_cards(new_card(CardClass::GhostlyArmor), 3)
-            .add_cards(new_card(CardClass::Strike), 1)
+            .add_cards(CardClass::GhostlyArmor, 3)
+            .add_cards(CardClass::Strike, 1)
             .build_combat();
         g.make_move(Move::EndTurn);
         assert_eq!(g.exhaust_pile.len(), 3);
