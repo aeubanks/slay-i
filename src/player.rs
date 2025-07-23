@@ -1,5 +1,5 @@
 use crate::{
-    card::CardPile,
+    card::{Card, CardPile},
     creature::Creature,
     queue::ActionQueue,
     relic::{Relic, RelicClass, new_relic},
@@ -21,10 +21,21 @@ macro_rules! trigger {
     };
 }
 
+macro_rules! trigger_card {
+    ($func_name:ident, $name:ident) => {
+        pub fn $func_name(&mut self, queue: &mut ActionQueue, card: &Card) {
+            for r in &mut self.relics {
+                r.$name(queue, card);
+            }
+        }
+    };
+}
+
 impl Player {
     pub fn add_relic(&mut self, class: RelicClass) {
         self.relics.push(new_relic(class));
     }
+    #[cfg(test)]
     pub fn remove_relic(&mut self, class: RelicClass) {
         self.relics.retain(|r| r.get_class() != class);
     }
@@ -39,6 +50,7 @@ impl Player {
     );
     trigger!(trigger_relics_turn_end, turn_end);
     trigger!(trigger_relics_combat_finish, combat_finish);
+    trigger_card!(trigger_relics_on_card_played, on_card_played);
 }
 
 #[cfg(test)]

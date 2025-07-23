@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::{
     action::Action,
     actions::exhaust_card::ExhaustCardAction,
@@ -21,12 +23,14 @@ impl Action for PlayCardAction {
             CardCost::Cost(cost) => cost,
         };
         assert!(energy <= game.energy);
-        game.energy -= energy;
         let info = CardPlayInfo {
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
         };
         (c.class.behavior())(game, self.target, info);
+        game.player
+            .trigger_relics_on_card_played(&mut game.action_queue, c.deref());
+        game.energy -= energy;
         if c.class.ty() == CardType::Power {
             return;
         }

@@ -9,7 +9,7 @@ use crate::actions::play_card::PlayCardAction;
 use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
 use crate::card::{Card, CardPile};
-use crate::cards::{CardClass, CardCost, new_card, new_card_upgraded};
+use crate::cards::{CardClass, CardCost, CardType, new_card, new_card_upgraded};
 use crate::creature::Creature;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
@@ -502,7 +502,11 @@ impl Game {
 
     fn can_play_card(&self, c: &Card) -> bool {
         match c.cost {
-            CardCost::None => false,
+            CardCost::None => match c.class.ty() {
+                CardType::Curse => self.player.has_relic(RelicClass::BlueCandle),
+                CardType::Status => self.player.has_relic(RelicClass::MedicalKit),
+                _ => unreachable!(),
+            },
             CardCost::Cost(cost) => self.energy >= cost,
         }
     }

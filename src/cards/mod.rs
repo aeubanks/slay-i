@@ -62,6 +62,7 @@ pub enum CardClass {
     Slimed,
     // Curses
     AscendersBane,
+    Injury,
     // Other
     DebugKill,
     TestAttack,
@@ -95,7 +96,7 @@ impl CardClass {
             SearingBlow | GhostlyArmor | Bloodletting | Inflame => Uncommon,
             Impervious | LimitBreak => Rare,
             DebugKill | TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed
-            | AscendersBane => Special,
+            | AscendersBane | Injury => Special,
         }
     }
     pub fn ty(&self) -> CardType {
@@ -108,7 +109,7 @@ impl CardClass {
             | TestSkill => Skill,
             Inflame | TestPower => Power,
             Dazed | Wound | Slimed => Status,
-            AscendersBane => Curse,
+            AscendersBane | Injury => Curse,
         }
     }
     pub fn has_target(&self) -> bool {
@@ -137,9 +138,8 @@ impl CardClass {
             Impervious => skills::impervious_behavior,
             LimitBreak => skills::limit_break_behavior,
             DebugKill => attacks::debug_kill_behavior,
-            TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | AscendersBane => {
-                |_, _, _| ()
-            }
+            TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | AscendersBane
+            | Injury => |_, _, _| (),
         }
     }
     pub fn base_cost(&self) -> CardCost {
@@ -150,12 +150,15 @@ impl CardClass {
             Strike | Defend | PommelStrike | TwinStrike | Cleave | Thunderclap | Armaments
             | GhostlyArmor | Inflame | LimitBreak | Slimed => Cost(1),
             Bash | Clothesline | SearingBlow | Impervious => Cost(2),
-            Dazed | Wound | AscendersBane => None,
+            Dazed | Wound | AscendersBane | Injury => None,
         }
     }
     pub fn base_exhaust(&self) -> bool {
         use CardClass::*;
-        matches!(self, Impervious | LimitBreak | Slimed)
+        matches!(
+            self,
+            Impervious | LimitBreak | Slimed | Dazed | Wound | AscendersBane | Injury
+        )
     }
     // Change (cost, exhaust)
     pub fn upgrade_fn(&self) -> Option<fn(&mut CardCost, &mut bool)> {
