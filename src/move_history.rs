@@ -27,50 +27,55 @@ impl<T: Eq + Copy> MoveHistory<T> {
     }
 }
 
-#[test]
-fn test_move_history() {
-    let mut mh = MoveHistory::<i32>::default();
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    assert!(!mh.last(0));
-    assert!(!mh.last_last(0));
-    assert!(!mh.last_two(0));
-    assert!(!mh.last(1));
-    assert!(!mh.last_last(1));
-    assert!(!mh.last_two(1));
+    #[test]
+    fn test_move_history() {
+        let mut mh = MoveHistory::<i32>::default();
 
-    mh.add(0);
+        assert!(!mh.last(0));
+        assert!(!mh.last_last(0));
+        assert!(!mh.last_two(0));
+        assert!(!mh.last(1));
+        assert!(!mh.last_last(1));
+        assert!(!mh.last_two(1));
 
-    assert!(mh.last(0));
-    assert!(!mh.last_last(0));
-    assert!(!mh.last_two(0));
-    assert!(!mh.last(1));
-    assert!(!mh.last_last(1));
-    assert!(!mh.last_two(1));
+        mh.add(0);
 
-    mh.add(0);
+        assert!(mh.last(0));
+        assert!(!mh.last_last(0));
+        assert!(!mh.last_two(0));
+        assert!(!mh.last(1));
+        assert!(!mh.last_last(1));
+        assert!(!mh.last_two(1));
 
-    assert!(mh.last(0));
-    assert!(mh.last_last(0));
-    assert!(mh.last_two(0));
-    assert!(!mh.last(1));
-    assert!(!mh.last_last(1));
-    assert!(!mh.last_two(1));
+        mh.add(0);
 
-    mh.add(1);
+        assert!(mh.last(0));
+        assert!(mh.last_last(0));
+        assert!(mh.last_two(0));
+        assert!(!mh.last(1));
+        assert!(!mh.last_last(1));
+        assert!(!mh.last_two(1));
 
-    assert!(!mh.last(0));
-    assert!(mh.last_last(0));
-    assert!(!mh.last_two(0));
-    assert!(mh.last(1));
-    assert!(!mh.last_last(1));
-    assert!(!mh.last_two(1));
+        mh.add(1);
 
-    mh.add(1);
+        assert!(!mh.last(0));
+        assert!(mh.last_last(0));
+        assert!(!mh.last_two(0));
+        assert!(mh.last(1));
+        assert!(!mh.last_last(1));
+        assert!(!mh.last_two(1));
 
-    assert!(!mh.last(0));
-    assert!(!mh.last_last(0));
-    assert!(!mh.last_two(0));
-    assert!(mh.last(1));
-    assert!(mh.last_last(1));
-    assert!(mh.last_two(1));
+        mh.add(1);
+
+        assert!(!mh.last(0));
+        assert!(!mh.last_last(0));
+        assert!(!mh.last_two(0));
+        assert!(mh.last(1));
+        assert!(mh.last_last(1));
+        assert!(mh.last_two(1));
+    }
 }
