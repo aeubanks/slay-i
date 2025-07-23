@@ -57,6 +57,12 @@ pub enum CardClass {
     // Rare skills
     LimitBreak,
     Impervious,
+    // Colorless uncommon attacks
+    SwiftStrike,
+    FlashOfSteel,
+    // Colorless uncommon skills
+    GoodInstincts,
+    Finesse,
     // Statuses
     Wound,
     Dazed,
@@ -100,7 +106,8 @@ impl CardClass {
         match self {
             Strike | Defend | Bash => Basic,
             PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap | Armaments => Common,
-            SearingBlow | Whirlwind | GhostlyArmor | Bloodletting | Inflame => Uncommon,
+            SearingBlow | Whirlwind | GhostlyArmor | Bloodletting | Inflame | SwiftStrike
+            | FlashOfSteel | GoodInstincts | Finesse => Uncommon,
             Impervious | LimitBreak => Rare,
             DebugKill | TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | Burn
             | BurnPlus | AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt
@@ -112,9 +119,11 @@ impl CardClass {
         use CardType::*;
         match self {
             Strike | Bash | PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap
-            | SearingBlow | Whirlwind | DebugKill | TestAttack => Attack,
+            | SearingBlow | Whirlwind | SwiftStrike | FlashOfSteel | DebugKill | TestAttack => {
+                Attack
+            }
             Defend | Armaments | GhostlyArmor | Bloodletting | Impervious | LimitBreak
-            | TestSkill => Skill,
+            | GoodInstincts | Finesse | TestSkill => Skill,
             Inflame | TestPower => Power,
             Dazed | Wound | Slimed | Burn | BurnPlus => Status,
             AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt | Decay | Regret => {
@@ -126,7 +135,14 @@ impl CardClass {
         use CardClass::*;
         matches!(
             self,
-            Strike | Bash | PommelStrike | TwinStrike | Clothesline | SearingBlow
+            Strike
+                | Bash
+                | PommelStrike
+                | TwinStrike
+                | Clothesline
+                | SearingBlow
+                | SwiftStrike
+                | FlashOfSteel
         )
     }
     pub fn behavior(&self) -> CardBehavior {
@@ -148,6 +164,10 @@ impl CardClass {
             Inflame => powers::inflame_behavior,
             Impervious => skills::impervious_behavior,
             LimitBreak => skills::limit_break_behavior,
+            SwiftStrike => attacks::swift_strike_behavior,
+            FlashOfSteel => attacks::flash_of_steel_behavior,
+            GoodInstincts => skills::good_instincts_behavior,
+            Finesse => skills::finesse_behavior,
             DebugKill => attacks::debug_kill_behavior,
             TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | Burn | BurnPlus
             | AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt | Decay | Regret => {
@@ -171,7 +191,8 @@ impl CardClass {
         use CardClass::*;
         use CardCost::*;
         match self {
-            Bloodletting | DebugKill | TestAttack | TestSkill | TestPower => Cost(0),
+            Bloodletting | SwiftStrike | FlashOfSteel | GoodInstincts | Finesse | DebugKill
+            | TestAttack | TestSkill | TestPower => Cost(0),
             Strike | Defend | PommelStrike | TwinStrike | Cleave | Thunderclap | Armaments
             | GhostlyArmor | Inflame | LimitBreak | Slimed => Cost(1),
             Bash | Clothesline | SearingBlow | Impervious => Cost(2),

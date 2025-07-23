@@ -115,6 +115,15 @@ pub fn whirlwind_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPla
     }
 }
 
+pub fn swift_strike_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
+    push_damage(game, target, info, 7, 10);
+}
+
+pub fn flash_of_steel_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
+    push_damage(game, target, info, 3, 6);
+    game.action_queue.push_bot(DrawAction(1));
+}
+
 pub fn debug_kill_behavior(game: &mut Game, target: Option<CreatureRef>, _: CardPlayInfo) {
     game.action_queue.push_bot(DamageAction::from_player(
         9999,
@@ -317,6 +326,22 @@ mod tests {
             target: Some(0),
         });
         assert!(!g.monsters[0].creature.is_alive());
+    }
+
+    #[test]
+    fn test_flash_of_steel_finesse_infinite() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Finesse)
+            .add_card(CardClass::FlashOfSteel)
+            .add_monster(NoopMonster())
+            .build_combat();
+
+        for _ in 0..50 {
+            g.make_move(Move::PlayCard {
+                card_index: 0,
+                target: Some(0),
+            });
+        }
     }
 
     #[test]

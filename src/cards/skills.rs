@@ -4,6 +4,7 @@ use crate::{
         choose_upgrade_one_card_in_hand::ChooseUpgradeOneCardInHandAction,
         damage::{DamageAction, DamageType},
         double_strength::DoubleStrengthAction,
+        draw::DrawAction,
         gain_energy::GainEnergyAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
@@ -11,18 +12,28 @@ use crate::{
     game::{CreatureRef, Game},
 };
 
-pub fn defend_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+fn push_block(
+    game: &mut Game,
+    info: CardPlayInfo,
+    unupgraded_base_damage: i32,
+    upgraded_base_damage: i32,
+) {
     game.action_queue.push_bot(BlockAction {
         target: CreatureRef::player(),
-        amount: if info.upgraded { 8 } else { 5 },
+        amount: if info.upgraded {
+            upgraded_base_damage
+        } else {
+            unupgraded_base_damage
+        },
     });
 }
 
+pub fn defend_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    push_block(game, info, 5, 8);
+}
+
 pub fn armaments_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
-    game.action_queue.push_bot(BlockAction {
-        target: CreatureRef::player(),
-        amount: 5,
-    });
+    push_block(game, info, 5, 5);
     if info.upgraded {
         game.action_queue.push_bot(UpgradeAllCardsInHandAction());
     } else {
@@ -32,10 +43,7 @@ pub fn armaments_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPla
 }
 
 pub fn ghostly_armor_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
-    game.action_queue.push_bot(BlockAction {
-        target: CreatureRef::player(),
-        amount: if info.upgraded { 13 } else { 10 },
-    });
+    push_block(game, info, 10, 13);
 }
 
 pub fn bloodletting_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
@@ -50,14 +58,20 @@ pub fn bloodletting_behavior(game: &mut Game, _: Option<CreatureRef>, info: Card
 }
 
 pub fn impervious_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
-    game.action_queue.push_bot(BlockAction {
-        target: CreatureRef::player(),
-        amount: if info.upgraded { 40 } else { 30 },
-    });
+    push_block(game, info, 30, 40);
 }
 
 pub fn limit_break_behavior(game: &mut Game, _: Option<CreatureRef>, _: CardPlayInfo) {
     game.action_queue.push_bot(DoubleStrengthAction());
+}
+
+pub fn good_instincts_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    push_block(game, info, 6, 9);
+}
+
+pub fn finesse_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    push_block(game, info, 2, 4);
+    game.action_queue.push_bot(DrawAction(1));
 }
 
 #[cfg(test)]
