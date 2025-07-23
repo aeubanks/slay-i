@@ -20,7 +20,7 @@ mod tests {
     use super::Status::*;
     use crate::{
         actions::{block::BlockAction, damage::DamageAction, set_hp::SetHPAction},
-        cards::{CardClass, card},
+        cards::{CardClass, new_card},
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::{ApplyVulnerableMonster, NoopMonster},
     };
@@ -76,7 +76,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_monster(ApplyVulnerableMonster())
             .add_monster(NoopMonster())
-            .add_card(card(CardClass::DebugKill))
+            .add_card(new_card(CardClass::DebugKill))
             .build_combat();
 
         assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
@@ -162,7 +162,7 @@ mod tests {
     fn test_thorns() {
         let mut g = GameBuilder::default()
             .add_monster_status(Thorns, 2)
-            .add_cards(card(CardClass::Strike), 5)
+            .add_cards(new_card(CardClass::Strike), 5)
             .build_combat();
 
         let hp = g.player.creature.cur_hp;
@@ -202,7 +202,7 @@ mod tests {
     fn test_thorns2() {
         let mut g = GameBuilder::default()
             .add_monster_status(Thorns, 2)
-            .add_cards(card(CardClass::TwinStrike), 5)
+            .add_cards(new_card(CardClass::TwinStrike), 5)
             .build_combat();
 
         let hp = g.player.creature.cur_hp;

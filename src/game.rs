@@ -10,7 +10,7 @@ use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
 use crate::card::CardRef;
 use crate::card::{Card, CardPile};
-use crate::cards::{CardClass, CardCost, card};
+use crate::cards::{CardClass, CardCost, new_card};
 use crate::creature::Creature;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
@@ -97,13 +97,13 @@ pub struct GameBuilder {
 impl GameBuilder {
     pub fn ironclad_starting_deck(mut self) -> Self {
         for _ in 0..5 {
-            self.master_deck.push(card(CardClass::Strike));
+            self.master_deck.push(new_card(CardClass::Strike));
         }
         for _ in 0..4 {
-            self.master_deck.push(card(CardClass::Defend));
+            self.master_deck.push(new_card(CardClass::Defend));
         }
-        self.master_deck.push(card(CardClass::Bash));
-        self.master_deck.push(card(CardClass::AscendersBane));
+        self.master_deck.push(new_card(CardClass::Bash));
+        self.master_deck.push(new_card(CardClass::AscendersBane));
         self
     }
     pub fn add_card(mut self, c: CardRef) -> Self {

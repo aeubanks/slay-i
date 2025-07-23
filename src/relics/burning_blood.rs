@@ -14,7 +14,7 @@ impl Relic for BurningBlood {
 #[cfg(test)]
 mod tests {
     use crate::{
-        cards::{CardClass, card},
+        cards::{CardClass, new_card},
         game::{GameBuilder, Move},
         relics::burning_blood::BurningBlood,
     };
@@ -22,7 +22,7 @@ mod tests {
     #[test]
     fn test_burning_blood() {
         let mut g = GameBuilder::default()
-            .add_card(card(CardClass::DebugKill))
+            .add_card(new_card(CardClass::DebugKill))
             .add_relic(BurningBlood {})
             .build_combat();
         let hp = g.player.creature.cur_hp;

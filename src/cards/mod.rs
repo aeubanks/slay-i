@@ -167,7 +167,7 @@ impl CardClass {
     }
 }
 
-pub fn card(class: CardClass) -> CardRef {
+pub fn new_card(class: CardClass) -> CardRef {
     Rc::new(RefCell::new(Card {
         class,
         upgrade_count: 0,
@@ -177,8 +177,8 @@ pub fn card(class: CardClass) -> CardRef {
 }
 
 #[cfg(test)]
-pub fn upgraded_card(class: CardClass) -> CardRef {
-    let c = card(class);
+pub fn new_card_upgraded(class: CardClass) -> CardRef {
+    let c = new_card(class);
     c.borrow_mut().upgrade();
     c
 }

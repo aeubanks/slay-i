@@ -16,7 +16,7 @@ pub fn inflame_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayI
 #[cfg(test)]
 mod tests {
     use crate::{
-        cards::{CardClass, card},
+        cards::{CardClass, new_card},
         game::{GameBuilder, Move},
         status::Status,
     };
@@ -24,7 +24,7 @@ mod tests {
     #[test]
     fn test_inflame() {
         let mut g = GameBuilder::default()
-            .add_card(card(CardClass::Inflame))
+            .add_card(new_card(CardClass::Inflame))
             .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,

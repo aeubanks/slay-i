@@ -64,7 +64,7 @@ pub fn limit_break_behavior(game: &mut Game, _: Option<CreatureRef>, _: CardPlay
 mod tests {
     use crate::{
         actions::block::BlockAction,
-        cards::{CardClass, card, upgraded_card},
+        cards::{CardClass, new_card, new_card_upgraded},
         game::{CreatureRef, GameBuilder, Move},
         status::Status,
     };
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn test_defend() {
         let mut g = GameBuilder::default()
-            .add_card(card(CardClass::Defend))
+            .add_card(new_card(CardClass::Defend))
             .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_upgraded_defend() {
         let mut g = GameBuilder::default()
-            .add_card(upgraded_card(CardClass::Defend))
+            .add_card(new_card_upgraded(CardClass::Defend))
             .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -103,10 +103,10 @@ mod tests {
     fn test_armaments() {
         {
             let mut g = GameBuilder::default().build_combat();
-            g.hand.push(card(CardClass::Armaments));
-            g.hand.push(card(CardClass::Strike));
-            g.hand.push(upgraded_card(CardClass::Defend));
-            g.hand.push(card(CardClass::TwinStrike));
+            g.hand.push(new_card(CardClass::Armaments));
+            g.hand.push(new_card(CardClass::Strike));
+            g.hand.push(new_card_upgraded(CardClass::Defend));
+            g.hand.push(new_card(CardClass::TwinStrike));
             g.make_move(Move::PlayCard {
                 card_index: 0,
                 target: None,
@@ -127,7 +127,7 @@ mod tests {
 
         {
             let mut g = GameBuilder::default().build_combat();
-            g.hand.push(card(CardClass::Armaments));
+            g.hand.push(new_card(CardClass::Armaments));
             g.make_move(Move::PlayCard {
                 card_index: 0,
                 target: None,
@@ -139,10 +139,10 @@ mod tests {
     #[test]
     fn test_upgraded_armaments() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(upgraded_card(CardClass::Armaments));
-        g.hand.push(card(CardClass::Strike));
-        g.hand.push(upgraded_card(CardClass::Defend));
-        g.hand.push(upgraded_card(CardClass::SearingBlow));
+        g.hand.push(new_card_upgraded(CardClass::Armaments));
+        g.hand.push(new_card(CardClass::Strike));
+        g.hand.push(new_card_upgraded(CardClass::Defend));
+        g.hand.push(new_card_upgraded(CardClass::SearingBlow));
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn test_bloodletting() {
         let mut g = GameBuilder::default()
-            .add_card(card(CardClass::Bloodletting))
+            .add_card(new_card(CardClass::Bloodletting))
             .build_combat();
         let hp = g.player.creature.cur_hp;
         g.run_action(BlockAction {
@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn test_impervious() {
         let mut g = GameBuilder::default()
-            .add_card(card(CardClass::Impervious))
+            .add_card(new_card(CardClass::Impervious))
             .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -191,8 +191,8 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_player_status(Status::Strength, 3)
                 .build_combat();
-            g.hand.push(card(CardClass::LimitBreak));
-            g.hand.push(upgraded_card(CardClass::LimitBreak));
+            g.hand.push(new_card(CardClass::LimitBreak));
+            g.hand.push(new_card_upgraded(CardClass::LimitBreak));
             g.make_move(Move::PlayCard {
                 card_index: 0,
                 target: None,
@@ -211,7 +211,7 @@ mod tests {
         {
             let mut g = GameBuilder::default()
                 .add_player_status(Status::Strength, -3)
-                .add_card(card(CardClass::LimitBreak))
+                .add_card(new_card(CardClass::LimitBreak))
                 .build_combat();
             g.make_move(Move::PlayCard {
                 card_index: 0,

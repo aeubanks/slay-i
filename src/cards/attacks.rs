@@ -121,7 +121,7 @@ pub fn debug_kill_behavior(game: &mut Game, target: Option<CreatureRef>, _: Card
 #[cfg(test)]
 mod tests {
     use crate::{
-        cards::{CardClass, card, upgraded_card},
+        cards::{CardClass, new_card, new_card_upgraded},
         game::{GameBuilder, Move},
         monsters::test::NoopMonster,
         status::Status,
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn test_strike() {
         let mut g = GameBuilder::default()
-            .add_card(card(CardClass::Strike))
+            .add_card(new_card(CardClass::Strike))
             .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::PlayCard {
@@ -147,7 +147,7 @@ mod tests {
     #[test]
     fn test_upgraded_strike() {
         let mut g = GameBuilder::default()
-            .add_card(upgraded_card(CardClass::Strike))
+            .add_card(new_card_upgraded(CardClass::Strike))
             .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::PlayCard {
@@ -160,7 +160,7 @@ mod tests {
     #[test]
     fn test_bash() {
         let mut g = GameBuilder::default()
-            .add_card(card(CardClass::Bash))
+            .add_card(new_card(CardClass::Bash))
             .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::PlayCard {
@@ -179,7 +179,7 @@ mod tests {
     fn test_upgraded_pommel_strike() {
         let mut gb = GameBuilder::default();
         for _ in 0..10 {
-            gb = gb.add_card(upgraded_card(CardClass::PommelStrike));
+            gb = gb.add_card(new_card_upgraded(CardClass::PommelStrike));
         }
         let mut g = gb.build_combat();
         assert_eq!(g.draw_pile.len(), 5);
@@ -198,7 +198,7 @@ mod tests {
     fn test_pommel_strike() {
         let mut gb = GameBuilder::default();
         for _ in 0..10 {
-            gb = gb.add_card(card(CardClass::PommelStrike));
+            gb = gb.add_card(new_card(CardClass::PommelStrike));
         }
         let mut g = gb.build_combat();
         assert_eq!(g.draw_pile.len(), 5);
@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn test_cleave() {
         let mut g = GameBuilder::default()
-            .add_cards(card(CardClass::Cleave), 2)
+            .add_cards(new_card(CardClass::Cleave), 2)
             .add_monster(NoopMonster())
             .add_monster(NoopMonster())
             .build_combat();
@@ -239,7 +239,7 @@ mod tests {
     #[test]
     fn test_thunderclap() {
         let mut g = GameBuilder::default()
-            .add_cards(card(CardClass::Thunderclap), 2)
+            .add_cards(new_card(CardClass::Thunderclap), 2)
             .add_monster(NoopMonster())
             .add_monster(NoopMonster())
             .build_combat();
@@ -261,7 +261,7 @@ mod tests {
     #[test]
     fn test_searing_blow() {
         for (upgrade_count, damage) in [(0, 12), (1, 16), (2, 21), (3, 27)] {
-            let c = card(CardClass::SearingBlow);
+            let c = new_card(CardClass::SearingBlow);
             for _ in 0..upgrade_count {
                 c.borrow_mut().upgrade();
             }
@@ -278,7 +278,7 @@ mod tests {
     #[test]
     fn test_debug_kill() {
         let mut g = GameBuilder::default()
-            .add_card(card(CardClass::DebugKill))
+            .add_card(new_card(CardClass::DebugKill))
             .build_combat();
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_upgrade_crash() {
-        let c = upgraded_card(CardClass::Strike);
+        let c = new_card_upgraded(CardClass::Strike);
         let mut c = c.borrow_mut();
         c.upgrade();
     }
