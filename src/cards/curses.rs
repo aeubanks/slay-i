@@ -25,8 +25,12 @@ pub fn doubt_behavior(game: &mut Game) {
     });
 }
 
-pub fn shame_behavior(_game: &mut Game) {
-    // game.action_queue.push_top(GainStatusAction{status:Status::Frail, amount: 1, target:CreatureRef::player()});
+pub fn shame_behavior(game: &mut Game) {
+    game.action_queue.push_top(GainStatusAction {
+        status: Status::Frail,
+        amount: 1,
+        target: CreatureRef::player(),
+    });
 }
 
 #[cfg(test)]
@@ -111,5 +115,26 @@ mod tests {
             .build_combat();
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.statuses.get(&Status::Weak), Some(&1));
+    }
+
+    #[test]
+    fn test_doubt2() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Strike, 4)
+            .add_card(CardClass::Doubt)
+            .add_player_status(Status::Weak, 1)
+            .build_combat();
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Status::Weak), Some(&1));
+    }
+
+    #[test]
+    fn test_shame() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Strike, 4)
+            .add_card(CardClass::Shame)
+            .build_combat();
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Status::Frail), Some(&1));
     }
 }

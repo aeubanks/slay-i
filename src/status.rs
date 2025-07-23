@@ -5,13 +5,16 @@ pub enum Status {
     Brutality,
     DemonForm,
     Weak,
+    Dexterity,
+    Frail,
+    NoBlock,
     Thorns,
 }
 
 impl Status {
     pub fn decays(&self) -> bool {
         use Status::*;
-        matches!(self, Vulnerable | Weak)
+        matches!(self, Vulnerable | Weak | NoBlock | Frail)
     }
 }
 
@@ -139,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multiple() {
+    fn test_multiple_damage_statuses() {
         let mut g = GameBuilder::default()
             .add_player_status(Weak, 2)
             .add_player_status(Strength, 4)
@@ -156,6 +159,63 @@ mod tests {
         ));
 
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 15);
+    }
+
+    #[test]
+    fn test_dexterity() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Dexterity, 2)
+            .build_combat();
+
+        g.run_action(BlockAction {
+            target: CreatureRef::player(),
+            amount: 6,
+        });
+
+        assert_eq!(g.player.creature.block, 8);
+    }
+
+    #[test]
+    fn test_frail() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Frail, 2)
+            .build_combat();
+
+        g.run_action(BlockAction {
+            target: CreatureRef::player(),
+            amount: 6,
+        });
+
+        assert_eq!(g.player.creature.block, 4);
+    }
+
+    #[test]
+    fn test_noblock() {
+        let mut g = GameBuilder::default()
+            .add_player_status(NoBlock, 2)
+            .build_combat();
+
+        g.run_action(BlockAction {
+            target: CreatureRef::player(),
+            amount: 6,
+        });
+
+        assert_eq!(g.player.creature.block, 0);
+    }
+
+    #[test]
+    fn test_multiple_block_statuses() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Dexterity, 4)
+            .add_player_status(Frail, 2)
+            .build_combat();
+
+        g.run_action(BlockAction {
+            target: CreatureRef::player(),
+            amount: 6,
+        });
+
+        assert_eq!(g.player.creature.block, 7);
     }
 
     #[test]
