@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    actions::{draw::DrawAction, gain_status::GainStatusAction, lose_hp::LoseHPAction},
+    actions::{damage::DamageAction, draw::DrawAction, gain_status::GainStatusAction},
     game::CreatureRef,
     queue::ActionQueue,
     status::Status,
@@ -52,10 +52,7 @@ impl Creature {
         }
         if let Some(v) = self.statuses.get(&Status::Brutality) {
             queue.push_bot(DrawAction(*v));
-            queue.push_bot(LoseHPAction {
-                target: this,
-                amount: *v,
-            });
+            queue.push_bot(DamageAction::lose_hp(*v, this));
         }
     }
 

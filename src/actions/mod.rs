@@ -10,7 +10,6 @@ pub mod exhaust_card;
 pub mod gain_energy;
 pub mod gain_status;
 pub mod heal;
-pub mod lose_hp;
 pub mod play_card;
 pub mod set_hp;
 pub mod set_status;
