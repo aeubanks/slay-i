@@ -48,6 +48,7 @@ pub enum CardClass {
     Armaments,
     // Uncommon attacks
     SearingBlow,
+    Whirlwind,
     // Uncommon skills
     GhostlyArmor,
     Bloodletting,
@@ -75,6 +76,7 @@ pub type CardBehavior = fn(&mut Game, Option<CreatureRef>, CardPlayInfo);
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CardCost {
     Cost(i32),
+    X,
     None,
 }
 
@@ -93,7 +95,7 @@ impl CardClass {
         match self {
             Strike | Defend | Bash => Basic,
             PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap | Armaments => Common,
-            SearingBlow | GhostlyArmor | Bloodletting | Inflame => Uncommon,
+            SearingBlow | Whirlwind | GhostlyArmor | Bloodletting | Inflame => Uncommon,
             Impervious | LimitBreak => Rare,
             DebugKill | TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed
             | AscendersBane | Injury => Special,
@@ -104,7 +106,7 @@ impl CardClass {
         use CardType::*;
         match self {
             Strike | Bash | PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap
-            | SearingBlow | DebugKill | TestAttack => Attack,
+            | SearingBlow | Whirlwind | DebugKill | TestAttack => Attack,
             Defend | Armaments | GhostlyArmor | Bloodletting | Impervious | LimitBreak
             | TestSkill => Skill,
             Inflame | TestPower => Power,
@@ -132,6 +134,7 @@ impl CardClass {
             Thunderclap => attacks::thunderclap_behavior,
             Armaments => skills::armaments_behavior,
             SearingBlow => attacks::searing_blow_behavior,
+            Whirlwind => attacks::whirlwind_behavior,
             GhostlyArmor => skills::ghostly_armor_behavior,
             Bloodletting => skills::bloodletting_behavior,
             Inflame => powers::inflame_behavior,
@@ -150,6 +153,7 @@ impl CardClass {
             Strike | Defend | PommelStrike | TwinStrike | Cleave | Thunderclap | Armaments
             | GhostlyArmor | Inflame | LimitBreak | Slimed => Cost(1),
             Bash | Clothesline | SearingBlow | Impervious => Cost(2),
+            Whirlwind => X,
             Dazed | Wound | AscendersBane | Injury => None,
         }
     }

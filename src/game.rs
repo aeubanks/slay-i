@@ -507,6 +507,7 @@ impl Game {
                 CardType::Status => self.player.has_relic(RelicClass::MedicalKit),
                 _ => unreachable!(),
             },
+            CardCost::X => true,
             CardCost::Cost(cost) => self.energy >= cost,
         }
     }

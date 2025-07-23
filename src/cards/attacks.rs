@@ -109,6 +109,12 @@ pub fn searing_blow_behavior(game: &mut Game, target: Option<CreatureRef>, info:
     ));
 }
 
+pub fn whirlwind_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    for _ in 0..game.energy {
+        push_aoe_damage(game, info, 5, 8);
+    }
+}
+
 pub fn debug_kill_behavior(game: &mut Game, target: Option<CreatureRef>, _: CardPlayInfo) {
     game.action_queue.push_bot(DamageAction::from_player(
         9999,
@@ -274,6 +280,31 @@ mod tests {
             });
             assert_eq!(g.monsters[0].creature.cur_hp, hp - damage);
         }
+    }
+
+    #[test]
+    fn test_whirlwind() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Whirlwind, 2)
+            .add_monster(NoopMonster())
+            .add_monster(NoopMonster())
+            .build_combat();
+
+        let hp0 = g.monsters[0].creature.cur_hp;
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
+        assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 15);
+        assert_eq!(g.energy, 0);
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
+        assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 15);
     }
 
     #[test]

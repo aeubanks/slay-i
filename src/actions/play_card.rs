@@ -20,6 +20,7 @@ impl Action for PlayCardAction {
         let c = self.card.borrow_mut();
         let energy = match c.cost {
             CardCost::None => 0,
+            CardCost::X => game.energy,
             CardCost::Cost(cost) => cost,
         };
         assert!(energy <= game.energy);
