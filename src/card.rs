@@ -38,7 +38,7 @@ impl std::fmt::Debug for Card {
         }
         match self.cost {
             CardCost::None => {}
-            CardCost::Cost(cost) => write!(f, ", {} cost", cost)?,
+            CardCost::Cost(cost) => write!(f, ", {cost} cost")?,
         }
         Ok(())
     }
