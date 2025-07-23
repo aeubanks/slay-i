@@ -11,7 +11,6 @@ mod move_history;
 mod player;
 mod queue;
 mod relic;
-mod relics;
 mod status;
 
 use game::Game;
@@ -23,7 +22,7 @@ use crate::{
     monster::Monster,
     monsters::jawworm::JawWorm,
     player::Player,
-    relics::burning_blood::BurningBlood,
+    relic::RelicClass,
 };
 
 fn creature_str(c: &Creature) -> String {
@@ -124,7 +123,7 @@ fn main() {
     let mut game = GameBuilder::default()
         .ironclad_starting_deck()
         .add_card(cards::new_card(CardClass::Armaments))
-        .add_relic(BurningBlood {})
+        .add_relic(RelicClass::BurningBlood)
         .add_monster(JawWorm::new())
         .build();
     loop {

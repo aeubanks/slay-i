@@ -1,38 +1,69 @@
-use crate::{card::CardPile, creature::Creature, queue::ActionQueue, relic::Relic};
+use crate::{
+    card::CardPile,
+    creature::Creature,
+    queue::ActionQueue,
+    relic::{Relic, RelicClass, new_relic},
+};
 
 pub struct Player {
     pub creature: Creature,
     pub master_deck: CardPile,
-    pub relics: Vec<Box<dyn Relic>>,
+    pub relics: Vec<Relic>,
+}
+
+macro_rules! trigger {
+    ($func_name:ident, $name:ident) => {
+        pub fn $func_name(&mut self, queue: &mut ActionQueue) {
+            for r in &mut self.relics {
+                r.$name(queue);
+            }
+        }
+    };
 }
 
 impl Player {
-    pub fn add_relic(&mut self, r: Box<dyn Relic>) {
-        self.relics.push(r);
+    pub fn add_relic(&mut self, class: RelicClass) {
+        self.relics.push(new_relic(class));
     }
-    pub fn trigger_relics_pre_combat(&mut self, queue: &mut ActionQueue) {
-        for r in &mut self.relics {
-            r.pre_combat(queue);
-        }
+    pub fn remove_relic(&mut self, class: RelicClass) {
+        self.relics.retain(|r| r.get_class() != class);
     }
-    pub fn trigger_relics_combat_start_pre_draw(&mut self, queue: &mut ActionQueue) {
-        for r in &mut self.relics {
-            r.combat_start_pre_draw(queue);
-        }
+    pub fn has_relic(&self, class: RelicClass) -> bool {
+        self.relics.iter().any(|r| r.get_class() == class)
     }
-    pub fn trigger_relics_combat_start_post_draw(&mut self, queue: &mut ActionQueue) {
-        for r in &mut self.relics {
-            r.combat_start_post_draw(queue);
-        }
-    }
-    pub fn trigger_relics_turn_end(&mut self, queue: &mut ActionQueue) {
-        for r in &mut self.relics {
-            r.turn_end(queue);
-        }
-    }
-    pub fn trigger_relics_combat_finish(&mut self, queue: &mut ActionQueue) {
-        for r in &mut self.relics {
-            r.combat_finish(queue);
-        }
+    trigger!(trigger_relics_pre_combat, pre_combat);
+    trigger!(trigger_relics_combat_start_pre_draw, combat_start_pre_draw);
+    trigger!(
+        trigger_relics_combat_start_post_draw,
+        combat_start_post_draw
+    );
+    trigger!(trigger_relics_turn_end, turn_end);
+    trigger!(trigger_relics_combat_finish, combat_finish);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::creature::Creature;
+
+    #[test]
+    fn test_has_relic() {
+        use RelicClass::{BagOfPrep, BloodVial};
+        let mut p = Player {
+            creature: Creature::new("test", 10),
+            master_deck: vec![],
+            relics: vec![],
+        };
+
+        assert!(!p.has_relic(BagOfPrep));
+        assert!(!p.has_relic(BloodVial));
+
+        p.add_relic(BagOfPrep);
+        assert!(p.has_relic(BagOfPrep));
+        assert!(!p.has_relic(BloodVial));
+
+        p.remove_relic(BagOfPrep);
+        assert!(!p.has_relic(BagOfPrep));
+        assert!(!p.has_relic(BloodVial));
     }
 }

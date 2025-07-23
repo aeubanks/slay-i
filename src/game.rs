@@ -16,7 +16,7 @@ use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
 use crate::player::Player;
 use crate::queue::ActionQueue;
-use crate::relic::Relic;
+use crate::relic::RelicClass;
 use crate::status::Status;
 use rand::seq::SliceRandom;
 
@@ -89,7 +89,7 @@ pub struct GameBuilder {
     monsters: Vec<Monster>,
     monster_statuses: HashMap<Status, i32>,
     player_statuses: HashMap<Status, i32>,
-    relics: Vec<Box<dyn Relic>>,
+    relics: Vec<RelicClass>,
     player_hp: Option<i32>,
     rng: Rand,
 }
@@ -147,8 +147,8 @@ impl GameBuilder {
         self.player_statuses.insert(s, amount);
         self
     }
-    pub fn add_relic<R: Relic + 'static>(mut self, relic: R) -> Self {
-        self.relics.push(Box::new(relic));
+    pub fn add_relic(mut self, relic: RelicClass) -> Self {
+        self.relics.push(relic);
         self
     }
     #[cfg(test)]
@@ -173,7 +173,9 @@ impl GameBuilder {
         }
         let mut g = Game::new(self.rng, self.master_deck, self.monsters);
         g.player.creature.statuses = self.player_statuses;
-        g.player.relics = self.relics;
+        for r in self.relics {
+            g.player.add_relic(r);
+        }
         if let Some(hp) = self.player_hp {
             g.player.creature.cur_hp = hp;
         }

@@ -1,4 +1,4 @@
-use crate::{game::Game, relics::random_relic};
+use crate::{game::Game, relic::random_relic};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Blessing {
