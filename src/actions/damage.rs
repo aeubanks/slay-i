@@ -6,7 +6,7 @@ use crate::{
     status::Status,
 };
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DamageType {
     Attack { source: CreatureRef },
     Thorns,
@@ -90,6 +90,10 @@ impl Action for DamageAction {
 
 impl std::fmt::Debug for DamageAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "damage {} hp {:?}", self.amount, self.target)
+        write!(
+            f,
+            "damage {} hp {:?} ({:?})",
+            self.amount, self.target, self.ty
+        )
     }
 }
