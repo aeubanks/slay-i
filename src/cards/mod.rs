@@ -61,9 +61,17 @@ pub enum CardClass {
     Wound,
     Dazed,
     Slimed,
+    Burn,
+    BurnPlus,
     // Curses
     AscendersBane,
+    CurseOfTheBell,
+    Clumsy,
     Injury,
+    Shame,
+    Doubt,
+    Decay,
+    Regret,
     // Other
     DebugKill,
     TestAttack,
@@ -72,6 +80,7 @@ pub enum CardClass {
 }
 
 pub type CardBehavior = fn(&mut Game, Option<CreatureRef>, CardPlayInfo);
+pub type CardEndOfTurnBehavior = fn(&mut Game);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CardCost {
@@ -81,10 +90,6 @@ pub enum CardCost {
 }
 
 impl CardClass {
-    pub fn is_ethereal(&self) -> bool {
-        use CardClass::*;
-        matches!(self, GhostlyArmor | Dazed | AscendersBane)
-    }
     pub fn can_upgrade_forever(&self) -> bool {
         matches!(self, CardClass::SearingBlow)
     }
@@ -97,8 +102,9 @@ impl CardClass {
             PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap | Armaments => Common,
             SearingBlow | Whirlwind | GhostlyArmor | Bloodletting | Inflame => Uncommon,
             Impervious | LimitBreak => Rare,
-            DebugKill | TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed
-            | AscendersBane | Injury => Special,
+            DebugKill | TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | Burn
+            | BurnPlus | AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt
+            | Decay | Regret => Special,
         }
     }
     pub fn ty(&self) -> CardType {
@@ -110,8 +116,10 @@ impl CardClass {
             Defend | Armaments | GhostlyArmor | Bloodletting | Impervious | LimitBreak
             | TestSkill => Skill,
             Inflame | TestPower => Power,
-            Dazed | Wound | Slimed => Status,
-            AscendersBane | Injury => Curse,
+            Dazed | Wound | Slimed | Burn | BurnPlus => Status,
+            AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt | Decay | Regret => {
+                Curse
+            }
         }
     }
     pub fn has_target(&self) -> bool {
@@ -141,8 +149,22 @@ impl CardClass {
             Impervious => skills::impervious_behavior,
             LimitBreak => skills::limit_break_behavior,
             DebugKill => attacks::debug_kill_behavior,
-            TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | AscendersBane
-            | Injury => |_, _, _| (),
+            TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | Burn | BurnPlus
+            | AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt | Decay | Regret => {
+                |_, _, _| ()
+            }
+        }
+    }
+    pub fn end_of_turn_in_hand_behavior(&self) -> Option<CardEndOfTurnBehavior> {
+        use CardClass::*;
+        match self {
+            Burn => Some(statuses::burn_behavior),
+            BurnPlus => Some(statuses::burn_plus_behavior),
+            Regret => Some(curses::regret_behavior),
+            Decay => Some(curses::decay_behavior),
+            Shame => Some(curses::shame_behavior),
+            Doubt => Some(curses::doubt_behavior),
+            _ => None,
         }
     }
     pub fn base_cost(&self) -> CardCost {
@@ -154,15 +176,34 @@ impl CardClass {
             | GhostlyArmor | Inflame | LimitBreak | Slimed => Cost(1),
             Bash | Clothesline | SearingBlow | Impervious => Cost(2),
             Whirlwind => X,
-            Dazed | Wound | AscendersBane | Injury => None,
+            Dazed | Wound | Burn | BurnPlus | AscendersBane | CurseOfTheBell | Clumsy | Injury
+            | Shame | Doubt | Decay | Regret => None,
         }
     }
     pub fn base_exhaust(&self) -> bool {
         use CardClass::*;
         matches!(
             self,
-            Impervious | LimitBreak | Slimed | Dazed | Wound | AscendersBane | Injury
+            Impervious
+                | LimitBreak
+                | Slimed
+                | Dazed
+                | Wound
+                | Burn
+                | BurnPlus
+                | AscendersBane
+                | CurseOfTheBell
+                | Clumsy
+                | Injury
+                | Shame
+                | Doubt
+                | Decay
+                | Regret
         )
+    }
+    pub fn is_ethereal(&self) -> bool {
+        use CardClass::*;
+        matches!(self, GhostlyArmor | Dazed | AscendersBane | Clumsy)
     }
     // Change (cost, exhaust)
     pub fn upgrade_fn(&self) -> Option<fn(&mut CardCost, &mut bool)> {

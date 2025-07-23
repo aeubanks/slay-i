@@ -3,6 +3,7 @@ use std::collections::HashMap;
 #[cfg(test)]
 use crate::action::Action;
 use crate::actions::damage::{DamageAction, DamageType};
+use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::play_card::PlayCardAction;
@@ -339,7 +340,6 @@ impl Game {
             }
             GameState::PlayerTurnEnd => {
                 self.player_end_of_turn();
-                self.run_actions_until_empty();
                 if self.finished() {
                     return;
                 }
@@ -399,11 +399,35 @@ impl Game {
         }
     }
 
+    fn trigger_end_of_turn_cards_in_hand(&mut self) {
+        let mut indexes_to_discard = Vec::new();
+        let mut actions = vec![];
+        for (i, c) in self.hand.iter().enumerate() {
+            if let Some(a) = c.borrow().class.end_of_turn_in_hand_behavior() {
+                indexes_to_discard.push(i);
+                actions.push(a);
+            }
+        }
+        for a in actions {
+            a(self);
+        }
+        for i in indexes_to_discard.into_iter().rev() {
+            self.action_queue.push_top(DiscardCardAction {
+                card: self.hand.remove(i),
+            });
+        }
+    }
+
     fn player_end_of_turn(&mut self) {
         self.player.trigger_relics_turn_end(&mut self.action_queue);
         self.player
             .creature
             .trigger_statuses_turn_end(CreatureRef::player(), &mut self.action_queue);
+        self.run_actions_until_empty();
+
+        self.trigger_end_of_turn_cards_in_hand();
+        self.run_actions_until_empty();
+
         self.action_queue.push_bot(EndOfTurnDiscardAction());
     }
 
@@ -559,8 +583,11 @@ impl Game {
         moves
     }
 
-    pub fn is_monster_turn(&self) -> bool {
-        self.state == GameState::MonsterTurn
+    pub fn should_add_extra_decay_status(&self) -> bool {
+        matches!(
+            self.state,
+            GameState::MonsterTurn | GameState::PlayerTurnEnd
+        )
     }
 
     #[cfg(test)]

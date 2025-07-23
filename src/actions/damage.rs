@@ -73,6 +73,13 @@ impl DamageAction {
             ty: DamageType::Attack { source: source_ref },
         }
     }
+    pub fn thorns(amount: i32, target: CreatureRef) -> Self {
+        Self {
+            target,
+            amount,
+            ty: DamageType::Thorns,
+        }
+    }
     pub fn lose_hp(amount: i32, target: CreatureRef) -> Self {
         Self {
             target,

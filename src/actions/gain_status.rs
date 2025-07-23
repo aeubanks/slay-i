@@ -13,7 +13,7 @@ pub struct GainStatusAction {
 impl Action for GainStatusAction {
     fn run(&self, game: &mut Game) {
         let extra = self.target.is_player()
-            && game.is_monster_turn()
+            && game.should_add_extra_decay_status()
             && self.status.decays()
             && !game.player.creature.statuses.contains_key(&self.status);
         let v = game
