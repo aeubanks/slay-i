@@ -160,6 +160,7 @@ impl CardClass {
                 | SearingBlow
                 | SwiftStrike
                 | FlashOfSteel
+                | DebugKill
         )
     }
     pub fn end_of_turn_in_hand_behavior(&self) -> Option<CardEndOfTurnBehavior> {
