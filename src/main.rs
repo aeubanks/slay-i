@@ -11,6 +11,7 @@ mod move_history;
 mod player;
 mod queue;
 mod relic;
+mod rng;
 mod status;
 
 use game::Game;

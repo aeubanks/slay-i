@@ -1,4 +1,3 @@
-use rand::Rng;
 
 use crate::{
     actions::{damage::DamageAction, draw::DrawAction, heal::HealAction},
@@ -6,6 +5,7 @@ use crate::{
     cards::CardType,
     game::{CreatureRef, Rand},
     queue::ActionQueue,
+    rng::rand_slice,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -131,8 +131,7 @@ pub fn new_relic(class: RelicClass) -> Relic {
 pub fn random_relic(rng: &mut Rand) -> RelicClass {
     use RelicClass::*;
     let relics = [BagOfPrep, BloodVial];
-    let i = rng.random_range(0..relics.len());
-    relics[i]
+    rand_slice(rng, &relics)
 }
 
 #[cfg(test)]

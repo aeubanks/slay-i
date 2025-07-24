@@ -5,12 +5,12 @@ mod skills;
 mod statuses;
 
 use lazy_static::lazy_static;
-use rand::Rng;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     card::{Card, CardPlayInfo, CardRef},
     game::{CreatureRef, Game, Rand},
+    rng::rand_slice,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -253,23 +253,19 @@ lazy_static! {
 }
 
 fn random_red(rng: &mut Rand) -> CardClass {
-    let i = rng.random_range(0..ALL_NON_BASIC_RED.len());
-    ALL_NON_BASIC_RED[i]
+    rand_slice(rng, &ALL_NON_BASIC_RED)
 }
 
 fn random_colorless(rng: &mut Rand) -> CardClass {
-    let i = rng.random_range(0..ALL_COLORLESS.len());
-    ALL_COLORLESS[i]
+    rand_slice(rng, &ALL_COLORLESS)
 }
 
 pub fn random_uncommon_colorless(rng: &mut Rand) -> CardClass {
-    let i = rng.random_range(0..ALL_UNCOMMON_COLORLESS.len());
-    ALL_UNCOMMON_COLORLESS[i]
+    rand_slice(rng, &ALL_UNCOMMON_COLORLESS)
 }
 
 fn random_curse(rng: &mut Rand) -> CardClass {
-    let i = rng.random_range(0..ALL_CURSES.len());
-    ALL_CURSES[i]
+    rand_slice(rng, &ALL_CURSES)
 }
 
 pub fn transformed(class: CardClass, rng: &mut Rand) -> CardClass {
