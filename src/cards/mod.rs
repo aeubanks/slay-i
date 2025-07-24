@@ -31,59 +31,108 @@ pub enum CardRarity {
     Special,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[allow(dead_code)]
-pub enum CardClass {
-    // Basic
-    Strike,
-    Defend,
-    Bash,
-    // Common attacks
-    PommelStrike,
-    TwinStrike,
-    Clothesline,
-    Cleave,
-    Thunderclap,
-    // Common skills
-    Armaments,
-    // Uncommon attacks
-    SearingBlow,
-    Whirlwind,
-    // Uncommon skills
-    GhostlyArmor,
-    Bloodletting,
-    // Uncommon powers
-    Inflame,
-    // Rare skills
-    LimitBreak,
-    Impervious,
-    // Colorless uncommon attacks
-    SwiftStrike,
-    FlashOfSteel,
-    // Colorless uncommon skills
-    GoodInstincts,
-    Finesse,
-    // Statuses
-    Wound,
-    Dazed,
-    Slimed,
-    Burn,
-    BurnPlus,
-    // Curses
-    AscendersBane,
-    CurseOfTheBell,
-    Clumsy,
-    Injury,
-    Shame,
-    Doubt,
-    Decay,
-    Regret,
-    // Other
-    DebugKill,
-    TestAttack,
-    TestSkill,
-    TestPower,
+macro_rules! c {
+    ($($name:ident => ($rarity:expr, $ty:expr, $cost:expr, $behavior:expr, $exhausts:expr)),+,) => {
+        #[allow(dead_code)]
+        #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+        pub enum CardClass {
+            $(
+                $name,
+            )+
+        }
+        impl CardClass {
+            #[allow(dead_code)]
+            pub fn rarity(&self) -> CardRarity {
+                use CardRarity::*;
+                match self {
+                    $(Self::$name => $rarity,)+
+                }
+            }
+            pub fn ty(&self) -> CardType {
+                use CardType::*;
+                match self {
+                    $(Self::$name => $ty,)+
+                }
+            }
+            pub fn base_cost(&self) -> CardCost {
+                use CardCost::*;
+                match self {
+                    $(Self::$name => $cost,)+
+                }
+            }
+            pub fn behavior(&self) -> CardBehavior {
+                match self {
+                    $(Self::$name => $behavior,)+
+                }
+            }
+            pub fn base_exhausts(&self) -> bool {
+                match self {
+                    $(Self::$name => $exhausts,)+
+                }
+            }
+        }
+        impl CardClass {
+            #[allow(dead_code)]
+            pub fn all() -> Vec<Self> {
+                vec![$(Self::$name,)+]
+            }
+        }
+    };
 }
+
+fn noop_behavior(_: &mut Game, _: Option<CreatureRef>, _: CardPlayInfo) {}
+
+c!(
+    // Basic
+    Strike => (Basic, Attack, Cost(1), attacks::strike_behavior, false),
+    Defend => (Basic, Skill, Cost(1), skills::defend_behavior, false),
+    Bash => (Basic, Attack, Cost(2), attacks::bash_behavior, false),
+    // Common attacks
+    PommelStrike => (Common, Attack, Cost(1), attacks::pommel_strike_behavior, false),
+    TwinStrike => (Common, Attack, Cost(1), attacks::twin_strike_behavior, false),
+    Clothesline => (Common, Attack, Cost(2), attacks::clothesline_behavior, false),
+    Cleave => (Common, Attack, Cost(1), attacks::cleave_behavior, false),
+    Thunderclap => (Common, Attack, Cost(1), attacks::thunderclap_behavior, false),
+    // Common skills
+    Armaments => (Common, Skill, Cost(1), skills::armaments_behavior, false),
+    // Uncommon attacks
+    SearingBlow => (Uncommon, Attack, Cost(2), attacks::searing_blow_behavior, false),
+    Whirlwind => (Uncommon, Attack, X, attacks::whirlwind_behavior, false),
+    // Uncommon skills
+    GhostlyArmor => (Uncommon, Skill, Cost(1), skills::ghostly_armor_behavior, false),
+    Bloodletting => (Uncommon, Skill, Cost(0), skills::bloodletting_behavior, false),
+    // Uncommon powers
+    Inflame => (Uncommon, Power, Cost(1), powers::inflame_behavior, false),
+    // Rare skills
+    LimitBreak => (Rare, Skill, Cost(1), skills::limit_break_behavior, true),
+    Impervious => (Rare, Skill, Cost(2), skills::impervious_behavior, true),
+    // Colorless uncommon attacks
+    SwiftStrike => (Uncommon, Attack, Cost(0), attacks::swift_strike_behavior, false),
+    FlashOfSteel => (Uncommon, Attack, Cost(0), attacks::flash_of_steel_behavior, false),
+    // Colorless uncommon skills
+    GoodInstincts => (Uncommon, Skill, Cost(0), skills::good_instincts_behavior, false),
+    Finesse => (Uncommon, Skill, Cost(0), skills::finesse_behavior, false),
+    // Statuses
+    Wound => (Special, Status, None, noop_behavior, true),
+    Dazed => (Special, Status, None, noop_behavior, true),
+    Slimed => (Special, Status, Cost(1), noop_behavior, true),
+    Burn => (Special, Status, None, noop_behavior, true),
+    BurnPlus => (Special, Status, None, noop_behavior, true),
+    // Curses
+    AscendersBane => (Special, Curse, None, noop_behavior, true),
+    CurseOfTheBell => (Special, Curse, None, noop_behavior, true),
+    Clumsy => (Special, Curse, None, noop_behavior, true),
+    Injury => (Special, Curse, None, noop_behavior, true),
+    Shame => (Special, Curse, None, noop_behavior, true),
+    Doubt => (Special, Curse, None, noop_behavior, true),
+    Decay => (Special, Curse, None, noop_behavior, true),
+    Regret => (Special, Curse, None, noop_behavior, true),
+    // Other
+    DebugKill => (Special, Attack, Cost(0), attacks::debug_kill_behavior, false),
+    TestAttack => (Special, Attack, Cost(0), noop_behavior, false),
+    TestSkill => (Special, Skill, Cost(0), noop_behavior, false),
+    TestPower => (Special, Power, Cost(0), noop_behavior, false),
+);
 
 pub type CardBehavior = fn(&mut Game, Option<CreatureRef>, CardPlayInfo);
 pub type CardEndOfTurnBehavior = fn(&mut Game);
@@ -99,38 +148,6 @@ impl CardClass {
     pub fn can_upgrade_forever(&self) -> bool {
         matches!(self, CardClass::SearingBlow)
     }
-    #[allow(dead_code)]
-    pub fn rarity(&self) -> CardRarity {
-        use CardClass::*;
-        use CardRarity::*;
-        match self {
-            Strike | Defend | Bash => Basic,
-            PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap | Armaments => Common,
-            SearingBlow | Whirlwind | GhostlyArmor | Bloodletting | Inflame | SwiftStrike
-            | FlashOfSteel | GoodInstincts | Finesse => Uncommon,
-            Impervious | LimitBreak => Rare,
-            DebugKill | TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | Burn
-            | BurnPlus | AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt
-            | Decay | Regret => Special,
-        }
-    }
-    pub fn ty(&self) -> CardType {
-        use CardClass::*;
-        use CardType::*;
-        match self {
-            Strike | Bash | PommelStrike | TwinStrike | Clothesline | Cleave | Thunderclap
-            | SearingBlow | Whirlwind | SwiftStrike | FlashOfSteel | DebugKill | TestAttack => {
-                Attack
-            }
-            Defend | Armaments | GhostlyArmor | Bloodletting | Impervious | LimitBreak
-            | GoodInstincts | Finesse | TestSkill => Skill,
-            Inflame | TestPower => Power,
-            Dazed | Wound | Slimed | Burn | BurnPlus => Status,
-            AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt | Decay | Regret => {
-                Curse
-            }
-        }
-    }
     pub fn has_target(&self) -> bool {
         use CardClass::*;
         matches!(
@@ -145,36 +162,6 @@ impl CardClass {
                 | FlashOfSteel
         )
     }
-    pub fn behavior(&self) -> CardBehavior {
-        use CardClass::*;
-        match self {
-            Strike => attacks::strike_behavior,
-            Defend => skills::defend_behavior,
-            Bash => attacks::bash_behavior,
-            PommelStrike => attacks::pommel_strike_behavior,
-            TwinStrike => attacks::twin_strike_behavior,
-            Clothesline => attacks::clothesline_behavior,
-            Cleave => attacks::cleave_behavior,
-            Thunderclap => attacks::thunderclap_behavior,
-            Armaments => skills::armaments_behavior,
-            SearingBlow => attacks::searing_blow_behavior,
-            Whirlwind => attacks::whirlwind_behavior,
-            GhostlyArmor => skills::ghostly_armor_behavior,
-            Bloodletting => skills::bloodletting_behavior,
-            Inflame => powers::inflame_behavior,
-            Impervious => skills::impervious_behavior,
-            LimitBreak => skills::limit_break_behavior,
-            SwiftStrike => attacks::swift_strike_behavior,
-            FlashOfSteel => attacks::flash_of_steel_behavior,
-            GoodInstincts => skills::good_instincts_behavior,
-            Finesse => skills::finesse_behavior,
-            DebugKill => attacks::debug_kill_behavior,
-            TestAttack | TestSkill | TestPower | Dazed | Wound | Slimed | Burn | BurnPlus
-            | AscendersBane | CurseOfTheBell | Clumsy | Injury | Shame | Doubt | Decay | Regret => {
-                |_, _, _| ()
-            }
-        }
-    }
     pub fn end_of_turn_in_hand_behavior(&self) -> Option<CardEndOfTurnBehavior> {
         use CardClass::*;
         match self {
@@ -186,41 +173,6 @@ impl CardClass {
             Doubt => Some(curses::doubt_behavior),
             _ => None,
         }
-    }
-    pub fn base_cost(&self) -> CardCost {
-        use CardClass::*;
-        use CardCost::*;
-        match self {
-            Bloodletting | SwiftStrike | FlashOfSteel | GoodInstincts | Finesse | DebugKill
-            | TestAttack | TestSkill | TestPower => Cost(0),
-            Strike | Defend | PommelStrike | TwinStrike | Cleave | Thunderclap | Armaments
-            | GhostlyArmor | Inflame | LimitBreak | Slimed => Cost(1),
-            Bash | Clothesline | SearingBlow | Impervious => Cost(2),
-            Whirlwind => X,
-            Dazed | Wound | Burn | BurnPlus | AscendersBane | CurseOfTheBell | Clumsy | Injury
-            | Shame | Doubt | Decay | Regret => None,
-        }
-    }
-    pub fn base_exhaust(&self) -> bool {
-        use CardClass::*;
-        matches!(
-            self,
-            Impervious
-                | LimitBreak
-                | Slimed
-                | Dazed
-                | Wound
-                | Burn
-                | BurnPlus
-                | AscendersBane
-                | CurseOfTheBell
-                | Clumsy
-                | Injury
-                | Shame
-                | Doubt
-                | Decay
-                | Regret
-        )
     }
     pub fn is_ethereal(&self) -> bool {
         use CardClass::*;
@@ -241,7 +193,7 @@ pub fn new_card(class: CardClass) -> CardRef {
         class,
         upgrade_count: 0,
         cost: class.base_cost(),
-        exhaust: class.base_exhaust(),
+        exhaust: class.base_exhausts(),
     }))
 }
 
