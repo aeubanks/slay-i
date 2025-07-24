@@ -28,6 +28,14 @@ impl Card {
             f(&mut self.cost, &mut self.exhaust);
         }
     }
+    pub fn is_innate(&self) -> bool {
+        use CardClass::*;
+        match self.class {
+            Brutality => self.upgrade_count != 0,
+            DramaticEntrance | MindBlast | Writhe => true,
+            _ => false,
+        }
+    }
 }
 
 impl std::fmt::Debug for Card {

@@ -194,6 +194,7 @@ pub struct Game {
     pub combat_monsters_queue: Vec<Vec<Monster>>,
     pub monsters: Vec<Monster>,
     pub energy: i32,
+    pub draw_per_turn: i32,
     pub draw_pile: CardPile,
     pub hand: CardPile,
     pub discard_pile: CardPile,
@@ -204,6 +205,8 @@ pub struct Game {
 }
 
 impl Game {
+    pub const MAX_HAND_SIZE: i32 = 10;
+
     fn new(rng: Rand, master_deck: CardPile, monsters: Vec<Monster>) -> Self {
         let mut g = Self {
             player: Player {
@@ -214,6 +217,7 @@ impl Game {
             combat_monsters_queue: vec![monsters],
             monsters: Default::default(),
             energy: 0,
+            draw_per_turn: 5,
             draw_pile: Default::default(),
             hand: Default::default(),
             discard_pile: Default::default(),
@@ -295,6 +299,17 @@ impl Game {
     fn setup_combat_draw_pile(&mut self) {
         self.draw_pile = self.player.master_deck.clone();
         self.draw_pile.shuffle(&mut self.rng);
+        self.draw_pile.sort_by_key(|c| c.borrow().is_innate());
+        let num_innate = self
+            .player
+            .master_deck
+            .iter()
+            .filter(|c| c.borrow().is_innate())
+            .count() as i32;
+        let extra_draw = num_innate - self.draw_per_turn;
+        if extra_draw > 0 {
+            self.action_queue.push_bot(DrawAction(extra_draw));
+        }
     }
 
     fn run_once(&mut self) {
@@ -335,7 +350,7 @@ impl Game {
 
                 self.player
                     .trigger_relics_combat_start_pre_draw(&mut self.action_queue);
-                self.action_queue.push_bot(DrawAction(5));
+                self.action_queue.push_bot(DrawAction(self.draw_per_turn));
                 self.player
                     .trigger_relics_combat_start_post_draw(&mut self.action_queue);
                 self.run_actions_until_empty();

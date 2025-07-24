@@ -15,7 +15,7 @@ impl Action for DrawAction {
             return;
         }
 
-        let mut amount = self.0.min(10 - hand_size);
+        let mut amount = self.0.min(Game::MAX_HAND_SIZE - hand_size);
         if amount == 0 {
             return;
         }

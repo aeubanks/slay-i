@@ -122,9 +122,13 @@ c!(
     // Rare skills
     LimitBreak => (Rare, Skill, Red, Cost(1), skills::limit_break_behavior, true),
     Impervious => (Rare, Skill, Red, Cost(2), skills::impervious_behavior, true),
+    // Rare powers
+    Brutality => (Rare, Power, Red, Cost(0), powers::brutality_behavior, false),
     // Colorless uncommon attacks
     SwiftStrike => (Uncommon, Attack, Colorless, Cost(0), attacks::swift_strike_behavior, false),
     FlashOfSteel => (Uncommon, Attack, Colorless, Cost(0), attacks::flash_of_steel_behavior, false),
+    DramaticEntrance => (Uncommon, Attack, Colorless, Cost(0), attacks::dramatic_entrance_behavior, true),
+    MindBlast => (Uncommon, Attack, Colorless, Cost(2), attacks::mind_blast_behavior, false),
     // Colorless uncommon skills
     GoodInstincts => (Uncommon, Skill, Colorless, Cost(0), skills::good_instincts_behavior, false),
     Finesse => (Uncommon, Skill, Colorless, Cost(0), skills::finesse_behavior, false),
@@ -139,6 +143,7 @@ c!(
     CurseOfTheBell => (Special, Curse, Curse, None, noop_behavior, true),
     Clumsy => (Special, Curse, Curse, None, noop_behavior, true),
     Injury => (Special, Curse, Curse, None, noop_behavior, true),
+    Writhe => (Special, Curse, Curse, None, noop_behavior, true),
     Shame => (Special, Curse, Curse, None, noop_behavior, true),
     Doubt => (Special, Curse, Curse, None, noop_behavior, true),
     Decay => (Special, Curse, Curse, None, noop_behavior, true),
@@ -285,7 +290,7 @@ pub fn transformed(class: CardClass, rng: &mut Rand) -> CardClass {
 mod tests {
     use crate::{
         cards::{CardClass, CardColor, CardRarity, transformed},
-        game::Rand,
+        game::{GameBuilder, Rand},
     };
 
     #[test]
@@ -329,6 +334,51 @@ mod tests {
                 assert_ne!(t, CardClass::AscendersBane);
                 assert_ne!(t, CardClass::Injury);
             }
+        }
+    }
+
+    #[test]
+    fn test_innate() {
+        let g = GameBuilder::default()
+            .add_card(CardClass::MindBlast)
+            .add_card_upgraded(CardClass::Brutality)
+            .add_card(CardClass::DramaticEntrance)
+            .add_card(CardClass::Writhe)
+            .add_cards(CardClass::Strike, 50)
+            .build_combat();
+        assert!(
+            g.hand
+                .iter()
+                .any(|c| c.borrow().class == CardClass::MindBlast)
+        );
+        assert!(
+            g.hand
+                .iter()
+                .any(|c| c.borrow().class == CardClass::Brutality)
+        );
+        assert!(
+            g.hand
+                .iter()
+                .any(|c| c.borrow().class == CardClass::DramaticEntrance)
+        );
+        assert!(g.hand.iter().any(|c| c.borrow().class == CardClass::Writhe));
+    }
+
+    #[test]
+    fn test_innate2() {
+        {
+            let g = GameBuilder::default()
+                .add_cards(CardClass::DramaticEntrance, 7)
+                .add_cards(CardClass::Strike, 50)
+                .build_combat();
+            assert_eq!(g.hand.len(), 7);
+        }
+        {
+            let g = GameBuilder::default()
+                .add_cards(CardClass::DramaticEntrance, 11)
+                .add_cards(CardClass::Strike, 50)
+                .build_combat();
+            assert_eq!(g.hand.len(), 10);
         }
     }
 }

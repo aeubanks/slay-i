@@ -124,6 +124,15 @@ pub fn flash_of_steel_behavior(game: &mut Game, target: Option<CreatureRef>, inf
     game.action_queue.push_bot(DrawAction(1));
 }
 
+pub fn dramatic_entrance_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    push_aoe_damage(game, info, 8, 12);
+}
+
+pub fn mind_blast_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
+    let damage = game.draw_pile.len() as i32;
+    push_damage(game, target, info, damage, damage);
+}
+
 pub fn debug_kill_behavior(game: &mut Game, target: Option<CreatureRef>, _: CardPlayInfo) {
     game.action_queue.push_bot(DamageAction::from_player(
         9999,
@@ -136,7 +145,7 @@ pub fn debug_kill_behavior(game: &mut Game, target: Option<CreatureRef>, _: Card
 #[cfg(test)]
 mod tests {
     use crate::{
-        cards::{CardClass, new_card_upgraded},
+        cards::{CardClass, new_card, new_card_upgraded},
         game::{GameBuilder, Move},
         monsters::test::NoopMonster,
         status::Status,
@@ -314,6 +323,20 @@ mod tests {
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
         assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 15);
+    }
+
+    #[test]
+    fn test_mind_blast() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Strike, 25)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.hand.push(new_card(CardClass::MindBlast));
+        g.make_move(Move::PlayCard {
+            card_index: 5,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 20);
     }
 
     #[test]
