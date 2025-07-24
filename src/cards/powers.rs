@@ -53,6 +53,6 @@ mod tests {
                 return;
             }
         }
-        assert!(false);
+        panic!();
     }
 }
