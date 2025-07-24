@@ -10,7 +10,7 @@ use crate::actions::play_card::PlayCardAction;
 use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
 use crate::card::{Card, CardPile};
-use crate::cards::{CardClass, CardCost, CardType, new_card, new_card_upgraded};
+use crate::cards::{CardClass, CardCost, CardType, new_card, new_card_upgraded, transformed};
 use crate::creature::Creature;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
@@ -50,6 +50,9 @@ impl std::fmt::Debug for CreatureRef {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Move {
     ChooseBlessing(Blessing),
+    Transform {
+        card_index: usize,
+    },
     EndTurn,
     PlayCard {
         card_index: usize,
@@ -70,6 +73,7 @@ pub enum GameStatus {
 #[derive(PartialEq, Eq, Debug)]
 pub enum GameState {
     Blessing,
+    BlessingTransform,
     RollCombat,
     CombatBegin,
     PlayerTurnBegin,
@@ -379,7 +383,11 @@ impl Game {
             GameState::PlayerTurn => {
                 self.run_actions_until_empty();
             }
-            GameState::Victory | GameState::Defeat | GameState::Blessing | GameState::Armaments => {
+            GameState::Victory
+            | GameState::Defeat
+            | GameState::Blessing
+            | GameState::BlessingTransform
+            | GameState::Armaments => {
                 unreachable!()
             }
         }
@@ -396,6 +404,15 @@ impl Game {
             && self.state != GameState::Armaments
         {
             self.run_once();
+        }
+    }
+
+    fn run_actions_until_empty(&mut self) {
+        while let Some(a) = self.action_queue.pop() {
+            a.run(self);
+            if self.state == GameState::Armaments {
+                break;
+            }
         }
     }
 
@@ -483,6 +500,18 @@ impl Game {
         self.run_actions_until_empty();
     }
 
+    fn transform_card(&mut self, master_deck_index: usize) {
+        let c = self.player.master_deck.remove(master_deck_index);
+        let class = c.borrow().class;
+        assert!(class.can_remove_from_master_deck());
+        let transformed = transformed(class, &mut self.rng);
+        self.add_card_to_master_deck(transformed);
+    }
+
+    pub fn add_card_to_master_deck(&mut self, class: CardClass) {
+        self.player.master_deck.push(new_card(class));
+    }
+
     pub fn result(&self) -> GameStatus {
         match self.state {
             GameState::Victory => GameStatus::Victory,
@@ -497,6 +526,14 @@ impl Game {
             Move::ChooseBlessing(b) => {
                 assert_eq!(self.state, GameState::Blessing);
                 b.run(self);
+                if self.state != GameState::BlessingTransform {
+                    self.state = GameState::RollCombat;
+                    self.run();
+                }
+            }
+            Move::Transform { card_index } => {
+                assert_eq!(self.state, GameState::BlessingTransform);
+                self.transform_card(card_index);
                 self.state = GameState::RollCombat;
                 self.run();
             }
@@ -542,6 +579,15 @@ impl Game {
             GameState::Blessing => {
                 moves.push(Move::ChooseBlessing(Blessing::GainMaxHPSmall));
                 moves.push(Move::ChooseBlessing(Blessing::CommonRelic));
+                moves.push(Move::ChooseBlessing(Blessing::TransformOne));
+                moves.push(Move::ChooseBlessing(Blessing::RandomUncommonColorless));
+            }
+            GameState::BlessingTransform => {
+                for (i, c) in self.player.master_deck.iter().enumerate() {
+                    if c.borrow().class.can_remove_from_master_deck() {
+                        moves.push(Move::Transform { card_index: i });
+                    }
+                }
             }
             GameState::PlayerTurn => {
                 moves.push(Move::EndTurn);
@@ -633,14 +679,5 @@ impl Game {
     pub fn increase_max_hp(&mut self, amount: i32) {
         self.player.creature.increase_max_hp(amount);
         self.heal(CreatureRef::player(), amount);
-    }
-
-    fn run_actions_until_empty(&mut self) {
-        while let Some(a) = self.action_queue.pop() {
-            a.run(self);
-            if self.state == GameState::Armaments {
-                break;
-            }
-        }
     }
 }

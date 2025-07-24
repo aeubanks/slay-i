@@ -81,6 +81,9 @@ fn print_state(g: &Game) {
             Move::ChooseBlessing(b) => {
                 print!("choose blessing {b:?}");
             }
+            Move::Transform { card_index } => {
+                print!("transform {:?}", g.player.master_deck[*card_index].borrow());
+            }
             Move::EndTurn => print!("end turn"),
             Move::PlayCard {
                 card_index: i,
