@@ -1,7 +1,7 @@
 use crate::{
     cards::random_uncommon_colorless,
     game::{Game, GameState},
-    relic::random_relic,
+    relic::random_common_relic,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -20,7 +20,7 @@ impl Blessing {
                 game.increase_max_hp(8);
             }
             CommonRelic => {
-                game.player.add_relic(random_relic(&mut game.rng));
+                game.player.add_relic(random_common_relic(&mut game.rng));
             }
             TransformOne => {
                 game.state = GameState::BlessingTransform;

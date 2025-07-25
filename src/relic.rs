@@ -1,6 +1,7 @@
+use lazy_static::lazy_static;
 
 use crate::{
-    actions::{damage::DamageAction, draw::DrawAction, heal::HealAction},
+    actions::{block::BlockAction, damage::DamageAction, draw::DrawAction, heal::HealAction},
     card::Card,
     cards::CardType,
     game::{CreatureRef, Rand},
@@ -8,18 +9,58 @@ use crate::{
     rng::rand_slice,
 };
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum RelicClass {
-    // Starter
-    BurningBlood,
-    // Common
-    BagOfPrep,
-    BloodVial,
-    // Uncommon
-    BlueCandle,
-    // Shop
-    MedicalKit,
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[allow(dead_code)]
+pub enum RelicRarity {
+    Starter,
+    Common,
+    Uncommon,
+    Rare,
+    Shop,
+    Event,
+    Boss,
 }
+
+macro_rules! r {
+    ($($name:ident => $rarity:expr),+,) => {
+        #[allow(dead_code)]
+        #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+        pub enum RelicClass {
+            $(
+                $name,
+            )+
+        }
+        impl RelicClass {
+            #[allow(dead_code)]
+            pub fn rarity(&self) -> RelicRarity {
+                use RelicRarity::*;
+                match self {
+                    $(Self::$name => $rarity,)+
+                }
+            }
+        }
+        impl RelicClass {
+            pub fn all() -> Vec<Self> {
+                vec![$(Self::$name,)+]
+            }
+        }
+    };
+}
+
+r!(
+    BurningBlood => Starter,
+
+    Anchor => Common,
+    BagOfPrep => Common,
+    BloodVial => Common,
+
+    BlueCandle => Uncommon,
+    HornCleat => Uncommon,
+
+    CaptainsWheel => Rare,
+
+    MedicalKit => Shop,
+);
 
 type RelicCallback = fn(&mut i32, &mut ActionQueue);
 type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &Card);
@@ -29,6 +70,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             BloodVial => Some(blood_vial),
+            HornCleat | CaptainsWheel => Some(set_value_zero),
             _ => None,
         }
     }
@@ -46,6 +88,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             BagOfPrep => Some(bag_of_prep),
+            Anchor => Some(anchor),
             _ => None,
         }
     }
@@ -59,6 +102,10 @@ impl RelicClass {
     pub fn turn_end(&self) -> Option<RelicCallback> {
         None
     }
+}
+
+fn set_value_zero(v: &mut i32, _: &mut ActionQueue) {
+    *v = 0;
 }
 
 fn burning_blood(_: &mut i32, queue: &mut ActionQueue) {
@@ -77,6 +124,33 @@ fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
 
 fn bag_of_prep(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(DrawAction(2));
+}
+
+fn anchor(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(BlockAction {
+        target: CreatureRef::player(),
+        amount: 10,
+    });
+}
+
+fn horn_cleat(v: &mut i32, queue: &mut ActionQueue) {
+    // *v += 1;
+    // if *v == 2 {
+    //     queue.push_bot(BlockAction {
+    //         target: CreatureRef::player(),
+    //         amount: 14,
+    //     });
+    // }
+}
+
+fn captains_wheel(v: &mut i32, queue: &mut ActionQueue) {
+    // *v += 1;
+    // if *v == 3 {
+    //     queue.push_bot(BlockAction {
+    //         target: CreatureRef::player(),
+    //         amount: 18,
+    //     });
+    // }
 }
 
 fn blue_candle(_: &mut i32, queue: &mut ActionQueue, card: &Card) {
@@ -128,10 +202,15 @@ pub fn new_relic(class: RelicClass) -> Relic {
     Relic { class, value: 0 }
 }
 
-pub fn random_relic(rng: &mut Rand) -> RelicClass {
-    use RelicClass::*;
-    let relics = [BagOfPrep, BloodVial];
-    rand_slice(rng, &relics)
+lazy_static! {
+    static ref ALL_COMMON: Vec<RelicClass> = RelicClass::all()
+        .into_iter()
+        .filter(|r| r.rarity() == RelicRarity::Common)
+        .collect();
+}
+
+pub fn random_common_relic(rng: &mut Rand) -> RelicClass {
+    rand_slice(rng, &ALL_COMMON)
 }
 
 #[cfg(test)]
