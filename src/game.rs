@@ -722,10 +722,8 @@ mod tests {
     #[test]
     fn test_player_lose_block_start_of_turn() {
         let mut g = GameBuilder::default().build_combat();
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 7,
-        });
+
+        g.run_action(BlockAction::player_flat_amount(7));
         assert_eq!(g.player.creature.block, 7);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.block, 0);
@@ -734,10 +732,7 @@ mod tests {
     #[test]
     fn test_monster_lose_block_start_of_turn() {
         let mut g = GameBuilder::default().build_combat();
-        g.run_action(BlockAction {
-            target: CreatureRef::monster(0),
-            amount: 7,
-        });
+        g.run_action(BlockAction::monster(CreatureRef::monster(0), 7));
         assert_eq!(g.monsters[0].creature.block, 7);
         g.make_move(Move::EndTurn);
         assert_eq!(g.monsters[0].creature.block, 0);

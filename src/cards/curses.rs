@@ -38,7 +38,7 @@ mod tests {
     use crate::{
         actions::block::BlockAction,
         cards::{CardClass, new_card},
-        game::{CreatureRef, GameBuilder, Move},
+        game::{GameBuilder, Move},
         status::Status,
     };
 
@@ -67,10 +67,7 @@ mod tests {
             .add_card(CardClass::Regret)
             .set_player_hp(50)
             .build_combat();
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 4,
-        });
+        g.run_action(BlockAction::player_flat_amount(4));
         assert_eq!(g.player.creature.cur_hp, 50);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.cur_hp, 45);
@@ -83,10 +80,7 @@ mod tests {
             .add_cards(CardClass::Regret, 2)
             .set_player_hp(50)
             .build_combat();
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 4,
-        });
+        g.run_action(BlockAction::player_flat_amount(4));
         assert_eq!(g.player.creature.cur_hp, 50);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.cur_hp, 40);
@@ -98,10 +92,7 @@ mod tests {
             .add_card(CardClass::Decay)
             .set_player_hp(50)
             .build_combat();
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 1,
-        });
+        g.run_action(BlockAction::player_flat_amount(1));
         assert_eq!(g.player.creature.cur_hp, 50);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.cur_hp, 49);

@@ -55,10 +55,7 @@ impl MonsterBehavior for JawWorm {
             Action::Thrash => {
                 queue.push_bot(DamageAction::from_monster(7, player, this, this_ref));
 
-                queue.push_bot(BlockAction {
-                    target: this_ref,
-                    amount: 5,
-                });
+                queue.push_bot(BlockAction::monster(this_ref, 5));
             }
             Action::Bellow => {
                 queue.push_bot(GainStatusAction {
@@ -66,10 +63,7 @@ impl MonsterBehavior for JawWorm {
                     amount: 5,
                     target: this_ref,
                 });
-                queue.push_bot(BlockAction {
-                    target: this_ref,
-                    amount: 9,
-                });
+                queue.push_bot(BlockAction::monster(this_ref, 9));
             }
             Action::None => unreachable!(),
         }

@@ -135,29 +135,20 @@ fn bag_of_prep(_: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn anchor(_: &mut i32, queue: &mut ActionQueue) {
-    queue.push_bot(BlockAction {
-        target: CreatureRef::player(),
-        amount: 10,
-    });
+    queue.push_bot(BlockAction::player_flat_amount(10));
 }
 
 fn horn_cleat(v: &mut i32, queue: &mut ActionQueue) {
     *v += 1;
     if *v == 2 {
-        queue.push_bot(BlockAction {
-            target: CreatureRef::player(),
-            amount: 14,
-        });
+        queue.push_bot(BlockAction::player_flat_amount(14));
     }
 }
 
 fn captains_wheel(v: &mut i32, queue: &mut ActionQueue) {
     *v += 1;
     if *v == 3 {
-        queue.push_bot(BlockAction {
-            target: CreatureRef::player(),
-            amount: 18,
-        });
+        queue.push_bot(BlockAction::player_flat_amount(18));
     }
 }
 
@@ -229,6 +220,7 @@ mod tests {
         actions::block::BlockAction,
         cards::CardClass,
         game::{GameBuilder, Move},
+        status::Status,
     };
 
     #[test]
@@ -293,10 +285,7 @@ mod tests {
             .add_relic(RelicClass::BlueCandle)
             .set_player_hp(50)
             .build_combat();
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 5,
-        });
+        g.run_action(BlockAction::player_flat_amount(5));
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,
@@ -315,6 +304,17 @@ mod tests {
     fn test_anchor() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Anchor)
+            .build_combat();
+        assert_eq!(g.player.creature.block, 10);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 0);
+    }
+
+    #[test]
+    fn test_anchor_dexterity() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Anchor)
+            .add_player_status(Status::Dexterity, 55)
             .build_combat();
         assert_eq!(g.player.creature.block, 10);
         g.make_move(Move::EndTurn);

@@ -18,7 +18,7 @@ mod tests {
     use crate::{
         actions::block::BlockAction,
         cards::{CardClass, new_card},
-        game::{CreatureRef, GameBuilder, Move},
+        game::{GameBuilder, Move},
     };
 
     #[test]
@@ -61,10 +61,7 @@ mod tests {
             .add_card(CardClass::BurnPlus)
             .set_player_hp(50)
             .build_combat();
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 1,
-        });
+        g.run_action(BlockAction::player_flat_amount(1));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.cur_hp, 47);
     }

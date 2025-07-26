@@ -18,14 +18,12 @@ fn push_block(
     unupgraded_base_damage: i32,
     upgraded_base_damage: i32,
 ) {
-    game.action_queue.push_bot(BlockAction {
-        target: CreatureRef::player(),
-        amount: if info.upgraded {
+    game.action_queue
+        .push_bot(BlockAction::player_card(if info.upgraded {
             upgraded_base_damage
         } else {
             unupgraded_base_damage
-        },
-    });
+        }));
 }
 
 pub fn defend_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
@@ -79,7 +77,7 @@ mod tests {
     use crate::{
         actions::block::BlockAction,
         cards::{CardClass, new_card, new_card_upgraded},
-        game::{CreatureRef, GameBuilder, Move},
+        game::{GameBuilder, Move},
         status::Status,
     };
 
@@ -172,10 +170,7 @@ mod tests {
             .add_card(CardClass::Bloodletting)
             .build_combat();
         let hp = g.player.creature.cur_hp;
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 5,
-        });
+        g.run_action(BlockAction::player_flat_amount(5));
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,

@@ -167,10 +167,7 @@ mod tests {
             .add_player_status(Dexterity, 2)
             .build_combat();
 
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 6,
-        });
+        g.run_action(BlockAction::player_card(6));
 
         assert_eq!(g.player.creature.block, 8);
     }
@@ -181,10 +178,7 @@ mod tests {
             .add_player_status(Frail, 2)
             .build_combat();
 
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 6,
-        });
+        g.run_action(BlockAction::player_card(6));
 
         assert_eq!(g.player.creature.block, 4);
     }
@@ -195,10 +189,7 @@ mod tests {
             .add_player_status(NoBlock, 2)
             .build_combat();
 
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 6,
-        });
+        g.run_action(BlockAction::player_card(6));
 
         assert_eq!(g.player.creature.block, 0);
     }
@@ -210,10 +201,7 @@ mod tests {
             .add_player_status(Frail, 2)
             .build_combat();
 
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 6,
-        });
+        g.run_action(BlockAction::player_card(6));
 
         assert_eq!(g.player.creature.block, 7);
     }
@@ -234,10 +222,7 @@ mod tests {
 
         assert_eq!(g.player.creature.cur_hp, hp - 2);
 
-        g.run_action(BlockAction {
-            target: CreatureRef::player(),
-            amount: 3,
-        });
+        g.run_action(BlockAction::player_flat_amount(3));
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: Some(0),
@@ -290,10 +275,7 @@ mod tests {
             target: CreatureRef::monster(0),
             hp: 10,
         });
-        g.run_action(BlockAction {
-            target: CreatureRef::monster(0),
-            amount: 5,
-        });
+        g.run_action(BlockAction::player_flat_amount(5));
         g.make_move(Move::EndTurn);
 
         assert_eq!(g.monsters[0].creature.cur_hp, 8);
