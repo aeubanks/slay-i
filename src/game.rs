@@ -718,8 +718,9 @@ mod tests {
     use crate::actions::block::BlockAction;
 
     use super::*;
+
     #[test]
-    fn test_lose_block_start_of_turn() {
+    fn test_player_lose_block_start_of_turn() {
         let mut g = GameBuilder::default().build_combat();
         g.run_action(BlockAction {
             target: CreatureRef::player(),
@@ -728,5 +729,17 @@ mod tests {
         assert_eq!(g.player.creature.block, 7);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.block, 0);
+    }
+
+    #[test]
+    fn test_monster_lose_block_start_of_turn() {
+        let mut g = GameBuilder::default().build_combat();
+        g.run_action(BlockAction {
+            target: CreatureRef::monster(0),
+            amount: 7,
+        });
+        assert_eq!(g.monsters[0].creature.block, 7);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.block, 0);
     }
 }

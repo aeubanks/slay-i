@@ -25,7 +25,7 @@ mod tests {
         actions::{block::BlockAction, damage::DamageAction, set_hp::SetHPAction},
         cards::CardClass,
         game::{CreatureRef, GameBuilder, Move},
-        monsters::test::{ApplyVulnerableMonster, NoopMonster},
+        monsters::test::{ApplyVulnerableMonster, AttackMonster, NoopMonster},
     };
 
     #[test]
@@ -277,5 +277,25 @@ mod tests {
         });
 
         assert_eq!(g.player.creature.cur_hp, hp - 2);
+    }
+
+    #[test]
+    fn test_thorns3() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Thorns, 2)
+            .add_monster(AttackMonster())
+            .build_combat();
+
+        g.run_action(SetHPAction {
+            target: CreatureRef::monster(0),
+            hp: 10,
+        });
+        g.run_action(BlockAction {
+            target: CreatureRef::monster(0),
+            amount: 5,
+        });
+        g.make_move(Move::EndTurn);
+
+        assert_eq!(g.monsters[0].creature.cur_hp, 8);
     }
 }
