@@ -193,6 +193,7 @@ pub struct Game {
     pub player: Player,
     pub combat_monsters_queue: Vec<Vec<Monster>>,
     pub monsters: Vec<Monster>,
+    pub turn: i32,
     pub energy: i32,
     pub draw_per_turn: i32,
     pub draw_pile: CardPile,
@@ -216,6 +217,7 @@ impl Game {
             },
             combat_monsters_queue: vec![monsters],
             monsters: Default::default(),
+            turn: 0,
             energy: 0,
             draw_per_turn: 5,
             draw_pile: Default::default(),
@@ -323,6 +325,8 @@ impl Game {
                 }
             }
             GameState::CombatBegin => {
+                self.turn = 0;
+
                 self.setup_combat_draw_pile();
 
                 // player pre-combat relic setup
@@ -338,8 +342,8 @@ impl Game {
                     self.monsters[i]
                         .behavior
                         .pre_combat(&mut self.action_queue, CreatureRef::monster(i));
-                    self.run_actions_until_empty();
                 }
+                self.run_actions_until_empty();
 
                 self.state = GameState::PlayerTurnBegin;
             }
@@ -347,12 +351,23 @@ impl Game {
                 self.monsters_roll_move();
 
                 self.energy = 3;
+                self.player.creature.block = 0;
+
+                if self.turn == 0 {
+                    self.player
+                        .trigger_relics_combat_start_pre_draw(&mut self.action_queue);
+                }
+
+                self.action_queue.push_bot(DrawAction(self.draw_per_turn));
+
+                if self.turn == 0 {
+                    self.player
+                        .trigger_relics_combat_start_post_draw(&mut self.action_queue);
+                }
 
                 self.player
-                    .trigger_relics_combat_start_pre_draw(&mut self.action_queue);
-                self.action_queue.push_bot(DrawAction(self.draw_per_turn));
-                self.player
-                    .trigger_relics_combat_start_post_draw(&mut self.action_queue);
+                    .trigger_relics_turn_start(&mut self.action_queue);
+
                 self.run_actions_until_empty();
 
                 self.state = GameState::PlayerTurn;
@@ -394,6 +409,7 @@ impl Game {
                 }
                 self.run_actions_until_empty();
                 self.state = GameState::PlayerTurnBegin;
+                self.turn += 1;
             }
             GameState::PlayerTurn => {
                 self.run_actions_until_empty();
@@ -694,5 +710,23 @@ impl Game {
     pub fn increase_max_hp(&mut self, amount: i32) {
         self.player.creature.increase_max_hp(amount);
         self.heal(CreatureRef::player(), amount);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::actions::block::BlockAction;
+
+    use super::*;
+    #[test]
+    fn test_lose_block_start_of_turn() {
+        let mut g = GameBuilder::default().build_combat();
+        g.run_action(BlockAction {
+            target: CreatureRef::player(),
+            amount: 7,
+        });
+        assert_eq!(g.player.creature.block, 7);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 0);
     }
 }

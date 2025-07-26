@@ -48,6 +48,7 @@ impl Player {
         trigger_relics_combat_start_post_draw,
         combat_start_post_draw
     );
+    trigger!(trigger_relics_turn_start, turn_start);
     trigger!(trigger_relics_turn_end, turn_end);
     trigger!(trigger_relics_combat_finish, combat_finish);
     trigger_card!(trigger_relics_on_card_played, on_card_played);

@@ -99,6 +99,14 @@ impl RelicClass {
             _ => None,
         }
     }
+    pub fn turn_start(&self) -> Option<RelicCallback> {
+        use RelicClass::*;
+        match self {
+            HornCleat => Some(horn_cleat),
+            CaptainsWheel => Some(captains_wheel),
+            _ => None,
+        }
+    }
     pub fn turn_end(&self) -> Option<RelicCallback> {
         None
     }
@@ -134,23 +142,23 @@ fn anchor(_: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn horn_cleat(v: &mut i32, queue: &mut ActionQueue) {
-    // *v += 1;
-    // if *v == 2 {
-    //     queue.push_bot(BlockAction {
-    //         target: CreatureRef::player(),
-    //         amount: 14,
-    //     });
-    // }
+    *v += 1;
+    if *v == 2 {
+        queue.push_bot(BlockAction {
+            target: CreatureRef::player(),
+            amount: 14,
+        });
+    }
 }
 
 fn captains_wheel(v: &mut i32, queue: &mut ActionQueue) {
-    // *v += 1;
-    // if *v == 3 {
-    //     queue.push_bot(BlockAction {
-    //         target: CreatureRef::player(),
-    //         amount: 18,
-    //     });
-    // }
+    *v += 1;
+    if *v == 3 {
+        queue.push_bot(BlockAction {
+            target: CreatureRef::player(),
+            amount: 18,
+        });
+    }
 }
 
 fn blue_candle(_: &mut i32, queue: &mut ActionQueue, card: &Card) {
@@ -193,6 +201,7 @@ impl Relic {
     trigger!(pre_combat);
     trigger!(combat_start_pre_draw);
     trigger!(combat_start_post_draw);
+    trigger!(turn_start);
     trigger!(turn_end);
     trigger!(combat_finish);
     trigger_card!(on_card_played);
@@ -300,5 +309,41 @@ mod tests {
         assert_eq!(g.player.creature.cur_hp, 48);
         assert_eq!(g.exhaust_pile.len(), 2);
         assert_eq!(g.discard_pile.len(), 0);
+    }
+
+    #[test]
+    fn test_anchor() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Anchor)
+            .build_combat();
+        assert_eq!(g.player.creature.block, 10);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 0);
+    }
+
+    #[test]
+    fn test_horn_cleat() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::HornCleat)
+            .build_combat();
+        assert_eq!(g.player.creature.block, 0);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 14);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 0);
+    }
+
+    #[test]
+    fn test_captains_wheel() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::CaptainsWheel)
+            .build_combat();
+        assert_eq!(g.player.creature.block, 0);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 0);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 18);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 0);
     }
 }
