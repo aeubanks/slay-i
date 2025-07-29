@@ -17,7 +17,7 @@ pub struct PlayCardAction {
 
 impl Action for PlayCardAction {
     fn run(&self, game: &mut Game) {
-        let c = self.card.borrow_mut();
+        let mut c = self.card.borrow_mut();
         let energy = match c.cost {
             CardCost::Zero => 0,
             CardCost::X => game.energy,
@@ -30,8 +30,10 @@ impl Action for PlayCardAction {
         let info = CardPlayInfo {
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
+            times_played: c.times_played,
         };
         (c.class.behavior())(game, self.target, info);
+        c.times_played += 1;
         game.player
             .trigger_relics_on_card_played(&mut game.action_queue, c.deref());
         game.energy -= energy;

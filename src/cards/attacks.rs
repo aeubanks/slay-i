@@ -115,6 +115,11 @@ pub fn whirlwind_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPla
     }
 }
 
+pub fn rampage_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
+    let damage = if info.upgraded { 8 } else { 5 } * info.times_played + 8;
+    push_damage(game, target, info, damage, damage);
+}
+
 pub fn swift_strike_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
     push_damage(game, target, info, 7, 10);
 }
@@ -323,6 +328,68 @@ mod tests {
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
         assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 15);
+    }
+
+    #[test]
+    fn test_rampage() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Rampage)
+            .build_combat();
+
+        let hp0 = g.monsters[0].creature.cur_hp;
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8);
+
+        let c = g.discard_pile.pop().unwrap();
+        g.hand.push(c);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13);
+
+        let c = g.discard_pile.pop().unwrap();
+        g.hand.push(c);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13 - 18);
+    }
+
+    #[test]
+    fn test_rampage_upgraded() {
+        let mut g = GameBuilder::default()
+            .add_card_upgraded(CardClass::Rampage)
+            .build_combat();
+
+        let hp0 = g.monsters[0].creature.cur_hp;
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8);
+
+        let c = g.discard_pile.pop().unwrap();
+        g.hand.push(c);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 16);
+
+        let c = g.discard_pile.pop().unwrap();
+        g.hand.push(c);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 16 - 24);
     }
 
     #[test]

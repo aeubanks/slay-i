@@ -117,6 +117,7 @@ c!(
     // Uncommon attacks
     SearingBlow => (Uncommon, Attack, Red, cost(2), attacks::searing_blow_behavior, false),
     Whirlwind => (Uncommon, Attack, Red, X, attacks::whirlwind_behavior, false),
+    Rampage => (Uncommon, Attack, Red, cost(1), attacks::rampage_behavior, false),
     // Uncommon skills
     GhostlyArmor => (Uncommon, Skill, Red, cost(1), skills::ghostly_armor_behavior, false),
     Bloodletting => (Uncommon, Skill, Red, cost(0), skills::bloodletting_behavior, false),
@@ -236,6 +237,7 @@ pub fn new_card(class: CardClass) -> CardRef {
         upgrade_count: 0,
         cost: class.base_cost(),
         exhaust: class.base_exhausts(),
+        times_played: 0,
     }))
 }
 

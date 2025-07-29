@@ -6,6 +6,7 @@ use crate::cards::{CardClass, CardCost, CardType};
 pub struct CardPlayInfo {
     pub upgraded: bool,
     pub upgrade_count: i32,
+    pub times_played: i32,
 }
 
 #[derive(Clone)]
@@ -14,6 +15,7 @@ pub struct Card {
     pub upgrade_count: i32,
     pub cost: CardCost,
     pub exhaust: bool,
+    pub times_played: i32,
 }
 
 impl Card {
