@@ -9,6 +9,8 @@ pub enum Status {
     Frail,
     NoBlock,
     Thorns,
+    FeelNoPain,
+    DarkEmbrace,
 }
 
 impl Status {

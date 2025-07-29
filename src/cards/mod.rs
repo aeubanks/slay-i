@@ -122,6 +122,8 @@ c!(
     Bloodletting => (Uncommon, Skill, Red, cost(0), skills::bloodletting_behavior, false),
     // Uncommon powers
     Inflame => (Uncommon, Power, Red, cost(1), powers::inflame_behavior, false),
+    FeelNoPain => (Uncommon, Power, Red, cost(1), powers::feel_no_pain_behavior, false),
+    DarkEmbrace => (Uncommon, Power, Red, cost(2), powers::dark_embrace_behavior, false),
     // Rare skills
     LimitBreak => (Rare, Skill, Red, cost(1), skills::limit_break_behavior, true),
     Impervious => (Rare, Skill, Red, cost(2), skills::impervious_behavior, true),
@@ -215,6 +217,13 @@ impl CardClass {
         use CardClass::*;
         match self {
             LimitBreak => Some(|_, exhaust| *exhaust = false),
+            DarkEmbrace => Some(|cost, _| match cost {
+                CardCost::Cost {
+                    base_cost,
+                    temporary_cost: _,
+                } => *base_cost = 1,
+                _ => unreachable!(),
+            }),
             _ => None,
         }
     }

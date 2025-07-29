@@ -125,6 +125,13 @@ impl GameBuilder {
         }
         self
     }
+    #[cfg(test)]
+    pub fn add_cards_upgraded(mut self, c: CardClass, amount: i32) -> Self {
+        for _ in 0..amount {
+            self.master_deck.push(new_card_upgraded(c));
+        }
+        self
+    }
     pub fn add_monster<M: MonsterBehavior + 'static>(mut self, m: M) -> Self {
         let hp = m.roll_hp(&mut self.rng);
         let name = m.name();
