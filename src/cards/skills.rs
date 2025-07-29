@@ -51,9 +51,12 @@ pub fn bloodletting_behavior(game: &mut Game, _: Option<CreatureRef>, info: Card
         amount: 3,
         ty: DamageType::HPLoss,
     });
-    game.action_queue.push_bot(GainEnergyAction {
-        amount: if info.upgraded { 3 } else { 2 },
-    });
+    game.action_queue
+        .push_bot(GainEnergyAction(if info.upgraded { 3 } else { 2 }));
+}
+
+pub fn sentinel_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    push_block(game, info, 5, 8);
 }
 
 pub fn impervious_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
@@ -184,6 +187,38 @@ mod tests {
         });
         assert_eq!(g.energy, 5);
         assert_eq!(g.player.creature.cur_hp, hp - 3);
+    }
+
+    #[test]
+    fn test_sentinel() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Sentinel, 2)
+            .build_combat();
+        assert_eq!(g.energy, 3);
+        let c = g.hand.pop().unwrap();
+        g.run_action(ExhaustCardAction { card: c });
+        assert_eq!(g.energy, 5);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.player.creature.block, 5);
+    }
+
+    #[test]
+    fn test_sentinel_upgraded() {
+        let mut g = GameBuilder::default()
+            .add_cards_upgraded(CardClass::Sentinel, 2)
+            .build_combat();
+        assert_eq!(g.energy, 3);
+        let c = g.hand.pop().unwrap();
+        g.run_action(ExhaustCardAction { card: c });
+        assert_eq!(g.energy, 6);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.player.creature.block, 8);
     }
 
     #[test]

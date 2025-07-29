@@ -120,6 +120,7 @@ c!(
     // Uncommon skills
     GhostlyArmor => (Uncommon, Skill, Red, cost(1), skills::ghostly_armor_behavior, false),
     Bloodletting => (Uncommon, Skill, Red, cost(0), skills::bloodletting_behavior, false),
+    Sentinel => (Uncommon, Skill, Red, cost(1), skills::sentinel_behavior, false),
     // Uncommon powers
     Inflame => (Uncommon, Power, Red, cost(1), powers::inflame_behavior, false),
     FeelNoPain => (Uncommon, Power, Red, cost(1), powers::feel_no_pain_behavior, false),
