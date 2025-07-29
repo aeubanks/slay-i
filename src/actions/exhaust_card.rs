@@ -6,6 +6,7 @@ pub struct ExhaustCardAction {
 
 impl Action for ExhaustCardAction {
     fn run(&self, game: &mut Game) {
+        self.card.borrow_mut().clear_temporary();
         game.exhaust_pile.push(self.card.clone());
     }
 }

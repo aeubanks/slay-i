@@ -6,6 +6,7 @@ pub struct DiscardCardAction {
 
 impl Action for DiscardCardAction {
     fn run(&self, game: &mut Game) {
+        self.card.borrow_mut().clear_temporary();
         game.discard_pile.push(self.card.clone());
     }
 }

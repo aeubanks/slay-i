@@ -1,10 +1,12 @@
-use crate::{action::Action, game::Game};
+use crate::{action::Action, actions::discard_card::DiscardCardAction, game::Game};
 
 pub struct DiscardHandAction();
 
 impl Action for DiscardHandAction {
     fn run(&self, game: &mut Game) {
-        game.discard_pile.append(&mut game.hand);
+        while let Some(c) = game.hand.pop() {
+            game.action_queue.push_top(DiscardCardAction { card: c });
+        }
     }
 }
 

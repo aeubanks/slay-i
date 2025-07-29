@@ -19,9 +19,12 @@ impl Action for PlayCardAction {
     fn run(&self, game: &mut Game) {
         let c = self.card.borrow_mut();
         let energy = match c.cost {
-            CardCost::None => 0,
+            CardCost::Zero => 0,
             CardCost::X => game.energy,
-            CardCost::Cost(cost) => cost,
+            CardCost::Cost {
+                base_cost,
+                temporary_cost,
+            } => temporary_cost.unwrap_or(base_cost),
         };
         assert!(energy <= game.energy);
         let info = CardPlayInfo {

@@ -73,6 +73,9 @@ macro_rules! c {
             }
             pub fn base_cost(&self) -> CardCost {
                 use CardCost::*;
+                fn cost(c: i32) -> CardCost {
+                    CardCost::Cost{base_cost:c,temporary_cost: None}
+                }
                 match self {
                     $(Self::$name => $cost,)+
                 }
@@ -100,59 +103,60 @@ fn noop_behavior(_: &mut Game, _: Option<CreatureRef>, _: CardPlayInfo) {}
 
 c!(
     // Basic
-    Strike => (Basic, Attack, Red, Cost(1), attacks::strike_behavior, false),
-    Defend => (Basic, Skill, Red, Cost(1), skills::defend_behavior, false),
-    Bash => (Basic, Attack, Red, Cost(2), attacks::bash_behavior, false),
+    Strike => (Basic, Attack, Red, cost(1), attacks::strike_behavior, false),
+    Defend => (Basic, Skill, Red, cost(1), skills::defend_behavior, false),
+    Bash => (Basic, Attack, Red, cost(2), attacks::bash_behavior, false),
     // Common attacks
-    PommelStrike => (Common, Attack, Red, Cost(1), attacks::pommel_strike_behavior, false),
-    TwinStrike => (Common, Attack, Red, Cost(1), attacks::twin_strike_behavior, false),
-    Clothesline => (Common, Attack, Red, Cost(2), attacks::clothesline_behavior, false),
-    Cleave => (Common, Attack, Red, Cost(1), attacks::cleave_behavior, false),
-    Thunderclap => (Common, Attack, Red, Cost(1), attacks::thunderclap_behavior, false),
+    PommelStrike => (Common, Attack, Red, cost(1), attacks::pommel_strike_behavior, false),
+    TwinStrike => (Common, Attack, Red, cost(1), attacks::twin_strike_behavior, false),
+    Clothesline => (Common, Attack, Red, cost(2), attacks::clothesline_behavior, false),
+    Cleave => (Common, Attack, Red, cost(1), attacks::cleave_behavior, false),
+    Thunderclap => (Common, Attack, Red, cost(1), attacks::thunderclap_behavior, false),
     // Common skills
-    Armaments => (Common, Skill, Red, Cost(1), skills::armaments_behavior, false),
+    Armaments => (Common, Skill, Red, cost(1), skills::armaments_behavior, false),
     // Uncommon attacks
-    SearingBlow => (Uncommon, Attack, Red, Cost(2), attacks::searing_blow_behavior, false),
+    SearingBlow => (Uncommon, Attack, Red, cost(2), attacks::searing_blow_behavior, false),
     Whirlwind => (Uncommon, Attack, Red, X, attacks::whirlwind_behavior, false),
     // Uncommon skills
-    GhostlyArmor => (Uncommon, Skill, Red, Cost(1), skills::ghostly_armor_behavior, false),
-    Bloodletting => (Uncommon, Skill, Red, Cost(0), skills::bloodletting_behavior, false),
+    GhostlyArmor => (Uncommon, Skill, Red, cost(1), skills::ghostly_armor_behavior, false),
+    Bloodletting => (Uncommon, Skill, Red, cost(0), skills::bloodletting_behavior, false),
     // Uncommon powers
-    Inflame => (Uncommon, Power, Red, Cost(1), powers::inflame_behavior, false),
+    Inflame => (Uncommon, Power, Red, cost(1), powers::inflame_behavior, false),
     // Rare skills
-    LimitBreak => (Rare, Skill, Red, Cost(1), skills::limit_break_behavior, true),
-    Impervious => (Rare, Skill, Red, Cost(2), skills::impervious_behavior, true),
+    LimitBreak => (Rare, Skill, Red, cost(1), skills::limit_break_behavior, true),
+    Impervious => (Rare, Skill, Red, cost(2), skills::impervious_behavior, true),
     // Rare powers
-    Brutality => (Rare, Power, Red, Cost(0), powers::brutality_behavior, false),
+    Brutality => (Rare, Power, Red, cost(0), powers::brutality_behavior, false),
     // Colorless uncommon attacks
-    SwiftStrike => (Uncommon, Attack, Colorless, Cost(0), attacks::swift_strike_behavior, false),
-    FlashOfSteel => (Uncommon, Attack, Colorless, Cost(0), attacks::flash_of_steel_behavior, false),
-    DramaticEntrance => (Uncommon, Attack, Colorless, Cost(0), attacks::dramatic_entrance_behavior, true),
-    MindBlast => (Uncommon, Attack, Colorless, Cost(2), attacks::mind_blast_behavior, false),
+    SwiftStrike => (Uncommon, Attack, Colorless, cost(0), attacks::swift_strike_behavior, false),
+    FlashOfSteel => (Uncommon, Attack, Colorless, cost(0), attacks::flash_of_steel_behavior, false),
+    DramaticEntrance => (Uncommon, Attack, Colorless, cost(0), attacks::dramatic_entrance_behavior, true),
+    MindBlast => (Uncommon, Attack, Colorless, cost(2), attacks::mind_blast_behavior, false),
     // Colorless uncommon skills
-    GoodInstincts => (Uncommon, Skill, Colorless, Cost(0), skills::good_instincts_behavior, false),
-    Finesse => (Uncommon, Skill, Colorless, Cost(0), skills::finesse_behavior, false),
+    GoodInstincts => (Uncommon, Skill, Colorless, cost(0), skills::good_instincts_behavior, false),
+    Finesse => (Uncommon, Skill, Colorless, cost(0), skills::finesse_behavior, false),
+    Enlightenment => (Uncommon, Skill, Colorless, cost(0), skills::enlightenment_behavior, false),
     // Statuses
-    Wound => (Special, Status, Special, None, noop_behavior, true),
-    Dazed => (Special, Status, Special, None, noop_behavior, true),
-    Slimed => (Special, Status, Special, Cost(1), noop_behavior, true),
-    Burn => (Special, Status, Special, None, noop_behavior, true),
-    BurnPlus => (Special, Status, Special, None, noop_behavior, true),
+    Wound => (Special, Status, Special, Zero, noop_behavior, true),
+    Dazed => (Special, Status, Special, Zero, noop_behavior, true),
+    Slimed => (Special, Status, Special, cost(1), noop_behavior, true),
+    Burn => (Special, Status, Special, Zero, noop_behavior, true),
+    BurnPlus => (Special, Status, Special, Zero, noop_behavior, true),
     // Curses
-    AscendersBane => (Special, Curse, Curse, None, noop_behavior, true),
-    CurseOfTheBell => (Special, Curse, Curse, None, noop_behavior, true),
-    Clumsy => (Special, Curse, Curse, None, noop_behavior, true),
-    Injury => (Special, Curse, Curse, None, noop_behavior, true),
-    Writhe => (Special, Curse, Curse, None, noop_behavior, true),
-    Shame => (Special, Curse, Curse, None, noop_behavior, true),
-    Doubt => (Special, Curse, Curse, None, noop_behavior, true),
-    Decay => (Special, Curse, Curse, None, noop_behavior, true),
-    Regret => (Special, Curse, Curse, None, noop_behavior, true),
+    AscendersBane => (Special, Curse, Curse, Zero, noop_behavior, true),
+    CurseOfTheBell => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Clumsy => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Injury => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Writhe => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Shame => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Doubt => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Decay => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Regret => (Special, Curse, Curse, Zero, noop_behavior, true),
     // Other
-    DebugKill => (Special, Attack, Special, Cost(0), attacks::debug_kill_behavior, false),
-    TestAttack => (Special, Attack, Special, Cost(0), noop_behavior, false),
-    TestSkill => (Special, Skill, Special, Cost(0), noop_behavior, false),
-    TestPower => (Special, Power, Special, Cost(0), noop_behavior, false),
+    DebugKill => (Special, Attack, Special, cost(0), attacks::debug_kill_behavior, false),
+    TestAttack => (Special, Attack, Special, cost(0), noop_behavior, false),
+    TestSkill => (Special, Skill, Special, cost(0), noop_behavior, false),
+    TestPower => (Special, Power, Special, cost(0), noop_behavior, false),
 );
 
 pub type CardBehavior = fn(&mut Game, Option<CreatureRef>, CardPlayInfo);
@@ -160,9 +164,12 @@ pub type CardEndOfTurnBehavior = fn(&mut Game);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CardCost {
-    Cost(i32),
+    Cost {
+        base_cost: i32,
+        temporary_cost: Option<i32>,
+    },
     X,
-    None,
+    Zero,
 }
 
 impl CardClass {

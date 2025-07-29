@@ -5,6 +5,7 @@ use crate::{
         damage::{DamageAction, DamageType},
         double_strength::DoubleStrengthAction,
         draw::DrawAction,
+        enlightenment::EnlightenmentAction,
         gain_energy::GainEnergyAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
@@ -72,10 +73,16 @@ pub fn finesse_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayI
     game.action_queue.push_bot(DrawAction(1));
 }
 
+pub fn enlightenment_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+    game.action_queue.push_bot(EnlightenmentAction {
+        for_combat: info.upgraded,
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::block::BlockAction,
+        actions::{block::BlockAction, exhaust_card::ExhaustCardAction},
         cards::{CardClass, new_card, new_card_upgraded},
         game::{GameBuilder, Move},
         status::Status,
@@ -228,5 +235,122 @@ mod tests {
             });
             assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&-6));
         }
+    }
+
+    #[test]
+    fn test_enlightenment() {
+        let mut g = GameBuilder::default().build_combat();
+        g.hand.push(new_card(CardClass::Enlightenment));
+        g.hand.push(new_card(CardClass::SwiftStrike));
+        g.hand.push(new_card(CardClass::Bash));
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 2);
+        g.hand.push(g.discard_pile.pop().unwrap());
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 0);
+    }
+
+    #[test]
+    fn test_enlightenment_exhaust() {
+        let mut g = GameBuilder::default().build_combat();
+        g.hand.push(new_card(CardClass::Enlightenment));
+        g.hand.push(new_card(CardClass::Bash));
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        let b = g.hand.pop().unwrap();
+        g.run_action(ExhaustCardAction { card: b });
+        g.hand.push(g.exhaust_pile.pop().unwrap());
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 1);
+    }
+
+    #[test]
+    fn test_enlightenment_end_turn() {
+        let mut g = GameBuilder::default().build_combat();
+        g.hand.push(new_card(CardClass::Enlightenment));
+        g.hand.push(new_card(CardClass::Bash));
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        g.discard_pile.pop();
+        g.make_move(Move::EndTurn);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 1);
+    }
+
+    #[test]
+    fn test_enlightenment_upgraded() {
+        let mut g = GameBuilder::default().build_combat();
+        g.hand.push(new_card_upgraded(CardClass::Enlightenment));
+        g.hand.push(new_card(CardClass::SwiftStrike));
+        g.hand.push(new_card(CardClass::Bash));
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 2);
+        g.hand.push(g.discard_pile.pop().unwrap());
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 1);
+    }
+
+    #[test]
+    fn test_enlightenment_upgraded_end_turn() {
+        let mut g = GameBuilder::default().build_combat();
+        g.hand.push(new_card_upgraded(CardClass::Enlightenment));
+        g.hand.push(new_card(CardClass::Bash));
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        g.discard_pile.pop();
+        g.make_move(Move::EndTurn);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.energy, 2);
     }
 }

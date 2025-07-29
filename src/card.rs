@@ -36,6 +36,17 @@ impl Card {
             _ => false,
         }
     }
+    pub fn clear_temporary(&mut self) {
+        match &mut self.cost {
+            CardCost::Cost {
+                base_cost: _,
+                temporary_cost,
+            } => {
+                *temporary_cost = None;
+            }
+            CardCost::X | CardCost::Zero => {}
+        }
+    }
 }
 
 impl std::fmt::Debug for Card {
@@ -45,8 +56,16 @@ impl std::fmt::Debug for Card {
             write!(f, "+")?;
         }
         match self.cost {
-            CardCost::None | CardCost::X => {}
-            CardCost::Cost(cost) => write!(f, ", {cost} cost")?,
+            CardCost::Zero | CardCost::X => {}
+            CardCost::Cost {
+                base_cost,
+                temporary_cost,
+            } => {
+                write!(f, ", {base_cost} cost")?;
+                if let Some(temporary_cost) = temporary_cost {
+                    write!(f, " (temp cost {temporary_cost})")?;
+                }
+            }
         }
         Ok(())
     }

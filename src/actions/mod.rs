@@ -6,6 +6,7 @@ pub mod discard_hand;
 pub mod double_strength;
 pub mod draw;
 pub mod end_of_turn_discard;
+pub mod enlightenment;
 pub mod exhaust_card;
 pub mod gain_energy;
 pub mod gain_status;

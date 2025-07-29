@@ -594,13 +594,16 @@ impl Game {
 
     fn can_play_card(&self, c: &Card) -> bool {
         match c.cost {
-            CardCost::None => match c.class.ty() {
+            CardCost::Zero => match c.class.ty() {
                 CardType::Curse => self.player.has_relic(RelicClass::BlueCandle),
                 CardType::Status => self.player.has_relic(RelicClass::MedicalKit),
                 _ => unreachable!(),
             },
             CardCost::X => true,
-            CardCost::Cost(cost) => self.energy >= cost,
+            CardCost::Cost {
+                base_cost,
+                temporary_cost,
+            } => self.energy >= temporary_cost.unwrap_or(base_cost),
         }
     }
 
