@@ -16,9 +16,8 @@ impl Action for EndOfTurnDiscardAction {
             }
         }
         for i in indexes_to_exhaust.into_iter().rev() {
-            game.action_queue.push_top(ExhaustCardAction {
-                card: game.hand.remove(i),
-            });
+            game.action_queue
+                .push_top(ExhaustCardAction(game.hand.remove(i)));
         }
     }
 }

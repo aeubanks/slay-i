@@ -41,9 +41,8 @@ impl Action for PlayCardAction {
         let exhaust = c.exhaust;
         drop(c);
         if exhaust {
-            game.action_queue.push_bot(ExhaustCardAction {
-                card: self.card.clone(),
-            });
+            game.action_queue
+                .push_bot(ExhaustCardAction(self.card.clone()));
         } else {
             game.action_queue.push_bot(DiscardCardAction {
                 card: self.card.clone(),

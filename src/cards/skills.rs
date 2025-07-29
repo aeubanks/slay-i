@@ -196,7 +196,7 @@ mod tests {
             .build_combat();
         assert_eq!(g.energy, 3);
         let c = g.hand.pop().unwrap();
-        g.run_action(ExhaustCardAction { card: c });
+        g.run_action(ExhaustCardAction(c));
         assert_eq!(g.energy, 5);
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -212,7 +212,7 @@ mod tests {
             .build_combat();
         assert_eq!(g.energy, 3);
         let c = g.hand.pop().unwrap();
-        g.run_action(ExhaustCardAction { card: c });
+        g.run_action(ExhaustCardAction(c));
         assert_eq!(g.energy, 6);
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -313,7 +313,7 @@ mod tests {
             target: None,
         });
         let b = g.hand.pop().unwrap();
-        g.run_action(ExhaustCardAction { card: b });
+        g.run_action(ExhaustCardAction(b));
         g.hand.push(g.exhaust_pile.pop().unwrap());
         g.make_move(Move::PlayCard {
             card_index: 0,

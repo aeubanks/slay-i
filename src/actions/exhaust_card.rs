@@ -7,9 +7,7 @@ use crate::{
     status::Status,
 };
 
-pub struct ExhaustCardAction {
-    pub card: CardRef,
-}
+pub struct ExhaustCardAction(pub CardRef);
 
 impl Action for ExhaustCardAction {
     fn run(&self, game: &mut Game) {
@@ -22,7 +20,7 @@ impl Action for ExhaustCardAction {
         }
 
         {
-            let mut c = self.card.borrow_mut();
+            let mut c = self.0.borrow_mut();
             c.clear_temporary();
             if c.class == CardClass::Sentinel {
                 game.action_queue
@@ -30,12 +28,12 @@ impl Action for ExhaustCardAction {
             }
         }
 
-        game.exhaust_pile.push(self.card.clone());
+        game.exhaust_pile.push(self.0.clone());
     }
 }
 
 impl std::fmt::Debug for ExhaustCardAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "exhaust {:?}", self.card)
+        write!(f, "exhaust {:?}", self.0)
     }
 }

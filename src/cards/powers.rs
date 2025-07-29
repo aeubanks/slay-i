@@ -68,14 +68,14 @@ mod tests {
             target: None,
         });
         let card = g.hand.pop().unwrap();
-        g.run_action(ExhaustCardAction { card });
+        g.run_action(ExhaustCardAction(card));
         assert_eq!(g.player.creature.block, 3);
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,
         });
         let card = g.hand.pop().unwrap();
-        g.run_action(ExhaustCardAction { card });
+        g.run_action(ExhaustCardAction(card));
         assert_eq!(g.player.creature.block, 9);
     }
 
@@ -92,7 +92,7 @@ mod tests {
         assert_eq!(g.hand.len(), 4);
         let card = g.hand.pop().unwrap();
         assert_eq!(g.hand.len(), 3);
-        g.run_action(ExhaustCardAction { card });
+        g.run_action(ExhaustCardAction(card));
         assert_eq!(g.hand.len(), 4);
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -101,7 +101,7 @@ mod tests {
         assert_eq!(g.hand.len(), 3);
         let card = g.hand.pop().unwrap();
         assert_eq!(g.hand.len(), 2);
-        g.run_action(ExhaustCardAction { card });
+        g.run_action(ExhaustCardAction(card));
         assert_eq!(g.hand.len(), 4);
     }
 
