@@ -46,9 +46,8 @@ impl Action for PlayCardAction {
             game.action_queue
                 .push_bot(ExhaustCardAction(self.card.clone()));
         } else {
-            game.action_queue.push_bot(DiscardCardAction {
-                card: self.card.clone(),
-            });
+            game.action_queue
+                .push_bot(DiscardCardAction(self.card.clone()));
         }
     }
 }

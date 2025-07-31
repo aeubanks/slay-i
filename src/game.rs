@@ -267,7 +267,11 @@ impl Game {
         }
         if let DamageType::Attack { source } = ty {
             let c = self.get_creature_mut(target);
-            if let Some(a) = c.statuses.get(&Status::Thorns).map(|v| DamageAction::thorns(*v, source)) {
+            if let Some(a) = c
+                .statuses
+                .get(&Status::Thorns)
+                .map(|v| DamageAction::thorns(*v, source))
+            {
                 self.action_queue.push_top(a);
             }
         }
@@ -454,9 +458,8 @@ impl Game {
             a(self);
         }
         for i in indexes_to_discard.into_iter().rev() {
-            self.action_queue.push_top(DiscardCardAction {
-                card: self.hand.remove(i),
-            });
+            self.action_queue
+                .push_top(DiscardCardAction(self.hand.remove(i)));
         }
     }
 

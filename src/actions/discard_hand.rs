@@ -5,7 +5,7 @@ pub struct DiscardHandAction();
 impl Action for DiscardHandAction {
     fn run(&self, game: &mut Game) {
         while let Some(c) = game.hand.pop() {
-            game.action_queue.push_top(DiscardCardAction { card: c });
+            game.action_queue.push_top(DiscardCardAction(c));
         }
     }
 }
