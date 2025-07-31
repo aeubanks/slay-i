@@ -8,14 +8,26 @@ use crate::{
     status::Status,
 };
 
-pub struct NoopMonster();
+pub struct NoopMonster {
+    max_hp: i32,
+}
+
+impl NoopMonster {
+    pub fn new() -> Self {
+        Self { max_hp: 100 }
+    }
+    #[allow(dead_code)]
+    pub fn with_hp(hp: i32) -> Self {
+        Self { max_hp: hp }
+    }
+}
 
 impl MonsterBehavior for NoopMonster {
     fn name(&self) -> &'static str {
         "noop"
     }
     fn roll_hp(&self, _r: &mut Rand) -> i32 {
-        100
+        self.max_hp
     }
     fn roll_next_action(&mut self, _r: &mut Rand, _info: &MonsterInfo) {}
     fn get_intent(&self) -> Intent {
@@ -24,18 +36,31 @@ impl MonsterBehavior for NoopMonster {
     fn take_turn(&mut self, _: &mut ActionQueue, _: &Player, _: &Creature, _: CreatureRef) {}
 }
 
-pub struct AttackMonster();
+pub struct AttackMonster {
+    attack: i32,
+    max_hp: i32,
+}
+
+#[allow(dead_code)]
+impl AttackMonster {
+    pub fn new(attack: i32) -> Self {
+        Self {
+            attack,
+            max_hp: 100,
+        }
+    }
+}
 
 impl MonsterBehavior for AttackMonster {
     fn name(&self) -> &'static str {
         "attack"
     }
     fn roll_hp(&self, _r: &mut Rand) -> i32 {
-        100
+        self.max_hp
     }
     fn roll_next_action(&mut self, _r: &mut Rand, _info: &MonsterInfo) {}
     fn get_intent(&self) -> Intent {
-        Intent::Attack(10, 1)
+        Intent::Attack(self.attack, 1)
     }
     fn take_turn(
         &mut self,
@@ -44,13 +69,21 @@ impl MonsterBehavior for AttackMonster {
         this: &Creature,
         this_ref: CreatureRef,
     ) {
-        queue.push_bot(DamageAction::from_monster(2, player, this, this_ref));
+        queue.push_bot(DamageAction::from_monster(
+            self.attack,
+            player,
+            this,
+            this_ref,
+        ));
     }
 }
 
-pub struct ApplyVulnerableMonster();
+pub struct ApplyStatusMonster {
+    pub status: Status,
+    pub amount: i32,
+}
 
-impl MonsterBehavior for ApplyVulnerableMonster {
+impl MonsterBehavior for ApplyStatusMonster {
     fn name(&self) -> &'static str {
         "apply-vuln"
     }
@@ -63,8 +96,8 @@ impl MonsterBehavior for ApplyVulnerableMonster {
     }
     fn take_turn(&mut self, queue: &mut ActionQueue, _: &Player, _: &Creature, _: CreatureRef) {
         queue.push_bot(GainStatusAction {
-            status: Status::Vulnerable,
-            amount: 2,
+            status: self.status,
+            amount: self.amount,
             target: CreatureRef::player(),
         });
     }

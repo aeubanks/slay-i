@@ -30,7 +30,8 @@ mod tests {
         },
         cards::CardClass,
         game::{CreatureRef, GameBuilder, Move},
-        monsters::test::{ApplyVulnerableMonster, AttackMonster, NoopMonster},
+        monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
+        status::Status,
     };
 
     #[test]
@@ -82,8 +83,11 @@ mod tests {
     #[test]
     fn test_vulnerable2() {
         let mut g = GameBuilder::default()
-            .add_monster(ApplyVulnerableMonster())
-            .add_monster(NoopMonster())
+            .add_monster(ApplyStatusMonster {
+                status: Status::Vulnerable,
+                amount: 2,
+            })
+            .add_monster(NoopMonster::new())
             .add_card(CardClass::DebugKill)
             .build_combat();
 
@@ -117,8 +121,14 @@ mod tests {
     #[test]
     fn test_vulnerable3() {
         let mut g = GameBuilder::default()
-            .add_monster(ApplyVulnerableMonster())
-            .add_monster(ApplyVulnerableMonster())
+            .add_monster(ApplyStatusMonster {
+                status: Status::Vulnerable,
+                amount: 2,
+            })
+            .add_monster(ApplyStatusMonster {
+                status: Status::Vulnerable,
+                amount: 2,
+            })
             .build_combat();
 
         assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
@@ -286,7 +296,7 @@ mod tests {
     fn test_thorns3() {
         let mut g = GameBuilder::default()
             .add_player_status(Thorns, 2)
-            .add_monster(AttackMonster())
+            .add_monster(AttackMonster::new(2))
             .build_combat();
 
         g.run_action(SetHPAction {

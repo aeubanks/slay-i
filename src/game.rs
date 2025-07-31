@@ -186,7 +186,7 @@ impl GameBuilder {
     }
     pub fn build(mut self) -> Game {
         if self.monsters.is_empty() {
-            self = self.add_monster(NoopMonster());
+            self = self.add_monster(NoopMonster::new());
         }
         let mut g = Game::new(self.rng, self.master_deck, self.monsters);
         g.player.creature.statuses = self.player_statuses;
@@ -752,8 +752,8 @@ mod tests {
     #[test]
     fn test_moves() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster())
-            .add_monster(NoopMonster())
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
             .build_combat();
         g.hand.push(new_card(CardClass::DebugKill));
         g.hand.push(new_card(CardClass::Defend));

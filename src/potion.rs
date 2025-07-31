@@ -156,8 +156,8 @@ mod tests {
     #[test]
     fn test_fire() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster())
-            .add_monster(NoopMonster())
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
             .build_combat();
         g.player.add_potion(Potion::Fire);
         let hp = g.monsters[0].creature.cur_hp;
@@ -172,8 +172,8 @@ mod tests {
     #[test]
     fn test_explosive() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster())
-            .add_monster(NoopMonster())
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
             .build_combat();
         g.player.add_potion(Potion::Explosive);
         let hp = g.monsters[0].creature.cur_hp;

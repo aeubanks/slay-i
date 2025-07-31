@@ -234,8 +234,8 @@ mod tests {
     fn test_cleave() {
         let mut g = GameBuilder::default()
             .add_cards(CardClass::Cleave, 2)
-            .add_monster(NoopMonster())
-            .add_monster(NoopMonster())
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
             .build_combat();
         let hp0 = g.monsters[0].creature.cur_hp;
         g.monsters[1].creature.cur_hp = 4;
@@ -257,8 +257,8 @@ mod tests {
     fn test_thunderclap() {
         let mut g = GameBuilder::default()
             .add_cards(CardClass::Thunderclap, 2)
-            .add_monster(NoopMonster())
-            .add_monster(NoopMonster())
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
             .build_combat();
         let hp0 = g.monsters[0].creature.cur_hp;
         g.make_move(Move::PlayCard {
@@ -297,8 +297,8 @@ mod tests {
     fn test_whirlwind() {
         let mut g = GameBuilder::default()
             .add_cards(CardClass::Whirlwind, 2)
-            .add_monster(NoopMonster())
-            .add_monster(NoopMonster())
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
             .build_combat();
 
         let hp0 = g.monsters[0].creature.cur_hp;
@@ -411,7 +411,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_card(CardClass::Finesse)
             .add_card(CardClass::FlashOfSteel)
-            .add_monster(NoopMonster())
+            .add_monster(NoopMonster::new())
             .build_combat();
 
         for _ in 0..50 {
