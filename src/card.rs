@@ -1,9 +1,13 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::cards::{CardClass, CardCost, CardType};
+use crate::{
+    cards::{CardClass, CardCost, CardType},
+    game::CreatureRef,
+};
 
 #[derive(Clone, Copy)]
 pub struct CardPlayInfo {
+    pub target: Option<CreatureRef>,
     pub upgraded: bool,
     pub upgrade_count: i32,
     pub times_played: i32,

@@ -5,7 +5,7 @@ use crate::{
     status::Status,
 };
 
-pub fn inflame_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn inflame_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Strength,
         target: CreatureRef::player(),
@@ -13,7 +13,7 @@ pub fn inflame_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayI
     });
 }
 
-pub fn feel_no_pain_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn feel_no_pain_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::FeelNoPain,
         target: CreatureRef::player(),
@@ -21,7 +21,7 @@ pub fn feel_no_pain_behavior(game: &mut Game, _: Option<CreatureRef>, info: Card
     });
 }
 
-pub fn dark_embrace_behavior(game: &mut Game, _: Option<CreatureRef>, _: CardPlayInfo) {
+pub fn dark_embrace_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::DarkEmbrace,
         target: CreatureRef::player(),
@@ -29,7 +29,7 @@ pub fn dark_embrace_behavior(game: &mut Game, _: Option<CreatureRef>, _: CardPla
     });
 }
 
-pub fn brutality_behavior(game: &mut Game, _: Option<CreatureRef>, _: CardPlayInfo) {
+pub fn brutality_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Brutality,
         target: CreatureRef::player(),

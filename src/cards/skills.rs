@@ -24,11 +24,11 @@ fn push_block(
         }));
 }
 
-pub fn defend_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn defend_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 5, 8);
 }
 
-pub fn armaments_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn armaments_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 5, 5);
     if info.upgraded {
         game.action_queue.push_bot(UpgradeAllCardsInHandAction());
@@ -38,45 +38,45 @@ pub fn armaments_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPla
     }
 }
 
-pub fn ghostly_armor_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn ghostly_armor_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 10, 13);
 }
 
-pub fn bloodletting_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn bloodletting_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::lose_hp(3, CreatureRef::player()));
     game.action_queue
         .push_bot(GainEnergyAction(if info.upgraded { 3 } else { 2 }));
 }
 
-pub fn sentinel_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn sentinel_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 5, 8);
 }
 
-pub fn impervious_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn impervious_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 30, 40);
 }
 
-pub fn limit_break_behavior(game: &mut Game, _: Option<CreatureRef>, _: CardPlayInfo) {
+pub fn limit_break_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(DoubleStrengthAction());
 }
 
-pub fn good_instincts_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn good_instincts_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 6, 9);
 }
 
-pub fn finesse_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn finesse_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 2, 4);
     game.action_queue.push_bot(DrawAction(1));
 }
 
-pub fn enlightenment_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn enlightenment_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue.push_bot(EnlightenmentAction {
         for_combat: info.upgraded,
     });
 }
 
-pub fn bomb_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
+pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Bomb3,
         amount: if info.upgraded { 50 } else { 40 },

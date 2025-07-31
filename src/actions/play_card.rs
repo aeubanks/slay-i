@@ -28,11 +28,12 @@ impl Action for PlayCardAction {
         };
         assert!(energy <= game.energy);
         let info = CardPlayInfo {
+            target: self.target,
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
             times_played: c.times_played,
         };
-        (c.class.behavior())(game, self.target, info);
+        (c.class.behavior())(game, info);
         c.times_played += 1;
         game.player
             .trigger_relics_on_card_played(&mut game.action_queue, c.deref());
