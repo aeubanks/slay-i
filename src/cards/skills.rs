@@ -1,12 +1,8 @@
 use crate::{
     actions::{
-        block::BlockAction,
-        choose_upgrade_one_card_in_hand::ChooseUpgradeOneCardInHandAction,
-        damage::{DamageAction, DamageType},
-        double_strength::DoubleStrengthAction,
-        draw::DrawAction,
-        enlightenment::EnlightenmentAction,
-        gain_energy::GainEnergyAction,
+        block::BlockAction, choose_upgrade_one_card_in_hand::ChooseUpgradeOneCardInHandAction,
+        damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
+        enlightenment::EnlightenmentAction, gain_energy::GainEnergyAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
@@ -46,11 +42,8 @@ pub fn ghostly_armor_behavior(game: &mut Game, _: Option<CreatureRef>, info: Car
 }
 
 pub fn bloodletting_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
-    game.action_queue.push_bot(DamageAction {
-        target: CreatureRef::player(),
-        amount: 3,
-        ty: DamageType::HPLoss,
-    });
+    game.action_queue
+        .push_bot(DamageAction::lose_hp(3, CreatureRef::player()));
     game.action_queue
         .push_bot(GainEnergyAction(if info.upgraded { 3 } else { 2 }));
 }

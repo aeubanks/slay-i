@@ -24,7 +24,10 @@ impl Status {
 mod tests {
     use super::Status::*;
     use crate::{
-        actions::{block::BlockAction, damage::DamageAction, set_hp::SetHPAction},
+        actions::{
+            block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
+            set_hp::SetHPAction,
+        },
         cards::CardClass,
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::{ApplyVulnerableMonster, AttackMonster, NoopMonster},
@@ -123,6 +126,19 @@ mod tests {
         g.make_move(Move::EndTurn);
 
         assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&4));
+    }
+
+    #[test]
+    fn test_vulnerable4() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Vulnerable, 2)
+            .build_combat();
+
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.run_action(DamageAllMonstersAction::from_player(6));
+
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 9);
     }
 
     #[test]

@@ -1,5 +1,8 @@
 use crate::{
-    actions::{damage::DamageAction, gain_energy::GainEnergyAction},
+    actions::{
+        damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
+        gain_energy::GainEnergyAction,
+    },
     game::{CreatureRef, Rand},
     queue::ActionQueue,
     rng::rand_slice,
@@ -94,7 +97,9 @@ fn dex(_: Option<CreatureRef>, _: &mut ActionQueue) {}
 fn energy(_: Option<CreatureRef>, queue: &mut ActionQueue) {
     queue.push_bot(GainEnergyAction(2));
 }
-fn explosive(_: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn explosive(_: Option<CreatureRef>, queue: &mut ActionQueue) {
+    queue.push_bot(DamageAllMonstersAction::thorns(10));
+}
 fn fire(target: Option<CreatureRef>, queue: &mut ActionQueue) {
     queue.push_bot(DamageAction::thorns(20, target.unwrap()));
 }
@@ -141,13 +146,19 @@ pub fn random_common_potion(rng: &mut Rand) -> Potion {
 
 #[cfg(test)]
 mod tests {
-    use crate::game::{GameBuilder, Move};
+    use crate::{
+        game::{GameBuilder, Move},
+        monsters::test::NoopMonster,
+    };
 
     use super::*;
 
     #[test]
     fn test_fire() {
-        let mut g = GameBuilder::default().build_combat();
+        let mut g = GameBuilder::default()
+            .add_monster(NoopMonster())
+            .add_monster(NoopMonster())
+            .build_combat();
         g.player.add_potion(Potion::Fire);
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::UsePotion {
@@ -155,5 +166,22 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 20);
+        assert_eq!(g.monsters[1].creature.cur_hp, hp);
+    }
+
+    #[test]
+    fn test_explosive() {
+        let mut g = GameBuilder::default()
+            .add_monster(NoopMonster())
+            .add_monster(NoopMonster())
+            .build_combat();
+        g.player.add_potion(Potion::Explosive);
+        let hp = g.monsters[0].creature.cur_hp;
+        g.make_move(Move::UsePotion {
+            potion_index: 0,
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 10);
+        assert_eq!(g.monsters[1].creature.cur_hp, hp - 10);
     }
 }

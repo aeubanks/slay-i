@@ -1,6 +1,7 @@
 pub mod block;
 pub mod choose_upgrade_one_card_in_hand;
 pub mod damage;
+pub mod damage_all_monsters;
 pub mod discard_card;
 pub mod discard_hand;
 pub mod double_strength;
@@ -10,6 +11,7 @@ pub mod enlightenment;
 pub mod exhaust_card;
 pub mod gain_energy;
 pub mod gain_status;
+pub mod gain_status_all_monsters;
 pub mod heal;
 pub mod play_card;
 pub mod set_hp;

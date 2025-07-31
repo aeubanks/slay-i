@@ -14,9 +14,9 @@ pub enum DamageType {
 }
 
 pub struct DamageAction {
-    pub target: CreatureRef,
-    pub amount: i32,
-    pub ty: DamageType,
+    target: CreatureRef,
+    amount: i32,
+    ty: DamageType,
 }
 
 pub fn calculate_damage(

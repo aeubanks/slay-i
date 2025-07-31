@@ -261,27 +261,13 @@ impl Game {
         }
     }
 
-    pub fn get_alive_monsters(&self) -> Vec<CreatureRef> {
-        let mut ret = Vec::new();
-        for (i, m) in self.monsters.iter().enumerate() {
-            if m.creature.is_alive() {
-                ret.push(CreatureRef::monster(i));
-            }
-        }
-        ret
-    }
-
     pub fn damage(&mut self, target: CreatureRef, mut amount: i32, ty: DamageType) {
         if !self.get_creature(target).is_alive() {
             return;
         }
         if let DamageType::Attack { source } = ty {
             let c = self.get_creature_mut(target);
-            if let Some(a) = c.statuses.get(&Status::Thorns).map(|v| DamageAction {
-                target: source,
-                amount: *v,
-                ty: DamageType::Thorns,
-            }) {
+            if let Some(a) = c.statuses.get(&Status::Thorns).map(|v| DamageAction::thorns(*v, source)) {
                 self.action_queue.push_top(a);
             }
         }

@@ -1,5 +1,8 @@
 use crate::{
-    actions::{damage::DamageAction, draw::DrawAction, gain_status::GainStatusAction},
+    actions::{
+        damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
+        gain_status::GainStatusAction, gain_status_all_monsters::GainStatusAllMonstersAction,
+    },
     card::CardPlayInfo,
     game::{CreatureRef, Game},
     status::Status,
@@ -30,30 +33,12 @@ fn push_aoe_damage(
     unupgraded_base_damage: i32,
     upgraded_base_damage: i32,
 ) {
-    let monsters = game.get_alive_monsters();
-    for m in monsters {
-        game.action_queue.push_bot(DamageAction::from_player(
-            if info.upgraded {
-                upgraded_base_damage
-            } else {
-                unupgraded_base_damage
-            },
-            &game.player,
-            game.get_creature(m),
-            m,
-        ));
-    }
-}
-
-pub fn push_aoe_status(game: &mut Game, status: Status, amount: i32) {
-    let monsters = game.get_alive_monsters();
-    for m in monsters {
-        game.action_queue.push_bot(GainStatusAction {
-            status,
-            amount,
-            target: m,
-        });
-    }
+    game.action_queue
+        .push_bot(DamageAllMonstersAction::from_player(if info.upgraded {
+            upgraded_base_damage
+        } else {
+            unupgraded_base_damage
+        }));
 }
 
 pub fn strike_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
@@ -96,7 +81,10 @@ pub fn cleave_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayIn
 
 pub fn thunderclap_behavior(game: &mut Game, _: Option<CreatureRef>, info: CardPlayInfo) {
     push_aoe_damage(game, info, 4, 7);
-    push_aoe_status(game, Status::Vulnerable, 1);
+    game.action_queue.push_bot(GainStatusAllMonstersAction {
+        status: Status::Vulnerable,
+        amount: 1,
+    });
 }
 
 pub fn searing_blow_behavior(game: &mut Game, target: Option<CreatureRef>, info: CardPlayInfo) {
