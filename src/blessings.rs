@@ -1,6 +1,7 @@
 use crate::{
     cards::random_uncommon_colorless,
     game::{Game, GameState},
+    potion::random_common_potion,
     relic::random_common_relic,
 };
 
@@ -10,6 +11,7 @@ pub enum Blessing {
     CommonRelic,
     TransformOne,
     RandomUncommonColorless,
+    RandomPotion,
 }
 
 impl Blessing {
@@ -28,6 +30,10 @@ impl Blessing {
             RandomUncommonColorless => {
                 let r = random_uncommon_colorless(&mut game.rng);
                 game.add_card_to_master_deck(r);
+            }
+            RandomPotion => {
+                let p = random_common_potion(&mut game.rng);
+                game.player.add_potion(p);
             }
         }
     }

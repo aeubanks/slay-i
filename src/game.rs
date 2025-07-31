@@ -61,6 +61,10 @@ pub enum Move {
     Armaments {
         card_index: usize,
     },
+    UsePotion {
+        potion_index: usize,
+        target: Option<usize>,
+    },
 }
 
 pub enum GameStatus {
@@ -217,11 +221,7 @@ impl Game {
 
     fn new(rng: Rand, master_deck: CardPile, monsters: Vec<Monster>) -> Self {
         let mut g = Self {
-            player: Player {
-                creature: Creature::new("Ironclad", 80),
-                master_deck,
-                relics: vec![],
-            },
+            player: Player::new("Ironclad", 80),
             combat_monsters_queue: vec![monsters],
             monsters: Default::default(),
             turn: 0,
@@ -236,6 +236,7 @@ impl Game {
             state: GameState::Blessing,
         };
 
+        g.player.master_deck = master_deck;
         g.player.creature.cur_hp = (g.player.creature.cur_hp as f32 * 0.9) as i32;
 
         g
@@ -596,6 +597,15 @@ impl Game {
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
+            Move::UsePotion {
+                potion_index,
+                target,
+            } => {
+                assert_eq!(self.state, GameState::PlayerTurn);
+                let p = self.player.take_potion(potion_index);
+                p.behavior()(target.map(CreatureRef::monster), &mut self.action_queue);
+                self.run();
+            }
         }
     }
 
@@ -622,6 +632,7 @@ impl Game {
                 moves.push(Move::ChooseBlessing(Blessing::CommonRelic));
                 moves.push(Move::ChooseBlessing(Blessing::TransformOne));
                 moves.push(Move::ChooseBlessing(Blessing::RandomUncommonColorless));
+                moves.push(Move::ChooseBlessing(Blessing::RandomPotion));
             }
             GameState::BlessingTransform => {
                 for (i, c) in self.player.master_deck.iter().enumerate() {
@@ -652,6 +663,26 @@ impl Game {
                             card_index: ci,
                             target: None,
                         });
+                    }
+                }
+                for (pi, p) in self.player.potions.iter().enumerate() {
+                    if let Some(p) = p {
+                        if p.has_target() {
+                            for (mi, m) in self.monsters.iter().enumerate() {
+                                if !m.creature.is_alive() {
+                                    continue;
+                                }
+                                moves.push(Move::UsePotion {
+                                    potion_index: pi,
+                                    target: Some(mi),
+                                });
+                            }
+                        } else {
+                            moves.push(Move::UsePotion {
+                                potion_index: pi,
+                                target: None,
+                            });
+                        }
                     }
                 }
             }
@@ -725,9 +756,89 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
-    use crate::actions::block::BlockAction;
+    use crate::{actions::block::BlockAction, potion::Potion};
 
     use super::*;
+
+    #[test]
+    fn test_moves() {
+        let mut g = GameBuilder::default()
+            .add_monster(NoopMonster())
+            .add_monster(NoopMonster())
+            .build_combat();
+        g.hand.push(new_card(CardClass::DebugKill));
+        g.hand.push(new_card(CardClass::Defend));
+        g.player.add_potion(Potion::Fire);
+        g.player.add_potion(Potion::Flex);
+        assert_eq!(
+            g.valid_moves()
+                .iter()
+                .filter(|m| matches!(m, Move::EndTurn))
+                .count(),
+            1
+        );
+        assert_eq!(
+            g.valid_moves()
+                .iter()
+                .filter(|m| matches!(
+                    m,
+                    Move::PlayCard {
+                        card_index: _,
+                        target: _
+                    }
+                ))
+                .count(),
+            3
+        );
+        assert_eq!(
+            g.valid_moves()
+                .iter()
+                .filter(|m| matches!(
+                    m,
+                    Move::UsePotion {
+                        potion_index: _,
+                        target: _
+                    }
+                ))
+                .count(),
+            3
+        );
+
+        g.run_action(DamageAction::thorns(9999, CreatureRef::monster(0)));
+        assert_eq!(
+            g.valid_moves()
+                .iter()
+                .filter(|m| matches!(m, Move::EndTurn))
+                .count(),
+            1
+        );
+        assert_eq!(
+            g.valid_moves()
+                .iter()
+                .filter(|m| matches!(
+                    m,
+                    Move::PlayCard {
+                        card_index: _,
+                        target: _
+                    }
+                ))
+                .count(),
+            2
+        );
+        assert_eq!(
+            g.valid_moves()
+                .iter()
+                .filter(|m| matches!(
+                    m,
+                    Move::UsePotion {
+                        potion_index: _,
+                        target: _
+                    }
+                ))
+                .count(),
+            2
+        );
+    }
 
     #[test]
     fn test_player_lose_block_start_of_turn() {

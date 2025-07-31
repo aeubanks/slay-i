@@ -9,6 +9,7 @@ mod monster;
 mod monsters;
 mod move_history;
 mod player;
+mod potion;
 mod queue;
 mod relic;
 mod rng;
@@ -51,6 +52,13 @@ fn monster_str(m: &Monster, player: &Player) -> String {
 
 fn print_state(g: &Game) {
     println!("{}", creature_str(&g.player.creature));
+    if g.player.potions.iter().any(|p| p.is_some()) {
+        print!("potions:");
+        for p in g.player.potions.iter().flatten() {
+            print!(" {p:?}");
+        }
+        println!();
+    }
     println!("energy: {}", g.energy);
     println!("monsters:");
     for m in &g.monsters {
@@ -101,6 +109,22 @@ fn print_state(g: &Game) {
             }
             Move::Armaments { card_index: i } => {
                 print!("upgrade card {} ({:?})", i, g.hand[*i].borrow());
+            }
+            Move::UsePotion {
+                potion_index,
+                target,
+            } => {
+                print!(
+                    "use potion {potion_index} ({:?})",
+                    g.player.potions[*potion_index].unwrap()
+                );
+                if let Some(t) = target {
+                    print!(
+                        " on monster {} ({})",
+                        t,
+                        monster_str(&g.monsters[*t], &g.player)
+                    );
+                }
             }
         }
         println!();
