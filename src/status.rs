@@ -11,6 +11,9 @@ pub enum Status {
     Thorns,
     FeelNoPain,
     DarkEmbrace,
+    Bomb3,
+    Bomb2,
+    Bomb1,
 }
 
 impl Status {

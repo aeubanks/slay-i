@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use crate::{
-    actions::{damage::DamageAction, draw::DrawAction, gain_status::GainStatusAction},
+    actions::{
+        damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
+        gain_status::GainStatusAction,
+    },
     game::CreatureRef,
     queue::ActionQueue,
     status::Status,
@@ -56,7 +59,20 @@ impl Creature {
         }
     }
 
-    pub fn trigger_statuses_turn_end(&mut self, _this: CreatureRef, _queue: &mut ActionQueue) {}
+    pub fn trigger_statuses_turn_end(&mut self, _this: CreatureRef, queue: &mut ActionQueue) {
+        if let Some(b) = self.statuses.get(&Status::Bomb1) {
+            queue.push_bot(DamageAllMonstersAction::thorns(*b));
+            self.statuses.remove(&Status::Bomb1);
+        }
+        if let Some(b) = self.statuses.get(&Status::Bomb2) {
+            self.statuses.insert(Status::Bomb1, *b);
+            self.statuses.remove(&Status::Bomb2);
+        }
+        if let Some(b) = self.statuses.get(&Status::Bomb3) {
+            self.statuses.insert(Status::Bomb2, *b);
+            self.statuses.remove(&Status::Bomb3);
+        }
+    }
     pub fn trigger_statuses_round_end(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
         for s in self.statuses.keys() {
             if s.decays() {

@@ -140,6 +140,7 @@ c!(
     GoodInstincts => (Uncommon, Skill, Colorless, cost(0), skills::good_instincts_behavior, false),
     Finesse => (Uncommon, Skill, Colorless, cost(0), skills::finesse_behavior, false),
     Enlightenment => (Uncommon, Skill, Colorless, cost(0), skills::enlightenment_behavior, false),
+    Bomb => (Uncommon, Skill, Colorless, cost(2), skills::bomb_behavior, false),
     // Statuses
     Wound => (Special, Status, Special, Zero, noop_behavior, true),
     Dazed => (Special, Status, Special, Zero, noop_behavior, true),

@@ -49,6 +49,9 @@ impl AttackMonster {
             max_hp: 100,
         }
     }
+    pub fn with_hp(attack: i32, max_hp: i32) -> Self {
+        Self { attack, max_hp }
+    }
 }
 
 impl MonsterBehavior for AttackMonster {
