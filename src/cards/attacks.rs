@@ -86,6 +86,11 @@ pub fn thunderclap_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
+pub fn body_slam_behavior(game: &mut Game, info: CardPlayInfo) {
+    let damage = game.player.creature.block;
+    push_damage(game, info, damage, damage);
+}
+
 pub fn searing_blow_behavior(game: &mut Game, info: CardPlayInfo) {
     let n = info.upgrade_count;
     game.action_queue.push_bot(DamageAction::from_player(
@@ -132,6 +137,7 @@ pub fn debug_kill_behavior(game: &mut Game, info: CardPlayInfo) {
 #[cfg(test)]
 mod tests {
     use crate::{
+        actions::block::BlockAction,
         cards::{CardClass, new_card, new_card_upgraded},
         game::{GameBuilder, Move},
         monsters::test::NoopMonster,
@@ -267,6 +273,21 @@ mod tests {
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 10);
         assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 10);
+    }
+
+    #[test]
+    fn test_body_slam() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::BodySlam)
+            .add_monster(NoopMonster::new())
+            .build_combat();
+        g.run_action(BlockAction::player_flat_amount(5));
+        let hp0 = g.monsters[0].creature.cur_hp;
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 5);
     }
 
     #[test]
