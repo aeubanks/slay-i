@@ -59,6 +59,27 @@ impl Card {
             _ => false,
         }
     }
+    pub fn is_ethereal(&self) -> bool {
+        use CardClass::*;
+        match self.class {
+            GhostlyArmor | Dazed | AscendersBane | Clumsy | Carnage => true,
+            Apparition => self.upgrade_count == 0,
+            _ => false,
+        }
+    }
+    pub fn has_target(&self) -> bool {
+        use CardClass::*;
+        match self.class {
+            Strike | Bash | PommelStrike | TwinStrike | Clothesline | BodySlam | IronWave
+            | WildStrike | Headbutt | PerfectedStrike | HeavyBlade | Anger | Clash
+            | SearingBlow | Rampage | Uppercut | SeverSoul | Carnage | Hemokinesis | Dropkick
+            | Pummel | BloodForBlood | RecklessCharge | SpotWeakness | Bludgeon | Feed
+            | FiendFire | SwiftStrike | FlashOfSteel | MindBlast | Bite | RitualDagger
+            | HandOfGreed | DebugKill => true,
+            Blind | Trip => self.upgrade_count == 0,
+            _ => false,
+        }
+    }
     pub fn clear_temporary(&mut self) {
         match &mut self.cost {
             CardCost::Cost {

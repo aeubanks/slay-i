@@ -11,7 +11,7 @@ impl Action for EndOfTurnDiscardAction {
         game.action_queue.push_top(DiscardHandAction());
         let mut indexes_to_exhaust = Vec::new();
         for (i, c) in game.hand.iter().enumerate() {
-            if c.borrow().class.is_ethereal() {
+            if c.borrow().is_ethereal() {
                 indexes_to_exhaust.push(i);
             }
         }

@@ -173,8 +173,7 @@ mod tests {
 
     #[test]
     fn test_bloodletting() {
-        let mut g = GameBuilder::default()
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat();
         let hp = g.player.creature.cur_hp;
         g.run_action(BlockAction::player_flat_amount(5));
         g.play_card(CardClass::Bloodletting, None);
@@ -216,8 +215,7 @@ mod tests {
 
     #[test]
     fn test_impervious() {
-        let mut g = GameBuilder::default()
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::Impervious, None);
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.exhaust_pile.len(), 1);

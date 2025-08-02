@@ -101,6 +101,10 @@ macro_rules! c {
 
 fn noop_behavior(_: &mut Game, _: CardPlayInfo) {}
 
+fn todo(_: &mut Game, _: CardPlayInfo) {
+    todo!();
+}
+
 c!(
     // Basic
     Strike => (Basic, Attack, Red, cost(1), attacks::strike_behavior, false),
@@ -113,44 +117,132 @@ c!(
     Cleave => (Common, Attack, Red, cost(1), attacks::cleave_behavior, false),
     Thunderclap => (Common, Attack, Red, cost(1), attacks::thunderclap_behavior, false),
     BodySlam => (Common, Attack, Red, cost(1), attacks::body_slam_behavior, false),
+    IronWave => (Common, Attack, Red, cost(1), todo, false),
+    WildStrike => (Common, Attack, Red, cost(1), todo, false),
+    Headbutt => (Common, Attack, Red, cost(1), todo, false),
+    SwordBoomerang => (Common, Attack, Red, cost(1), todo, false),
+    PerfectedStrike => (Common, Attack, Red, cost(2), todo, false),
+    HeavyBlade => (Common, Attack, Red, cost(2), todo, false),
+    Anger => (Common, Attack, Red, cost(0), todo, false),
+    Clash => (Common, Attack, Red, cost(0), todo, false),
     // Common skills
     Armaments => (Common, Skill, Red, cost(1), skills::armaments_behavior, false),
+    Flex => (Common, Skill, Red, cost(0), todo, false),
+    TrueGrit => (Common, Skill, Red, cost(1), todo, false),
+    ShrugItOff => (Common, Skill, Red, cost(1), todo, false),
+    Havoc => (Common, Skill, Red, cost(1), todo, false),
+    Warcry => (Common, Skill, Red, cost(0), todo, false),
     // Uncommon attacks
     SearingBlow => (Uncommon, Attack, Red, cost(2), attacks::searing_blow_behavior, false),
     Whirlwind => (Uncommon, Attack, Red, X, attacks::whirlwind_behavior, false),
     Rampage => (Uncommon, Attack, Red, cost(1), attacks::rampage_behavior, false),
+    Uppercut => (Uncommon, Attack, Red, cost(2), todo, false),
+    SeverSoul => (Uncommon, Attack, Red, cost(2), todo, false),
+    Carnage => (Uncommon, Attack, Red, cost(2), todo, false),
+    Hemokinesis => (Uncommon, Attack, Red, cost(1), todo, false),
+    Dropkick => (Uncommon, Attack, Red, cost(1), todo, false),
+    Pummel => (Uncommon, Attack, Red, cost(1), todo, true),
+    BloodForBlood => (Uncommon, Attack, Red, cost(4), todo, false),
+    RecklessCharge => (Uncommon, Attack, Red, cost(0), todo, false),
     // Uncommon skills
     GhostlyArmor => (Uncommon, Skill, Red, cost(1), skills::ghostly_armor_behavior, false),
     Bloodletting => (Uncommon, Skill, Red, cost(0), skills::bloodletting_behavior, false),
     Sentinel => (Uncommon, Skill, Red, cost(1), skills::sentinel_behavior, false),
+    SpotWeakness => (Uncommon, Skill, Red, cost(1), todo, false),
+    DualWield => (Uncommon, Skill, Red, cost(1), todo, false),
+    BattleTrance => (Uncommon, Skill, Red, cost(0), todo, false),
+    Disarm => (Uncommon, Skill, Red, cost(1), todo, true),
+    Rage => (Uncommon, Skill, Red, cost(0), todo, false),
+    Intimidate => (Uncommon, Skill, Red, cost(0), todo, true),
+    FlameBarrier => (Uncommon, Skill, Red, cost(2), todo, false),
+    Shockwave => (Uncommon, Skill, Red, cost(2), todo, true),
+    Entrench => (Uncommon, Skill, Red, cost(2), todo, false),
+    BurningPact => (Uncommon, Skill, Red, cost(1), todo, false),
+    SeeingRed => (Uncommon, Skill, Red, cost(1), todo, true),
+    PowerThrough => (Uncommon, Skill, Red, cost(1), todo, false),
+    InfernalBlade => (Uncommon, Skill, Red, cost(1), todo, true),
+    SecondWind => (Uncommon, Skill, Red, cost(1), todo, false),
     // Uncommon powers
     Inflame => (Uncommon, Power, Red, cost(1), powers::inflame_behavior, false),
     FeelNoPain => (Uncommon, Power, Red, cost(1), powers::feel_no_pain_behavior, false),
     DarkEmbrace => (Uncommon, Power, Red, cost(2), powers::dark_embrace_behavior, false),
+    Evolve => (Uncommon, Power, Red, cost(1), todo, false),
+    Metallicize => (Uncommon, Power, Red, cost(1), todo, false),
+    Combust => (Uncommon, Power, Red, cost(1), todo, false),
+    FireBreathing => (Uncommon, Power, Red, cost(1), todo, false),
+    Rupture => (Uncommon, Power, Red, cost(1), todo, false),
+    // Rare attacks
+    Reaper => (Rare, Attack, Red, cost(2), todo, true),
+    Immolate => (Rare, Attack, Red, cost(2), todo, false),
+    Bludgeon => (Rare, Attack, Red, cost(3), todo, false),
+    Feed => (Rare, Attack, Red, cost(1), todo, true),
+    FiendFire => (Rare, Attack, Red, cost(2), todo, true),
     // Rare skills
     LimitBreak => (Rare, Skill, Red, cost(1), skills::limit_break_behavior, true),
     Impervious => (Rare, Skill, Red, cost(2), skills::impervious_behavior, true),
+    DoubleTap => (Rare, Skill, Red, cost(1), todo, false),
+    Offering => (Rare, Skill, Red, cost(0), todo, true),
+    Exhume => (Rare, Skill, Red, cost(1), todo, true),
     // Rare powers
     Brutality => (Rare, Power, Red, cost(0), powers::brutality_behavior, false),
+    DemonForm => (Rare, Power, Red, cost(3), todo, false),
+    Barricade => (Rare, Power, Red, cost(3), todo, false),
+    Corruption => (Rare, Power, Red, cost(3), todo, false),
+    Juggernaut => (Rare, Power, Red, cost(2), todo, false),
+    Berserk => (Rare, Power, Red, cost(0), todo, false),
     // Colorless uncommon attacks
     SwiftStrike => (Uncommon, Attack, Colorless, cost(0), attacks::swift_strike_behavior, false),
     FlashOfSteel => (Uncommon, Attack, Colorless, cost(0), attacks::flash_of_steel_behavior, false),
     DramaticEntrance => (Uncommon, Attack, Colorless, cost(0), attacks::dramatic_entrance_behavior, true),
     MindBlast => (Uncommon, Attack, Colorless, cost(2), attacks::mind_blast_behavior, false),
+    Bite => (Uncommon, Attack, Colorless, cost(1), todo, false),
+    RitualDagger => (Uncommon, Attack, Colorless, cost(1), todo, true),
     // Colorless uncommon skills
     GoodInstincts => (Uncommon, Skill, Colorless, cost(0), skills::good_instincts_behavior, false),
     Finesse => (Uncommon, Skill, Colorless, cost(0), skills::finesse_behavior, false),
     Enlightenment => (Uncommon, Skill, Colorless, cost(0), skills::enlightenment_behavior, false),
+    Impatience => (Uncommon, Skill, Colorless, cost(0), todo, false),
+    JackOfAllTrades => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    Forethought => (Uncommon, Skill, Colorless, cost(0), todo, false),
+    BandageUp => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    Blind => (Uncommon, Skill, Colorless, cost(0), todo, false),
+    Trip => (Uncommon, Skill, Colorless, cost(0), todo, false),
+    Discovery => (Uncommon, Skill, Colorless, cost(1), todo, true),
+    DeepBreath => (Uncommon, Skill, Colorless, cost(0), todo, false),
+    DarkShackles => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    Apparition => (Uncommon, Skill, Colorless, cost(1), todo, true),
+    Jax => (Uncommon, Skill, Colorless, cost(0), todo, false),
+    PanicButton => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    Purity => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    Panacea => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    Madness => (Uncommon, Skill, Colorless, cost(1), todo, true),
+    // Colorless rare attacks
+    HandOfGreed => (Rare, Attack, Colorless, cost(2), todo, false),
+    // Colorless rare skills
     Bomb => (Uncommon, Skill, Colorless, cost(2), skills::bomb_behavior, false),
+    Apotheosis => (Rare, Skill, Colorless, cost(2), todo, true),
+    ThinkingAhead => (Rare, Skill, Colorless, cost(0), todo, true),
+    SecretTechnique => (Rare, Skill, Colorless, cost(0), todo, true),
+    SecretWeapon => (Rare, Skill, Colorless, cost(0), todo, true),
+    Metamorphosis => (Rare, Skill, Colorless, cost(2), todo, true),
+    Chrysalis => (Rare, Skill, Colorless, cost(2), todo, true),
+    Transmutation => (Rare, Skill, Colorless, X, todo, true),
+    MasterOfStrategy => (Rare, Skill, Colorless, cost(0), todo, true),
+    Violence => (Rare, Skill, Colorless, cost(0), todo, true),
     // Colorless rare powers
     Panache => (Rare, Power, Colorless, cost(0), powers::panache_behavior, false),
+    SadisticNature => (Rare, Power, Colorless, cost(0), todo, false),
+    Mayhem => (Rare, Power, Colorless, cost(2), todo, false),
+    Magnetism => (Rare, Power, Colorless, cost(2), todo, false),
     // Statuses
+    // TODO: void
     Wound => (Special, Status, Special, Zero, noop_behavior, true),
     Dazed => (Special, Status, Special, Zero, noop_behavior, true),
     Slimed => (Special, Status, Special, cost(1), noop_behavior, true),
     Burn => (Special, Status, Special, Zero, noop_behavior, true),
     BurnPlus => (Special, Status, Special, Zero, noop_behavior, true),
     // Curses
+    // TODO: normality, pain, parasite, necronomicurse
     AscendersBane => (Special, Curse, Curse, Zero, noop_behavior, true),
     CurseOfTheBell => (Special, Curse, Curse, Zero, noop_behavior, true),
     Clumsy => (Special, Curse, Curse, Zero, noop_behavior, true),
@@ -187,22 +279,6 @@ impl CardClass {
     pub fn can_remove_from_master_deck(&self) -> bool {
         !matches!(self, CardClass::AscendersBane | CardClass::CurseOfTheBell)
     }
-    pub fn has_target(&self) -> bool {
-        use CardClass::*;
-        matches!(
-            self,
-            Strike
-                | Bash
-                | PommelStrike
-                | TwinStrike
-                | Clothesline
-                | BodySlam
-                | SearingBlow
-                | SwiftStrike
-                | FlashOfSteel
-                | DebugKill
-        )
-    }
     pub fn end_of_turn_in_hand_behavior(&self) -> Option<CardEndOfTurnBehavior> {
         use CardClass::*;
         match self {
@@ -215,19 +291,20 @@ impl CardClass {
             _ => None,
         }
     }
-    pub fn is_ethereal(&self) -> bool {
-        use CardClass::*;
-        matches!(self, GhostlyArmor | Dazed | AscendersBane | Clumsy)
-    }
     pub fn upgrade_removes_exhaust(&self) -> bool {
         use CardClass::*;
-        matches!(self, LimitBreak)
+        matches!(
+            self,
+            LimitBreak | Discovery | ThinkingAhead | SecretTechnique | SecretWeapon
+        )
     }
-    pub fn upgrade_cost(&self, _cur_cost: i32) -> Option<i32> {
+    pub fn upgrade_cost(&self, cur_cost: i32) -> Option<i32> {
         use CardClass::*;
         match self {
-            BodySlam => Some(0),
-            DarkEmbrace => Some(1),
+            BodySlam | Havoc | InfernalBlade | Exhume | SeeingRed | Madness => Some(0),
+            DarkEmbrace | Entrench | MindBlast | Mayhem | Magnetism | Apotheosis => Some(1),
+            Corruption | Barricade => Some(2),
+            BloodForBlood => Some((cur_cost - 1).max(0)),
             _ => None,
         }
     }

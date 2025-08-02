@@ -384,8 +384,7 @@ mod tests {
 
     #[test]
     fn test_debug_kill() {
-        let mut g = GameBuilder::default()
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
         assert!(!g.monsters[0].creature.is_alive());
     }

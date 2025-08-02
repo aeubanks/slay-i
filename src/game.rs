@@ -637,7 +637,7 @@ impl Game {
                     if !self.can_play_card(&c) {
                         continue;
                     }
-                    if c.class.has_target() {
+                    if c.has_target() {
                         for (mi, m) in self.monsters.iter().enumerate() {
                             if !m.creature.is_alive() {
                                 continue;
