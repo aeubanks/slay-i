@@ -94,6 +94,17 @@ mod tests {
     }
 
     #[test]
+    fn test_dark_embrace_ethereal() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Dazed, 20)
+            .build_combat();
+        assert_eq!(g.hand.len(), 5);
+        g.play_card(CardClass::DarkEmbrace, None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 10);
+    }
+
+    #[test]
     fn test_brutality() {
         // check that unupgraded brutality is not innate
         for _ in 0..50 {
