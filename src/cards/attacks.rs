@@ -2,8 +2,10 @@ use crate::{
     actions::{
         damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
         gain_status::GainStatusAction, gain_status_all_monsters::GainStatusAllMonstersAction,
+        shuffle_card_into_draw::ShuffleCardIntoDrawAction,
     },
     card::CardPlayInfo,
+    cards::{CardClass, new_card},
     game::Game,
     status::Status,
 };
@@ -89,6 +91,18 @@ pub fn thunderclap_behavior(game: &mut Game, info: CardPlayInfo) {
 pub fn body_slam_behavior(game: &mut Game, info: CardPlayInfo) {
     let damage = game.player.creature.block;
     push_damage(game, info, damage, damage);
+}
+
+pub fn wild_strike_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_damage(game, info, 12, 17);
+    game.action_queue
+        .push_bot(ShuffleCardIntoDrawAction(new_card(CardClass::Wound)));
+}
+
+pub fn reckless_charge_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_damage(game, info, 7, 10);
+    game.action_queue
+        .push_bot(ShuffleCardIntoDrawAction(new_card(CardClass::Dazed)));
 }
 
 pub fn searing_blow_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -254,13 +268,21 @@ mod tests {
 
     #[test]
     fn test_body_slam() {
-        let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::new())
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat();
         g.run_action(BlockAction::player_flat_amount(5));
         let hp0 = g.monsters[0].creature.cur_hp;
         g.play_card(CardClass::BodySlam, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 5);
+    }
+
+    #[test]
+    fn test_wild_strike() {
+        let mut g = GameBuilder::default().build_combat();
+        let hp0 = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::WildStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 12);
+        assert_eq!(g.draw_pile.len(), 1);
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Wound);
     }
 
     #[test]

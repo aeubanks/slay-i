@@ -118,7 +118,7 @@ c!(
     Thunderclap => (Common, Attack, Red, cost(1), attacks::thunderclap_behavior, false),
     BodySlam => (Common, Attack, Red, cost(1), attacks::body_slam_behavior, false),
     IronWave => (Common, Attack, Red, cost(1), todo, false),
-    WildStrike => (Common, Attack, Red, cost(1), todo, false),
+    WildStrike => (Common, Attack, Red, cost(1), attacks::wild_strike_behavior, false),
     Headbutt => (Common, Attack, Red, cost(1), todo, false),
     SwordBoomerang => (Common, Attack, Red, cost(1), todo, false),
     PerfectedStrike => (Common, Attack, Red, cost(2), todo, false),
@@ -143,7 +143,7 @@ c!(
     Dropkick => (Uncommon, Attack, Red, cost(1), todo, false),
     Pummel => (Uncommon, Attack, Red, cost(1), todo, true),
     BloodForBlood => (Uncommon, Attack, Red, cost(4), todo, false),
-    RecklessCharge => (Uncommon, Attack, Red, cost(0), todo, false),
+    RecklessCharge => (Uncommon, Attack, Red, cost(0), attacks::reckless_charge_behavior, false),
     // Uncommon skills
     GhostlyArmor => (Uncommon, Skill, Red, cost(1), skills::ghostly_armor_behavior, false),
     Bloodletting => (Uncommon, Skill, Red, cost(0), skills::bloodletting_behavior, false),
