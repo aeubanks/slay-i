@@ -5,6 +5,9 @@ pub struct GainEnergyAction(pub i32);
 impl Action for GainEnergyAction {
     fn run(&self, game: &mut Game) {
         game.energy += self.0;
+        if game.energy < 0 {
+            game.energy = 0;
+        }
     }
 }
 

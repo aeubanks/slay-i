@@ -235,12 +235,12 @@ c!(
     Mayhem => (Rare, Power, Colorless, cost(2), todo, false),
     Magnetism => (Rare, Power, Colorless, cost(2), todo, false),
     // Statuses
-    // TODO: void
     Wound => (Special, Status, Special, Zero, noop_behavior, true),
     Dazed => (Special, Status, Special, Zero, noop_behavior, true),
     Slimed => (Special, Status, Special, cost(1), noop_behavior, true),
     Burn => (Special, Status, Special, Zero, noop_behavior, true),
     BurnPlus => (Special, Status, Special, Zero, noop_behavior, true),
+    Void => (Special, Status, Special, Zero, noop_behavior, true),
     // Curses
     // TODO: normality, pain, parasite, necronomicurse
     AscendersBane => (Special, Curse, Curse, Zero, noop_behavior, true),

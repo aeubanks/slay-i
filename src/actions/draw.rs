@@ -1,5 +1,10 @@
 use crate::{
-    action::Action, actions::shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
+    action::Action,
+    actions::{
+        gain_energy::GainEnergyAction,
+        shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
+    },
+    cards::CardClass,
     game::Game,
 };
 
@@ -28,7 +33,12 @@ impl Action for DrawAction {
         }
 
         for _ in 0..amount {
-            game.hand.push(game.draw_pile.pop().unwrap());
+            let c = game.draw_pile.pop().unwrap();
+            // TODO: firebreathing, evolve, confusion
+            if c.borrow().class == CardClass::Void {
+                game.action_queue.push_bot(GainEnergyAction(-1));
+            }
+            game.hand.push(c);
         }
     }
 }

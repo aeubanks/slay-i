@@ -67,6 +67,24 @@ mod tests {
     }
 
     #[test]
+    fn test_void() {
+        {
+            let mut g = GameBuilder::default()
+                .add_cards(CardClass::Void, 2)
+                .build_combat();
+            assert_eq!(g.energy, 1);
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.exhaust_pile.len(), 2);
+        }
+        {
+            let g = GameBuilder::default()
+                .add_cards(CardClass::Void, 4)
+                .build_combat();
+            assert_eq!(g.energy, 0);
+        }
+    }
+
+    #[test]
     #[should_panic]
     fn test_crash_on_play_unplayable_status() {
         let mut g = GameBuilder::default().build_combat();

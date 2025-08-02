@@ -62,7 +62,7 @@ impl Card {
     pub fn is_ethereal(&self) -> bool {
         use CardClass::*;
         match self.class {
-            GhostlyArmor | Dazed | AscendersBane | Clumsy | Carnage => true,
+            GhostlyArmor | Carnage | Dazed | Void | AscendersBane | Clumsy => true,
             Apparition => self.upgrade_count == 0,
             _ => false,
         }
