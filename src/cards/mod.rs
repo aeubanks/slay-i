@@ -219,25 +219,15 @@ impl CardClass {
         use CardClass::*;
         matches!(self, GhostlyArmor | Dazed | AscendersBane | Clumsy)
     }
-    // Change (cost, exhaust)
-    pub fn upgrade_fn(&self) -> Option<fn(&mut CardCost, &mut bool)> {
+    pub fn upgrade_removes_exhaust(&self) -> bool {
+        use CardClass::*;
+        matches!(self, LimitBreak)
+    }
+    pub fn upgrade_cost(&self, _cur_cost: i32) -> Option<i32> {
         use CardClass::*;
         match self {
-            LimitBreak => Some(|_, exhaust| *exhaust = false),
-            BodySlam => Some(|cost, _| match cost {
-                CardCost::Cost {
-                    base_cost,
-                    temporary_cost: _,
-                } => *base_cost = 0,
-                _ => unreachable!(),
-            }),
-            DarkEmbrace => Some(|cost, _| match cost {
-                CardCost::Cost {
-                    base_cost,
-                    temporary_cost: _,
-                } => *base_cost = 1,
-                _ => unreachable!(),
-            }),
+            BodySlam => Some(0),
+            DarkEmbrace => Some(1),
             _ => None,
         }
     }

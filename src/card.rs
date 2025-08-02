@@ -30,8 +30,25 @@ impl Card {
     pub fn upgrade(&mut self) {
         assert!(self.can_upgrade());
         self.upgrade_count += 1;
-        if let Some(f) = self.class.upgrade_fn() {
-            f(&mut self.cost, &mut self.exhaust);
+        if self.class.upgrade_removes_exhaust() {
+            self.exhaust = false;
+        }
+        if let CardCost::Cost {
+            base_cost,
+            temporary_cost,
+        } = &mut self.cost
+        {
+            if let Some(new_cost) = self.class.upgrade_cost(*base_cost) {
+                let prev_base_cost = *base_cost;
+                *base_cost = new_cost;
+                // temporary cost gets adjusted the same amount
+                if let Some(temp) = temporary_cost {
+                    *temp += new_cost - prev_base_cost;
+                    if *temp < 0 {
+                        *temp = 0;
+                    }
+                }
+            }
         }
     }
     pub fn is_innate(&self) -> bool {
@@ -79,3 +96,40 @@ impl std::fmt::Debug for Card {
 
 pub type CardRef = Rc<RefCell<Card>>;
 pub type CardPile = Vec<CardRef>;
+
+#[cfg(test)]
+mod tests {
+    use crate::cards::{CardClass, CardCost, new_card};
+
+    #[test]
+    fn test_upgrade_temp_cost() {
+        for (init_temp, final_temp) in [(3, 2), (2, 1), (1, 0), (0, 0)] {
+            let c = new_card(CardClass::BodySlam);
+            let mut c = c.borrow_mut();
+            match &mut c.cost {
+                CardCost::Cost {
+                    base_cost: _,
+                    temporary_cost,
+                } => {
+                    *temporary_cost = Some(init_temp);
+                }
+                _ => unreachable!(),
+            }
+            assert_eq!(
+                c.cost,
+                CardCost::Cost {
+                    base_cost: 1,
+                    temporary_cost: Some(init_temp)
+                }
+            );
+            c.upgrade();
+            assert_eq!(
+                c.cost,
+                CardCost::Cost {
+                    base_cost: 0,
+                    temporary_cost: Some(final_temp)
+                }
+            );
+        }
+    }
+}
