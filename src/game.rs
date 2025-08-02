@@ -703,6 +703,22 @@ impl Game {
         self.run_actions_until_empty();
     }
 
+    #[cfg(test)]
+    pub fn play_card(&mut self, class: CardClass, target: Option<CreatureRef>) {
+        self.run_action(PlayCardAction {
+            card: new_card(class),
+            target,
+        });
+    }
+
+    #[cfg(test)]
+    pub fn play_card_upgraded(&mut self, class: CardClass, target: Option<CreatureRef>) {
+        self.run_action(PlayCardAction {
+            card: new_card_upgraded(class),
+            target,
+        });
+    }
+
     fn finished(&mut self) -> bool {
         assert_ne!(self.state, GameState::Defeat);
         assert_ne!(self.state, GameState::Victory);

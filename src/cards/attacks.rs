@@ -139,7 +139,7 @@ mod tests {
     use crate::{
         actions::block::BlockAction,
         cards::{CardClass, new_card, new_card_upgraded},
-        game::{GameBuilder, Move},
+        game::{CreatureRef, GameBuilder, Move},
         monsters::test::NoopMonster,
         status::Status,
     };
@@ -163,52 +163,23 @@ mod tests {
 
     #[test]
     fn test_upgraded_strike() {
-        let mut g = GameBuilder::default()
-            .add_card_upgraded(CardClass::Strike)
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat();
         let hp = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: Some(0),
-        });
+        g.play_card_upgraded(CardClass::Strike, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 9);
     }
 
     #[test]
     fn test_bash() {
-        let mut g = GameBuilder::default()
-            .add_card(CardClass::Bash)
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat();
         let hp = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: Some(0),
-        });
+        g.play_card(CardClass::Bash, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8);
         assert_eq!(g.monsters[0].creature.statuses.len(), 1);
         assert_eq!(
             g.monsters[0].creature.statuses.get(&Status::Vulnerable),
             Some(&2)
         );
-    }
-
-    #[test]
-    fn test_upgraded_pommel_strike() {
-        let mut gb = GameBuilder::default();
-        for _ in 0..10 {
-            gb = gb.add_card_upgraded(CardClass::PommelStrike);
-        }
-        let mut g = gb.build_combat();
-        assert_eq!(g.draw_pile.len(), 5);
-        assert_eq!(g.discard_pile.len(), 0);
-        assert_eq!(g.hand.len(), 5);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: Some(0),
-        });
-        assert_eq!(g.draw_pile.len(), 3);
-        assert_eq!(g.discard_pile.len(), 1);
-        assert_eq!(g.hand.len(), 6);
     }
 
     #[test]
@@ -231,6 +202,25 @@ mod tests {
     }
 
     #[test]
+    fn test_pommel_strike_upgrade() {
+        let mut gb = GameBuilder::default();
+        for _ in 0..10 {
+            gb = gb.add_card_upgraded(CardClass::PommelStrike);
+        }
+        let mut g = gb.build_combat();
+        assert_eq!(g.draw_pile.len(), 5);
+        assert_eq!(g.discard_pile.len(), 0);
+        assert_eq!(g.hand.len(), 5);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.draw_pile.len(), 3);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.hand.len(), 6);
+    }
+
+    #[test]
     fn test_cleave() {
         let mut g = GameBuilder::default()
             .add_cards(CardClass::Cleave, 2)
@@ -239,16 +229,10 @@ mod tests {
             .build_combat();
         let hp0 = g.monsters[0].creature.cur_hp;
         g.monsters[1].creature.cur_hp = 4;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Cleave, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8);
         assert_eq!(g.monsters[1].creature.cur_hp, 0);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Cleave, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 16);
         assert_eq!(g.monsters[1].creature.cur_hp, 0);
     }
@@ -256,21 +240,14 @@ mod tests {
     #[test]
     fn test_thunderclap() {
         let mut g = GameBuilder::default()
-            .add_cards(CardClass::Thunderclap, 2)
             .add_monster(NoopMonster::new())
             .add_monster(NoopMonster::new())
             .build_combat();
         let hp0 = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Thunderclap, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 4);
         assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 4);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Thunderclap, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 10);
         assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 10);
     }
@@ -278,15 +255,11 @@ mod tests {
     #[test]
     fn test_body_slam() {
         let mut g = GameBuilder::default()
-            .add_card(CardClass::BodySlam)
             .add_monster(NoopMonster::new())
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(5));
         let hp0 = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: Some(0),
-        });
+        g.play_card(CardClass::BodySlam, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 5);
     }
 
@@ -412,12 +385,8 @@ mod tests {
     #[test]
     fn test_debug_kill() {
         let mut g = GameBuilder::default()
-            .add_card(CardClass::DebugKill)
             .build_combat();
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: Some(0),
-        });
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
         assert!(!g.monsters[0].creature.is_alive());
     }
 

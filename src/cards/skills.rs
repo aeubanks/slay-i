@@ -99,10 +99,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_card(CardClass::Defend)
             .build_combat();
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Defend, None);
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.exhaust_pile.len(), 0);
         assert_eq!(g.draw_pile.len(), 0);
@@ -114,10 +111,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_card_upgraded(CardClass::Defend)
             .build_combat();
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card_upgraded(CardClass::Defend, None);
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.exhaust_pile.len(), 0);
         assert_eq!(g.draw_pile.len(), 0);
@@ -180,14 +174,10 @@ mod tests {
     #[test]
     fn test_bloodletting() {
         let mut g = GameBuilder::default()
-            .add_card(CardClass::Bloodletting)
             .build_combat();
         let hp = g.player.creature.cur_hp;
         g.run_action(BlockAction::player_flat_amount(5));
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.energy, 5);
         assert_eq!(g.player.creature.cur_hp, hp - 3);
     }
@@ -227,12 +217,8 @@ mod tests {
     #[test]
     fn test_impervious() {
         let mut g = GameBuilder::default()
-            .add_card(CardClass::Impervious)
             .build_combat();
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Impervious, None);
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.draw_pile.len(), 0);
@@ -398,25 +384,17 @@ mod tests {
             .add_monster(NoopMonster::with_hp(1000))
             .add_monster(AttackMonster::with_hp(2, 10))
             .build_combat();
-        g.hand.push(new_card_upgraded(CardClass::Bomb));
-        g.hand.push(new_card(CardClass::Bomb));
         g.energy = 999;
 
         let hp = g.monsters[0].creature.cur_hp;
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card_upgraded(CardClass::Bomb, None);
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb3), Some(&50));
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb2), None);
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb1), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Bomb, None);
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb3), Some(&90));
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb2), None);
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb1), None);
@@ -428,12 +406,7 @@ mod tests {
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb1), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
 
-        g.hand.clear();
-        g.hand.push(new_card(CardClass::Bomb));
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card(CardClass::Bomb, None);
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb3), Some(&40));
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb2), Some(&90));
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb1), None);
