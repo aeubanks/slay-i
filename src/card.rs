@@ -93,6 +93,31 @@ impl Card {
     }
 }
 
+#[cfg(test)]
+impl Card {
+    pub fn set_cost(&mut self, base: i32, temp: Option<i32>) {
+        match &mut self.cost {
+            CardCost::Cost {
+                base_cost,
+                temporary_cost,
+            } => {
+                *base_cost = base;
+                *temporary_cost = temp;
+            }
+            _ => unreachable!(),
+        }
+    }
+    pub fn get_base_cost(&self) -> i32 {
+        match self.cost {
+            CardCost::Cost {
+                base_cost,
+                temporary_cost: _,
+            } => base_cost,
+            _ => unreachable!(),
+        }
+    }
+}
+
 impl std::fmt::Debug for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.class)?;

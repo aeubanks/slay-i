@@ -14,6 +14,7 @@ pub mod gain_panache;
 pub mod gain_status;
 pub mod gain_status_all_monsters;
 pub mod heal;
+pub mod madness;
 pub mod noop;
 pub mod play_card;
 pub mod set_hp;

@@ -3,7 +3,8 @@ use crate::{
         block::BlockAction, choose_upgrade_one_card_in_hand::ChooseUpgradeOneCardInHandAction,
         damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction, gain_energy::GainEnergyAction,
-        gain_status::GainStatusAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        gain_status::GainStatusAction, madness::MadnessAction,
+        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
     game::{CreatureRef, Game},
@@ -76,6 +77,10 @@ pub fn enlightenment_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
+pub fn madness_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue.push_bot(MadnessAction());
+}
+
 pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Bomb3,
@@ -88,7 +93,7 @@ pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
 mod tests {
     use crate::{
         actions::{block::BlockAction, exhaust_card::ExhaustCardAction},
-        cards::{CardClass, new_card, new_card_upgraded},
+        cards::{CardClass, CardCost, new_card, new_card_upgraded},
         game::{GameBuilder, Move},
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
@@ -424,5 +429,65 @@ mod tests {
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb1), Some(&40));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 90);
         assert_eq!(g.player.creature.cur_hp, player_hp - 2);
+    }
+
+    #[test]
+    fn test_madness() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.hand.push(new_card(CardClass::Bloodletting));
+        g.play_card_upgraded(CardClass::Madness, None);
+        assert_eq!(
+            g.hand[0].borrow().cost,
+            CardCost::Cost {
+                base_cost: 0,
+                temporary_cost: None
+            }
+        );
+
+        g.hand.clear();
+        g.hand.push(new_card(CardClass::Strike));
+        g.play_card_upgraded(CardClass::Madness, None);
+        assert_eq!(
+            g.hand[0].borrow().cost,
+            CardCost::Cost {
+                base_cost: 0,
+                temporary_cost: None
+            }
+        );
+
+        g.hand.clear();
+        let c = new_card(CardClass::Strike);
+        c.borrow_mut().set_cost(1, Some(0));
+        g.hand.push(c);
+        g.hand.push(new_card(CardClass::Strike));
+        g.play_card_upgraded(CardClass::Madness, None);
+        assert_eq!(
+            g.hand[0].borrow().cost,
+            CardCost::Cost {
+                base_cost: 1,
+                temporary_cost: Some(0)
+            }
+        );
+        assert_eq!(
+            g.hand[1].borrow().cost,
+            CardCost::Cost {
+                base_cost: 0,
+                temporary_cost: None
+            }
+        );
+
+        let mut found_0 = false;
+        let mut found_1 = false;
+        for _ in 0..100 {
+            g.hand.clear();
+            g.hand.push(new_card(CardClass::Strike));
+            g.hand.push(new_card(CardClass::Bash));
+            g.play_card_upgraded(CardClass::Madness, None);
+            found_0 |= g.hand[0].borrow().get_base_cost() == 0;
+            found_1 |= g.hand[1].borrow().get_base_cost() == 0;
+        }
+        assert!(found_0);
+        assert!(found_1);
     }
 }

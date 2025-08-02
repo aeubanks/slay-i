@@ -215,7 +215,7 @@ c!(
     PanicButton => (Uncommon, Skill, Colorless, cost(0), todo, true),
     Purity => (Uncommon, Skill, Colorless, cost(0), todo, true),
     Panacea => (Uncommon, Skill, Colorless, cost(0), todo, true),
-    Madness => (Uncommon, Skill, Colorless, cost(1), todo, true),
+    Madness => (Uncommon, Skill, Colorless, cost(1), skills::madness_behavior, true),
     // Colorless rare attacks
     HandOfGreed => (Rare, Attack, Colorless, cost(2), todo, false),
     // Colorless rare skills
