@@ -45,6 +45,14 @@ pub fn firebreathing_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
+pub fn rupture_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Rupture,
+        target: CreatureRef::player(),
+        amount: if info.upgraded { 2 } else { 1 },
+    });
+}
+
 pub fn brutality_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Brutality,

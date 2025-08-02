@@ -6,6 +6,7 @@ use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
+use crate::actions::gain_status::GainStatusAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
@@ -270,7 +271,7 @@ impl Game {
             if let Some(a) = c
                 .statuses
                 .get(&Status::Thorns)
-                .map(|v| DamageAction::thorns(*v, source))
+                .map(|v| DamageAction::thorns_no_rupture(*v, source))
             {
                 self.action_queue.push_top(a);
             }
@@ -292,6 +293,24 @@ impl Game {
             c.cur_hp -= amount;
             if c.cur_hp < 0 {
                 c.cur_hp = 0;
+            }
+            // attack damage never procs rupture
+            // hp loss always procs rupture
+            // thorns proc rupture if source is player
+            if matches!(
+                ty,
+                DamageType::HPLoss
+                    | DamageType::Thorns {
+                        procs_rupture: true
+                    }
+            ) {
+                if let Some(&v) = c.statuses.get(&Status::Rupture) {
+                    self.action_queue.push_bot(GainStatusAction {
+                        status: Status::Strength,
+                        amount: v,
+                        target,
+                    });
+                }
             }
         }
     }
@@ -809,7 +828,7 @@ mod tests {
             3
         );
 
-        g.run_action(DamageAction::thorns(9999, CreatureRef::monster(0)));
+        g.run_action(DamageAction::thorns_rupture(9999, CreatureRef::monster(0)));
         assert_eq!(
             g.valid_moves()
                 .iter()

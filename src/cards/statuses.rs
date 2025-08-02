@@ -5,12 +5,12 @@ use crate::{
 
 pub fn burn_behavior(game: &mut Game) {
     game.action_queue
-        .push_bot(DamageAction::thorns(2, CreatureRef::player()));
+        .push_bot(DamageAction::thorns_rupture(2, CreatureRef::player()));
 }
 
 pub fn burn_plus_behavior(game: &mut Game) {
     game.action_queue
-        .push_bot(DamageAction::thorns(4, CreatureRef::player()));
+        .push_bot(DamageAction::thorns_rupture(4, CreatureRef::player()));
 }
 
 #[cfg(test)]

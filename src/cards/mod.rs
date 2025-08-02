@@ -170,7 +170,7 @@ c!(
     Metallicize => (Uncommon, Power, Red, cost(1), todo, false),
     Combust => (Uncommon, Power, Red, cost(1), todo, false),
     FireBreathing => (Uncommon, Power, Red, cost(1), powers::firebreathing_behavior, false),
-    Rupture => (Uncommon, Power, Red, cost(1), todo, false),
+    Rupture => (Uncommon, Power, Red, cost(1), powers::rupture_behavior, false),
     // Rare attacks
     Reaper => (Rare, Attack, Red, cost(2), todo, true),
     Immolate => (Rare, Attack, Red, cost(2), todo, false),

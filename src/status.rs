@@ -14,6 +14,7 @@ pub enum Status {
     Evolve,
     FireBreathing,
     Confusion,
+    Rupture,
     Bomb3,
     Bomb2,
     Bomb1,
@@ -39,7 +40,7 @@ mod tests {
             block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
             draw::DrawAction, set_hp::SetHPAction,
         },
-        cards::{CardClass, CardCost},
+        cards::{CardClass, CardCost, new_card},
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         status::Status,
@@ -385,5 +386,41 @@ mod tests {
                 _ => unreachable!(),
             }
         }
+    }
+
+    #[test]
+    fn test_rupture() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Rupture, 1)
+            .add_monster(AttackMonster::new(1))
+            .add_monster_status(Thorns, 1)
+            .build_combat();
+
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.statuses.get(&Strength), None);
+
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&1));
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&1));
+
+        g.hand.clear();
+        g.hand.push(new_card(CardClass::Burn));
+        g.run_action(BlockAction::player_flat_amount(2));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&1));
+
+        g.hand.clear();
+        g.hand.push(new_card(CardClass::Burn));
+        g.run_action(BlockAction::player_flat_amount(1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&2));
+
+        g.hand.clear();
+        g.hand.push(new_card(CardClass::Regret));
+        g.run_action(BlockAction::player_flat_amount(2));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&3));
     }
 }

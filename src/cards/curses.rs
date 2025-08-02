@@ -14,7 +14,7 @@ pub fn regret_behavior(game: &mut Game) {
 
 pub fn decay_behavior(game: &mut Game) {
     game.action_queue
-        .push_top(DamageAction::thorns(2, CreatureRef::player()));
+        .push_top(DamageAction::thorns_rupture(2, CreatureRef::player()));
 }
 
 pub fn doubt_behavior(game: &mut Game) {

@@ -101,7 +101,7 @@ fn explosive(_: Option<CreatureRef>, queue: &mut ActionQueue) {
     queue.push_bot(DamageAllMonstersAction::thorns(10));
 }
 fn fire(target: Option<CreatureRef>, queue: &mut ActionQueue) {
-    queue.push_bot(DamageAction::thorns(20, target.unwrap()));
+    queue.push_bot(DamageAction::thorns_rupture(20, target.unwrap()));
 }
 fn strength(_: Option<CreatureRef>, _: &mut ActionQueue) {}
 fn swift(_: Option<CreatureRef>, _: &mut ActionQueue) {}

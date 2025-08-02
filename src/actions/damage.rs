@@ -9,7 +9,7 @@ use crate::{
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DamageType {
     Attack { source: CreatureRef },
-    Thorns,
+    Thorns { procs_rupture: bool },
     HPLoss,
 }
 
@@ -73,11 +73,22 @@ impl DamageAction {
             ty: DamageType::Attack { source: source_ref },
         }
     }
-    pub fn thorns(amount: i32, target: CreatureRef) -> Self {
+    pub fn thorns_rupture(amount: i32, target: CreatureRef) -> Self {
         Self {
             target,
             amount,
-            ty: DamageType::Thorns,
+            ty: DamageType::Thorns {
+                procs_rupture: true,
+            },
+        }
+    }
+    pub fn thorns_no_rupture(amount: i32, target: CreatureRef) -> Self {
+        Self {
+            target,
+            amount,
+            ty: DamageType::Thorns {
+                procs_rupture: false,
+            },
         }
     }
     pub fn lose_hp(amount: i32, target: CreatureRef) -> Self {

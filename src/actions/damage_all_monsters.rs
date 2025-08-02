@@ -32,7 +32,7 @@ impl Action for DamageAllMonstersAction {
             }
             let target = CreatureRef::monster(mi);
             game.action_queue.push_top(if self.thorns {
-                DamageAction::thorns(self.amount, target)
+                DamageAction::thorns_no_rupture(self.amount, target)
             } else {
                 DamageAction::from_player(
                     self.amount,
