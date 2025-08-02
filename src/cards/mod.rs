@@ -112,6 +112,7 @@ c!(
     Clothesline => (Common, Attack, Red, cost(2), attacks::clothesline_behavior, false),
     Cleave => (Common, Attack, Red, cost(1), attacks::cleave_behavior, false),
     Thunderclap => (Common, Attack, Red, cost(1), attacks::thunderclap_behavior, false),
+    BodySlam => (Common, Attack, Red, cost(1), attacks::body_slam_behavior, false),
     // Common skills
     Armaments => (Common, Skill, Red, cost(1), skills::armaments_behavior, false),
     // Uncommon attacks
@@ -193,6 +194,7 @@ impl CardClass {
                 | PommelStrike
                 | TwinStrike
                 | Clothesline
+                | BodySlam
                 | SearingBlow
                 | SwiftStrike
                 | FlashOfSteel
@@ -220,6 +222,13 @@ impl CardClass {
         use CardClass::*;
         match self {
             LimitBreak => Some(|_, exhaust| *exhaust = false),
+            BodySlam => Some(|cost, _| match cost {
+                CardCost::Cost {
+                    base_cost,
+                    temporary_cost: _,
+                } => *base_cost = 0,
+                _ => unreachable!(),
+            }),
             DarkEmbrace => Some(|cost, _| match cost {
                 CardCost::Cost {
                     base_cost,
