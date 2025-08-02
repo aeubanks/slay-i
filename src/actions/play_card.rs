@@ -36,6 +36,9 @@ impl Action for PlayCardAction {
         (c.class.behavior())(game, info);
         c.times_played += 1;
         game.player
+            .creature
+            .trigger_statuses_on_card_played(&mut game.action_queue, c.deref());
+        game.player
             .trigger_relics_on_card_played(&mut game.action_queue, c.deref());
         game.energy -= energy;
         if c.class.ty() == CardType::Power {

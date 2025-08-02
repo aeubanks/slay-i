@@ -14,6 +14,11 @@ pub enum Status {
     Bomb3,
     Bomb2,
     Bomb1,
+    Panache5,
+    Panache4,
+    Panache3,
+    Panache2,
+    Panache1,
 }
 
 impl Status {

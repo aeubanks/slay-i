@@ -5,6 +5,7 @@ use crate::{
         damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
         gain_status::GainStatusAction,
     },
+    card::Card,
     game::CreatureRef,
     queue::ActionQueue,
     status::Status,
@@ -45,6 +46,25 @@ impl Creature {
         self.max_hp += amount;
     }
 
+    pub fn trigger_statuses_on_card_played(&mut self, queue: &mut ActionQueue, _: &Card) {
+        for (p, p_next) in [
+            (Status::Panache5, Status::Panache4),
+            (Status::Panache4, Status::Panache3),
+            (Status::Panache3, Status::Panache2),
+            (Status::Panache2, Status::Panache1),
+            (Status::Panache1, Status::Panache5),
+        ] {
+            if let Some(&v) = self.statuses.get(&p) {
+                self.statuses.insert(p_next, v);
+                self.statuses.remove_entry(&p);
+                if p == Status::Panache1 {
+                    queue.push_bot(DamageAllMonstersAction::thorns(v));
+                }
+                break;
+            }
+        }
+    }
+
     pub fn trigger_statuses_turn_begin(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
         if let Some(v) = self.statuses.get(&Status::DemonForm) {
             queue.push_bot(GainStatusAction {
@@ -71,6 +91,18 @@ impl Creature {
         if let Some(b) = self.statuses.get(&Status::Bomb3) {
             self.statuses.insert(Status::Bomb2, *b);
             self.statuses.remove(&Status::Bomb3);
+        }
+        for p in [
+            Status::Panache4,
+            Status::Panache3,
+            Status::Panache2,
+            Status::Panache1,
+        ] {
+            if let Some(v) = self.statuses.get(&p) {
+                self.statuses.insert(Status::Panache5, *v);
+                self.statuses.remove_entry(&p);
+                break;
+            }
         }
     }
     pub fn trigger_statuses_round_end(&mut self, this: CreatureRef, queue: &mut ActionQueue) {

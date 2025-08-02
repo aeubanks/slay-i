@@ -1,5 +1,5 @@
 use crate::{
-    actions::gain_status::GainStatusAction,
+    actions::{gain_panache::GainPanacheAction, gain_status::GainStatusAction},
     card::CardPlayInfo,
     game::{CreatureRef, Game},
     status::Status,
@@ -37,11 +37,17 @@ pub fn brutality_behavior(game: &mut Game, _: CardPlayInfo) {
     });
 }
 
+pub fn panache_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue.push_bot(GainPanacheAction {
+        amount: if info.upgraded { 14 } else { 10 },
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::exhaust_card::ExhaustCardAction,
-        cards::CardClass,
+        actions::{exhaust_card::ExhaustCardAction, play_card::PlayCardAction},
+        cards::{CardClass, new_card, new_card_upgraded},
         game::{GameBuilder, Move},
         status::Status,
     };
@@ -118,5 +124,90 @@ mod tests {
             }
         }
         panic!();
+    }
+
+    #[test]
+    fn test_panache() {
+        let mut g = GameBuilder::default().build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::Panache),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp);
+        // 5 -> 4
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp);
+        // 4 -> 3
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp);
+        // 3 -> 2
+        g.run_action(PlayCardAction {
+            card: new_card_upgraded(CardClass::Panache),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp);
+        // 2 -> 1
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp);
+        // 1 -> 5
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
+        // 5 -> 4
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
+        // 4 -> 3
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
+        // reset to 5
+        g.make_move(Move::EndTurn);
+        // 5 -> 4
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
+        // 4 -> 3
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
+        // 3 -> 2
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
+        // 2 -> 1
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
+        // 1 -> 5
+        g.run_action(PlayCardAction {
+            card: new_card(CardClass::TestSkill),
+            target: None,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 48);
     }
 }

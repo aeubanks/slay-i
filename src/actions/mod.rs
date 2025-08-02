@@ -10,6 +10,7 @@ pub mod end_of_turn_discard;
 pub mod enlightenment;
 pub mod exhaust_card;
 pub mod gain_energy;
+pub mod gain_panache;
 pub mod gain_status;
 pub mod gain_status_all_monsters;
 pub mod heal;
