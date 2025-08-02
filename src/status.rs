@@ -13,6 +13,7 @@ pub enum Status {
     DarkEmbrace,
     Evolve,
     FireBreathing,
+    Confusion,
     Bomb3,
     Bomb2,
     Bomb1,
@@ -36,9 +37,9 @@ mod tests {
     use crate::{
         actions::{
             block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-            set_hp::SetHPAction,
+            draw::DrawAction, set_hp::SetHPAction,
         },
-        cards::CardClass,
+        cards::{CardClass, CardCost},
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         status::Status,
@@ -317,5 +318,72 @@ mod tests {
         g.make_move(Move::EndTurn);
 
         assert_eq!(g.monsters[0].creature.cur_hp, 8);
+    }
+
+    #[test]
+    fn test_confusion() {
+        let mut found_0 = false;
+        let mut found_1 = false;
+        let mut found_2 = false;
+        let mut found_3 = false;
+        for _ in 0..100 {
+            let g = GameBuilder::default()
+                .add_player_status(Confusion, 1)
+                .add_cards(CardClass::Strike, 10)
+                .build_combat();
+            for c in &g.hand {
+                let c = c.borrow();
+                match c.cost {
+                    CardCost::Cost {
+                        base_cost,
+                        temporary_cost: _,
+                    } => match base_cost {
+                        0 => found_0 = true,
+                        1 => found_1 = true,
+                        2 => found_2 = true,
+                        3 => found_3 = true,
+                        _ => unreachable!(),
+                    },
+                    _ => unreachable!(),
+                }
+            }
+        }
+        assert!(found_0);
+        assert!(found_1);
+        assert!(found_2);
+        assert!(found_3);
+    }
+
+    #[test]
+    fn test_confusion_temp_cost() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Confusion, 1)
+            .add_cards(CardClass::Strike, 10)
+            .build_combat();
+        for c in &g.draw_pile {
+            let mut c = c.borrow_mut();
+            match &mut c.cost {
+                CardCost::Cost {
+                    base_cost: _,
+                    temporary_cost,
+                } => {
+                    *temporary_cost = Some(0);
+                }
+                _ => unreachable!(),
+            }
+        }
+        g.run_action(DrawAction(2));
+        for c in &g.hand {
+            let c = c.borrow();
+            match c.cost {
+                CardCost::Cost {
+                    base_cost: _,
+                    temporary_cost,
+                } => {
+                    assert!(temporary_cost.is_none());
+                }
+                _ => unreachable!(),
+            }
+        }
     }
 }

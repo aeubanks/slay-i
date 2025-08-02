@@ -1,10 +1,12 @@
+use rand::Rng;
+
 use crate::{
     action::Action,
     actions::{
         damage_all_monsters::DamageAllMonstersAction, gain_energy::GainEnergyAction,
         shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
     },
-    cards::{CardClass, CardType},
+    cards::{CardClass, CardCost, CardType},
     game::Game,
     status::Status,
 };
@@ -35,18 +37,35 @@ impl Action for DrawAction {
 
         for _ in 0..amount {
             let c = game.draw_pile.pop().unwrap();
-            // TODO: confusion
-            let class = c.borrow().class;
-            if class == CardClass::Void {
-                game.action_queue.push_bot(GainEnergyAction(-1));
-            }
-            if class.ty() == CardType::Status {
-                if let Some(v) = game.player.creature.statuses.get(&Status::FireBreathing) {
-                    game.action_queue
-                        .push_bot(DamageAllMonstersAction::thorns(*v));
+            {
+                let mut c = c.borrow_mut();
+                if game
+                    .player
+                    .creature
+                    .statuses
+                    .contains_key(&Status::Confusion)
+                {
+                    if let CardCost::Cost {
+                        base_cost,
+                        temporary_cost,
+                    } = &mut c.cost
+                    {
+                        *base_cost = game.rng.random_range(0..=3);
+                        *temporary_cost = None;
+                    }
                 }
-                if let Some(v) = game.player.creature.statuses.get(&Status::Evolve) {
-                    game.action_queue.push_bot(DrawAction(*v));
+                let class = c.class;
+                if class == CardClass::Void {
+                    game.action_queue.push_bot(GainEnergyAction(-1));
+                }
+                if class.ty() == CardType::Status {
+                    if let Some(v) = game.player.creature.statuses.get(&Status::FireBreathing) {
+                        game.action_queue
+                            .push_bot(DamageAllMonstersAction::thorns(*v));
+                    }
+                    if let Some(v) = game.player.creature.statuses.get(&Status::Evolve) {
+                        game.action_queue.push_bot(DrawAction(*v));
+                    }
                 }
             }
             game.hand.push(c);
