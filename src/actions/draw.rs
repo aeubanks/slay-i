@@ -1,11 +1,12 @@
 use crate::{
     action::Action,
     actions::{
-        gain_energy::GainEnergyAction,
+        damage_all_monsters::DamageAllMonstersAction, gain_energy::GainEnergyAction,
         shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
     },
-    cards::CardClass,
+    cards::{CardClass, CardType},
     game::Game,
+    status::Status,
 };
 
 pub struct DrawAction(pub i32);
@@ -34,9 +35,19 @@ impl Action for DrawAction {
 
         for _ in 0..amount {
             let c = game.draw_pile.pop().unwrap();
-            // TODO: firebreathing, evolve, confusion
-            if c.borrow().class == CardClass::Void {
+            // TODO: confusion
+            let class = c.borrow().class;
+            if class == CardClass::Void {
                 game.action_queue.push_bot(GainEnergyAction(-1));
+            }
+            if class.ty() == CardType::Status {
+                if let Some(v) = game.player.creature.statuses.get(&Status::FireBreathing) {
+                    game.action_queue
+                        .push_bot(DamageAllMonstersAction::thorns(*v));
+                }
+                if let Some(v) = game.player.creature.statuses.get(&Status::Evolve) {
+                    game.action_queue.push_bot(DrawAction(*v));
+                }
             }
             game.hand.push(c);
         }

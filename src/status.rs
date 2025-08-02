@@ -11,6 +11,8 @@ pub enum Status {
     Thorns,
     FeelNoPain,
     DarkEmbrace,
+    Evolve,
+    FireBreathing,
     Bomb3,
     Bomb2,
     Bomb1,

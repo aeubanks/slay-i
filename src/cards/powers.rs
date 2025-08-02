@@ -29,6 +29,22 @@ pub fn dark_embrace_behavior(game: &mut Game, _: CardPlayInfo) {
     });
 }
 
+pub fn evolve_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Evolve,
+        target: CreatureRef::player(),
+        amount: if info.upgraded { 2 } else { 1 },
+    });
+}
+
+pub fn firebreathing_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::FireBreathing,
+        target: CreatureRef::player(),
+        amount: if info.upgraded { 10 } else { 6 },
+    });
+}
+
 pub fn brutality_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Brutality,
@@ -46,8 +62,8 @@ pub fn panache_behavior(game: &mut Game, info: CardPlayInfo) {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::exhaust_card::ExhaustCardAction,
-        cards::CardClass,
+        actions::{draw::DrawAction, exhaust_card::ExhaustCardAction},
+        cards::{CardClass, new_card},
         game::{GameBuilder, Move},
         status::Status,
     };
@@ -102,6 +118,39 @@ mod tests {
         g.play_card(CardClass::DarkEmbrace, None);
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 10);
+    }
+
+    #[test]
+    fn test_evolve() {
+        let mut g = GameBuilder::default().build_combat();
+        g.play_card(CardClass::Evolve, None);
+        for _ in 0..10 {
+            g.draw_pile.push(new_card(CardClass::Strike));
+        }
+        g.draw_pile.push(new_card(CardClass::Wound));
+        g.run_action(DrawAction(1));
+        assert_eq!(g.hand.len(), 2);
+        g.play_card_upgraded(CardClass::Evolve, None);
+        g.draw_pile.push(new_card(CardClass::Dazed));
+        g.run_action(DrawAction(2));
+        assert_eq!(g.hand.len(), 7);
+    }
+
+    #[test]
+    fn test_firebreathing() {
+        let mut g = GameBuilder::default().build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.play_card(CardClass::FireBreathing, None);
+        g.draw_pile.push(new_card(CardClass::Wound));
+        g.run_action(DrawAction(1));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6);
+
+        g.play_card_upgraded(CardClass::FireBreathing, None);
+        g.draw_pile.push(new_card(CardClass::Dazed));
+        g.draw_pile.push(new_card(CardClass::Strike));
+        g.run_action(DrawAction(2));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 16);
     }
 
     #[test]
