@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     actions::{
         damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
-        gain_status::GainStatusAction,
+        gain_status::GainStatusAction, remove_status::RemoveStatusAction,
     },
     card::Card,
     game::CreatureRef,
@@ -111,6 +111,12 @@ impl Creature {
                 queue.push_bot(GainStatusAction {
                     status: *s,
                     amount: -1,
+                    target: this,
+                });
+            }
+            if s.disappears_end_of_turn() {
+                queue.push_bot(RemoveStatusAction {
+                    status: *s,
                     target: this,
                 });
             }

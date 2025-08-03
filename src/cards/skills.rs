@@ -3,7 +3,7 @@ use crate::{
         block::BlockAction, choose_upgrade_one_card_in_hand::ChooseUpgradeOneCardInHandAction,
         damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction, gain_energy::GainEnergyAction,
-        gain_status::GainStatusAction, madness::MadnessAction,
+        gain_status::GainStatusAction, madness::MadnessAction, set_status::SetStatusAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
@@ -52,6 +52,15 @@ pub fn bloodletting_behavior(game: &mut Game, info: CardPlayInfo) {
 
 pub fn sentinel_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 5, 8);
+}
+
+pub fn battle_trance_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue
+        .push_bot(DrawAction(if info.upgraded { 4 } else { 3 }));
+    game.action_queue.push_bot(SetStatusAction {
+        status: Status::NoDraw,
+        target: CreatureRef::player(),
+    });
 }
 
 pub fn impervious_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -216,6 +225,23 @@ mod tests {
             target: None,
         });
         assert_eq!(g.player.creature.block, 8);
+    }
+
+    #[test]
+    fn test_battle_trance() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Strike, 20)
+            .build_combat();
+        assert_eq!(g.hand.len(), 5);
+        g.play_card(CardClass::BattleTrance, None);
+        assert_eq!(g.hand.len(), 8);
+        assert_eq!(g.player.creature.statuses.get(&Status::NoDraw), Some(&1));
+        g.play_card(CardClass::BattleTrance, None);
+        assert_eq!(g.hand.len(), 8);
+        assert_eq!(g.player.creature.statuses.get(&Status::NoDraw), Some(&1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 5);
+        assert_eq!(g.player.creature.statuses.get(&Status::NoDraw), None);
     }
 
     #[test]

@@ -17,6 +17,7 @@ pub mod heal;
 pub mod madness;
 pub mod noop;
 pub mod play_card;
+pub mod remove_status;
 pub mod set_hp;
 pub mod set_status;
 pub mod shuffle_card_into_draw;

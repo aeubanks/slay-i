@@ -15,6 +15,7 @@ pub enum Status {
     FireBreathing,
     Confusion,
     Rupture,
+    NoDraw,
     Bomb3,
     Bomb2,
     Bomb1,
@@ -29,6 +30,10 @@ impl Status {
     pub fn decays(&self) -> bool {
         use Status::*;
         matches!(self, Vulnerable | Weak | NoBlock | Frail)
+    }
+    pub fn disappears_end_of_turn(&self) -> bool {
+        use Status::*;
+        matches!(self, NoDraw)
     }
 }
 

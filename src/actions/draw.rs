@@ -15,6 +15,9 @@ pub struct DrawAction(pub i32);
 
 impl Action for DrawAction {
     fn run(&self, game: &mut Game) {
+        if game.player.creature.statuses.contains_key(&Status::NoDraw) {
+            return;
+        }
         let discard_size = game.discard_pile.len() as i32;
         let draw_size = game.draw_pile.len() as i32;
         let hand_size = game.hand.len() as i32;
