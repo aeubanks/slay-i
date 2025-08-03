@@ -50,6 +50,9 @@ impl Action for GainStatusAction {
         if extra {
             *v += 1;
         }
+        if self.status.bounded_999() {
+            *v = (*v).clamp(-999, 999);
+        }
         if *v == 0 {
             game.get_creature_mut(self.target)
                 .statuses

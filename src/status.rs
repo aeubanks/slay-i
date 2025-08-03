@@ -65,7 +65,6 @@ impl Status {
     }
     pub fn does_not_stack(&self) -> bool {
         use Status::*;
-        // TODO: entangled
         matches!(self, NoDraw | Confusion)
     }
     pub fn is_debuff(&self, amount: i32) -> bool {
@@ -74,6 +73,12 @@ impl Status {
             StatusType::Debuff => true,
             StatusType::Buff => false,
         }
+    }
+    pub fn bounded_999(&self) -> bool {
+        use Status::*;
+        // plated armor
+        // gain strength
+        matches!(self, Strength | Dexterity)
     }
 }
 
@@ -694,5 +699,22 @@ mod tests {
         });
         assert_eq!(g.player.creature.statuses.get(&Artifact), None);
         assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+    }
+
+    #[test]
+    fn test_999() {
+        let mut g = GameBuilder::default().build_combat();
+        g.run_action(GainStatusAction {
+            status: Strength,
+            amount: 1000,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&999));
+        g.run_action(GainStatusAction {
+            status: Strength,
+            amount: -2000,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&-999));
     }
 }
