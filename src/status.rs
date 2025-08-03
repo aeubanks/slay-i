@@ -1,30 +1,58 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Status {
-    Vulnerable,
-    Strength,
-    Brutality,
-    DemonForm,
-    Weak,
-    Dexterity,
-    Frail,
-    NoBlock,
-    Thorns,
-    FeelNoPain,
-    DarkEmbrace,
-    Evolve,
-    FireBreathing,
-    Confusion,
-    Rupture,
-    NoDraw,
-    Bomb3,
-    Bomb2,
-    Bomb1,
-    Panache5,
-    Panache4,
-    Panache3,
-    Panache2,
-    Panache1,
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum StatusType {
+    Debuff,
+    Buff,
+    Amount,
 }
+
+macro_rules! s {
+    ($($name:ident => $rarity:expr),+,) => {
+        #[allow(dead_code)]
+        #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+        pub enum Status {
+            $(
+                $name,
+            )+
+        }
+        impl Status {
+            #[allow(dead_code)]
+            pub fn ty(&self) -> StatusType {
+                use StatusType::*;
+                match self {
+                    $(Self::$name => $rarity,)+
+                }
+            }
+        }
+    };
+}
+
+s!(
+    Artifact => Buff,
+    Vulnerable => Debuff,
+    Strength => Amount,
+    Brutality => Buff,
+    DemonForm => Buff,
+    Weak => Debuff,
+    Dexterity => Amount,
+    Frail => Debuff,
+    NoBlock => Debuff,
+    Thorns => Buff,
+    FeelNoPain => Buff,
+    DarkEmbrace => Buff,
+    Evolve => Buff,
+    FireBreathing => Buff,
+    Confusion => Debuff,
+    Rupture => Buff,
+    NoDraw => Debuff,
+    Bomb3 => Buff,
+    Bomb2 => Buff,
+    Bomb1 => Buff,
+    Panache5 => Buff,
+    Panache4 => Buff,
+    Panache3 => Buff,
+    Panache2 => Buff,
+    Panache1 => Buff,
+);
 
 impl Status {
     pub fn decays(&self) -> bool {
@@ -35,6 +63,18 @@ impl Status {
         use Status::*;
         matches!(self, NoDraw)
     }
+    pub fn does_not_stack(&self) -> bool {
+        use Status::*;
+        // TODO: entangled
+        matches!(self, NoDraw | Confusion)
+    }
+    pub fn is_debuff(&self, amount: i32) -> bool {
+        match self.ty() {
+            StatusType::Amount => amount < 0,
+            StatusType::Debuff => true,
+            StatusType::Buff => false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -43,7 +83,8 @@ mod tests {
     use crate::{
         actions::{
             block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-            draw::DrawAction, set_hp::SetHPAction,
+            draw::DrawAction, gain_status::GainStatusAction, reduce_status::ReduceStatusAction,
+            set_hp::SetHPAction,
         },
         cards::{CardClass, CardCost, new_card},
         game::{CreatureRef, GameBuilder, Move},
@@ -427,5 +468,231 @@ mod tests {
         g.run_action(BlockAction::player_flat_amount(2));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.statuses.get(&Strength), Some(&3));
+    }
+
+    #[test]
+    fn test_stack() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Confusion,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+        g.run_action(GainStatusAction {
+            status: Confusion,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+
+        g.run_action(GainStatusAction {
+            status: NoDraw,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&NoDraw), Some(&1));
+        g.run_action(GainStatusAction {
+            status: NoDraw,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&NoDraw), Some(&1));
+    }
+
+    #[test]
+    fn test_reduce() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Confusion,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+        g.run_action(ReduceStatusAction {
+            status: Confusion,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Confusion), None);
+
+        g.run_action(GainStatusAction {
+            status: Rupture,
+            amount: 4,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Rupture), Some(&4));
+        g.run_action(ReduceStatusAction {
+            status: Rupture,
+            amount: 3,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Rupture), Some(&1));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_reduce_amount_invalid() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(ReduceStatusAction {
+            status: Strength,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_reduce_negative_invalid() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(ReduceStatusAction {
+            status: Rupture,
+            amount: -1,
+            target: CreatureRef::player(),
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_gain_non_stackable_invalid() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Confusion,
+            amount: 2,
+            target: CreatureRef::player(),
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_gain_buff_invalid() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Rupture,
+            amount: -1,
+            target: CreatureRef::player(),
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_gain_buff_invalid_2() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Rupture,
+            amount: 0,
+            target: CreatureRef::player(),
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_gain_debuff_invalid() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Weak,
+            amount: -2,
+            target: CreatureRef::player(),
+        });
+    }
+
+    #[test]
+    fn test_artifact() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Artifact,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
+        g.run_action(GainStatusAction {
+            status: Weak,
+            amount: 2,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), None);
+        assert_eq!(g.player.creature.statuses.get(&Weak), None);
+
+        g.run_action(GainStatusAction {
+            status: Artifact,
+            amount: 2,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&2));
+        g.run_action(GainStatusAction {
+            status: Strength,
+            amount: 2,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&2));
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&2));
+        g.run_action(GainStatusAction {
+            status: Strength,
+            amount: -2,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
+        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&2));
+    }
+
+    #[test]
+    fn test_artifact_no_draw() {
+        // getting no draw while already having no draw doesn't use artifact
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: NoDraw,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        g.run_action(GainStatusAction {
+            status: Artifact,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
+        assert_eq!(g.player.creature.statuses.get(&NoDraw), Some(&1));
+        g.run_action(GainStatusAction {
+            status: NoDraw,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
+        assert_eq!(g.player.creature.statuses.get(&NoDraw), Some(&1));
+    }
+
+    #[test]
+    fn test_artifact_confusion() {
+        // getting confusion while already having confusion does use artifact
+        let mut g = GameBuilder::default().build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Confusion,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        g.run_action(GainStatusAction {
+            status: Artifact,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
+        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+        g.run_action(GainStatusAction {
+            status: Confusion,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        assert_eq!(g.player.creature.statuses.get(&Artifact), None);
+        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
     }
 }
