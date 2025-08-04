@@ -43,6 +43,7 @@ s!(
     FireBreathing => Buff,
     Confusion => Debuff,
     Rupture => Buff,
+    Barricade => Buff,
     NoDraw => Debuff,
     Bomb3 => Buff,
     Bomb2 => Buff,
@@ -65,7 +66,7 @@ impl Status {
     }
     pub fn does_not_stack(&self) -> bool {
         use Status::*;
-        matches!(self, NoDraw | Confusion)
+        matches!(self, NoDraw | Confusion | Barricade)
     }
     pub fn is_debuff(&self, amount: i32) -> bool {
         match self.ty() {

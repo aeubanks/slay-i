@@ -369,7 +369,7 @@ impl Game {
                 self.monsters_roll_move();
 
                 self.action_queue.push_top(StartOfTurnEnergyAction());
-                self.player.creature.block = 0;
+                self.player.creature.start_of_turn_lose_block();
 
                 if self.turn == 0 {
                     self.player
@@ -513,7 +513,7 @@ impl Game {
             if !self.monsters[i].creature.is_alive() {
                 continue;
             }
-            self.monsters[i].creature.block = 0;
+            self.monsters[i].creature.start_of_turn_lose_block();
             self.monsters[i]
                 .creature
                 .trigger_statuses_turn_begin(CreatureRef::monster(i), &mut self.action_queue);
@@ -882,5 +882,18 @@ mod tests {
         assert_eq!(g.monsters[0].creature.block, 7);
         g.make_move(Move::EndTurn);
         assert_eq!(g.monsters[0].creature.block, 0);
+    }
+
+    #[test]
+    fn test_barricade() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Status::Barricade, 1)
+            .add_player_status(Status::Barricade, 1)
+            .build_combat();
+        g.run_action(BlockAction::monster(CreatureRef::player(), 7));
+        g.run_action(BlockAction::monster(CreatureRef::monster(0), 7));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 7);
+        assert_eq!(g.monsters[0].creature.block, 7);
     }
 }

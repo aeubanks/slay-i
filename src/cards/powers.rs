@@ -53,6 +53,14 @@ pub fn rupture_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
+pub fn barricade_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Barricade,
+        target: CreatureRef::player(),
+        amount: 1,
+    });
+}
+
 pub fn brutality_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Brutality,
@@ -70,7 +78,7 @@ pub fn panache_behavior(game: &mut Game, info: CardPlayInfo) {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::{draw::DrawAction, exhaust_card::ExhaustCardAction},
+        actions::{block::BlockAction, draw::DrawAction, exhaust_card::ExhaustCardAction},
         cards::{CardClass, new_card},
         game::{GameBuilder, Move},
         status::Status,
@@ -174,6 +182,15 @@ mod tests {
             }
         }
         panic!();
+    }
+
+    #[test]
+    fn test_barricade() {
+        let mut g = GameBuilder::default().build_combat();
+        g.play_card(CardClass::Barricade, None);
+        g.run_action(BlockAction::player_flat_amount(5));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.block, 5);
     }
 
     #[test]

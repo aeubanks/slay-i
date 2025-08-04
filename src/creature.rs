@@ -47,6 +47,13 @@ impl Creature {
         self.max_hp += amount;
     }
 
+    pub fn start_of_turn_lose_block(&mut self) {
+        if self.statuses.contains_key(&Status::Barricade) {
+            return;
+        }
+        self.block = 0;
+    }
+
     pub fn trigger_statuses_on_card_played(&mut self, queue: &mut ActionQueue, _: &Card) {
         for (p, p_next) in [
             (Status::Panache5, Status::Panache4),

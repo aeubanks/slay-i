@@ -186,7 +186,7 @@ c!(
     // Rare powers
     Brutality => (Rare, Power, Red, cost(0), powers::brutality_behavior, false),
     DemonForm => (Rare, Power, Red, cost(3), todo, false),
-    Barricade => (Rare, Power, Red, cost(3), todo, false),
+    Barricade => (Rare, Power, Red, cost(3), powers::barricade_behavior, false),
     Corruption => (Rare, Power, Red, cost(3), todo, false),
     Juggernaut => (Rare, Power, Red, cost(2), todo, false),
     Berserk => (Rare, Power, Red, cost(0), todo, false),
