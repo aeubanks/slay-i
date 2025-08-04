@@ -71,10 +71,7 @@ impl std::fmt::Debug for BlockAction {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        actions::block::BlockAction,
-        game::GameBuilder,
-    };
+    use crate::{actions::block::BlockAction, game::GameBuilder};
 
     #[test]
     fn test_999() {

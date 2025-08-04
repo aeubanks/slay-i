@@ -8,6 +8,7 @@ use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::play_card::PlayCardAction;
+use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
 use crate::card::{Card, CardPile};
@@ -367,7 +368,7 @@ impl Game {
             GameState::PlayerTurnBegin => {
                 self.monsters_roll_move();
 
-                self.energy = 3;
+                self.action_queue.push_top(StartOfTurnEnergyAction());
                 self.player.creature.block = 0;
 
                 if self.turn == 0 {

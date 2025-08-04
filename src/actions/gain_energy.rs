@@ -17,9 +17,7 @@ impl std::fmt::Debug for GainEnergyAction {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        actions::gain_energy::GainEnergyAction, game::GameBuilder
-    };
+    use crate::{actions::gain_energy::GainEnergyAction, game::GameBuilder};
 
     #[test]
     fn test_bounds() {
