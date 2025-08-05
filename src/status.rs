@@ -45,6 +45,7 @@ s!(
     Rupture => Buff,
     Barricade => Buff,
     NoDraw => Debuff,
+    Duplication => Buff,
     Bomb3 => Buff,
     Bomb2 => Buff,
     Bomb1 => Buff,
@@ -58,7 +59,7 @@ s!(
 impl Status {
     pub fn decays(&self) -> bool {
         use Status::*;
-        matches!(self, Vulnerable | Weak | NoBlock | Frail)
+        matches!(self, Vulnerable | Weak | NoBlock | Frail | Duplication)
     }
     pub fn disappears_end_of_turn(&self) -> bool {
         use Status::*;
@@ -717,5 +718,41 @@ mod tests {
             target: CreatureRef::player(),
         });
         assert_eq!(g.player.creature.statuses.get(&Strength), Some(&-999));
+    }
+
+    #[test]
+    fn test_duplication() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Duplication, 1)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Rampage, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5);
+        assert_eq!(g.discard_pile.len(), 1);
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.statuses.get(&Duplication), None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5 - 6);
+    }
+
+    #[test]
+    fn test_duplication_2() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Duplication, 1)
+            .build_combat();
+        g.play_card(CardClass::PommelStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.discard_pile.len(), 0);
+        assert_eq!(g.hand.len(), 1);
+    }
+
+    #[test]
+    fn test_duplication_duplicated_card() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Duplication, 2)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 6);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.player.creature.statuses.get(&Duplication), Some(&1));
     }
 }

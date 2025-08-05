@@ -214,6 +214,7 @@ pub struct Game {
     pub discard_pile: CardPile,
     pub exhaust_pile: CardPile,
     pub action_queue: ActionQueue,
+    pub card_queue: Vec<PlayCardAction>,
     pub rng: Rand,
     pub state: GameState,
 }
@@ -234,6 +235,7 @@ impl Game {
             discard_pile: Default::default(),
             exhaust_pile: Default::default(),
             action_queue: Default::default(),
+            card_queue: Default::default(),
             rng,
             state: GameState::Blessing,
         };
@@ -457,9 +459,15 @@ impl Game {
     }
 
     fn run_actions_until_empty(&mut self) {
-        while let Some(a) = self.action_queue.pop() {
-            a.run(self);
-            if self.state == GameState::Armaments {
+        loop {
+            if let Some(a) = self.action_queue.pop() {
+                a.run(self);
+                if self.state == GameState::Armaments {
+                    break;
+                }
+            } else if let Some(a) = self.card_queue.pop() {
+                self.action_queue.push_bot(a);
+            } else {
                 break;
             }
         }
@@ -593,9 +601,10 @@ impl Game {
             Move::PlayCard { card_index, target } => {
                 assert_eq!(self.state, GameState::PlayerTurn);
                 assert!(self.can_play_card(&self.hand[card_index].borrow()));
-                self.action_queue.push_bot(PlayCardAction {
+                self.card_queue.push(PlayCardAction {
                     card: self.hand.remove(card_index),
                     target: target.map(CreatureRef::monster),
+                    is_duplicated: false,
                 });
                 self.run();
             }
@@ -728,6 +737,7 @@ impl Game {
         self.run_action(PlayCardAction {
             card: new_card(class),
             target,
+            is_duplicated: false,
         });
     }
 
@@ -736,6 +746,7 @@ impl Game {
         self.run_action(PlayCardAction {
             card: new_card_upgraded(class),
             target,
+            is_duplicated: false,
         });
     }
 

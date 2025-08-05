@@ -3,10 +3,9 @@ use std::collections::HashMap;
 use crate::{
     actions::{
         damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
-        gain_status::GainStatusAction, reduce_status::ReduceStatusAction,
-        remove_status::RemoveStatusAction,
+        gain_status::GainStatusAction, play_card::PlayCardAction,
+        reduce_status::ReduceStatusAction, remove_status::RemoveStatusAction,
     },
-    card::Card,
     game::CreatureRef,
     queue::ActionQueue,
     status::Status,
@@ -54,7 +53,12 @@ impl Creature {
         self.block = 0;
     }
 
-    pub fn trigger_statuses_on_card_played(&mut self, queue: &mut ActionQueue, _: &Card) {
+    pub fn trigger_statuses_on_card_played(
+        &mut self,
+        queue: &mut ActionQueue,
+        card_queue: &mut Vec<PlayCardAction>,
+        play: &PlayCardAction,
+    ) {
         for (p, p_next) in [
             (Status::Panache5, Status::Panache4),
             (Status::Panache4, Status::Panache3),
@@ -70,6 +74,18 @@ impl Creature {
                 }
                 break;
             }
+        }
+        if !play.is_duplicated && self.statuses.contains_key(&Status::Duplication) {
+            queue.push_top(ReduceStatusAction {
+                status: Status::Duplication,
+                amount: 1,
+                target: CreatureRef::player(),
+            });
+            card_queue.push(PlayCardAction {
+                card: play.card.clone(),
+                target: play.target,
+                is_duplicated: true,
+            });
         }
     }
 

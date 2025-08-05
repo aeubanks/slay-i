@@ -13,6 +13,7 @@ use super::discard_card::DiscardCardAction;
 pub struct PlayCardAction {
     pub card: CardRef,
     pub target: Option<CreatureRef>,
+    pub is_duplicated: bool,
 }
 
 impl Action for PlayCardAction {
@@ -35,9 +36,11 @@ impl Action for PlayCardAction {
         };
         (c.class.behavior())(game, info);
         c.times_played += 1;
-        game.player
-            .creature
-            .trigger_statuses_on_card_played(&mut game.action_queue, c.deref());
+        game.player.creature.trigger_statuses_on_card_played(
+            &mut game.action_queue,
+            &mut game.card_queue,
+            self,
+        );
         game.player
             .trigger_relics_on_card_played(&mut game.action_queue, c.deref());
         game.energy -= energy;
@@ -46,12 +49,14 @@ impl Action for PlayCardAction {
         }
         let exhaust = c.exhaust;
         drop(c);
-        if exhaust {
-            game.action_queue
-                .push_bot(ExhaustCardAction(self.card.clone()));
-        } else {
-            game.action_queue
-                .push_bot(DiscardCardAction(self.card.clone()));
+        if !self.is_duplicated {
+            if exhaust {
+                game.action_queue
+                    .push_bot(ExhaustCardAction(self.card.clone()));
+            } else {
+                game.action_queue
+                    .push_bot(DiscardCardAction(self.card.clone()));
+            }
         }
     }
 }
