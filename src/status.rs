@@ -779,4 +779,16 @@ mod tests {
         assert_eq!(g.player.creature.statuses.get(&Duplication), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5 - 6);
     }
+
+    #[test]
+    fn test_duplication_double_tap() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Duplication, 1)
+            .add_player_status(Status::DoubleTap, 1)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Rampage, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5 - 8 - 10);
+        assert_eq!(g.discard_pile.len(), 1);
+    }
 }
