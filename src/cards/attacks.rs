@@ -2,7 +2,7 @@ use crate::{
     actions::{
         damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
         gain_status::GainStatusAction, gain_status_all_monsters::GainStatusAllMonstersAction,
-        shuffle_card_into_draw::ShuffleCardIntoDrawAction,
+        increase_max_hp::IncreaseMaxHPAction, shuffle_card_into_draw::ShuffleCardIntoDrawAction,
     },
     card::CardPlayInfo,
     cards::{CardClass, new_card},
@@ -126,6 +126,28 @@ pub fn rampage_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, damage, damage);
 }
 
+pub fn feed_behavior(game: &mut Game, info: CardPlayInfo) {
+    if info.upgraded {
+        game.action_queue
+            .push_bot(DamageAction::from_player_with_on_fatal(
+                12,
+                &game.player,
+                game.get_creature(info.target.unwrap()),
+                info.target.unwrap(),
+                |queue| queue.push_top(IncreaseMaxHPAction(4)),
+            ));
+    } else {
+        game.action_queue
+            .push_bot(DamageAction::from_player_with_on_fatal(
+                10,
+                &game.player,
+                game.get_creature(info.target.unwrap()),
+                info.target.unwrap(),
+                |queue| queue.push_top(IncreaseMaxHPAction(3)),
+            ));
+    }
+}
+
 pub fn swift_strike_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 7, 10);
 }
@@ -151,7 +173,7 @@ pub fn debug_kill_behavior(game: &mut Game, info: CardPlayInfo) {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::block::BlockAction,
+        actions::{block::BlockAction, set_hp::SetHPAction},
         cards::{CardClass, new_card, new_card_upgraded},
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::NoopMonster,
@@ -388,6 +410,50 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 16 - 24);
+    }
+
+    #[test]
+    fn test_feed() {
+        let mut g = GameBuilder::default().build_combat();
+        let player_max_hp = g.player.creature.max_hp;
+        let player_cur_hp = g.player.creature.cur_hp;
+        let monster_hp = g.monsters[0].creature.cur_hp;
+
+        g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, monster_hp - 10);
+        assert_eq!(g.player.creature.max_hp, player_max_hp);
+        assert_eq!(g.player.creature.cur_hp, player_cur_hp);
+
+        g.run_action(SetHPAction {
+            target: CreatureRef::monster(0),
+            hp: 8,
+        });
+        g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 0);
+        assert_eq!(g.player.creature.max_hp, player_max_hp + 3);
+        assert_eq!(g.player.creature.cur_hp, player_cur_hp + 3);
+    }
+
+    #[test]
+    fn test_feed_upgrade() {
+        let mut g = GameBuilder::default().build_combat();
+        let player_max_hp = g.player.creature.max_hp;
+        let player_cur_hp = g.player.creature.cur_hp;
+        let monster_hp = g.monsters[0].creature.cur_hp;
+
+        g.play_card_upgraded(CardClass::Feed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, monster_hp - 12);
+        assert_eq!(g.player.creature.max_hp, player_max_hp);
+        assert_eq!(g.player.creature.cur_hp, player_cur_hp);
+
+        g.run_action(SetHPAction {
+            target: CreatureRef::monster(0),
+            hp: 11,
+        });
+        g.play_card_upgraded(CardClass::Feed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 0);
+        assert_eq!(g.player.creature.max_hp, player_max_hp + 4);
+        assert_eq!(g.player.creature.cur_hp, player_cur_hp + 4);
     }
 
     #[test]

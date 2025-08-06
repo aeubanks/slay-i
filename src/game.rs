@@ -269,7 +269,11 @@ impl Game {
         if !self.get_creature(target).is_alive() {
             return;
         }
-        if let DamageType::Attack { source } = ty {
+        if let DamageType::Attack {
+            source,
+            on_fatal: _,
+        } = ty
+        {
             let c = self.get_creature_mut(target);
             if let Some(a) = c
                 .statuses

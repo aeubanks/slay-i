@@ -3,15 +3,23 @@ use crate::{
     creature::Creature,
     game::{CreatureRef, Game},
     player::Player,
+    queue::ActionQueue,
     status::Status,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DamageType {
-    Attack { source: CreatureRef },
-    Thorns { procs_rupture: bool },
+    Attack {
+        source: CreatureRef,
+        on_fatal: Option<OnFatal>,
+    },
+    Thorns {
+        procs_rupture: bool,
+    },
     HPLoss,
 }
+
+pub type OnFatal = fn(&mut ActionQueue);
 
 pub struct DamageAction {
     target: CreatureRef,
@@ -56,6 +64,24 @@ impl DamageAction {
             amount,
             ty: DamageType::Attack {
                 source: CreatureRef::player(),
+                on_fatal: None,
+            },
+        }
+    }
+    pub fn from_player_with_on_fatal(
+        base_amount: i32,
+        player: &Player,
+        target: &Creature,
+        target_ref: CreatureRef,
+        on_fatal: OnFatal,
+    ) -> Self {
+        let amount = calculate_damage(base_amount, true, target, player);
+        Self {
+            target: target_ref,
+            amount,
+            ty: DamageType::Attack {
+                source: CreatureRef::player(),
+                on_fatal: Some(on_fatal),
             },
         }
     }
@@ -70,7 +96,10 @@ impl DamageAction {
         Self {
             target,
             amount,
-            ty: DamageType::Attack { source: source_ref },
+            ty: DamageType::Attack {
+                source: source_ref,
+                on_fatal: None,
+            },
         }
     }
     pub fn thorns_rupture(amount: i32, target: CreatureRef) -> Self {
@@ -103,6 +132,16 @@ impl DamageAction {
 impl Action for DamageAction {
     fn run(&self, game: &mut Game) {
         game.damage(self.target, self.amount, self.ty);
+        if !game.get_creature(self.target).is_alive() {
+            if let DamageType::Attack {
+                source: _,
+                on_fatal,
+            } = self.ty
+                && let Some(on_fatal) = on_fatal
+            {
+                on_fatal(&mut game.action_queue);
+            }
+        }
     }
 }
 

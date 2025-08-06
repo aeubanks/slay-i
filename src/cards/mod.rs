@@ -175,7 +175,7 @@ c!(
     Reaper => (Rare, Attack, Red, cost(2), todo, true),
     Immolate => (Rare, Attack, Red, cost(2), todo, false),
     Bludgeon => (Rare, Attack, Red, cost(3), todo, false),
-    Feed => (Rare, Attack, Red, cost(1), todo, true),
+    Feed => (Rare, Attack, Red, cost(1), attacks::feed_behavior, true),
     FiendFire => (Rare, Attack, Red, cost(2), todo, true),
     // Rare skills
     LimitBreak => (Rare, Skill, Red, cost(1), skills::limit_break_behavior, true),
