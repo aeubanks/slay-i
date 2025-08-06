@@ -1,8 +1,10 @@
 use lazy_static::lazy_static;
 
 use crate::{
-    actions::{block::BlockAction, damage::DamageAction, draw::DrawAction, heal::HealAction},
-    card::Card,
+    actions::{
+        block::BlockAction, damage::DamageAction, draw::DrawAction, heal::HealAction,
+        play_card::PlayCardAction,
+    },
     cards::CardType,
     game::{CreatureRef, Rand},
     queue::ActionQueue,
@@ -63,7 +65,7 @@ r!(
 );
 
 type RelicCallback = fn(&mut i32, &mut ActionQueue);
-type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &Card);
+type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &PlayCardAction);
 
 impl RelicClass {
     pub fn pre_combat(&self) -> Option<RelicCallback> {
@@ -152,8 +154,8 @@ fn captains_wheel(v: &mut i32, queue: &mut ActionQueue) {
     }
 }
 
-fn blue_candle(_: &mut i32, queue: &mut ActionQueue, card: &Card) {
-    if card.class.ty() == CardType::Curse {
+fn blue_candle(_: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+    if play.card.borrow().class.ty() == CardType::Curse {
         queue.push_bot(DamageAction::lose_hp(1, CreatureRef::player()));
     }
 }
@@ -180,9 +182,9 @@ macro_rules! trigger {
 }
 macro_rules! trigger_card {
     ($name:ident) => {
-        pub fn $name(&mut self, queue: &mut ActionQueue, card: &Card) {
+        pub fn $name(&mut self, queue: &mut ActionQueue, play: &PlayCardAction) {
             if let Some(f) = self.class.$name() {
-                f(&mut self.value, queue, card)
+                f(&mut self.value, queue, play)
             }
         }
     };

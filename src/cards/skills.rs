@@ -68,6 +68,14 @@ pub fn impervious_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 30, 40);
 }
 
+pub fn double_tap_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::DoubleTap,
+        amount: if info.upgraded { 2 } else { 1 },
+        target: CreatureRef::player(),
+    });
+}
+
 pub fn limit_break_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(DoubleStrengthAction());
 }

@@ -180,7 +180,7 @@ c!(
     // Rare skills
     LimitBreak => (Rare, Skill, Red, cost(1), skills::limit_break_behavior, true),
     Impervious => (Rare, Skill, Red, cost(2), skills::impervious_behavior, true),
-    DoubleTap => (Rare, Skill, Red, cost(1), todo, false),
+    DoubleTap => (Rare, Skill, Red, cost(1), skills::double_tap_behavior, false),
     Offering => (Rare, Skill, Red, cost(0), todo, true),
     Exhume => (Rare, Skill, Red, cost(1), todo, true),
     // Rare powers

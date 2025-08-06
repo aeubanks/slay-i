@@ -6,6 +6,7 @@ use crate::{
         gain_status::GainStatusAction, play_card::PlayCardAction,
         reduce_status::ReduceStatusAction, remove_status::RemoveStatusAction,
     },
+    cards::CardType,
     game::CreatureRef,
     queue::ActionQueue,
     status::Status,
@@ -75,17 +76,33 @@ impl Creature {
                 break;
             }
         }
-        if !play.is_duplicated && self.statuses.contains_key(&Status::Duplication) {
-            queue.push_top(ReduceStatusAction {
-                status: Status::Duplication,
-                amount: 1,
-                target: CreatureRef::player(),
-            });
-            card_queue.push(PlayCardAction {
-                card: play.card.clone(),
-                target: play.target,
-                is_duplicated: true,
-            });
+        if !play.is_duplicated {
+            if self.statuses.contains_key(&Status::Duplication) {
+                queue.push_top(ReduceStatusAction {
+                    status: Status::Duplication,
+                    amount: 1,
+                    target: CreatureRef::player(),
+                });
+                card_queue.push(PlayCardAction {
+                    card: play.card.clone(),
+                    target: play.target,
+                    is_duplicated: true,
+                });
+            }
+            if self.statuses.contains_key(&Status::DoubleTap)
+                && play.card.borrow().class.ty() == CardType::Attack
+            {
+                queue.push_top(ReduceStatusAction {
+                    status: Status::DoubleTap,
+                    amount: 1,
+                    target: CreatureRef::player(),
+                });
+                card_queue.push(PlayCardAction {
+                    card: play.card.clone(),
+                    target: play.target,
+                    is_duplicated: true,
+                });
+            }
         }
     }
 

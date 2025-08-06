@@ -1,5 +1,6 @@
 use crate::{
-    card::{Card, CardPile},
+    actions::play_card::PlayCardAction,
+    card::CardPile,
     creature::Creature,
     potion::Potion,
     queue::ActionQueue,
@@ -25,9 +26,9 @@ macro_rules! trigger {
 
 macro_rules! trigger_card {
     ($func_name:ident, $name:ident) => {
-        pub fn $func_name(&mut self, queue: &mut ActionQueue, card: &Card) {
+        pub fn $func_name(&mut self, queue: &mut ActionQueue, play: &PlayCardAction) {
             for r in &mut self.relics {
-                r.$name(queue, card);
+                r.$name(queue, play);
             }
         }
     };

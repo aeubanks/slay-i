@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::{
     action::Action,
     actions::exhaust_card::ExhaustCardAction,
@@ -36,27 +34,35 @@ impl Action for PlayCardAction {
         };
         (c.class.behavior())(game, info);
         c.times_played += 1;
+        enum CardDestination {
+            Discard,
+            Exhaust,
+            None,
+        }
+        let dest = if self.is_duplicated || c.class.ty() == CardType::Power {
+            CardDestination::None
+        } else if c.exhaust {
+            CardDestination::Exhaust
+        } else {
+            CardDestination::Discard
+        };
+        drop(c);
         game.player.creature.trigger_statuses_on_card_played(
             &mut game.action_queue,
             &mut game.card_queue,
             self,
         );
         game.player
-            .trigger_relics_on_card_played(&mut game.action_queue, c.deref());
+            .trigger_relics_on_card_played(&mut game.action_queue, self);
         game.energy -= energy;
-        if c.class.ty() == CardType::Power {
-            return;
-        }
-        let exhaust = c.exhaust;
-        drop(c);
-        if !self.is_duplicated {
-            if exhaust {
-                game.action_queue
-                    .push_bot(ExhaustCardAction(self.card.clone()));
-            } else {
-                game.action_queue
-                    .push_bot(DiscardCardAction(self.card.clone()));
-            }
+        match dest {
+            CardDestination::None => {}
+            CardDestination::Discard => game
+                .action_queue
+                .push_bot(DiscardCardAction(self.card.clone())),
+            CardDestination::Exhaust => game
+                .action_queue
+                .push_bot(ExhaustCardAction(self.card.clone())),
         }
     }
 }

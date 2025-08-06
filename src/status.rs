@@ -46,6 +46,7 @@ s!(
     Barricade => Buff,
     NoDraw => Debuff,
     Duplication => Buff,
+    DoubleTap => Buff,
     Bomb3 => Buff,
     Bomb2 => Buff,
     Bomb1 => Buff,
@@ -63,7 +64,7 @@ impl Status {
     }
     pub fn disappears_end_of_turn(&self) -> bool {
         use Status::*;
-        matches!(self, NoDraw)
+        matches!(self, NoDraw | DoubleTap)
     }
     pub fn does_not_stack(&self) -> bool {
         use Status::*;
@@ -754,5 +755,28 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 6);
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.player.creature.statuses.get(&Duplication), Some(&1));
+    }
+
+    #[test]
+    fn test_double_tap() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::DoubleTap, 1)
+            .build_combat();
+        g.energy = 99;
+
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.creature.block, 5);
+        assert_eq!(g.player.creature.statuses.get(&DoubleTap), Some(&1));
+        assert_eq!(g.discard_pile.len(), 1);
+
+        g.play_card(CardClass::Rampage, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5);
+        assert_eq!(g.discard_pile.len(), 2);
+
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.statuses.get(&Duplication), None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5 - 6);
     }
 }
