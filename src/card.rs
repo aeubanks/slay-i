@@ -11,6 +11,7 @@ pub struct CardPlayInfo {
     pub upgraded: bool,
     pub upgrade_count: i32,
     pub times_played: i32,
+    pub energy: i32,
 }
 
 #[derive(Clone)]

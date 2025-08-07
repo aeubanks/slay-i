@@ -116,7 +116,7 @@ pub fn searing_blow_behavior(game: &mut Game, info: CardPlayInfo) {
 }
 
 pub fn whirlwind_behavior(game: &mut Game, info: CardPlayInfo) {
-    for _ in 0..game.energy {
+    for _ in 0..info.energy {
         push_aoe_damage(game, info, 5, 8);
     }
 }

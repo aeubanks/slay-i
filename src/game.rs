@@ -609,6 +609,7 @@ impl Game {
                     card: self.hand.remove(card_index),
                     target: target.map(CreatureRef::monster),
                     is_duplicated: false,
+                    energy: self.energy,
                 });
                 self.run();
             }
@@ -742,6 +743,7 @@ impl Game {
             card: new_card(class),
             target,
             is_duplicated: false,
+            energy: self.energy,
         });
     }
 
@@ -751,6 +753,7 @@ impl Game {
             card: new_card_upgraded(class),
             target,
             is_duplicated: false,
+            energy: self.energy,
         });
     }
 

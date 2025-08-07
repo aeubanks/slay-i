@@ -12,6 +12,7 @@ pub struct PlayCardAction {
     pub card: CardRef,
     pub target: Option<CreatureRef>,
     pub is_duplicated: bool,
+    pub energy: i32,
 }
 
 impl Action for PlayCardAction {
@@ -31,6 +32,7 @@ impl Action for PlayCardAction {
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
             times_played: c.times_played,
+            energy: self.energy,
         };
         (c.class.behavior())(game, info);
         c.times_played += 1;

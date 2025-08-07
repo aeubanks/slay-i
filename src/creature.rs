@@ -87,6 +87,7 @@ impl Creature {
                     card: play.card.clone(),
                     target: play.target,
                     is_duplicated: true,
+                    energy: play.energy,
                 });
             }
             if self.statuses.contains_key(&Status::DoubleTap)
@@ -101,6 +102,7 @@ impl Creature {
                     card: play.card.clone(),
                     target: play.target,
                     is_duplicated: true,
+                    energy: play.energy,
                 });
             }
         }

@@ -791,4 +791,14 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5 - 8 - 10);
         assert_eq!(g.discard_pile.len(), 1);
     }
+
+    #[test]
+    fn test_duplication_whirlwind() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Duplication, 1)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Whirlwind, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 5 * 6);
+    }
 }
