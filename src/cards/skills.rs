@@ -3,7 +3,7 @@ use crate::{
         block::BlockAction, choose_upgrade_one_card_in_hand::ChooseUpgradeOneCardInHandAction,
         damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction, gain_energy::GainEnergyAction,
-        gain_status::GainStatusAction, madness::MadnessAction,
+        gain_status::GainStatusAction, madness::MadnessAction, play_top_card::PlayTopCardAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
@@ -37,6 +37,12 @@ pub fn armaments_behavior(game: &mut Game, info: CardPlayInfo) {
         game.action_queue
             .push_bot(ChooseUpgradeOneCardInHandAction());
     }
+}
+
+pub fn havoc_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue.push_bot(PlayTopCardAction {
+        force_exhaust: true,
+    });
 }
 
 pub fn ghostly_armor_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -192,6 +198,40 @@ mod tests {
         assert!(g.hand[0].borrow().upgrade_count == 1);
         assert!(g.hand[1].borrow().upgrade_count == 1);
         assert!(g.hand[2].borrow().upgrade_count == 2);
+    }
+
+    #[test]
+    fn test_havoc() {
+        let mut g = GameBuilder::default().build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.play_card_upgraded(CardClass::Havoc, None);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.exhaust_pile.len(), 0);
+
+        g.discard_pile.clear();
+        g.draw_pile.push(new_card(CardClass::Strike));
+        g.play_card(CardClass::Havoc, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6);
+        assert_eq!(g.energy, 2);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.exhaust_pile.len(), 1);
+
+        g.discard_pile.clear();
+        g.exhaust_pile.clear();
+        g.draw_pile.push(new_card_upgraded(CardClass::Strike));
+        g.play_card_upgraded(CardClass::Havoc, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 9);
+        assert_eq!(g.energy, 2);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.exhaust_pile.len(), 1);
+
+        g.discard_pile.clear();
+        g.exhaust_pile.clear();
+        g.draw_pile.push(new_card(CardClass::Whirlwind));
+        g.play_card_upgraded(CardClass::Havoc, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 9 - 10);
+        assert_eq!(g.energy, 2);
     }
 
     #[test]

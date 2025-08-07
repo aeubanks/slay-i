@@ -18,6 +18,7 @@ pub mod increase_max_hp;
 pub mod madness;
 pub mod noop;
 pub mod play_card;
+pub mod play_top_card;
 pub mod reduce_status;
 pub mod remove_status;
 pub mod set_energy;

@@ -130,7 +130,7 @@ c!(
     Flex => (Common, Skill, Red, cost(0), todo, false),
     TrueGrit => (Common, Skill, Red, cost(1), todo, false),
     ShrugItOff => (Common, Skill, Red, cost(1), todo, false),
-    Havoc => (Common, Skill, Red, cost(1), todo, false),
+    Havoc => (Common, Skill, Red, cost(1), skills::havoc_behavior, false),
     Warcry => (Common, Skill, Red, cost(0), todo, false),
     // Uncommon attacks
     SearingBlow => (Uncommon, Attack, Red, cost(2), attacks::searing_blow_behavior, false),

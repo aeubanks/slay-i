@@ -19,6 +19,7 @@ use crate::monsters::test::NoopMonster;
 use crate::player::Player;
 use crate::queue::ActionQueue;
 use crate::relic::RelicClass;
+use crate::rng::rand_slice;
 use crate::status::Status;
 use rand::seq::SliceRandom;
 
@@ -265,6 +266,17 @@ impl Game {
         }
     }
 
+    pub fn get_random_alive_monster(&mut self) -> CreatureRef {
+        let mut alive = vec![];
+        for (i, m) in self.monsters.iter().enumerate() {
+            if !m.creature.is_alive() {
+                continue;
+            }
+            alive.push(i);
+        }
+        CreatureRef::monster(rand_slice(&mut self.rng, &alive))
+    }
+
     pub fn damage(&mut self, target: CreatureRef, mut amount: i32, ty: DamageType) {
         if !self.get_creature(target).is_alive() {
             return;
@@ -469,8 +481,8 @@ impl Game {
                 if self.state == GameState::Armaments {
                     break;
                 }
-            } else if let Some(a) = self.card_queue.pop() {
-                self.action_queue.push_bot(a);
+            } else if !self.card_queue.is_empty() {
+                self.action_queue.push_bot(self.card_queue.remove(0));
             } else {
                 break;
             }
@@ -610,6 +622,8 @@ impl Game {
                     target: target.map(CreatureRef::monster),
                     is_duplicated: false,
                     energy: self.energy,
+                    force_exhaust: false,
+                    free: false,
                 });
                 self.run();
             }
@@ -744,6 +758,8 @@ impl Game {
             target,
             is_duplicated: false,
             energy: self.energy,
+            force_exhaust: false,
+            free: false,
         });
     }
 
@@ -754,6 +770,8 @@ impl Game {
             target,
             is_duplicated: false,
             energy: self.energy,
+            force_exhaust: false,
+            free: false,
         });
     }
 

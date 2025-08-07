@@ -13,6 +13,8 @@ pub struct PlayCardAction {
     pub target: Option<CreatureRef>,
     pub is_duplicated: bool,
     pub energy: i32,
+    pub free: bool,
+    pub force_exhaust: bool,
 }
 
 impl Action for PlayCardAction {
@@ -43,7 +45,7 @@ impl Action for PlayCardAction {
         }
         let dest = if self.is_duplicated || c.class.ty() == CardType::Power {
             CardDestination::None
-        } else if c.exhaust {
+        } else if c.exhaust || self.force_exhaust {
             CardDestination::Exhaust
         } else {
             CardDestination::Discard
@@ -56,7 +58,9 @@ impl Action for PlayCardAction {
         );
         game.player
             .trigger_relics_on_card_played(&mut game.action_queue, self);
-        game.energy -= energy;
+        if !self.free {
+            game.energy -= energy;
+        }
         match dest {
             CardDestination::None => {}
             CardDestination::Discard => game

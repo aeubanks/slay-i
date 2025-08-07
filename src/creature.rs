@@ -88,6 +88,8 @@ impl Creature {
                     target: play.target,
                     is_duplicated: true,
                     energy: play.energy,
+                    force_exhaust: false,
+                    free: true,
                 });
             }
             if self.statuses.contains_key(&Status::DoubleTap)
@@ -103,6 +105,8 @@ impl Creature {
                     target: play.target,
                     is_duplicated: true,
                     energy: play.energy,
+                    force_exhaust: false,
+                    free: true,
                 });
             }
         }
