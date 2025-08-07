@@ -235,6 +235,20 @@ mod tests {
     }
 
     #[test]
+    fn test_havoc_multiple_monsters() {
+        let mut g = GameBuilder::default()
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.draw_pile.push(new_card(CardClass::Strike));
+        g.play_card(CardClass::Havoc, None);
+        assert!(g.monsters[0].creature.cur_hp == hp || g.monsters[1].creature.cur_hp == hp);
+        assert!(g.monsters[0].creature.cur_hp == hp - 6 || g.monsters[1].creature.cur_hp == hp - 6);
+    }
+
+    #[test]
     fn test_bloodletting() {
         let mut g = GameBuilder::default().build_combat();
         let hp = g.player.creature.cur_hp;
