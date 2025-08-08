@@ -132,15 +132,14 @@ impl DamageAction {
 impl Action for DamageAction {
     fn run(&self, game: &mut Game) {
         game.damage(self.target, self.amount, self.ty);
-        if !game.get_creature(self.target).is_alive() {
-            if let DamageType::Attack {
+        if !game.get_creature(self.target).is_alive()
+            && let DamageType::Attack {
                 source: _,
                 on_fatal,
             } = self.ty
-                && let Some(on_fatal) = on_fatal
-            {
-                on_fatal(&mut game.action_queue);
-            }
+            && let Some(on_fatal) = on_fatal
+        {
+            on_fatal(&mut game.action_queue);
         }
     }
 }
