@@ -17,16 +17,16 @@ pub fn burn_plus_behavior(game: &mut Game) {
 mod tests {
     use crate::{
         actions::block::BlockAction,
-        cards::{CardClass, new_card},
+        cards::CardClass,
         game::{GameBuilder, Move},
     };
 
     #[test]
     fn test_playable() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card(CardClass::Wound));
-        g.hand.push(new_card(CardClass::Slimed));
-        g.hand.push(new_card(CardClass::Dazed));
+        g.add_card_to_hand(CardClass::Wound);
+        g.add_card_to_hand(CardClass::Slimed);
+        g.add_card_to_hand(CardClass::Dazed);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -88,7 +88,7 @@ mod tests {
     #[should_panic]
     fn test_crash_on_play_unplayable_status() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card(CardClass::Wound));
+        g.add_card_to_hand(CardClass::Wound);
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,

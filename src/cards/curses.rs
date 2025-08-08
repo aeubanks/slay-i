@@ -37,7 +37,7 @@ pub fn shame_behavior(game: &mut Game) {
 mod tests {
     use crate::{
         actions::block::BlockAction,
-        cards::{CardClass, new_card},
+        cards::CardClass,
         game::{GameBuilder, Move},
         status::Status,
     };
@@ -45,7 +45,7 @@ mod tests {
     #[test]
     fn test_playable() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card(CardClass::AscendersBane));
+        g.add_card_to_hand(CardClass::AscendersBane);
         assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
     }
 
@@ -53,7 +53,7 @@ mod tests {
     #[should_panic]
     fn test_crash_on_play_unplayable_curse() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card(CardClass::AscendersBane));
+        g.add_card_to_hand(CardClass::AscendersBane);
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,

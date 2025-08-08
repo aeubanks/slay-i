@@ -79,7 +79,7 @@ pub fn panache_behavior(game: &mut Game, info: CardPlayInfo) {
 mod tests {
     use crate::{
         actions::{block::BlockAction, draw::DrawAction, exhaust_card::ExhaustCardAction},
-        cards::{CardClass, new_card},
+        cards::CardClass,
         game::{GameBuilder, Move},
         status::Status,
     };
@@ -141,13 +141,13 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::Evolve, None);
         for _ in 0..10 {
-            g.draw_pile.push(new_card(CardClass::Strike));
+            g.add_card_to_draw_pile(CardClass::Strike);
         }
-        g.draw_pile.push(new_card(CardClass::Wound));
+        g.add_card_to_draw_pile(CardClass::Wound);
         g.run_action(DrawAction(1));
         assert_eq!(g.hand.len(), 2);
         g.play_card_upgraded(CardClass::Evolve, None);
-        g.draw_pile.push(new_card(CardClass::Dazed));
+        g.add_card_to_draw_pile(CardClass::Dazed);
         g.run_action(DrawAction(2));
         assert_eq!(g.hand.len(), 7);
     }
@@ -158,13 +158,13 @@ mod tests {
         let hp = g.monsters[0].creature.cur_hp;
 
         g.play_card(CardClass::FireBreathing, None);
-        g.draw_pile.push(new_card(CardClass::Wound));
+        g.add_card_to_draw_pile(CardClass::Wound);
         g.run_action(DrawAction(1));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6);
 
         g.play_card_upgraded(CardClass::FireBreathing, None);
-        g.draw_pile.push(new_card(CardClass::Dazed));
-        g.draw_pile.push(new_card(CardClass::Strike));
+        g.add_card_to_draw_pile(CardClass::Dazed);
+        g.add_card_to_draw_pile(CardClass::Strike);
         g.run_action(DrawAction(2));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 16);
     }

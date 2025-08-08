@@ -94,7 +94,7 @@ mod tests {
             draw::DrawAction, gain_status::GainStatusAction, reduce_status::ReduceStatusAction,
             set_hp::SetHPAction,
         },
-        cards::{CardClass, CardCost, new_card},
+        cards::{CardClass, CardCost},
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         status::Status,
@@ -460,19 +460,19 @@ mod tests {
         assert_eq!(g.player.creature.statuses.get(&Strength), Some(&1));
 
         g.hand.clear();
-        g.hand.push(new_card(CardClass::Burn));
+        g.add_card_to_hand(CardClass::Burn);
         g.run_action(BlockAction::player_flat_amount(2));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.statuses.get(&Strength), Some(&1));
 
         g.hand.clear();
-        g.hand.push(new_card(CardClass::Burn));
+        g.add_card_to_hand(CardClass::Burn);
         g.run_action(BlockAction::player_flat_amount(1));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.statuses.get(&Strength), Some(&2));
 
         g.hand.clear();
-        g.hand.push(new_card(CardClass::Regret));
+        g.add_card_to_hand(CardClass::Regret);
         g.run_action(BlockAction::player_flat_amount(2));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.statuses.get(&Strength), Some(&3));

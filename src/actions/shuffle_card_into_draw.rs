@@ -25,16 +25,16 @@ impl std::fmt::Debug for ShuffleCardIntoDrawAction {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::shuffle_card_into_draw::ShuffleCardIntoDrawAction,
-        cards::{CardClass, new_card},
+        actions::shuffle_card_into_draw::ShuffleCardIntoDrawAction, cards::CardClass,
         game::GameBuilder,
     };
 
     #[test]
     fn test_shuffle_into_draw_non_empty() {
         let mut g = GameBuilder::default().build_combat();
-        g.draw_pile.push(new_card(CardClass::Strike));
-        g.run_action(ShuffleCardIntoDrawAction(new_card(CardClass::Defend)));
+        g.add_card_to_draw_pile(CardClass::Strike);
+        let card = g.new_card(CardClass::Defend);
+        g.run_action(ShuffleCardIntoDrawAction(card));
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Defend);
         assert_eq!(g.draw_pile[1].borrow().class, CardClass::Strike);
     }
@@ -45,9 +45,10 @@ mod tests {
         let mut found_at_1 = false;
         for _ in 0..500 {
             let mut g = GameBuilder::default().build_combat();
-            g.draw_pile.push(new_card(CardClass::Strike));
-            g.draw_pile.push(new_card(CardClass::Strike));
-            g.run_action(ShuffleCardIntoDrawAction(new_card(CardClass::Defend)));
+            g.add_card_to_draw_pile(CardClass::Strike);
+            g.add_card_to_draw_pile(CardClass::Strike);
+            let card = g.new_card(CardClass::Defend);
+            g.run_action(ShuffleCardIntoDrawAction(card));
             found_at_0 |= g.draw_pile[0].borrow().class == CardClass::Defend;
             found_at_1 |= g.draw_pile[1].borrow().class == CardClass::Defend;
             assert_eq!(g.draw_pile[2].borrow().class, CardClass::Strike);
@@ -61,7 +62,8 @@ mod tests {
     #[test]
     fn test_shuffle_into_draw_empty() {
         let mut g = GameBuilder::default().build_combat();
-        g.run_action(ShuffleCardIntoDrawAction(new_card(CardClass::Defend)));
+        let card = g.new_card(CardClass::Defend);
+        g.run_action(ShuffleCardIntoDrawAction(card));
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Defend);
     }

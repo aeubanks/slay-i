@@ -5,7 +5,7 @@ use crate::{
         increase_max_hp::IncreaseMaxHPAction, shuffle_card_into_draw::ShuffleCardIntoDrawAction,
     },
     card::CardPlayInfo,
-    cards::{CardClass, new_card},
+    cards::CardClass,
     game::Game,
     status::Status,
 };
@@ -95,14 +95,14 @@ pub fn body_slam_behavior(game: &mut Game, info: CardPlayInfo) {
 
 pub fn wild_strike_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 12, 17);
-    game.action_queue
-        .push_bot(ShuffleCardIntoDrawAction(new_card(CardClass::Wound)));
+    let card = game.new_card(CardClass::Wound);
+    game.action_queue.push_bot(ShuffleCardIntoDrawAction(card));
 }
 
 pub fn reckless_charge_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 7, 10);
-    game.action_queue
-        .push_bot(ShuffleCardIntoDrawAction(new_card(CardClass::Dazed)));
+    let card = game.new_card(CardClass::Dazed);
+    game.action_queue.push_bot(ShuffleCardIntoDrawAction(card));
 }
 
 pub fn searing_blow_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -174,7 +174,7 @@ pub fn debug_kill_behavior(game: &mut Game, info: CardPlayInfo) {
 mod tests {
     use crate::{
         actions::{block::BlockAction, set_hp::SetHPAction},
-        cards::{CardClass, new_card, new_card_upgraded},
+        cards::CardClass,
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::NoopMonster,
         status::Status,
@@ -462,7 +462,7 @@ mod tests {
             .add_cards(CardClass::Strike, 25)
             .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
-        g.hand.push(new_card(CardClass::MindBlast));
+        g.add_card_to_hand(CardClass::MindBlast);
         g.make_move(Move::PlayCard {
             card_index: 5,
             target: Some(0),
@@ -496,7 +496,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_upgrade_crash() {
-        let c = new_card_upgraded(CardClass::Strike);
+        let mut g = GameBuilder::default().build_combat();
+        let c = g.new_card_upgraded(CardClass::Strike);
         let mut c = c.borrow_mut();
         c.upgrade();
     }

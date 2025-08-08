@@ -5,10 +5,9 @@ mod skills;
 mod statuses;
 
 use lazy_static::lazy_static;
-use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    card::{Card, CardPlayInfo, CardRef},
+    card::CardPlayInfo,
     game::{Game, Rand},
     rng::rand_slice,
 };
@@ -308,22 +307,6 @@ impl CardClass {
             _ => None,
         }
     }
-}
-
-pub fn new_card(class: CardClass) -> CardRef {
-    Rc::new(RefCell::new(Card {
-        class,
-        upgrade_count: 0,
-        cost: class.base_cost(),
-        exhaust: class.base_exhausts(),
-        times_played: 0,
-    }))
-}
-
-pub fn new_card_upgraded(class: CardClass) -> CardRef {
-    let c = new_card(class);
-    c.borrow_mut().upgrade();
-    c
 }
 
 lazy_static! {

@@ -117,7 +117,7 @@ pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
 mod tests {
     use crate::{
         actions::{block::BlockAction, exhaust_card::ExhaustCardAction},
-        cards::{CardClass, CardCost, new_card, new_card_upgraded},
+        cards::{CardClass, CardCost},
         game::{GameBuilder, Move},
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
@@ -151,14 +151,10 @@ mod tests {
     fn test_armaments() {
         {
             let mut g = GameBuilder::default().build_combat();
-            g.hand.push(new_card(CardClass::Armaments));
-            g.hand.push(new_card(CardClass::Strike));
-            g.hand.push(new_card_upgraded(CardClass::Defend));
-            g.hand.push(new_card(CardClass::TwinStrike));
-            g.make_move(Move::PlayCard {
-                card_index: 0,
-                target: None,
-            });
+            g.add_card_to_hand(CardClass::Strike);
+            g.add_card_to_hand_upgraded(CardClass::Defend);
+            g.add_card_to_hand(CardClass::TwinStrike);
+            g.play_card(CardClass::Armaments, None);
             assert_eq!(
                 g.valid_moves(),
                 vec![
@@ -175,7 +171,7 @@ mod tests {
 
         {
             let mut g = GameBuilder::default().build_combat();
-            g.hand.push(new_card(CardClass::Armaments));
+            g.add_card_to_hand(CardClass::Armaments);
             g.make_move(Move::PlayCard {
                 card_index: 0,
                 target: None,
@@ -187,14 +183,10 @@ mod tests {
     #[test]
     fn test_upgraded_armaments() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card_upgraded(CardClass::Armaments));
-        g.hand.push(new_card(CardClass::Strike));
-        g.hand.push(new_card_upgraded(CardClass::Defend));
-        g.hand.push(new_card_upgraded(CardClass::SearingBlow));
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand_upgraded(CardClass::Defend);
+        g.add_card_to_hand_upgraded(CardClass::SearingBlow);
+        g.play_card_upgraded(CardClass::Armaments, None);
         assert!(g.hand[0].borrow().upgrade_count == 1);
         assert!(g.hand[1].borrow().upgrade_count == 1);
         assert!(g.hand[2].borrow().upgrade_count == 2);
@@ -210,7 +202,7 @@ mod tests {
         assert_eq!(g.exhaust_pile.len(), 0);
 
         g.discard_pile.clear();
-        g.draw_pile.push(new_card(CardClass::Strike));
+        g.add_card_to_draw_pile(CardClass::Strike);
         g.play_card(CardClass::Havoc, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6);
         assert_eq!(g.energy, 2);
@@ -219,18 +211,18 @@ mod tests {
 
         g.discard_pile.clear();
         g.exhaust_pile.clear();
-        g.draw_pile.push(new_card_upgraded(CardClass::Strike));
+        g.add_card_to_draw_pile(CardClass::TwinStrike);
         g.play_card_upgraded(CardClass::Havoc, None);
-        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 9);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 10);
         assert_eq!(g.energy, 2);
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.exhaust_pile.len(), 1);
 
         g.discard_pile.clear();
         g.exhaust_pile.clear();
-        g.draw_pile.push(new_card(CardClass::Whirlwind));
+        g.add_card_to_draw_pile(CardClass::Whirlwind);
         g.play_card_upgraded(CardClass::Havoc, None);
-        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 9 - 10);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 10 - 10);
         assert_eq!(g.energy, 2);
     }
 
@@ -242,7 +234,7 @@ mod tests {
             .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
 
-        g.draw_pile.push(new_card(CardClass::Strike));
+        g.add_card_to_draw_pile(CardClass::Strike);
         g.play_card(CardClass::Havoc, None);
         assert!(g.monsters[0].creature.cur_hp == hp || g.monsters[1].creature.cur_hp == hp);
         assert!(g.monsters[0].creature.cur_hp == hp - 6 || g.monsters[1].creature.cur_hp == hp - 6);
@@ -323,19 +315,11 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_player_status(Status::Strength, 3)
                 .build_combat();
-            g.hand.push(new_card(CardClass::LimitBreak));
-            g.hand.push(new_card_upgraded(CardClass::LimitBreak));
-            g.make_move(Move::PlayCard {
-                card_index: 0,
-                target: None,
-            });
+            g.play_card(CardClass::LimitBreak, None);
             assert_eq!(g.discard_pile.len(), 0);
             assert_eq!(g.exhaust_pile.len(), 1);
             assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&6));
-            g.make_move(Move::PlayCard {
-                card_index: 0,
-                target: None,
-            });
+            g.play_card_upgraded(CardClass::LimitBreak, None);
             assert_eq!(g.discard_pile.len(), 1);
             assert_eq!(g.exhaust_pile.len(), 1);
             assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&12));
@@ -356,9 +340,9 @@ mod tests {
     #[test]
     fn test_enlightenment() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card(CardClass::Enlightenment));
-        g.hand.push(new_card(CardClass::SwiftStrike));
-        g.hand.push(new_card(CardClass::Bash));
+        g.add_card_to_hand(CardClass::Enlightenment);
+        g.add_card_to_hand(CardClass::SwiftStrike);
+        g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -386,8 +370,8 @@ mod tests {
     #[test]
     fn test_enlightenment_exhaust() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card(CardClass::Enlightenment));
-        g.hand.push(new_card(CardClass::Bash));
+        g.add_card_to_hand(CardClass::Enlightenment);
+        g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -406,8 +390,8 @@ mod tests {
     #[test]
     fn test_enlightenment_end_turn() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card(CardClass::Enlightenment));
-        g.hand.push(new_card(CardClass::Bash));
+        g.add_card_to_hand(CardClass::Enlightenment);
+        g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -425,14 +409,10 @@ mod tests {
     #[test]
     fn test_enlightenment_upgraded() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card_upgraded(CardClass::Enlightenment));
-        g.hand.push(new_card(CardClass::SwiftStrike));
-        g.hand.push(new_card(CardClass::Bash));
+        g.add_card_to_hand(CardClass::SwiftStrike);
+        g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card_upgraded(CardClass::Enlightenment, None);
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: Some(0),
@@ -454,13 +434,9 @@ mod tests {
     #[test]
     fn test_enlightenment_upgraded_end_turn() {
         let mut g = GameBuilder::default().build_combat();
-        g.hand.push(new_card_upgraded(CardClass::Enlightenment));
-        g.hand.push(new_card(CardClass::Bash));
+        g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
-            target: None,
-        });
+        g.play_card_upgraded(CardClass::Enlightenment, None);
         g.discard_pile.pop();
         g.make_move(Move::EndTurn);
         g.make_move(Move::PlayCard {
@@ -524,7 +500,7 @@ mod tests {
     fn test_madness() {
         let mut g = GameBuilder::default().build_combat();
 
-        g.hand.push(new_card(CardClass::Bloodletting));
+        g.add_card_to_hand(CardClass::Bloodletting);
         g.play_card_upgraded(CardClass::Madness, None);
         assert_eq!(
             g.hand[0].borrow().cost,
@@ -535,7 +511,7 @@ mod tests {
         );
 
         g.hand.clear();
-        g.hand.push(new_card(CardClass::Strike));
+        g.add_card_to_hand(CardClass::Strike);
         g.play_card_upgraded(CardClass::Madness, None);
         assert_eq!(
             g.hand[0].borrow().cost,
@@ -546,10 +522,10 @@ mod tests {
         );
 
         g.hand.clear();
-        let c = new_card(CardClass::Strike);
+        let c = g.new_card(CardClass::Strike);
         c.borrow_mut().set_cost(1, Some(0));
         g.hand.push(c);
-        g.hand.push(new_card(CardClass::Strike));
+        g.add_card_to_hand(CardClass::Strike);
         g.play_card_upgraded(CardClass::Madness, None);
         assert_eq!(
             g.hand[0].borrow().cost,
@@ -570,8 +546,8 @@ mod tests {
         let mut found_1 = false;
         for _ in 0..100 {
             g.hand.clear();
-            g.hand.push(new_card(CardClass::Strike));
-            g.hand.push(new_card(CardClass::Bash));
+            g.add_card_to_hand(CardClass::Strike);
+            g.add_card_to_hand(CardClass::Bash);
             g.play_card_upgraded(CardClass::Madness, None);
             found_0 |= g.hand[0].borrow().get_base_cost() == 0;
             found_1 |= g.hand[1].borrow().get_base_cost() == 0;

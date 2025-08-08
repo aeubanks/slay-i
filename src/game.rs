@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 #[cfg(test)]
 use crate::action::Action;
@@ -11,8 +13,8 @@ use crate::actions::play_card::PlayCardAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
 use crate::blessings::Blessing;
-use crate::card::{Card, CardPile};
-use crate::cards::{CardClass, CardCost, CardType, new_card, new_card_upgraded, transformed};
+use crate::card::{Card, CardPile, CardRef};
+use crate::cards::{CardClass, CardCost, CardType, transformed};
 use crate::creature::Creature;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
@@ -96,7 +98,7 @@ pub enum GameState {
 #[derive(Default)]
 #[allow(unused)]
 pub struct GameBuilder {
-    master_deck: CardPile,
+    master_deck: Vec<(CardClass, bool)>,
     monsters: Vec<Monster>,
     monster_statuses: HashMap<Status, i32>,
     player_statuses: HashMap<Status, i32>,
@@ -108,34 +110,34 @@ pub struct GameBuilder {
 impl GameBuilder {
     pub fn ironclad_starting_deck(mut self) -> Self {
         for _ in 0..5 {
-            self.master_deck.push(new_card(CardClass::Strike));
+            self.master_deck.push((CardClass::Strike, false));
         }
         for _ in 0..4 {
-            self.master_deck.push(new_card(CardClass::Defend));
+            self.master_deck.push((CardClass::Defend, false));
         }
-        self.master_deck.push(new_card(CardClass::Bash));
-        self.master_deck.push(new_card(CardClass::AscendersBane));
+        self.master_deck.push((CardClass::Bash, false));
+        self.master_deck.push((CardClass::AscendersBane, false));
         self
     }
     pub fn add_card(mut self, c: CardClass) -> Self {
-        self.master_deck.push(new_card(c));
+        self.master_deck.push((c, false));
         self
     }
     pub fn add_card_upgraded(mut self, c: CardClass) -> Self {
-        self.master_deck.push(new_card_upgraded(c));
+        self.master_deck.push((c, true));
         self
     }
     #[cfg(test)]
     pub fn add_cards(mut self, c: CardClass, amount: i32) -> Self {
         for _ in 0..amount {
-            self.master_deck.push(new_card(c));
+            self.master_deck.push((c, false));
         }
         self
     }
     #[cfg(test)]
     pub fn add_cards_upgraded(mut self, c: CardClass, amount: i32) -> Self {
         for _ in 0..amount {
-            self.master_deck.push(new_card_upgraded(c));
+            self.master_deck.push((c, true));
         }
         self
     }
@@ -191,7 +193,7 @@ impl GameBuilder {
         if self.monsters.is_empty() {
             self = self.add_monster(NoopMonster::new());
         }
-        let mut g = Game::new(self.rng, self.master_deck, self.monsters);
+        let mut g = Game::new(self.rng, &self.master_deck, self.monsters);
         g.player.creature.statuses = self.player_statuses;
         for r in self.relics {
             g.player.add_relic(r);
@@ -223,7 +225,7 @@ pub struct Game {
 impl Game {
     pub const MAX_HAND_SIZE: i32 = 10;
 
-    fn new(rng: Rand, master_deck: CardPile, monsters: Vec<Monster>) -> Self {
+    fn new(rng: Rand, master_deck: &[(CardClass, bool)], monsters: Vec<Monster>) -> Self {
         let mut g = Self {
             player: Player::new("Ironclad", 80),
             combat_monsters_queue: vec![monsters],
@@ -241,7 +243,14 @@ impl Game {
             state: GameState::Blessing,
         };
 
-        g.player.master_deck = master_deck;
+        for (c, u) in master_deck {
+            let card = if *u {
+                g.new_card_upgraded(*c)
+            } else {
+                g.new_card(*c)
+            };
+            g.player.master_deck.push(card);
+        }
         g.player.creature.cur_hp = (g.player.creature.cur_hp as f32 * 0.9) as i32;
 
         g
@@ -250,6 +259,22 @@ impl Game {
     #[allow(dead_code)]
     pub fn set_debug(&mut self) {
         self.action_queue.set_debug();
+    }
+
+    pub fn new_card(&mut self, class: CardClass) -> CardRef {
+        Rc::new(RefCell::new(Card {
+            class,
+            upgrade_count: 0,
+            cost: class.base_cost(),
+            exhaust: class.base_exhausts(),
+            times_played: 0,
+        }))
+    }
+
+    pub fn new_card_upgraded(&mut self, class: CardClass) -> CardRef {
+        let c = self.new_card(class);
+        c.borrow_mut().upgrade();
+        c
     }
 
     pub fn get_creature(&self, r: CreatureRef) -> &Creature {
@@ -581,7 +606,8 @@ impl Game {
     }
 
     pub fn add_card_to_master_deck(&mut self, class: CardClass) {
-        self.player.master_deck.push(new_card(class));
+        let c = self.new_card(class);
+        self.player.master_deck.push(c);
     }
 
     pub fn result(&self) -> GameStatus {
@@ -753,8 +779,9 @@ impl Game {
 
     #[cfg(test)]
     pub fn play_card(&mut self, class: CardClass, target: Option<CreatureRef>) {
+        let card = self.new_card(class);
         self.run_action(PlayCardAction {
-            card: new_card(class),
+            card,
             target,
             is_duplicated: false,
             energy: self.energy,
@@ -765,14 +792,33 @@ impl Game {
 
     #[cfg(test)]
     pub fn play_card_upgraded(&mut self, class: CardClass, target: Option<CreatureRef>) {
+        let card = self.new_card_upgraded(class);
         self.run_action(PlayCardAction {
-            card: new_card_upgraded(class),
+            card,
             target,
             is_duplicated: false,
             energy: self.energy,
             force_exhaust: false,
             free: false,
         });
+    }
+
+    #[cfg(test)]
+    pub fn add_card_to_hand(&mut self, class: CardClass) {
+        let card = self.new_card(class);
+        self.hand.push(card);
+    }
+
+    #[cfg(test)]
+    pub fn add_card_to_hand_upgraded(&mut self, class: CardClass) {
+        let card = self.new_card_upgraded(class);
+        self.hand.push(card);
+    }
+
+    #[cfg(test)]
+    pub fn add_card_to_draw_pile(&mut self, class: CardClass) {
+        let card = self.new_card(class);
+        self.draw_pile.push(card);
     }
 
     fn finished(&mut self) -> bool {
@@ -827,8 +873,8 @@ mod tests {
             .add_monster(NoopMonster::new())
             .add_monster(NoopMonster::new())
             .build_combat();
-        g.hand.push(new_card(CardClass::DebugKill));
-        g.hand.push(new_card(CardClass::Defend));
+        g.add_card_to_hand(CardClass::DebugKill);
+        g.add_card_to_hand(CardClass::Defend);
         g.player.add_potion(Potion::Fire);
         g.player.add_potion(Potion::Flex);
         assert_eq!(

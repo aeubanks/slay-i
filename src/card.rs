@@ -146,12 +146,16 @@ pub type CardPile = Vec<CardRef>;
 
 #[cfg(test)]
 mod tests {
-    use crate::cards::{CardClass, CardCost, new_card};
+    use crate::{
+        cards::{CardClass, CardCost},
+        game::GameBuilder,
+    };
 
     #[test]
     fn test_upgrade_temp_cost() {
+        let mut g = GameBuilder::default().build_combat();
         for (init_temp, final_temp) in [(3, 2), (2, 1), (1, 0), (0, 0)] {
-            let c = new_card(CardClass::BodySlam);
+            let c = g.new_card(CardClass::BodySlam);
             let mut c = c.borrow_mut();
             match &mut c.cost {
                 CardCost::Cost {
