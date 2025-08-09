@@ -1,5 +1,6 @@
 pub mod block;
 pub mod choose_upgrade_one_card_in_hand;
+pub mod clear_cur_card;
 pub mod damage;
 pub mod damage_all_monsters;
 pub mod discard_card;

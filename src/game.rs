@@ -216,6 +216,7 @@ pub struct Game {
     pub hand: CardPile,
     pub discard_pile: CardPile,
     pub exhaust_pile: CardPile,
+    pub cur_card: Option<CardRef>,
     pub action_queue: ActionQueue,
     pub card_queue: Vec<PlayCardAction>,
     pub rng: Rand,
@@ -238,6 +239,7 @@ impl Game {
             hand: Default::default(),
             discard_pile: Default::default(),
             exhaust_pile: Default::default(),
+            cur_card: None,
             action_queue: Default::default(),
             card_queue: Default::default(),
             rng,
@@ -263,24 +265,23 @@ impl Game {
         self.action_queue.set_debug();
     }
 
-    fn new_card_id(&mut self) -> u32 {
-        let ret = self.next_id;
-        self.next_id += 1;
-        ret
+    fn new_card_id(&mut self, c: CardClass) -> u32 {
+        if matches!(c, CardClass::RitualDagger | CardClass::Rampage) {
+            let ret = self.next_id;
+            self.next_id += 1;
+            ret
+        } else {
+            0
+        }
     }
 
     pub fn new_card(&mut self, class: CardClass) -> CardRef {
-        let id = if class == CardClass::RitualDagger {
-            self.new_card_id()
-        } else {
-            0
-        };
+        let id = self.new_card_id(class);
         Rc::new(RefCell::new(Card {
             class,
             upgrade_count: 0,
             cost: class.base_cost(),
             exhaust: class.base_exhausts(),
-            times_played: 0,
             base_increase: 0,
             id,
         }))
@@ -290,6 +291,10 @@ impl Game {
         let c = self.new_card(class);
         c.borrow_mut().upgrade();
         c
+    }
+
+    pub fn clone_card_same_id(&self, c: &CardRef) -> CardRef {
+        Rc::new(RefCell::new(c.borrow().clone()))
     }
 
     pub fn get_creature(&self, r: CreatureRef) -> &Creature {
@@ -375,7 +380,12 @@ impl Game {
     }
 
     fn setup_combat_draw_pile(&mut self) {
-        self.draw_pile = self.player.master_deck.clone();
+        self.draw_pile = self
+            .player
+            .master_deck
+            .iter()
+            .map(|c| self.clone_card_same_id(c))
+            .collect();
         self.draw_pile.shuffle(&mut self.rng);
         self.draw_pile.sort_by_key(|c| c.borrow().is_innate());
         let num_innate = self

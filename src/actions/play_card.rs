@@ -1,6 +1,6 @@
 use crate::{
     action::Action,
-    actions::exhaust_card::ExhaustCardAction,
+    actions::{clear_cur_card::ClearCurCardAction, exhaust_card::ExhaustCardAction},
     card::{CardPlayInfo, CardRef},
     cards::{CardCost, CardType},
     game::{CreatureRef, Game},
@@ -19,7 +19,9 @@ pub struct PlayCardAction {
 
 impl Action for PlayCardAction {
     fn run(&self, game: &mut Game) {
-        let mut c = self.card.borrow_mut();
+        game.cur_card = Some(self.card.clone());
+
+        let c = self.card.borrow();
         let energy = match c.cost {
             CardCost::Zero => 0,
             CardCost::X => game.energy,
@@ -33,13 +35,12 @@ impl Action for PlayCardAction {
             target: self.target,
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
-            times_played: c.times_played,
             card_id: c.id,
             base_increase: c.base_increase,
             energy: self.energy,
         };
         (c.class.behavior())(game, info);
-        c.times_played += 1;
+
         enum CardDestination {
             Discard,
             Exhaust,
@@ -63,6 +64,7 @@ impl Action for PlayCardAction {
         if !self.free {
             game.energy -= energy;
         }
+        game.action_queue.push_bot(ClearCurCardAction());
         match dest {
             CardDestination::None => {}
             CardDestination::Discard => game
