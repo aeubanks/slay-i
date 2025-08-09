@@ -34,6 +34,8 @@ impl Action for PlayCardAction {
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
             times_played: c.times_played,
+            card_id: c.id,
+            base_increase: c.base_increase,
             energy: self.energy,
         };
         (c.class.behavior())(game, info);

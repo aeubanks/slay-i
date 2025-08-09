@@ -161,6 +161,22 @@ pub fn mind_blast_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, damage, damage);
 }
 
+pub fn ritual_dagger_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue
+        .push_bot(DamageAction::from_player_with_on_fatal(
+            15 + info.base_increase,
+            &game.player,
+            game.get_creature(info.target.unwrap()),
+            info.target.unwrap(),
+            OnFatal {
+                ty: OnFatalType::RitualDagger {
+                    card_id: info.card_id,
+                },
+                upgraded: info.upgraded,
+            },
+        ));
+}
+
 pub fn debug_kill_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 9999, 9999);
 }
@@ -463,6 +479,75 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 20);
+    }
+
+    #[test]
+    fn test_ritual_dagger() {
+        let mut g = GameBuilder::default()
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
+            .add_cards(CardClass::RitualDagger, 2)
+            .build_combat();
+
+        g.energy = 10;
+
+        let hp0 = g.monsters[0].creature.cur_hp;
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
+        assert_eq!(g.player.master_deck[0].borrow().base_increase, 0);
+        assert_eq!(g.player.master_deck[1].borrow().base_increase, 0);
+
+        g.run_action(SetHPAction {
+            target: CreatureRef::monster(0),
+            hp: 10,
+        });
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.exhaust_pile[0].borrow().base_increase, 0);
+        assert_eq!(g.exhaust_pile[1].borrow().base_increase, 3);
+        assert!(
+            g.player.master_deck[0].borrow().base_increase == 0
+                || g.player.master_deck[1].borrow().base_increase == 0
+        );
+        assert!(
+            g.player.master_deck[0].borrow().base_increase == 3
+                || g.player.master_deck[1].borrow().base_increase == 3
+        );
+
+        let hp1 = g.monsters[1].creature.cur_hp;
+        let c = g.exhaust_pile.pop().unwrap();
+        g.hand.push(c);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(1),
+        });
+        assert_eq!(g.monsters[1].creature.cur_hp, hp1 - 18);
+
+        g.run_action(SetHPAction {
+            target: CreatureRef::monster(1),
+            hp: 17,
+        });
+        let c = g.exhaust_pile.pop().unwrap();
+        c.borrow_mut().upgrade();
+        g.hand.push(c);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(1),
+        });
+
+        assert!(
+            g.player.master_deck[0].borrow().base_increase == 0
+                || g.player.master_deck[1].borrow().base_increase == 0
+        );
+        assert!(
+            g.player.master_deck[0].borrow().base_increase == 8
+                || g.player.master_deck[1].borrow().base_increase == 8
+        );
     }
 
     #[test]

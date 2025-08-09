@@ -220,6 +220,7 @@ pub struct Game {
     pub card_queue: Vec<PlayCardAction>,
     pub rng: Rand,
     pub state: GameState,
+    next_id: u32,
 }
 
 impl Game {
@@ -241,6 +242,7 @@ impl Game {
             card_queue: Default::default(),
             rng,
             state: GameState::Blessing,
+            next_id: 1,
         };
 
         for (c, u) in master_deck {
@@ -261,13 +263,26 @@ impl Game {
         self.action_queue.set_debug();
     }
 
+    fn new_card_id(&mut self) -> u32 {
+        let ret = self.next_id;
+        self.next_id += 1;
+        ret
+    }
+
     pub fn new_card(&mut self, class: CardClass) -> CardRef {
+        let id = if class == CardClass::RitualDagger {
+            self.new_card_id()
+        } else {
+            0
+        };
         Rc::new(RefCell::new(Card {
             class,
             upgrade_count: 0,
             cost: class.base_cost(),
             exhaust: class.base_exhausts(),
             times_played: 0,
+            base_increase: 0,
+            id,
         }))
     }
 

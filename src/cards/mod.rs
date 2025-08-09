@@ -195,7 +195,7 @@ c!(
     DramaticEntrance => (Uncommon, Attack, Colorless, cost(0), attacks::dramatic_entrance_behavior, true),
     MindBlast => (Uncommon, Attack, Colorless, cost(2), attacks::mind_blast_behavior, false),
     Bite => (Uncommon, Attack, Colorless, cost(1), todo, false),
-    RitualDagger => (Uncommon, Attack, Colorless, cost(1), todo, true),
+    RitualDagger => (Uncommon, Attack, Colorless, cost(1), attacks::ritual_dagger_behavior, true),
     // Colorless uncommon skills
     GoodInstincts => (Uncommon, Skill, Colorless, cost(0), skills::good_instincts_behavior, false),
     Finesse => (Uncommon, Skill, Colorless, cost(0), skills::finesse_behavior, false),

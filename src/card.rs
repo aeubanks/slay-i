@@ -11,6 +11,8 @@ pub struct CardPlayInfo {
     pub upgraded: bool,
     pub upgrade_count: i32,
     pub times_played: i32,
+    pub card_id: u32,
+    pub base_increase: i32,
     pub energy: i32,
 }
 
@@ -21,6 +23,8 @@ pub struct Card {
     pub cost: CardCost,
     pub exhaust: bool,
     pub times_played: i32,
+    pub base_increase: i32,
+    pub id: u32,
 }
 
 impl Card {

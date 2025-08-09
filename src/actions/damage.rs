@@ -1,6 +1,8 @@
 use crate::{
     action::Action,
-    actions::increase_max_hp::IncreaseMaxHPAction,
+    actions::{
+        increase_base_amount::IncreaseBaseAmountAction, increase_max_hp::IncreaseMaxHPAction,
+    },
     creature::Creature,
     game::{CreatureRef, Game},
     player::Player,
@@ -11,6 +13,7 @@ use crate::{
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum OnFatalType {
     Feed,
+    RitualDagger { card_id: u32 },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -25,6 +28,11 @@ impl OnFatal {
             OnFatalType::Feed => {
                 queue.push_top(IncreaseMaxHPAction(if self.upgraded { 4 } else { 3 }))
             }
+            OnFatalType::RitualDagger { card_id } => queue.push_top(IncreaseBaseAmountAction {
+                card_id,
+                amount: if self.upgraded { 5 } else { 3 },
+                master: true,
+            }),
         }
     }
 }
