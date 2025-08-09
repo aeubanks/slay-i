@@ -1,8 +1,11 @@
 use crate::{
     actions::{
-        damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
-        gain_status::GainStatusAction, gain_status_all_monsters::GainStatusAllMonstersAction,
-        increase_max_hp::IncreaseMaxHPAction, shuffle_card_into_draw::ShuffleCardIntoDrawAction,
+        damage::{DamageAction, OnFatal, OnFatalType},
+        damage_all_monsters::DamageAllMonstersAction,
+        draw::DrawAction,
+        gain_status::GainStatusAction,
+        gain_status_all_monsters::GainStatusAllMonstersAction,
+        shuffle_card_into_draw::ShuffleCardIntoDrawAction,
     },
     card::CardPlayInfo,
     cards::CardClass,
@@ -127,25 +130,17 @@ pub fn rampage_behavior(game: &mut Game, info: CardPlayInfo) {
 }
 
 pub fn feed_behavior(game: &mut Game, info: CardPlayInfo) {
-    if info.upgraded {
-        game.action_queue
-            .push_bot(DamageAction::from_player_with_on_fatal(
-                12,
-                &game.player,
-                game.get_creature(info.target.unwrap()),
-                info.target.unwrap(),
-                |queue| queue.push_top(IncreaseMaxHPAction(4)),
-            ));
-    } else {
-        game.action_queue
-            .push_bot(DamageAction::from_player_with_on_fatal(
-                10,
-                &game.player,
-                game.get_creature(info.target.unwrap()),
-                info.target.unwrap(),
-                |queue| queue.push_top(IncreaseMaxHPAction(3)),
-            ));
-    }
+    game.action_queue
+        .push_bot(DamageAction::from_player_with_on_fatal(
+            if info.upgraded { 12 } else { 10 },
+            &game.player,
+            game.get_creature(info.target.unwrap()),
+            info.target.unwrap(),
+            OnFatal {
+                ty: OnFatalType::Feed,
+                upgraded: info.upgraded,
+            },
+        ));
 }
 
 pub fn swift_strike_behavior(game: &mut Game, info: CardPlayInfo) {

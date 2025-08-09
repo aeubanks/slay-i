@@ -1,11 +1,33 @@
 use crate::{
     action::Action,
+    actions::increase_max_hp::IncreaseMaxHPAction,
     creature::Creature,
     game::{CreatureRef, Game},
     player::Player,
     queue::ActionQueue,
     status::Status,
 };
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum OnFatalType {
+    Feed,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct OnFatal {
+    pub ty: OnFatalType,
+    pub upgraded: bool,
+}
+
+impl OnFatal {
+    fn trigger(&self, queue: &mut ActionQueue) {
+        match self.ty {
+            OnFatalType::Feed => {
+                queue.push_top(IncreaseMaxHPAction(if self.upgraded { 4 } else { 3 }))
+            }
+        }
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DamageType {
@@ -18,8 +40,6 @@ pub enum DamageType {
     },
     HPLoss,
 }
-
-pub type OnFatal = fn(&mut ActionQueue);
 
 pub struct DamageAction {
     target: CreatureRef,
@@ -139,7 +159,7 @@ impl Action for DamageAction {
             } = self.ty
             && let Some(on_fatal) = on_fatal
         {
-            on_fatal(&mut game.action_queue);
+            on_fatal.trigger(&mut game.action_queue);
         }
     }
 }
