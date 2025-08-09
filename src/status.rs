@@ -785,11 +785,25 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_player_status(Status::Duplication, 1)
             .add_player_status(Status::DoubleTap, 1)
+            .add_card(CardClass::Rampage)
             .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
-        g.play_card(CardClass::Rampage, Some(CreatureRef::monster(0)));
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5 - 8 - 10);
         assert_eq!(g.discard_pile.len(), 1);
+        let c = g.discard_pile.pop().unwrap();
+        g.hand.push(c);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(
+            g.monsters[0].creature.cur_hp,
+            hp - 8 - 8 - 5 - 8 - 10 - 8 - 15
+        );
     }
 
     #[test]
