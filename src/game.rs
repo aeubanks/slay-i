@@ -701,7 +701,7 @@ impl Game {
         }
     }
 
-    fn can_play_card(&self, c: &Card) -> bool {
+    pub fn can_play_card(&self, c: &Card) -> bool {
         if self
             .player
             .creature

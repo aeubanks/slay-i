@@ -19,10 +19,12 @@ pub struct PlayCardAction {
 
 impl Action for PlayCardAction {
     fn run(&self, game: &mut Game) {
+        let c = self.card.borrow();
+        assert!(game.can_play_card(&c));
+
         game.num_cards_played_this_turn += 1;
         game.cur_card = Some(self.card.clone());
 
-        let c = self.card.borrow();
         let energy = match c.cost {
             CardCost::Zero => 0,
             CardCost::X => game.energy,
