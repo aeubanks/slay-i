@@ -536,7 +536,12 @@ impl Game {
                     break;
                 }
             } else if !self.card_queue.is_empty() {
-                self.action_queue.push_bot(self.card_queue.remove(0));
+                let play = self.card_queue.remove(0);
+                if self.can_play_card(&play.card.borrow()) {
+                    self.action_queue.push_bot(play);
+                } else {
+                    self.action_queue.push_bot(DiscardCardAction(play.card));
+                }
             } else {
                 break;
             }
@@ -1023,5 +1028,23 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.block, 7);
         assert_eq!(g.monsters[0].creature.block, 7);
+    }
+
+    #[test]
+    fn test_unplayable_card_in_card_queue() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Entangled, 1)
+            .build_combat();
+        let c = g.new_card(CardClass::Thunderclap);
+        g.card_queue.push(PlayCardAction {
+            card: c,
+            target: None,
+            is_duplicated: false,
+            energy: g.energy,
+            free: false,
+            force_exhaust: false,
+        });
+        g.run_actions_until_empty();
+        assert_eq!(g.discard_pile.len(), 1);
     }
 }
