@@ -698,6 +698,15 @@ impl Game {
     }
 
     fn can_play_card(&self, c: &Card) -> bool {
+        if self
+            .player
+            .creature
+            .statuses
+            .contains_key(&Status::Entangled)
+            && c.class.ty() == CardType::Attack
+        {
+            return false;
+        }
         match c.cost {
             CardCost::Zero => match c.class.ty() {
                 CardType::Curse => self.player.has_relic(RelicClass::BlueCandle),

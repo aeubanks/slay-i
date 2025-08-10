@@ -27,24 +27,27 @@ macro_rules! s {
 }
 
 s!(
-    Artifact => Buff,
-    Vulnerable => Debuff,
     Strength => Amount,
-    Brutality => Buff,
-    DemonForm => Buff,
-    Weak => Debuff,
     Dexterity => Amount,
+
+    Vulnerable => Debuff,
+    Weak => Debuff,
     Frail => Debuff,
     NoBlock => Debuff,
+    NoDraw => Debuff,
+    Confusion => Debuff,
+    Entangled => Debuff,
+
+    Brutality => Buff,
+    DemonForm => Buff,
+    Artifact => Buff,
     Thorns => Buff,
     FeelNoPain => Buff,
     DarkEmbrace => Buff,
     Evolve => Buff,
     FireBreathing => Buff,
-    Confusion => Debuff,
     Rupture => Buff,
     Barricade => Buff,
-    NoDraw => Debuff,
     Duplication => Buff,
     DoubleTap => Buff,
     Bomb3 => Buff,
@@ -814,5 +817,28 @@ mod tests {
         let hp = g.monsters[0].creature.cur_hp;
         g.play_card(CardClass::Whirlwind, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 5 * 6);
+    }
+
+    #[test]
+    fn test_entangled() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Entangled, 1)
+            .build_combat();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Defend);
+        assert!(g.valid_moves().iter().any(|m| matches!(
+            m,
+            Move::PlayCard {
+                card_index: 1,
+                target: _
+            }
+        )));
+        assert!(!g.valid_moves().iter().any(|m| matches!(
+            m,
+            Move::PlayCard {
+                card_index: 0,
+                target: _
+            }
+        )));
     }
 }
