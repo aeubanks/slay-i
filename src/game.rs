@@ -219,6 +219,7 @@ pub struct Game {
     pub cur_card: Option<CardRef>,
     pub action_queue: ActionQueue,
     pub card_queue: Vec<PlayCardAction>,
+    pub num_cards_played_this_turn: i32,
     pub rng: Rand,
     pub state: GameState,
     next_id: u32,
@@ -242,6 +243,7 @@ impl Game {
             cur_card: None,
             action_queue: Default::default(),
             card_queue: Default::default(),
+            num_cards_played_this_turn: 0,
             rng,
             state: GameState::Blessing,
             next_id: 1,
@@ -435,6 +437,8 @@ impl Game {
             }
             GameState::PlayerTurnBegin => {
                 self.monsters_roll_move();
+
+                self.num_cards_played_this_turn = 0;
 
                 self.action_queue.push_top(StartOfTurnEnergyAction());
                 self.player.creature.start_of_turn_lose_block();
@@ -704,6 +708,14 @@ impl Game {
             .statuses
             .contains_key(&Status::Entangled)
             && c.class.ty() == CardType::Attack
+        {
+            return false;
+        }
+        if self.num_cards_played_this_turn >= 3
+            && self
+                .hand
+                .iter()
+                .any(|c| c.borrow().class == CardClass::Normality)
         {
             return false;
         }

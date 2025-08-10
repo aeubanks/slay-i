@@ -241,7 +241,7 @@ c!(
     BurnPlus => (Special, Status, Special, Zero, noop_behavior, true),
     Void => (Special, Status, Special, Zero, noop_behavior, true),
     // Curses
-    // TODO: normality, pain, parasite, necronomicurse
+    // TODO: pain, parasite, necronomicurse
     AscendersBane => (Special, Curse, Curse, Zero, noop_behavior, true),
     CurseOfTheBell => (Special, Curse, Curse, Zero, noop_behavior, true),
     Clumsy => (Special, Curse, Curse, Zero, noop_behavior, true),
@@ -251,6 +251,7 @@ c!(
     Doubt => (Special, Curse, Curse, Zero, noop_behavior, true),
     Decay => (Special, Curse, Curse, Zero, noop_behavior, true),
     Regret => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Normality => (Special, Curse, Curse, Zero, noop_behavior, true),
     // Other
     DebugKill => (Special, Attack, Special, cost(0), attacks::debug_kill_behavior, false),
     TestAttack => (Special, Attack, Special, cost(0), noop_behavior, false),

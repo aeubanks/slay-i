@@ -19,6 +19,7 @@ pub struct PlayCardAction {
 
 impl Action for PlayCardAction {
     fn run(&self, game: &mut Game) {
+        game.num_cards_played_this_turn += 1;
         game.cur_card = Some(self.card.clone());
 
         let c = self.card.borrow();

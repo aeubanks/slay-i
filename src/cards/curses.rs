@@ -128,4 +128,57 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.statuses.get(&Status::Frail), Some(&1));
     }
+
+    #[test]
+    fn test_normality() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 10;
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Normality);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
+        g.hand.pop();
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::EndTurn,
+                Move::PlayCard {
+                    card_index: 0,
+                    target: None
+                }
+            ]
+        );
+        g.make_move(Move::EndTurn);
+        g.energy = 10;
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Defend);
+        assert_eq!(g.valid_moves().len(), 6);
+        for _ in 0..4 {
+            g.make_move(Move::PlayCard {
+                card_index: 0,
+                target: None,
+            });
+        }
+        assert_eq!(g.valid_moves().len(), 2);
+        g.add_card_to_hand(CardClass::Normality);
+        assert_eq!(g.valid_moves().len(), 1);
+    }
 }
