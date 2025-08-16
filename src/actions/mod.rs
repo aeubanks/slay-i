@@ -1,5 +1,5 @@
+pub mod armaments;
 pub mod block;
-pub mod choose_upgrade_one_card_in_hand;
 pub mod clear_cur_card;
 pub mod damage;
 pub mod damage_all_monsters;
@@ -29,5 +29,5 @@ pub mod set_hp;
 pub mod shuffle_card_into_draw;
 pub mod shuffle_discard_on_top_of_draw;
 pub mod start_of_turn_energy;
+pub mod upgrade;
 pub mod upgrade_all_cards_in_hand;
-pub mod upgrade_one_card_in_hand;

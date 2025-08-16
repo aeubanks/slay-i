@@ -3,9 +3,9 @@ use crate::{
     game::{Game, GameState},
 };
 
-pub struct ChooseUpgradeOneCardInHandAction();
+pub struct ArmamentsAction();
 
-impl Action for ChooseUpgradeOneCardInHandAction {
+impl Action for ArmamentsAction {
     fn run(&self, game: &mut Game) {
         if !game.hand.is_empty() {
             game.state = GameState::Armaments;
@@ -13,7 +13,7 @@ impl Action for ChooseUpgradeOneCardInHandAction {
     }
 }
 
-impl std::fmt::Debug for ChooseUpgradeOneCardInHandAction {
+impl std::fmt::Debug for ArmamentsAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "choose upgrade one card in hand")
     }

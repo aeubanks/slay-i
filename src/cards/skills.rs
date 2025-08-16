@@ -1,7 +1,7 @@
 use crate::{
     actions::{
-        block::BlockAction, choose_upgrade_one_card_in_hand::ChooseUpgradeOneCardInHandAction,
-        damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
+        armaments::ArmamentsAction, block::BlockAction, damage::DamageAction,
+        double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction, gain_energy::GainEnergyAction,
         gain_status::GainStatusAction, madness::MadnessAction, play_top_card::PlayTopCardAction,
         purity::PurityAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
@@ -34,8 +34,7 @@ pub fn armaments_behavior(game: &mut Game, info: CardPlayInfo) {
     if info.upgraded {
         game.action_queue.push_bot(UpgradeAllCardsInHandAction());
     } else {
-        game.action_queue
-            .push_bot(ChooseUpgradeOneCardInHandAction());
+        game.action_queue.push_bot(ArmamentsAction());
     }
 }
 

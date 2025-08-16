@@ -1,14 +1,16 @@
 use crate::{action::Action, card::CardRef, game::Game};
 
-pub struct UpgradeOneCardInHandAction(pub CardRef);
+pub struct UpgradeAction(pub CardRef);
 
-impl Action for UpgradeOneCardInHandAction {
+impl Action for UpgradeAction {
     fn run(&self, _: &mut Game) {
-        self.0.borrow_mut().upgrade();
+        let mut c = self.0.borrow_mut();
+        assert!(c.can_upgrade());
+        c.upgrade();
     }
 }
 
-impl std::fmt::Debug for UpgradeOneCardInHandAction {
+impl std::fmt::Debug for UpgradeAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "upgrade {:?} in hand", self.0.borrow())
     }

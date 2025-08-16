@@ -12,7 +12,7 @@ use crate::actions::exhaust_card::ExhaustCardAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
-use crate::actions::upgrade_one_card_in_hand::UpgradeOneCardInHandAction;
+use crate::actions::upgrade::UpgradeAction;
 use crate::blessings::Blessing;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
@@ -725,7 +725,7 @@ impl Game {
             Move::Armaments { card_index } => {
                 assert_eq!(self.state, GameState::Armaments);
                 self.action_queue
-                    .push_top(UpgradeOneCardInHandAction(self.hand[card_index].clone()));
+                    .push_top(UpgradeAction(self.hand[card_index].clone()));
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
