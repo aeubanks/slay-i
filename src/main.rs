@@ -83,6 +83,12 @@ fn print_state(g: &Game) {
     for c in &g.exhaust_pile {
         println!(" {:?}", c.borrow());
     }
+    if let GameStatus::Purity {
+        num_cards_remaining,
+    } = g.result()
+    {
+        println!("purity status: {num_cards_remaining} cards left");
+    }
     println!("moves:");
     for (mi, m) in g.valid_moves().iter().enumerate() {
         print!(" {mi}: ");
@@ -107,8 +113,22 @@ fn print_state(g: &Game) {
                     );
                 }
             }
-            Move::Armaments { card_index: i } => {
-                print!("upgrade card {} ({:?})", i, g.hand[*i].borrow());
+            Move::Armaments { card_index } => {
+                print!(
+                    "upgrade card {} ({:?})",
+                    card_index,
+                    g.hand[*card_index].borrow()
+                );
+            }
+            Move::Purity { card_index } => {
+                print!(
+                    "purity exhaust card {} ({:?})",
+                    card_index,
+                    g.hand[*card_index].borrow()
+                );
+            }
+            Move::PurityEnd => {
+                print!("purity end");
             }
             Move::UsePotion {
                 potion_index,
@@ -151,6 +171,7 @@ fn main() {
     let mut game = GameBuilder::default()
         .ironclad_starting_deck()
         .add_card(CardClass::Armaments)
+        .add_card(CardClass::Purity)
         .add_card_upgraded(CardClass::Inflame)
         .add_relic(RelicClass::BurningBlood)
         .add_monster(JawWorm::new())
@@ -165,7 +186,7 @@ fn main() {
                 println!("victory! :)");
                 break;
             }
-            GameStatus::Combat | GameStatus::Armaments => {
+            GameStatus::Combat | GameStatus::Armaments | GameStatus::Purity { .. } => {
                 print_state(&game);
                 let valid_moves = game.valid_moves();
                 let i = read_int_from_stdin(valid_moves.len());

@@ -8,6 +8,7 @@ use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
+use crate::actions::exhaust_card::ExhaustCardAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
@@ -66,17 +67,23 @@ pub enum Move {
     Armaments {
         card_index: usize,
     },
+    Purity {
+        card_index: usize,
+    },
+    PurityEnd,
     UsePotion {
         potion_index: usize,
         target: Option<usize>,
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameStatus {
     Defeat,
     Victory,
     Combat,
     Armaments,
+    Purity { num_cards_remaining: i32 },
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -91,6 +98,10 @@ pub enum GameState {
     MonsterTurn,
     EndOfRound,
     Armaments,
+    Purity {
+        num_cards_remaining: i32,
+        cards_remaining: Vec<usize>,
+    },
     Defeat,
     Victory,
 }
@@ -508,7 +519,8 @@ impl Game {
             | GameState::Defeat
             | GameState::Blessing
             | GameState::BlessingTransform
-            | GameState::Armaments => {
+            | GameState::Armaments
+            | GameState::Purity { .. } => {
                 unreachable!()
             }
         }
@@ -522,17 +534,21 @@ impl Game {
         while self.state != GameState::PlayerTurn
             && self.state != GameState::Victory
             && self.state != GameState::Defeat
-            && self.state != GameState::Armaments
+            && !self.in_pause_state()
         {
             self.run_once();
         }
+    }
+
+    fn in_pause_state(&self) -> bool {
+        matches!(self.state, GameState::Armaments | GameState::Purity { .. })
     }
 
     fn run_actions_until_empty(&mut self) {
         loop {
             if let Some(a) = self.action_queue.pop() {
                 a.run(self);
-                if self.state == GameState::Armaments {
+                if self.in_pause_state() {
                     break;
                 }
             } else if !self.card_queue.is_empty() {
@@ -649,8 +665,27 @@ impl Game {
             GameState::Victory => GameStatus::Victory,
             GameState::Defeat => GameStatus::Defeat,
             GameState::Armaments => GameStatus::Armaments,
+            GameState::Purity {
+                num_cards_remaining,
+                cards_remaining: _,
+            } => GameStatus::Purity {
+                num_cards_remaining,
+            },
             _ => GameStatus::Combat,
         }
+    }
+
+    fn exhaust_non_remaining_cards(&mut self, remaining: &[usize]) {
+        let exhaust = (0..(self.hand.len()))
+            .filter(|c| !remaining.contains(c))
+            .rev()
+            .collect::<Vec<_>>();
+        for c in exhaust {
+            let c = self.hand.remove(c);
+            self.action_queue.push_top(ExhaustCardAction(c));
+        }
+        self.state = GameState::PlayerTurn;
+        self.run();
     }
 
     pub fn make_move(&mut self, m: Move) {
@@ -694,6 +729,30 @@ impl Game {
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
+            Move::Purity { card_index } => match &mut self.state {
+                GameState::Purity {
+                    num_cards_remaining,
+                    cards_remaining,
+                } => {
+                    *num_cards_remaining -= 1;
+                    cards_remaining.retain(|c| *c != card_index);
+                    if *num_cards_remaining == 0 || cards_remaining.is_empty() {
+                        let copy = cards_remaining.clone();
+                        self.exhaust_non_remaining_cards(&copy);
+                    }
+                }
+                _ => unreachable!(),
+            },
+            Move::PurityEnd => match &mut self.state {
+                GameState::Purity {
+                    num_cards_remaining: _,
+                    cards_remaining,
+                } => {
+                    let copy = cards_remaining.clone();
+                    self.exhaust_non_remaining_cards(&copy);
+                }
+                _ => unreachable!(),
+            },
             Move::UsePotion {
                 potion_index,
                 target,
@@ -740,7 +799,7 @@ impl Game {
 
     pub fn valid_moves(&self) -> Vec<Move> {
         let mut moves = Vec::new();
-        match self.state {
+        match &self.state {
             GameState::Blessing => {
                 moves.push(Move::ChooseBlessing(Blessing::GainMaxHPSmall));
                 moves.push(Move::ChooseBlessing(Blessing::CommonRelic));
@@ -805,6 +864,15 @@ impl Game {
                     if c.borrow().can_upgrade() {
                         moves.push(Move::Armaments { card_index: i });
                     }
+                }
+            }
+            GameState::Purity {
+                num_cards_remaining: _,
+                cards_remaining,
+            } => {
+                moves.push(Move::PurityEnd);
+                for c in cards_remaining {
+                    moves.push(Move::Purity { card_index: *c });
                 }
             }
             _ => {

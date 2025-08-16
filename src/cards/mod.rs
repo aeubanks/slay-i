@@ -212,7 +212,7 @@ c!(
     Apparition => (Uncommon, Skill, Colorless, cost(1), todo, true),
     Jax => (Uncommon, Skill, Colorless, cost(0), todo, false),
     PanicButton => (Uncommon, Skill, Colorless, cost(0), todo, true),
-    Purity => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    Purity => (Uncommon, Skill, Colorless, cost(0), skills::purity_behavior, true),
     Panacea => (Uncommon, Skill, Colorless, cost(0), todo, true),
     Madness => (Uncommon, Skill, Colorless, cost(1), skills::madness_behavior, true),
     // Colorless rare attacks
