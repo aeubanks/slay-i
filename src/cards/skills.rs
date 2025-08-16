@@ -182,6 +182,37 @@ mod tests {
             });
             assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
         }
+
+        {
+            let mut g = GameBuilder::default().build_combat();
+            g.add_card_to_hand(CardClass::Armaments);
+            g.add_card_to_hand_upgraded(CardClass::Strike);
+            g.add_card_to_hand_upgraded(CardClass::Strike);
+            g.make_move(Move::PlayCard {
+                card_index: 0,
+                target: None,
+            });
+            assert_eq!(g.result(), GameStatus::Combat);
+            for c in g.hand {
+                assert!(!c.borrow().can_upgrade());
+            }
+        }
+
+        {
+            let mut g = GameBuilder::default().build_combat();
+            g.add_card_to_hand(CardClass::Armaments);
+            g.add_card_to_hand(CardClass::Strike);
+            g.add_card_to_hand_upgraded(CardClass::Strike);
+            g.add_card_to_hand_upgraded(CardClass::Strike);
+            g.make_move(Move::PlayCard {
+                card_index: 0,
+                target: None,
+            });
+            assert_eq!(g.result(), GameStatus::Combat);
+            for c in g.hand {
+                assert!(!c.borrow().can_upgrade());
+            }
+        }
     }
 
     #[test]

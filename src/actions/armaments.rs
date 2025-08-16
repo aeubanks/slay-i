@@ -7,8 +7,15 @@ pub struct ArmamentsAction();
 
 impl Action for ArmamentsAction {
     fn run(&self, game: &mut Game) {
-        if !game.hand.is_empty() {
-            game.state = GameState::Armaments;
+        let upgradable = game
+            .hand
+            .iter()
+            .filter(|c| c.borrow().can_upgrade())
+            .collect::<Vec<_>>();
+        match upgradable.len() {
+            0 => {}
+            1 => upgradable[0].borrow_mut().upgrade(),
+            _ => game.state = GameState::Armaments,
         }
     }
 }
