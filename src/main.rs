@@ -120,6 +120,13 @@ fn print_state(g: &Game) {
                     g.hand[*card_index].borrow()
                 );
             }
+            Move::PlaceCardInHandOnTopOfDraw { card_index } => {
+                print!(
+                    "place card on top of draw {} ({:?})",
+                    card_index,
+                    g.hand[*card_index].borrow()
+                );
+            }
             Move::Purity { card_index } => {
                 print!(
                     "purity exhaust card {} ({:?})",
@@ -186,7 +193,10 @@ fn main() {
                 println!("victory! :)");
                 break;
             }
-            GameStatus::Combat | GameStatus::Armaments | GameStatus::Purity { .. } => {
+            GameStatus::Combat
+            | GameStatus::Armaments
+            | GameStatus::PlaceCardInHandOnTopOfDraw
+            | GameStatus::Purity { .. } => {
                 print_state(&game);
                 let valid_moves = game.valid_moves();
                 let i = read_int_from_stdin(valid_moves.len());

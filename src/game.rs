@@ -10,6 +10,7 @@ use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::exhaust_card::ExhaustCardAction;
 use crate::actions::gain_status::GainStatusAction;
+use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade::UpgradeAction;
@@ -67,6 +68,9 @@ pub enum Move {
     Armaments {
         card_index: usize,
     },
+    PlaceCardInHandOnTopOfDraw {
+        card_index: usize,
+    },
     Purity {
         card_index: usize,
     },
@@ -83,6 +87,7 @@ pub enum GameStatus {
     Victory,
     Combat,
     Armaments,
+    PlaceCardInHandOnTopOfDraw,
     Purity { num_cards_remaining: i32 },
 }
 
@@ -102,6 +107,7 @@ pub enum GameState {
         num_cards_remaining: i32,
         cards_remaining: Vec<usize>,
     },
+    PlaceCardInHandOnTopOfDraw,
     Defeat,
     Victory,
 }
@@ -520,6 +526,7 @@ impl Game {
             | GameState::Blessing
             | GameState::BlessingTransform
             | GameState::Armaments
+            | GameState::PlaceCardInHandOnTopOfDraw
             | GameState::Purity { .. } => {
                 unreachable!()
             }
@@ -541,7 +548,10 @@ impl Game {
     }
 
     fn in_pause_state(&self) -> bool {
-        matches!(self.state, GameState::Armaments | GameState::Purity { .. })
+        matches!(
+            self.state,
+            GameState::Armaments | GameState::Purity { .. } | GameState::PlaceCardInHandOnTopOfDraw
+        )
     }
 
     fn run_actions_until_empty(&mut self) {
@@ -665,6 +675,7 @@ impl Game {
             GameState::Victory => GameStatus::Victory,
             GameState::Defeat => GameStatus::Defeat,
             GameState::Armaments => GameStatus::Armaments,
+            GameState::PlaceCardInHandOnTopOfDraw => GameStatus::PlaceCardInHandOnTopOfDraw,
             GameState::Purity {
                 num_cards_remaining,
                 cards_remaining: _,
@@ -726,6 +737,13 @@ impl Game {
                 assert_eq!(self.state, GameState::Armaments);
                 self.action_queue
                     .push_top(UpgradeAction(self.hand[card_index].clone()));
+                self.state = GameState::PlayerTurn;
+                self.run();
+            }
+            Move::PlaceCardInHandOnTopOfDraw { card_index } => {
+                assert_eq!(self.state, GameState::PlaceCardInHandOnTopOfDraw);
+                self.action_queue
+                    .push_top(PlaceCardOnTopOfDrawAction(self.hand.remove(card_index)));
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
@@ -864,6 +882,11 @@ impl Game {
                     if c.borrow().can_upgrade() {
                         moves.push(Move::Armaments { card_index: i });
                     }
+                }
+            }
+            GameState::PlaceCardInHandOnTopOfDraw => {
+                for i in 0..self.hand.len() {
+                    moves.push(Move::PlaceCardInHandOnTopOfDraw { card_index: i });
                 }
             }
             GameState::Purity {

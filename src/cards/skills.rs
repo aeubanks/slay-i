@@ -1,7 +1,8 @@
 use crate::{
     actions::{
-        armaments::ArmamentsAction, block::BlockAction, damage::DamageAction,
-        double_strength::DoubleStrengthAction, draw::DrawAction,
+        armaments::ArmamentsAction, block::BlockAction,
+        choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDraw,
+        damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction, gain_energy::GainEnergyAction,
         gain_status::GainStatusAction, madness::MadnessAction, play_top_card::PlayTopCardAction,
         purity::PurityAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
@@ -42,6 +43,13 @@ pub fn havoc_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(PlayTopCardAction {
         force_exhaust: true,
     });
+}
+
+pub fn warcry_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue
+        .push_bot(DrawAction(if info.upgraded { 2 } else { 1 }));
+    game.action_queue
+        .push_bot(ChooseCardInHandToPlaceOnTopOfDraw());
 }
 
 pub fn ghostly_armor_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -117,12 +125,21 @@ pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
+pub fn thinking_ahead_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue.push_bot(DrawAction(2));
+    game.action_queue
+        .push_bot(ChooseCardInHandToPlaceOnTopOfDraw());
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::{block::BlockAction, exhaust_card::ExhaustCardAction},
+        actions::{
+            block::BlockAction, exhaust_card::ExhaustCardAction, gain_status::GainStatusAction,
+            remove_status::RemoveStatusAction,
+        },
         cards::{CardClass, CardCost},
-        game::{GameBuilder, GameStatus, Move},
+        game::{CreatureRef, GameBuilder, GameStatus, Move},
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
     };
@@ -259,6 +276,51 @@ mod tests {
         g.play_card_upgraded(CardClass::Havoc, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 10 - 10);
         assert_eq!(g.energy, 2);
+    }
+
+    #[test]
+    fn test_warcry() {
+        let mut g = GameBuilder::default().build_combat();
+        g.play_card(CardClass::Warcry, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.play_card(CardClass::Warcry, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 1);
+        assert_eq!(g.hand.len(), 0);
+
+        g.run_action(GainStatusAction {
+            status: Status::NoDraw,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        g.add_card_to_hand(CardClass::Defend);
+        g.play_card(CardClass::Warcry, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 2);
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
+        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand.len(), 0);
+
+        g.run_action(RemoveStatusAction {
+            status: Status::NoDraw,
+            target: CreatureRef::player(),
+        });
+        g.play_card_upgraded(CardClass::Warcry, None);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::PlaceCardInHandOnTopOfDraw { card_index: 0 },
+                Move::PlaceCardInHandOnTopOfDraw { card_index: 1 },
+            ]
+        );
+        g.make_move(Move::PlaceCardInHandOnTopOfDraw { card_index: 0 });
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 1);
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
     }
 
     #[test]

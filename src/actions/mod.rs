@@ -1,5 +1,6 @@
 pub mod armaments;
 pub mod block;
+pub mod choose_card_in_hand_to_place_on_top_of_draw;
 pub mod clear_cur_card;
 pub mod damage;
 pub mod damage_all_monsters;
@@ -19,6 +20,7 @@ pub mod increase_base_amount;
 pub mod increase_max_hp;
 pub mod madness;
 pub mod noop;
+pub mod place_card_on_top_of_draw;
 pub mod play_card;
 pub mod play_top_card;
 pub mod purity;

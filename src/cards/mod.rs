@@ -130,7 +130,7 @@ c!(
     TrueGrit => (Common, Skill, Red, cost(1), todo, false),
     ShrugItOff => (Common, Skill, Red, cost(1), todo, false),
     Havoc => (Common, Skill, Red, cost(1), skills::havoc_behavior, false),
-    Warcry => (Common, Skill, Red, cost(0), todo, false),
+    Warcry => (Common, Skill, Red, cost(0), skills::warcry_behavior, true),
     // Uncommon attacks
     SearingBlow => (Uncommon, Attack, Red, cost(2), attacks::searing_blow_behavior, false),
     Whirlwind => (Uncommon, Attack, Red, X, attacks::whirlwind_behavior, false),
@@ -220,7 +220,7 @@ c!(
     // Colorless rare skills
     Bomb => (Uncommon, Skill, Colorless, cost(2), skills::bomb_behavior, false),
     Apotheosis => (Rare, Skill, Colorless, cost(2), todo, true),
-    ThinkingAhead => (Rare, Skill, Colorless, cost(0), todo, true),
+    ThinkingAhead => (Rare, Skill, Colorless, cost(0), skills::thinking_ahead_behavior, true),
     SecretTechnique => (Rare, Skill, Colorless, cost(0), todo, true),
     SecretWeapon => (Rare, Skill, Colorless, cost(0), todo, true),
     Metamorphosis => (Rare, Skill, Colorless, cost(2), todo, true),
