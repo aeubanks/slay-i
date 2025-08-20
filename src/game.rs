@@ -74,6 +74,9 @@ pub enum Move {
     PlaceCardInDiscardOnTopOfDraw {
         card_index: usize,
     },
+    ExhaustCardInHand {
+        card_index: usize,
+    },
     Purity {
         card_index: usize,
     },
@@ -92,6 +95,7 @@ pub enum GameStatus {
     Armaments,
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
+    ExhaustCardInHand,
     Purity { num_cards_remaining: i32 },
 }
 
@@ -113,6 +117,7 @@ pub enum GameState {
     },
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
+    ExhaustCardInHand,
     Defeat,
     Victory,
 }
@@ -533,6 +538,7 @@ impl Game {
             | GameState::Armaments
             | GameState::PlaceCardInHandOnTopOfDraw
             | GameState::PlaceCardInDiscardOnTopOfDraw
+            | GameState::ExhaustCardInHand
             | GameState::Purity { .. } => {
                 unreachable!()
             }
@@ -560,6 +566,7 @@ impl Game {
                 | GameState::Purity { .. }
                 | GameState::PlaceCardInHandOnTopOfDraw
                 | GameState::PlaceCardInDiscardOnTopOfDraw
+                | GameState::ExhaustCardInHand
         )
     }
 
@@ -686,6 +693,7 @@ impl Game {
             GameState::Armaments => GameStatus::Armaments,
             GameState::PlaceCardInHandOnTopOfDraw => GameStatus::PlaceCardInHandOnTopOfDraw,
             GameState::PlaceCardInDiscardOnTopOfDraw => GameStatus::PlaceCardInDiscardOnTopOfDraw,
+            GameState::ExhaustCardInHand => GameStatus::ExhaustCardInHand,
             GameState::Purity {
                 num_cards_remaining,
                 cards_remaining: _,
@@ -762,6 +770,13 @@ impl Game {
                 self.action_queue.push_top(PlaceCardOnTopOfDrawAction(
                     self.discard_pile.remove(card_index),
                 ));
+                self.state = GameState::PlayerTurn;
+                self.run();
+            }
+            Move::ExhaustCardInHand { card_index } => {
+                assert_eq!(self.state, GameState::ExhaustCardInHand);
+                self.action_queue
+                    .push_top(ExhaustCardAction(self.hand.remove(card_index)));
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
@@ -910,6 +925,11 @@ impl Game {
             GameState::PlaceCardInDiscardOnTopOfDraw => {
                 for i in 0..self.discard_pile.len() {
                     moves.push(Move::PlaceCardInDiscardOnTopOfDraw { card_index: i });
+                }
+            }
+            GameState::ExhaustCardInHand => {
+                for i in 0..self.hand.len() {
+                    moves.push(Move::ExhaustCardInHand { card_index: i });
                 }
             }
             GameState::Purity {

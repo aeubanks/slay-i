@@ -1,6 +1,7 @@
 use crate::{
     actions::{
         armaments::ArmamentsAction, block::BlockAction,
+        choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaust,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDraw,
         damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction, gain_energy::GainEnergyAction,
@@ -75,6 +76,12 @@ pub fn battle_trance_behavior(game: &mut Game, info: CardPlayInfo) {
         amount: 1,
         target: CreatureRef::player(),
     });
+}
+
+pub fn burning_pact_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue.push_bot(ChooseCardInHandToExhaust());
+    game.action_queue
+        .push_bot(DrawAction(if info.upgraded { 3 } else { 2 }));
 }
 
 pub fn impervious_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -394,6 +401,49 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.player.creature.statuses.get(&Status::NoDraw), None);
+    }
+
+    #[test]
+    fn test_burning_pact() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.play_card(CardClass::BurningPact, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+
+        g.discard_pile.clear();
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Strike);
+        g.play_card(CardClass::BurningPact, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.exhaust_pile.len(), 1);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.discard_pile.len(), 1);
+
+        g.hand.clear();
+        g.exhaust_pile.clear();
+        g.discard_pile.clear();
+        g.draw_pile.clear();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_draw_pile(CardClass::TwinStrike);
+        g.play_card(CardClass::BurningPact, None);
+        assert_eq!(
+            g.cur_card.clone().unwrap().borrow().class,
+            CardClass::BurningPact
+        );
+        assert_eq!(g.result(), GameStatus::ExhaustCardInHand);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::ExhaustCardInHand { card_index: 0 },
+                Move::ExhaustCardInHand { card_index: 1 },
+            ]
+        );
+        g.make_move(Move::ExhaustCardInHand { card_index: 1 });
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.exhaust_pile.len(), 1);
+        assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand.len(), 2);
     }
 
     #[test]

@@ -134,6 +134,13 @@ fn print_state(g: &Game) {
                     g.discard_pile[*card_index].borrow()
                 );
             }
+            Move::ExhaustCardInHand { card_index } => {
+                print!(
+                    "exhaust card {} ({:?})",
+                    card_index,
+                    g.hand[*card_index].borrow()
+                );
+            }
             Move::Purity { card_index } => {
                 print!(
                     "purity exhaust card {} ({:?})",
@@ -204,6 +211,7 @@ fn main() {
             | GameStatus::Armaments
             | GameStatus::PlaceCardInHandOnTopOfDraw
             | GameStatus::PlaceCardInDiscardOnTopOfDraw
+            | GameStatus::ExhaustCardInHand
             | GameStatus::Purity { .. } => {
                 print_state(&game);
                 let valid_moves = game.valid_moves();

@@ -156,7 +156,7 @@ c!(
     FlameBarrier => (Uncommon, Skill, Red, cost(2), todo, false),
     Shockwave => (Uncommon, Skill, Red, cost(2), todo, true),
     Entrench => (Uncommon, Skill, Red, cost(2), todo, false),
-    BurningPact => (Uncommon, Skill, Red, cost(1), todo, false),
+    BurningPact => (Uncommon, Skill, Red, cost(1), skills::burning_pact_behavior, false),
     SeeingRed => (Uncommon, Skill, Red, cost(1), todo, true),
     PowerThrough => (Uncommon, Skill, Red, cost(1), todo, false),
     InfernalBlade => (Uncommon, Skill, Red, cost(1), todo, true),

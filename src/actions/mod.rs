@@ -1,6 +1,7 @@
 pub mod armaments;
 pub mod block;
 pub mod choose_card_in_discard_to_place_on_top_of_draw;
+pub mod choose_card_in_hand_to_exhaust;
 pub mod choose_card_in_hand_to_place_on_top_of_draw;
 pub mod clear_cur_card;
 pub mod damage;
