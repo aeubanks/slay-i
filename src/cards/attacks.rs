@@ -1,5 +1,6 @@
 use crate::{
     actions::{
+        choose_card_in_discard_to_place_on_top_of_draw::ChooseCardInDiscardToPlaceOnTopOfDraw,
         damage::{DamageAction, OnFatal, OnFatalType},
         damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction,
@@ -103,6 +104,12 @@ pub fn wild_strike_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue.push_bot(ShuffleCardIntoDrawAction(card));
 }
 
+pub fn headbutt_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_damage(game, info, 9, 12);
+    game.action_queue
+        .push_bot(ChooseCardInDiscardToPlaceOnTopOfDraw());
+}
+
 pub fn reckless_charge_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 7, 10);
     let card = game.new_card(CardClass::Dazed);
@@ -192,7 +199,7 @@ mod tests {
     use crate::{
         actions::{block::BlockAction, set_hp::SetHPAction},
         cards::CardClass,
-        game::{CreatureRef, GameBuilder, Move},
+        game::{CreatureRef, GameBuilder, GameStatus, Move},
         monsters::test::NoopMonster,
         status::Status,
     };
@@ -322,6 +329,37 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 12);
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Wound);
+    }
+
+    #[test]
+    fn test_headbutt() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 10;
+        g.play_card(CardClass::Headbutt, Some(CreatureRef::monster(0)));
+        assert_eq!(g.draw_pile.len(), 0);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.result(), GameStatus::Combat);
+
+        g.play_card(CardClass::Headbutt, Some(CreatureRef::monster(0)));
+        assert_eq!(g.draw_pile.len(), 1);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.result(), GameStatus::Combat);
+
+        g.add_card_to_discard_pile(CardClass::Strike);
+        g.play_card(CardClass::Headbutt, Some(CreatureRef::monster(0)));
+        assert_eq!(g.result(), GameStatus::PlaceCardInDiscardOnTopOfDraw);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::PlaceCardInDiscardOnTopOfDraw { card_index: 0 },
+                Move::PlaceCardInDiscardOnTopOfDraw { card_index: 1 },
+            ]
+        );
+        g.make_move(Move::PlaceCardInDiscardOnTopOfDraw { card_index: 1 });
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 2);
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Headbutt);
+        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Strike);
     }
 
     #[test]

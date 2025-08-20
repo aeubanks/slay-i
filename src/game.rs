@@ -71,6 +71,9 @@ pub enum Move {
     PlaceCardInHandOnTopOfDraw {
         card_index: usize,
     },
+    PlaceCardInDiscardOnTopOfDraw {
+        card_index: usize,
+    },
     Purity {
         card_index: usize,
     },
@@ -88,6 +91,7 @@ pub enum GameStatus {
     Combat,
     Armaments,
     PlaceCardInHandOnTopOfDraw,
+    PlaceCardInDiscardOnTopOfDraw,
     Purity { num_cards_remaining: i32 },
 }
 
@@ -108,6 +112,7 @@ pub enum GameState {
         cards_remaining: Vec<usize>,
     },
     PlaceCardInHandOnTopOfDraw,
+    PlaceCardInDiscardOnTopOfDraw,
     Defeat,
     Victory,
 }
@@ -527,6 +532,7 @@ impl Game {
             | GameState::BlessingTransform
             | GameState::Armaments
             | GameState::PlaceCardInHandOnTopOfDraw
+            | GameState::PlaceCardInDiscardOnTopOfDraw
             | GameState::Purity { .. } => {
                 unreachable!()
             }
@@ -550,7 +556,10 @@ impl Game {
     fn in_pause_state(&self) -> bool {
         matches!(
             self.state,
-            GameState::Armaments | GameState::Purity { .. } | GameState::PlaceCardInHandOnTopOfDraw
+            GameState::Armaments
+                | GameState::Purity { .. }
+                | GameState::PlaceCardInHandOnTopOfDraw
+                | GameState::PlaceCardInDiscardOnTopOfDraw
         )
     }
 
@@ -676,6 +685,7 @@ impl Game {
             GameState::Defeat => GameStatus::Defeat,
             GameState::Armaments => GameStatus::Armaments,
             GameState::PlaceCardInHandOnTopOfDraw => GameStatus::PlaceCardInHandOnTopOfDraw,
+            GameState::PlaceCardInDiscardOnTopOfDraw => GameStatus::PlaceCardInDiscardOnTopOfDraw,
             GameState::Purity {
                 num_cards_remaining,
                 cards_remaining: _,
@@ -744,6 +754,14 @@ impl Game {
                 assert_eq!(self.state, GameState::PlaceCardInHandOnTopOfDraw);
                 self.action_queue
                     .push_top(PlaceCardOnTopOfDrawAction(self.hand.remove(card_index)));
+                self.state = GameState::PlayerTurn;
+                self.run();
+            }
+            Move::PlaceCardInDiscardOnTopOfDraw { card_index } => {
+                assert_eq!(self.state, GameState::PlaceCardInDiscardOnTopOfDraw);
+                self.action_queue.push_top(PlaceCardOnTopOfDrawAction(
+                    self.discard_pile.remove(card_index),
+                ));
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
@@ -889,6 +907,11 @@ impl Game {
                     moves.push(Move::PlaceCardInHandOnTopOfDraw { card_index: i });
                 }
             }
+            GameState::PlaceCardInDiscardOnTopOfDraw => {
+                for i in 0..self.discard_pile.len() {
+                    moves.push(Move::PlaceCardInDiscardOnTopOfDraw { card_index: i });
+                }
+            }
             GameState::Purity {
                 num_cards_remaining: _,
                 cards_remaining,
@@ -961,6 +984,12 @@ impl Game {
     pub fn add_card_to_draw_pile(&mut self, class: CardClass) {
         let card = self.new_card(class);
         self.draw_pile.push(card);
+    }
+
+    #[cfg(test)]
+    pub fn add_card_to_discard_pile(&mut self, class: CardClass) {
+        let card = self.new_card(class);
+        self.discard_pile.push(card);
     }
 
     fn finished(&mut self) -> bool {
