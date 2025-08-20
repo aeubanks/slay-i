@@ -4,9 +4,10 @@ use crate::{
         choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaust,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDraw,
         damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
-        enlightenment::EnlightenmentAction, gain_energy::GainEnergyAction,
-        gain_status::GainStatusAction, madness::MadnessAction, play_top_card::PlayTopCardAction,
-        purity::PurityAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        enlightenment::EnlightenmentAction, exhaust_random_card_in_hand::ExhaustRandomCardInHand,
+        gain_energy::GainEnergyAction, gain_status::GainStatusAction, madness::MadnessAction,
+        play_top_card::PlayTopCardAction, purity::PurityAction,
+        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
     game::{CreatureRef, Game},
@@ -37,6 +38,15 @@ pub fn armaments_behavior(game: &mut Game, info: CardPlayInfo) {
         game.action_queue.push_bot(UpgradeAllCardsInHandAction());
     } else {
         game.action_queue.push_bot(ArmamentsAction());
+    }
+}
+
+pub fn true_grit_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_block(game, info, 7, 9);
+    if info.upgraded {
+        game.action_queue.push_bot(ChooseCardInHandToExhaust());
+    } else {
+        game.action_queue.push_bot(ExhaustRandomCardInHand());
     }
 }
 
@@ -249,6 +259,32 @@ mod tests {
         assert!(g.hand[0].borrow().upgrade_count == 1);
         assert!(g.hand[1].borrow().upgrade_count == 1);
         assert!(g.hand[2].borrow().upgrade_count == 2);
+    }
+
+    #[test]
+    fn test_true_grit() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 999;
+        let mut found_strike = false;
+        let mut found_defend = false;
+        for _ in 0..100 {
+            g.hand.clear();
+            g.exhaust_pile.clear();
+            g.add_card_to_hand(CardClass::Strike);
+            g.add_card_to_hand(CardClass::Defend);
+            g.play_card(CardClass::TrueGrit, None);
+            assert_eq!(g.exhaust_pile.len(), 1);
+            if g.hand[0].borrow().class == CardClass::Strike {
+                found_strike = true;
+            } else {
+                found_defend = true;
+            }
+            if found_strike && found_defend {
+                break;
+            }
+        }
+        assert!(found_strike);
+        assert!(found_defend);
     }
 
     #[test]

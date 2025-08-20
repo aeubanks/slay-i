@@ -127,7 +127,7 @@ c!(
     // Common skills
     Armaments => (Common, Skill, Red, cost(1), skills::armaments_behavior, false),
     Flex => (Common, Skill, Red, cost(0), todo, false),
-    TrueGrit => (Common, Skill, Red, cost(1), todo, false),
+    TrueGrit => (Common, Skill, Red, cost(1), skills::true_grit_behavior, false),
     ShrugItOff => (Common, Skill, Red, cost(1), todo, false),
     Havoc => (Common, Skill, Red, cost(1), skills::havoc_behavior, false),
     Warcry => (Common, Skill, Red, cost(0), skills::warcry_behavior, true),
