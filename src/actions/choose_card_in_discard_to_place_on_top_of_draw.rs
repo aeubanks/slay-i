@@ -4,9 +4,9 @@ use crate::{
     game::{Game, GameState},
 };
 
-pub struct ChooseCardInDiscardToPlaceOnTopOfDraw();
+pub struct ChooseCardInDiscardToPlaceOnTopOfDrawAction();
 
-impl Action for ChooseCardInDiscardToPlaceOnTopOfDraw {
+impl Action for ChooseCardInDiscardToPlaceOnTopOfDrawAction {
     fn run(&self, game: &mut Game) {
         match game.discard_pile.len() {
             0 => {}
@@ -18,7 +18,7 @@ impl Action for ChooseCardInDiscardToPlaceOnTopOfDraw {
     }
 }
 
-impl std::fmt::Debug for ChooseCardInDiscardToPlaceOnTopOfDraw {
+impl std::fmt::Debug for ChooseCardInDiscardToPlaceOnTopOfDrawAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "move one card in discard on top of draw")
     }

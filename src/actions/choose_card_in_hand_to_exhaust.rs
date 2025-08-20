@@ -4,9 +4,9 @@ use crate::{
     game::{Game, GameState},
 };
 
-pub struct ChooseCardInHandToExhaust();
+pub struct ChooseCardInHandToExhaustAction();
 
-impl Action for ChooseCardInHandToExhaust {
+impl Action for ChooseCardInHandToExhaustAction {
     fn run(&self, game: &mut Game) {
         match game.hand.len() {
             0 => {}
@@ -18,7 +18,7 @@ impl Action for ChooseCardInHandToExhaust {
     }
 }
 
-impl std::fmt::Debug for ChooseCardInHandToExhaust {
+impl std::fmt::Debug for ChooseCardInHandToExhaustAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "choose card in hand to exhaust")
     }

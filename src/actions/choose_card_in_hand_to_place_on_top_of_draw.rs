@@ -4,9 +4,9 @@ use crate::{
     game::{Game, GameState},
 };
 
-pub struct ChooseCardInHandToPlaceOnTopOfDraw();
+pub struct ChooseCardInHandToPlaceOnTopOfDrawAction();
 
-impl Action for ChooseCardInHandToPlaceOnTopOfDraw {
+impl Action for ChooseCardInHandToPlaceOnTopOfDrawAction {
     fn run(&self, game: &mut Game) {
         match game.hand.len() {
             0 => {}
@@ -18,7 +18,7 @@ impl Action for ChooseCardInHandToPlaceOnTopOfDraw {
     }
 }
 
-impl std::fmt::Debug for ChooseCardInHandToPlaceOnTopOfDraw {
+impl std::fmt::Debug for ChooseCardInHandToPlaceOnTopOfDrawAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "move one card in hand on top of draw")
     }

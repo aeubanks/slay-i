@@ -1,13 +1,13 @@
 use crate::{
     actions::{
         armaments::ArmamentsAction, block::BlockAction,
-        choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaust,
-        choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDraw,
+        choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaustAction,
+        choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
         damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
-        enlightenment::EnlightenmentAction, exhaust_random_card_in_hand::ExhaustRandomCardInHand,
-        gain_energy::GainEnergyAction, gain_status::GainStatusAction, madness::MadnessAction,
-        play_top_card::PlayTopCardAction, purity::PurityAction,
-        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        enlightenment::EnlightenmentAction,
+        exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, gain_energy::GainEnergyAction,
+        gain_status::GainStatusAction, madness::MadnessAction, play_top_card::PlayTopCardAction,
+        purity::PurityAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
     game::{CreatureRef, Game},
@@ -44,9 +44,10 @@ pub fn armaments_behavior(game: &mut Game, info: CardPlayInfo) {
 pub fn true_grit_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 7, 9);
     if info.upgraded {
-        game.action_queue.push_bot(ChooseCardInHandToExhaust());
+        game.action_queue
+            .push_bot(ChooseCardInHandToExhaustAction());
     } else {
-        game.action_queue.push_bot(ExhaustRandomCardInHand());
+        game.action_queue.push_bot(ExhaustRandomCardInHandAction());
     }
 }
 
@@ -60,7 +61,7 @@ pub fn warcry_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue
         .push_bot(DrawAction(if info.upgraded { 2 } else { 1 }));
     game.action_queue
-        .push_bot(ChooseCardInHandToPlaceOnTopOfDraw());
+        .push_bot(ChooseCardInHandToPlaceOnTopOfDrawAction());
 }
 
 pub fn ghostly_armor_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -89,7 +90,8 @@ pub fn battle_trance_behavior(game: &mut Game, info: CardPlayInfo) {
 }
 
 pub fn burning_pact_behavior(game: &mut Game, info: CardPlayInfo) {
-    game.action_queue.push_bot(ChooseCardInHandToExhaust());
+    game.action_queue
+        .push_bot(ChooseCardInHandToExhaustAction());
     game.action_queue
         .push_bot(DrawAction(if info.upgraded { 3 } else { 2 }));
 }
@@ -145,7 +147,7 @@ pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
 pub fn thinking_ahead_behavior(game: &mut Game, _: CardPlayInfo) {
     game.action_queue.push_bot(DrawAction(2));
     game.action_queue
-        .push_bot(ChooseCardInHandToPlaceOnTopOfDraw());
+        .push_bot(ChooseCardInHandToPlaceOnTopOfDrawAction());
 }
 
 #[cfg(test)]

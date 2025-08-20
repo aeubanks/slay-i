@@ -1,6 +1,6 @@
 use crate::{
     actions::{
-        choose_card_in_discard_to_place_on_top_of_draw::ChooseCardInDiscardToPlaceOnTopOfDraw,
+        choose_card_in_discard_to_place_on_top_of_draw::ChooseCardInDiscardToPlaceOnTopOfDrawAction,
         damage::{DamageAction, OnFatal, OnFatalType},
         damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction,
@@ -107,7 +107,7 @@ pub fn wild_strike_behavior(game: &mut Game, info: CardPlayInfo) {
 pub fn headbutt_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 9, 12);
     game.action_queue
-        .push_bot(ChooseCardInDiscardToPlaceOnTopOfDraw());
+        .push_bot(ChooseCardInDiscardToPlaceOnTopOfDrawAction());
 }
 
 pub fn reckless_charge_behavior(game: &mut Game, info: CardPlayInfo) {

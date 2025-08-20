@@ -2,9 +2,9 @@ use rand::Rng;
 
 use crate::{action::Action, actions::exhaust_card::ExhaustCardAction, game::Game};
 
-pub struct ExhaustRandomCardInHand();
+pub struct ExhaustRandomCardInHandAction();
 
-impl Action for ExhaustRandomCardInHand {
+impl Action for ExhaustRandomCardInHandAction {
     fn run(&self, game: &mut Game) {
         match game.hand.len() {
             0 => {}
@@ -18,7 +18,7 @@ impl Action for ExhaustRandomCardInHand {
     }
 }
 
-impl std::fmt::Debug for ExhaustRandomCardInHand {
+impl std::fmt::Debug for ExhaustRandomCardInHandAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "exhaust random card in hand")
     }
