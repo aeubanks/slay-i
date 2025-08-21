@@ -5,9 +5,10 @@ use crate::{
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
         damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction,
-        exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, gain_energy::GainEnergyAction,
-        gain_status::GainStatusAction, madness::MadnessAction, play_top_card::PlayTopCardAction,
-        purity::PurityAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
+        gain_energy::GainEnergyAction, gain_status::GainStatusAction, madness::MadnessAction,
+        play_top_card::PlayTopCardAction, purity::PurityAction,
+        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
     game::{CreatureRef, Game},
@@ -106,6 +107,10 @@ pub fn double_tap_behavior(game: &mut Game, info: CardPlayInfo) {
         amount: if info.upgraded { 2 } else { 1 },
         target: CreatureRef::player(),
     });
+}
+
+pub fn exhume_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue.push_bot(ExhumeAction());
 }
 
 pub fn limit_break_behavior(game: &mut Game, _: CardPlayInfo) {
@@ -492,6 +497,62 @@ mod tests {
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.draw_pile.len(), 0);
         assert_eq!(g.player.creature.block, 30);
+    }
+
+    #[test]
+    fn test_exhume() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.play_card_upgraded(CardClass::Exhume, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 0);
+        assert_eq!(g.exhaust_pile.len(), 1);
+
+        g.hand.clear();
+        g.exhaust_pile.clear();
+        g.add_card_to_exhaust_pile(CardClass::Strike);
+        g.play_card_upgraded(CardClass::Exhume, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
+        assert_eq!(g.exhaust_pile.len(), 1);
+
+        g.hand.clear();
+        g.exhaust_pile.clear();
+        g.add_card_to_exhaust_pile(CardClass::Exhume);
+        g.play_card_upgraded(CardClass::Exhume, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 0);
+        assert_eq!(g.exhaust_pile.len(), 2);
+
+        g.hand.clear();
+        g.exhaust_pile.clear();
+        g.add_card_to_exhaust_pile(CardClass::Strike);
+        g.add_card_to_exhaust_pile(CardClass::Exhume);
+        g.play_card_upgraded(CardClass::Exhume, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
+        assert_eq!(g.exhaust_pile.len(), 2);
+
+        g.hand.clear();
+        g.exhaust_pile.clear();
+        g.add_card_to_exhaust_pile(CardClass::Strike);
+        g.add_card_to_exhaust_pile(CardClass::Exhume);
+        g.add_card_to_exhaust_pile(CardClass::Defend);
+        g.play_card_upgraded(CardClass::Exhume, None);
+        assert_eq!(g.result(), GameStatus::Exhume);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::Exhume { card_index: 0 },
+                Move::Exhume { card_index: 2 },
+            ]
+        );
+        g.make_move(Move::Exhume { card_index: 2 });
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.exhaust_pile.len(), 3);
     }
 
     #[test]

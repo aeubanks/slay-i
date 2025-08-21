@@ -10,6 +10,7 @@ use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::exhaust_card::ExhaustCardAction;
 use crate::actions::gain_status::GainStatusAction;
+use crate::actions::place_card_in_hand::PlaceCardInHandAction;
 use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
@@ -77,6 +78,9 @@ pub enum Move {
     ExhaustCardInHand {
         card_index: usize,
     },
+    Exhume {
+        card_index: usize,
+    },
     Purity {
         card_index: usize,
     },
@@ -96,6 +100,7 @@ pub enum GameStatus {
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
     ExhaustCardInHand,
+    Exhume,
     Purity { num_cards_remaining: i32 },
 }
 
@@ -118,6 +123,7 @@ pub enum GameState {
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
     ExhaustCardInHand,
+    Exhume,
     Defeat,
     Victory,
 }
@@ -539,6 +545,7 @@ impl Game {
             | GameState::PlaceCardInHandOnTopOfDraw
             | GameState::PlaceCardInDiscardOnTopOfDraw
             | GameState::ExhaustCardInHand
+            | GameState::Exhume
             | GameState::Purity { .. } => {
                 unreachable!()
             }
@@ -567,6 +574,7 @@ impl Game {
                 | GameState::PlaceCardInHandOnTopOfDraw
                 | GameState::PlaceCardInDiscardOnTopOfDraw
                 | GameState::ExhaustCardInHand
+                | GameState::Exhume
         )
     }
 
@@ -694,6 +702,7 @@ impl Game {
             GameState::PlaceCardInHandOnTopOfDraw => GameStatus::PlaceCardInHandOnTopOfDraw,
             GameState::PlaceCardInDiscardOnTopOfDraw => GameStatus::PlaceCardInDiscardOnTopOfDraw,
             GameState::ExhaustCardInHand => GameStatus::ExhaustCardInHand,
+            GameState::Exhume => GameStatus::Exhume,
             GameState::Purity {
                 num_cards_remaining,
                 cards_remaining: _,
@@ -777,6 +786,13 @@ impl Game {
                 assert_eq!(self.state, GameState::ExhaustCardInHand);
                 self.action_queue
                     .push_top(ExhaustCardAction(self.hand.remove(card_index)));
+                self.state = GameState::PlayerTurn;
+                self.run();
+            }
+            Move::Exhume { card_index } => {
+                assert_eq!(self.state, GameState::Exhume);
+                self.action_queue
+                    .push_top(PlaceCardInHandAction(self.exhaust_pile.remove(card_index)));
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
@@ -932,6 +948,13 @@ impl Game {
                     moves.push(Move::ExhaustCardInHand { card_index: i });
                 }
             }
+            GameState::Exhume => {
+                for (i, c) in self.exhaust_pile.iter().enumerate() {
+                    if c.borrow().class != CardClass::Exhume {
+                        moves.push(Move::Exhume { card_index: i });
+                    }
+                }
+            }
             GameState::Purity {
                 num_cards_remaining: _,
                 cards_remaining,
@@ -1010,6 +1033,16 @@ impl Game {
     pub fn add_card_to_discard_pile(&mut self, class: CardClass) {
         let card = self.new_card(class);
         self.discard_pile.push(card);
+    }
+
+    #[cfg(test)]
+    pub fn add_card_to_exhaust_pile(&mut self, class: CardClass) {
+        let card = self.new_card(class);
+        self.exhaust_pile.push(card);
+    }
+
+    pub fn hand_is_full(&self) -> bool {
+        self.hand.len() as i32 == Game::MAX_HAND_SIZE
     }
 
     fn finished(&mut self) -> bool {
