@@ -764,7 +764,8 @@ mod tests {
             g.hand[0].borrow().cost,
             CardCost::Cost {
                 base_cost: 0,
-                temporary_cost: None
+                temporary_cost: None,
+                free_to_play_once: false,
             }
         );
 
@@ -775,7 +776,8 @@ mod tests {
             g.hand[0].borrow().cost,
             CardCost::Cost {
                 base_cost: 0,
-                temporary_cost: None
+                temporary_cost: None,
+                free_to_play_once: false,
             }
         );
 
@@ -789,14 +791,16 @@ mod tests {
             g.hand[0].borrow().cost,
             CardCost::Cost {
                 base_cost: 1,
-                temporary_cost: Some(0)
+                temporary_cost: Some(0),
+                free_to_play_once: false,
             }
         );
         assert_eq!(
             g.hand[1].borrow().cost,
             CardCost::Cost {
                 base_cost: 0,
-                temporary_cost: None
+                temporary_cost: None,
+                free_to_play_once: false,
             }
         );
 

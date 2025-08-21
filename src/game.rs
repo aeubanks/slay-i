@@ -895,7 +895,8 @@ impl Game {
             CardCost::Cost {
                 base_cost,
                 temporary_cost,
-            } => self.energy >= temporary_cost.unwrap_or(base_cost),
+                free_to_play_once,
+            } => free_to_play_once || self.energy >= temporary_cost.unwrap_or(base_cost),
         }
     }
 
@@ -1261,5 +1262,45 @@ mod tests {
         });
         g.run_actions_until_empty();
         assert_eq!(g.discard_pile.len(), 1);
+    }
+
+    #[test]
+    fn test_free_to_play() {
+        let mut g = GameBuilder::default().build_combat();
+        let c = g.new_card(CardClass::Defend);
+        match &mut c.borrow_mut().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => *free_to_play_once = true,
+            _ => panic!(),
+        }
+        g.hand.push(c);
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.energy, 3);
+        g.hand.push(g.discard_pile.pop().unwrap());
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.energy, 2);
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 3);
+        match &mut g.hand[0].borrow_mut().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => *free_to_play_once = true,
+            _ => panic!(),
+        }
+        g.make_move(Move::EndTurn);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.energy, 3);
     }
 }

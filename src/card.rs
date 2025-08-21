@@ -39,6 +39,7 @@ impl Card {
         if let CardCost::Cost {
             base_cost,
             temporary_cost,
+            ..
         } = &mut self.cost
         {
             if let Some(new_cost) = self.class.upgrade_cost(*base_cost) {
@@ -85,10 +86,7 @@ impl Card {
     }
     pub fn clear_temporary(&mut self) {
         match &mut self.cost {
-            CardCost::Cost {
-                base_cost: _,
-                temporary_cost,
-            } => {
+            CardCost::Cost { temporary_cost, .. } => {
                 *temporary_cost = None;
             }
             CardCost::X | CardCost::Zero => {}
@@ -103,6 +101,7 @@ impl Card {
             CardCost::Cost {
                 base_cost,
                 temporary_cost,
+                ..
             } => {
                 *base_cost = base;
                 *temporary_cost = temp;
@@ -112,10 +111,7 @@ impl Card {
     }
     pub fn get_base_cost(&self) -> i32 {
         match self.cost {
-            CardCost::Cost {
-                base_cost,
-                temporary_cost: _,
-            } => base_cost,
+            CardCost::Cost { base_cost, .. } => base_cost,
             _ => unreachable!(),
         }
     }
@@ -132,10 +128,14 @@ impl std::fmt::Debug for Card {
             CardCost::Cost {
                 base_cost,
                 temporary_cost,
+                free_to_play_once,
             } => {
                 write!(f, ", {base_cost} cost")?;
                 if let Some(temporary_cost) = temporary_cost {
                     write!(f, " (temp cost {temporary_cost})")?;
+                }
+                if free_to_play_once {
+                    write!(f, " (free to play once)")?;
                 }
             }
         }
@@ -163,6 +163,7 @@ mod tests {
                 CardCost::Cost {
                     base_cost: _,
                     temporary_cost,
+                    free_to_play_once: _,
                 } => {
                     *temporary_cost = Some(init_temp);
                 }
@@ -172,7 +173,8 @@ mod tests {
                 c.cost,
                 CardCost::Cost {
                     base_cost: 1,
-                    temporary_cost: Some(init_temp)
+                    temporary_cost: Some(init_temp),
+                    free_to_play_once: false,
                 }
             );
             c.upgrade();
@@ -180,7 +182,8 @@ mod tests {
                 c.cost,
                 CardCost::Cost {
                     base_cost: 0,
-                    temporary_cost: Some(final_temp)
+                    temporary_cost: Some(final_temp),
+                    free_to_play_once: false,
                 }
             );
         }

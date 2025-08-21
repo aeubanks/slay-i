@@ -12,6 +12,7 @@ impl Action for EnlightenmentAction {
                 CardCost::Cost {
                     base_cost,
                     temporary_cost,
+                    ..
                 } => {
                     if temporary_cost.unwrap_or(*base_cost) > 1 {
                         if self.for_combat {

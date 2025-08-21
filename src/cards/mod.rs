@@ -73,7 +73,7 @@ macro_rules! c {
             pub fn base_cost(&self) -> CardCost {
                 use CardCost::*;
                 fn cost(c: i32) -> CardCost {
-                    CardCost::Cost{base_cost:c,temporary_cost: None}
+                    CardCost::Cost {base_cost:c, temporary_cost: None, free_to_play_once: false }
                 }
                 match self {
                     $(Self::$name => $cost,)+
@@ -267,6 +267,7 @@ pub enum CardCost {
     Cost {
         base_cost: i32,
         temporary_cost: Option<i32>,
+        free_to_play_once: bool,
     },
     X,
     Zero,

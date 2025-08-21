@@ -395,6 +395,7 @@ mod tests {
                     CardCost::Cost {
                         base_cost,
                         temporary_cost: _,
+                        free_to_play_once: _,
                     } => match base_cost {
                         0 => found_0 = true,
                         1 => found_1 = true,
@@ -424,8 +425,10 @@ mod tests {
                 CardCost::Cost {
                     base_cost: _,
                     temporary_cost,
+                    free_to_play_once,
                 } => {
                     *temporary_cost = Some(0);
+                    *free_to_play_once = true;
                 }
                 _ => unreachable!(),
             }
@@ -437,8 +440,10 @@ mod tests {
                 CardCost::Cost {
                     base_cost: _,
                     temporary_cost,
+                    free_to_play_once,
                 } => {
                     assert!(temporary_cost.is_none());
+                    assert!(!free_to_play_once);
                 }
                 _ => unreachable!(),
             }

@@ -25,15 +25,22 @@ impl Action for PlayCardAction {
         game.num_cards_played_this_turn += 1;
         game.cur_card = Some(self.card.clone());
 
-        let energy = match c.cost {
+        let energy_cost = match c.cost {
             CardCost::Zero => 0,
             CardCost::X => game.energy,
             CardCost::Cost {
                 base_cost,
                 temporary_cost,
-            } => temporary_cost.unwrap_or(base_cost),
+                free_to_play_once,
+            } => {
+                if free_to_play_once {
+                    0
+                } else {
+                    temporary_cost.unwrap_or(base_cost)
+                }
+            }
         };
-        assert!(energy <= game.energy);
+        assert!(energy_cost <= game.energy);
         let info = CardPlayInfo {
             target: self.target,
             upgraded: c.upgrade_count != 0,
@@ -57,6 +64,14 @@ impl Action for PlayCardAction {
             CardDestination::Discard
         };
         drop(c);
+
+        match &mut self.card.borrow_mut().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => *free_to_play_once = false,
+            _ => {}
+        }
+
         game.player.creature.trigger_statuses_on_card_played(
             &mut game.action_queue,
             &mut game.card_queue,
@@ -65,7 +80,7 @@ impl Action for PlayCardAction {
         game.player
             .trigger_relics_on_card_played(&mut game.action_queue, self);
         if !self.free {
-            game.energy -= energy;
+            game.energy -= energy_cost;
         }
         game.action_queue.push_bot(ClearCurCardAction());
         match dest {

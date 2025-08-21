@@ -3,11 +3,7 @@ use crate::{action::Action, card::CardRef, cards::CardCost, game::Game, rng::ran
 pub struct MadnessAction();
 
 fn temp_cost_is_zero(c: &CardRef) -> bool {
-    if let CardCost::Cost {
-        base_cost: _,
-        temporary_cost,
-    } = c.borrow().cost
-    {
+    if let CardCost::Cost { temporary_cost, .. } = c.borrow().cost {
         temporary_cost == Some(0)
     } else {
         unreachable!();
@@ -20,11 +16,7 @@ impl Action for MadnessAction {
         let mut not_free = vec![];
         let mut not_free_and_not_temp_free = vec![];
         for c in &g.hand {
-            if let CardCost::Cost {
-                base_cost,
-                temporary_cost: _,
-            } = c.borrow().cost
-            {
+            if let CardCost::Cost { base_cost, .. } = c.borrow().cost {
                 if base_cost != 0 {
                     not_free.push(c);
                     if !temp_cost_is_zero(c) {
@@ -41,10 +33,17 @@ impl Action for MadnessAction {
         } else {
             rand_slice(&mut g.rng, &not_free_and_not_temp_free)
         };
-        c.borrow_mut().cost = CardCost::Cost {
-            base_cost: 0,
-            temporary_cost: None,
-        };
+        match &mut c.borrow_mut().cost {
+            CardCost::Cost {
+                base_cost,
+                temporary_cost,
+                ..
+            } => {
+                *base_cost = 0;
+                *temporary_cost = None;
+            }
+            _ => unreachable!(),
+        }
     }
 }
 

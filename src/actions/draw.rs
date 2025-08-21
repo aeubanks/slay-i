@@ -51,10 +51,12 @@ impl Action for DrawAction {
                     if let CardCost::Cost {
                         base_cost,
                         temporary_cost,
+                        free_to_play_once,
                     } = &mut c.cost
                     {
                         *base_cost = game.rng.random_range(0..=3);
                         *temporary_cost = None;
+                        *free_to_play_once = false;
                     }
                 }
                 let class = c.class;
