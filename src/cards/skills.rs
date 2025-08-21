@@ -1,6 +1,7 @@
 use crate::{
     actions::{
         armaments::ArmamentsAction, block::BlockAction,
+        choose_card_in_draw_to_place_in_hand::ChooseCardInDrawToPlaceInHandAction,
         choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaustAction,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
         damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
@@ -11,6 +12,7 @@ use crate::{
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
+    cards::CardType,
     game::{CreatureRef, Game},
     status::Status,
 };
@@ -155,6 +157,16 @@ pub fn thinking_ahead_behavior(game: &mut Game, _: CardPlayInfo) {
         .push_bot(ChooseCardInHandToPlaceOnTopOfDrawAction());
 }
 
+pub fn secret_technique_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue
+        .push_bot(ChooseCardInDrawToPlaceInHandAction(CardType::Skill));
+}
+
+pub fn secret_weapon_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue
+        .push_bot(ChooseCardInDrawToPlaceInHandAction(CardType::Attack));
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -162,7 +174,7 @@ mod tests {
             block::BlockAction, exhaust_card::ExhaustCardAction, gain_status::GainStatusAction,
             remove_status::RemoveStatusAction,
         },
-        cards::{CardClass, CardCost},
+        cards::{CardClass, CardCost, CardType},
         game::{CreatureRef, GameBuilder, GameStatus, Move},
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
@@ -918,5 +930,99 @@ mod tests {
         assert_eq!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.discard_pile.len(), 0);
+    }
+
+    #[test]
+    fn test_secret_weapon() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_hand(CardClass::SecretWeapon);
+        assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
+
+        g.hand.clear();
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.play_card(CardClass::SecretWeapon, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 1);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
+
+        g.draw_pile.clear();
+        g.hand.clear();
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.add_card_to_draw_pile(CardClass::TwinStrike);
+        g.play_card(CardClass::SecretWeapon, None);
+        assert_eq!(g.result(), GameStatus::FetchCardFromDraw(CardType::Attack));
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::FetchCardFromDraw { card_index: 0 },
+                Move::FetchCardFromDraw { card_index: 2 },
+            ]
+        );
+        g.make_move(Move::FetchCardFromDraw { card_index: 2 });
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 2);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::TwinStrike);
+
+        g.draw_pile.clear();
+        g.hand.clear();
+        g.add_card_to_draw_pile(CardClass::Strike);
+        for _ in 0..10 {
+            g.add_card_to_hand(CardClass::Defend);
+        }
+        g.play_card(CardClass::SecretWeapon, None);
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.discard_pile[0].borrow().class, CardClass::Strike);
+    }
+
+    #[test]
+    fn test_secret_technique() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_hand(CardClass::SecretTechnique);
+        assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
+
+        g.hand.clear();
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.play_card(CardClass::SecretTechnique, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 1);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
+
+        g.draw_pile.clear();
+        g.hand.clear();
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::FlameBarrier);
+        g.play_card(CardClass::SecretTechnique, None);
+        assert_eq!(g.result(), GameStatus::FetchCardFromDraw(CardType::Skill));
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::FetchCardFromDraw { card_index: 0 },
+                Move::FetchCardFromDraw { card_index: 2 },
+            ]
+        );
+        g.make_move(Move::FetchCardFromDraw { card_index: 2 });
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 2);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::FlameBarrier);
+
+        g.draw_pile.clear();
+        g.hand.clear();
+        g.add_card_to_draw_pile(CardClass::Defend);
+        for _ in 0..10 {
+            g.add_card_to_hand(CardClass::Strike);
+        }
+        g.play_card(CardClass::SecretTechnique, None);
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.discard_pile[0].borrow().class, CardClass::Defend);
     }
 }

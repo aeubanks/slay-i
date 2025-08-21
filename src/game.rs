@@ -81,6 +81,9 @@ pub enum Move {
     Exhume {
         card_index: usize,
     },
+    FetchCardFromDraw {
+        card_index: usize,
+    },
     Purity {
         card_index: usize,
     },
@@ -101,6 +104,7 @@ pub enum GameStatus {
     PlaceCardInDiscardOnTopOfDraw,
     ExhaustCardInHand,
     Exhume,
+    FetchCardFromDraw(CardType),
     Purity { num_cards_remaining: i32 },
 }
 
@@ -124,6 +128,7 @@ pub enum GameState {
     PlaceCardInDiscardOnTopOfDraw,
     ExhaustCardInHand,
     Exhume,
+    FetchCardFromDraw(CardType),
     Defeat,
     Victory,
 }
@@ -546,6 +551,7 @@ impl Game {
             | GameState::PlaceCardInDiscardOnTopOfDraw
             | GameState::ExhaustCardInHand
             | GameState::Exhume
+            | GameState::FetchCardFromDraw(_)
             | GameState::Purity { .. } => {
                 unreachable!()
             }
@@ -703,6 +709,7 @@ impl Game {
             GameState::PlaceCardInDiscardOnTopOfDraw => GameStatus::PlaceCardInDiscardOnTopOfDraw,
             GameState::ExhaustCardInHand => GameStatus::ExhaustCardInHand,
             GameState::Exhume => GameStatus::Exhume,
+            GameState::FetchCardFromDraw(ty) => GameStatus::FetchCardFromDraw(ty),
             GameState::Purity {
                 num_cards_remaining,
                 cards_remaining: _,
@@ -796,6 +803,13 @@ impl Game {
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
+            Move::FetchCardFromDraw { card_index } => {
+                assert!(matches!(self.state, GameState::FetchCardFromDraw(_)));
+                self.action_queue
+                    .push_top(PlaceCardInHandAction(self.draw_pile.remove(card_index)));
+                self.state = GameState::PlayerTurn;
+                self.run();
+            }
             Move::Purity { card_index } => match &mut self.state {
                 GameState::Purity {
                     num_cards_remaining,
@@ -841,6 +855,27 @@ impl Game {
             && c.class.ty() == CardType::Attack
         {
             return false;
+        }
+        match c.class {
+            CardClass::SecretTechnique => {
+                if !self
+                    .draw_pile
+                    .iter()
+                    .any(|c| c.borrow().class.ty() == CardType::Skill)
+                {
+                    return false;
+                }
+            }
+            CardClass::SecretWeapon => {
+                if !self
+                    .draw_pile
+                    .iter()
+                    .any(|c| c.borrow().class.ty() == CardType::Attack)
+                {
+                    return false;
+                }
+            }
+            _ => {}
         }
         if self.num_cards_played_this_turn >= 3
             && self
@@ -952,6 +987,13 @@ impl Game {
                 for (i, c) in self.exhaust_pile.iter().enumerate() {
                     if c.borrow().class != CardClass::Exhume {
                         moves.push(Move::Exhume { card_index: i });
+                    }
+                }
+            }
+            GameState::FetchCardFromDraw(ty) => {
+                for (i, c) in self.draw_pile.iter().enumerate() {
+                    if c.borrow().class.ty() == *ty {
+                        moves.push(Move::FetchCardFromDraw { card_index: i });
                     }
                 }
             }
