@@ -13,7 +13,7 @@ impl Action for ChooseCardInHandToExhaustAction {
             1 => game
                 .action_queue
                 .push_top(ExhaustCardAction(game.hand.pop().unwrap())),
-            _ => game.state = GameState::ExhaustCardInHand,
+            _ => game.state = GameState::ExhaustOneCardInHand,
         }
     }
 }

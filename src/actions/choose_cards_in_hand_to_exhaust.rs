@@ -3,20 +3,20 @@ use crate::{
     game::{Game, GameState},
 };
 
-pub struct PurityAction(pub i32);
+pub struct ChooseCardsInHandToExhaustAction(pub i32);
 
-impl Action for PurityAction {
+impl Action for ChooseCardsInHandToExhaustAction {
     fn run(&self, g: &mut Game) {
         if !g.hand.is_empty() {
-            g.state = GameState::Purity {
+            g.state = GameState::ExhaustCardsInHand {
                 num_cards_remaining: self.0,
-                cards_remaining: (0..(g.hand.len())).collect(),
+                cards_to_exhaust: Vec::new(),
             };
         }
     }
 }
 
-impl std::fmt::Debug for PurityAction {
+impl std::fmt::Debug for ChooseCardsInHandToExhaustAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "purity {}", self.0)
     }

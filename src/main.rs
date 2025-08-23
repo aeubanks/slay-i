@@ -83,7 +83,7 @@ fn print_state(g: &Game) {
     for c in &g.exhaust_pile {
         println!(" {:?}", c.borrow());
     }
-    if let GameStatus::Purity {
+    if let GameStatus::ExhaustCardsInHand {
         num_cards_remaining,
     } = g.result()
     {
@@ -134,7 +134,7 @@ fn print_state(g: &Game) {
                     g.discard_pile[*card_index].borrow()
                 );
             }
-            Move::ExhaustCardInHand { card_index } => {
+            Move::ExhaustOneCardInHand { card_index } => {
                 print!(
                     "exhaust card {} ({:?})",
                     card_index,
@@ -155,14 +155,14 @@ fn print_state(g: &Game) {
                     g.draw_pile[*card_index].borrow()
                 );
             }
-            Move::Purity { card_index } => {
+            Move::ExhaustCardsInHand { card_index } => {
                 print!(
                     "purity exhaust card {} ({:?})",
                     card_index,
                     g.hand[*card_index].borrow()
                 );
             }
-            Move::PurityEnd => {
+            Move::ExhaustCardsInHandEnd => {
                 print!("purity end");
             }
             Move::UsePotion {
@@ -225,10 +225,10 @@ fn main() {
             | GameStatus::Armaments
             | GameStatus::PlaceCardInHandOnTopOfDraw
             | GameStatus::PlaceCardInDiscardOnTopOfDraw
-            | GameStatus::ExhaustCardInHand
+            | GameStatus::ExhaustOneCardInHand
             | GameStatus::Exhume
             | GameStatus::FetchCardFromDraw(_)
-            | GameStatus::Purity { .. } => {
+            | GameStatus::ExhaustCardsInHand { .. } => {
                 print_state(&game);
                 let valid_moves = game.valid_moves();
                 let i = read_int_from_stdin(valid_moves.len());

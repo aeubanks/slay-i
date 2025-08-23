@@ -4,12 +4,12 @@ use crate::{
         choose_card_in_draw_to_place_in_hand::ChooseCardInDrawToPlaceInHandAction,
         choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaustAction,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
-        damage::DamageAction, double_strength::DoubleStrengthAction, draw::DrawAction,
+        choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction, damage::DamageAction,
+        double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction,
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
         gain_energy::GainEnergyAction, gain_status::GainStatusAction, madness::MadnessAction,
-        play_top_card::PlayTopCardAction, purity::PurityAction,
-        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        play_top_card::PlayTopCardAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
     cards::CardType,
@@ -140,7 +140,11 @@ pub fn madness_behavior(game: &mut Game, _: CardPlayInfo) {
 
 pub fn purity_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue
-        .push_bot(PurityAction(if info.upgraded { 5 } else { 3 }));
+        .push_bot(ChooseCardsInHandToExhaustAction(if info.upgraded {
+            5
+        } else {
+            3
+        }));
 }
 
 pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -486,15 +490,15 @@ mod tests {
             g.cur_card.clone().unwrap().borrow().class,
             CardClass::BurningPact
         );
-        assert_eq!(g.result(), GameStatus::ExhaustCardInHand);
+        assert_eq!(g.result(), GameStatus::ExhaustOneCardInHand);
         assert_eq!(
             g.valid_moves(),
             vec![
-                Move::ExhaustCardInHand { card_index: 0 },
-                Move::ExhaustCardInHand { card_index: 1 },
+                Move::ExhaustOneCardInHand { card_index: 0 },
+                Move::ExhaustOneCardInHand { card_index: 1 },
             ]
         );
-        g.make_move(Move::ExhaustCardInHand { card_index: 1 });
+        g.make_move(Move::ExhaustOneCardInHand { card_index: 1 });
         assert_eq!(g.result(), GameStatus::Combat);
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
@@ -833,89 +837,89 @@ mod tests {
         g.play_card(CardClass::Purity, None);
         assert_eq!(
             g.result(),
-            GameStatus::Purity {
+            GameStatus::ExhaustCardsInHand {
                 num_cards_remaining: 3
             }
         );
         assert_eq!(
             g.valid_moves(),
             vec![
-                Move::PurityEnd,
-                Move::Purity { card_index: 0 },
-                Move::Purity { card_index: 1 },
-                Move::Purity { card_index: 2 },
-                Move::Purity { card_index: 3 },
-                Move::Purity { card_index: 4 },
-                Move::Purity { card_index: 5 },
-                Move::Purity { card_index: 6 },
-                Move::Purity { card_index: 7 },
+                Move::ExhaustCardsInHandEnd,
+                Move::ExhaustCardsInHand { card_index: 0 },
+                Move::ExhaustCardsInHand { card_index: 1 },
+                Move::ExhaustCardsInHand { card_index: 2 },
+                Move::ExhaustCardsInHand { card_index: 3 },
+                Move::ExhaustCardsInHand { card_index: 4 },
+                Move::ExhaustCardsInHand { card_index: 5 },
+                Move::ExhaustCardsInHand { card_index: 6 },
+                Move::ExhaustCardsInHand { card_index: 7 },
             ]
         );
-        g.make_move(Move::PurityEnd);
+        g.make_move(Move::ExhaustCardsInHandEnd);
         assert_eq!(g.hand.len(), 8);
         assert_eq!(g.exhaust_pile.len(), 1 + 1);
 
         g.play_card(CardClass::Purity, None);
         assert_eq!(
             g.result(),
-            GameStatus::Purity {
+            GameStatus::ExhaustCardsInHand {
                 num_cards_remaining: 3
             }
         );
         assert_eq!(
             g.valid_moves(),
             vec![
-                Move::PurityEnd,
-                Move::Purity { card_index: 0 },
-                Move::Purity { card_index: 1 },
-                Move::Purity { card_index: 2 },
-                Move::Purity { card_index: 3 },
-                Move::Purity { card_index: 4 },
-                Move::Purity { card_index: 5 },
-                Move::Purity { card_index: 6 },
-                Move::Purity { card_index: 7 },
+                Move::ExhaustCardsInHandEnd,
+                Move::ExhaustCardsInHand { card_index: 0 },
+                Move::ExhaustCardsInHand { card_index: 1 },
+                Move::ExhaustCardsInHand { card_index: 2 },
+                Move::ExhaustCardsInHand { card_index: 3 },
+                Move::ExhaustCardsInHand { card_index: 4 },
+                Move::ExhaustCardsInHand { card_index: 5 },
+                Move::ExhaustCardsInHand { card_index: 6 },
+                Move::ExhaustCardsInHand { card_index: 7 },
             ]
         );
-        g.make_move(Move::Purity { card_index: 3 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 3 });
         assert_eq!(
             g.result(),
-            GameStatus::Purity {
+            GameStatus::ExhaustCardsInHand {
                 num_cards_remaining: 2
             }
         );
         assert_eq!(
             g.valid_moves(),
             vec![
-                Move::PurityEnd,
-                Move::Purity { card_index: 0 },
-                Move::Purity { card_index: 1 },
-                Move::Purity { card_index: 2 },
-                Move::Purity { card_index: 4 },
-                Move::Purity { card_index: 5 },
-                Move::Purity { card_index: 6 },
-                Move::Purity { card_index: 7 },
+                Move::ExhaustCardsInHandEnd,
+                Move::ExhaustCardsInHand { card_index: 0 },
+                Move::ExhaustCardsInHand { card_index: 1 },
+                Move::ExhaustCardsInHand { card_index: 2 },
+                Move::ExhaustCardsInHand { card_index: 4 },
+                Move::ExhaustCardsInHand { card_index: 5 },
+                Move::ExhaustCardsInHand { card_index: 6 },
+                Move::ExhaustCardsInHand { card_index: 7 },
             ]
         );
-        g.make_move(Move::Purity { card_index: 7 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 7 });
         assert_eq!(
             g.result(),
-            GameStatus::Purity {
+            GameStatus::ExhaustCardsInHand {
                 num_cards_remaining: 1
             }
         );
         assert_eq!(
             g.valid_moves(),
             vec![
-                Move::PurityEnd,
-                Move::Purity { card_index: 0 },
-                Move::Purity { card_index: 1 },
-                Move::Purity { card_index: 2 },
-                Move::Purity { card_index: 4 },
-                Move::Purity { card_index: 5 },
-                Move::Purity { card_index: 6 },
+                Move::ExhaustCardsInHandEnd,
+                Move::ExhaustCardsInHand { card_index: 0 },
+                Move::ExhaustCardsInHand { card_index: 1 },
+                Move::ExhaustCardsInHand { card_index: 2 },
+                Move::ExhaustCardsInHand { card_index: 4 },
+                Move::ExhaustCardsInHand { card_index: 5 },
+                Move::ExhaustCardsInHand { card_index: 6 },
             ]
         );
-        g.make_move(Move::Purity { card_index: 6 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 6 });
         assert_eq!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.exhaust_pile.len(), 1 + 1 + 1 + 3);
@@ -927,10 +931,10 @@ mod tests {
 
         g.hand.pop();
         g.play_card_upgraded(CardClass::Purity, None);
-        g.make_move(Move::Purity { card_index: 0 });
-        g.make_move(Move::Purity { card_index: 1 });
-        g.make_move(Move::Purity { card_index: 2 });
-        g.make_move(Move::Purity { card_index: 3 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 1 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 2 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 3 });
         assert_eq!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.discard_pile.len(), 0);

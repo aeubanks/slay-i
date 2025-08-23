@@ -75,19 +75,19 @@ pub enum Move {
     PlaceCardInDiscardOnTopOfDraw {
         card_index: usize,
     },
-    ExhaustCardInHand {
+    ExhaustOneCardInHand {
         card_index: usize,
     },
+    ExhaustCardsInHand {
+        card_index: usize,
+    },
+    ExhaustCardsInHandEnd,
     Exhume {
         card_index: usize,
     },
     FetchCardFromDraw {
         card_index: usize,
     },
-    Purity {
-        card_index: usize,
-    },
-    PurityEnd,
     UsePotion {
         potion_index: usize,
         target: Option<usize>,
@@ -102,10 +102,10 @@ pub enum GameStatus {
     Armaments,
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
-    ExhaustCardInHand,
+    ExhaustOneCardInHand,
+    ExhaustCardsInHand { num_cards_remaining: i32 },
     Exhume,
     FetchCardFromDraw(CardType),
-    Purity { num_cards_remaining: i32 },
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -120,13 +120,13 @@ pub enum GameState {
     MonsterTurn,
     EndOfRound,
     Armaments,
-    Purity {
+    ExhaustOneCardInHand,
+    ExhaustCardsInHand {
         num_cards_remaining: i32,
-        cards_remaining: Vec<usize>,
+        cards_to_exhaust: Vec<usize>,
     },
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
-    ExhaustCardInHand,
     Exhume,
     FetchCardFromDraw(CardType),
     Defeat,
@@ -549,10 +549,10 @@ impl Game {
             | GameState::Armaments
             | GameState::PlaceCardInHandOnTopOfDraw
             | GameState::PlaceCardInDiscardOnTopOfDraw
-            | GameState::ExhaustCardInHand
+            | GameState::ExhaustOneCardInHand
             | GameState::Exhume
             | GameState::FetchCardFromDraw(_)
-            | GameState::Purity { .. } => {
+            | GameState::ExhaustCardsInHand { .. } => {
                 unreachable!()
             }
         }
@@ -576,10 +576,10 @@ impl Game {
         matches!(
             self.state,
             GameState::Armaments
-                | GameState::Purity { .. }
+                | GameState::ExhaustCardsInHand { .. }
                 | GameState::PlaceCardInHandOnTopOfDraw
                 | GameState::PlaceCardInDiscardOnTopOfDraw
-                | GameState::ExhaustCardInHand
+                | GameState::ExhaustOneCardInHand
                 | GameState::Exhume
         )
     }
@@ -707,27 +707,30 @@ impl Game {
             GameState::Armaments => GameStatus::Armaments,
             GameState::PlaceCardInHandOnTopOfDraw => GameStatus::PlaceCardInHandOnTopOfDraw,
             GameState::PlaceCardInDiscardOnTopOfDraw => GameStatus::PlaceCardInDiscardOnTopOfDraw,
-            GameState::ExhaustCardInHand => GameStatus::ExhaustCardInHand,
+            GameState::ExhaustOneCardInHand => GameStatus::ExhaustOneCardInHand,
             GameState::Exhume => GameStatus::Exhume,
             GameState::FetchCardFromDraw(ty) => GameStatus::FetchCardFromDraw(ty),
-            GameState::Purity {
+            GameState::ExhaustCardsInHand {
                 num_cards_remaining,
-                cards_remaining: _,
-            } => GameStatus::Purity {
+                ..
+            } => GameStatus::ExhaustCardsInHand {
                 num_cards_remaining,
             },
             _ => GameStatus::Combat,
         }
     }
 
-    fn exhaust_non_remaining_cards(&mut self, remaining: &[usize]) {
-        let exhaust = (0..(self.hand.len()))
-            .filter(|c| !remaining.contains(c))
-            .rev()
-            .collect::<Vec<_>>();
-        for c in exhaust {
-            let c = self.hand.remove(c);
+    fn exhaust_cards(&mut self, cards_to_exhaust: &[usize]) {
+        let mut cards_to_exhaust = cards_to_exhaust.iter().copied().collect::<Vec<_>>();
+        cards_to_exhaust.reverse();
+        while let Some(i) = cards_to_exhaust.pop() {
+            let c = self.hand.remove(i);
             self.action_queue.push_top(ExhaustCardAction(c));
+            for j in &mut cards_to_exhaust {
+                if *j > i {
+                    *j -= 1;
+                }
+            }
         }
         self.state = GameState::PlayerTurn;
         self.run();
@@ -789,8 +792,8 @@ impl Game {
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
-            Move::ExhaustCardInHand { card_index } => {
-                assert_eq!(self.state, GameState::ExhaustCardInHand);
+            Move::ExhaustOneCardInHand { card_index } => {
+                assert_eq!(self.state, GameState::ExhaustOneCardInHand);
                 self.action_queue
                     .push_top(ExhaustCardAction(self.hand.remove(card_index)));
                 self.state = GameState::PlayerTurn;
@@ -810,27 +813,26 @@ impl Game {
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
-            Move::Purity { card_index } => match &mut self.state {
-                GameState::Purity {
+            Move::ExhaustCardsInHand { card_index } => match &mut self.state {
+                GameState::ExhaustCardsInHand {
                     num_cards_remaining,
-                    cards_remaining,
+                    cards_to_exhaust,
                 } => {
                     *num_cards_remaining -= 1;
-                    cards_remaining.retain(|c| *c != card_index);
-                    if *num_cards_remaining == 0 || cards_remaining.is_empty() {
-                        let copy = cards_remaining.clone();
-                        self.exhaust_non_remaining_cards(&copy);
+                    cards_to_exhaust.push(card_index);
+                    if *num_cards_remaining == 0 || cards_to_exhaust.len() == self.hand.len() {
+                        let copy = cards_to_exhaust.clone();
+                        self.exhaust_cards(&copy);
                     }
                 }
                 _ => unreachable!(),
             },
-            Move::PurityEnd => match &mut self.state {
-                GameState::Purity {
-                    num_cards_remaining: _,
-                    cards_remaining,
+            Move::ExhaustCardsInHandEnd => match &mut self.state {
+                GameState::ExhaustCardsInHand {
+                    cards_to_exhaust, ..
                 } => {
-                    let copy = cards_remaining.clone();
-                    self.exhaust_non_remaining_cards(&copy);
+                    let copy = cards_to_exhaust.clone();
+                    self.exhaust_cards(&copy);
                 }
                 _ => unreachable!(),
             },
@@ -979,9 +981,9 @@ impl Game {
                     moves.push(Move::PlaceCardInDiscardOnTopOfDraw { card_index: i });
                 }
             }
-            GameState::ExhaustCardInHand => {
+            GameState::ExhaustOneCardInHand => {
                 for i in 0..self.hand.len() {
-                    moves.push(Move::ExhaustCardInHand { card_index: i });
+                    moves.push(Move::ExhaustOneCardInHand { card_index: i });
                 }
             }
             GameState::Exhume => {
@@ -998,13 +1000,14 @@ impl Game {
                     }
                 }
             }
-            GameState::Purity {
-                num_cards_remaining: _,
-                cards_remaining,
+            GameState::ExhaustCardsInHand {
+                cards_to_exhaust, ..
             } => {
-                moves.push(Move::PurityEnd);
-                for c in cards_remaining {
-                    moves.push(Move::Purity { card_index: *c });
+                moves.push(Move::ExhaustCardsInHandEnd);
+                for c in 0..self.hand.len() {
+                    if !cards_to_exhaust.contains(&c) {
+                        moves.push(Move::ExhaustCardsInHand { card_index: c });
+                    }
                 }
             }
             _ => {
