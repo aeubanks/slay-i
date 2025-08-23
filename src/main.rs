@@ -87,7 +87,7 @@ fn print_state(g: &Game) {
         num_cards_remaining,
     } = g.result()
     {
-        println!("purity status: {num_cards_remaining} cards left");
+        println!("exhaust cards in hand: {num_cards_remaining} cards left");
     }
     println!("moves:");
     for (mi, m) in g.valid_moves().iter().enumerate() {
@@ -141,6 +141,16 @@ fn print_state(g: &Game) {
                     g.hand[*card_index].borrow()
                 );
             }
+            Move::ExhaustCardsInHand { card_index } => {
+                print!(
+                    "exhaust card {} ({:?})",
+                    card_index,
+                    g.hand[*card_index].borrow()
+                );
+            }
+            Move::ExhaustCardsInHandEnd => {
+                print!("exhaust cards end");
+            }
             Move::Exhume { card_index } => {
                 print!(
                     "exhume card {} ({:?})",
@@ -155,15 +165,22 @@ fn print_state(g: &Game) {
                     g.draw_pile[*card_index].borrow()
                 );
             }
-            Move::ExhaustCardsInHand { card_index } => {
+            Move::ForethoughtOne { card_index } => {
                 print!(
-                    "purity exhaust card {} ({:?})",
+                    "forethought one {} ({:?})",
                     card_index,
                     g.hand[*card_index].borrow()
                 );
             }
-            Move::ExhaustCardsInHandEnd => {
-                print!("purity end");
+            Move::ForethoughtAny { card_index } => {
+                print!(
+                    "forethought any {} ({:?})",
+                    card_index,
+                    g.hand[*card_index].borrow()
+                );
+            }
+            Move::ForethoughtAnyEnd => {
+                print!("forethought any end");
             }
             Move::UsePotion {
                 potion_index,
@@ -228,7 +245,9 @@ fn main() {
             | GameStatus::ExhaustOneCardInHand
             | GameStatus::Exhume
             | GameStatus::FetchCardFromDraw(_)
-            | GameStatus::ExhaustCardsInHand { .. } => {
+            | GameStatus::ExhaustCardsInHand { .. }
+            | GameStatus::ForethoughtAny
+            | GameStatus::ForethoughtOne => {
                 print_state(&game);
                 let valid_moves = game.valid_moves();
                 let i = read_int_from_stdin(valid_moves.len());

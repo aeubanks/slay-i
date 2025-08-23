@@ -4,7 +4,9 @@ use crate::{
         choose_card_in_draw_to_place_in_hand::ChooseCardInDrawToPlaceInHandAction,
         choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaustAction,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
-        choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction, damage::DamageAction,
+        choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction,
+        choose_forethought_any::ChooseForethoughtAnyAction,
+        choose_forethought_one::ChooseForethoughtOneAction, damage::DamageAction,
         double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction,
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
@@ -132,6 +134,14 @@ pub fn enlightenment_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue.push_bot(EnlightenmentAction {
         for_combat: info.upgraded,
     });
+}
+
+pub fn forethought_behavior(game: &mut Game, info: CardPlayInfo) {
+    if info.upgraded {
+        game.action_queue.push_bot(ChooseForethoughtAnyAction());
+    } else {
+        game.action_queue.push_bot(ChooseForethoughtOneAction());
+    }
 }
 
 pub fn madness_behavior(game: &mut Game, _: CardPlayInfo) {
@@ -1032,5 +1042,187 @@ mod tests {
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.discard_pile[0].borrow().class, CardClass::Defend);
+    }
+
+    #[test]
+    fn test_forethought() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.play_card(CardClass::Forethought, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Strike);
+        g.play_card(CardClass::Forethought, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 2);
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
+        match g.draw_pile[0].borrow().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => assert!(free_to_play_once),
+            _ => panic!(),
+        }
+        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Defend);
+        match g.draw_pile[1].borrow().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => assert!(!free_to_play_once),
+            _ => panic!(),
+        }
+
+        g.draw_pile.clear();
+        g.hand.clear();
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::TwinStrike);
+        g.play_card(CardClass::Forethought, None);
+        assert_eq!(g.result(), GameStatus::ForethoughtOne);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::ForethoughtOne { card_index: 0 },
+                Move::ForethoughtOne { card_index: 1 }
+            ]
+        );
+        g.make_move(Move::ForethoughtOne { card_index: 0 });
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.draw_pile.len(), 2);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
+        match g.draw_pile[0].borrow().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => assert!(free_to_play_once),
+            _ => panic!(),
+        }
+        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Defend);
+        match g.draw_pile[1].borrow().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => assert!(!free_to_play_once),
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_forethought_upgraded() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.play_card_upgraded(CardClass::Forethought, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::TwinStrike);
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.play_card_upgraded(CardClass::Forethought, None);
+        assert_eq!(g.result(), GameStatus::ForethoughtAny);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::ForethoughtAnyEnd,
+                Move::ForethoughtAny { card_index: 0 },
+                Move::ForethoughtAny { card_index: 1 }
+            ]
+        );
+        g.make_move(Move::ForethoughtAnyEnd);
+        assert_eq!(g.draw_pile.len(), 1);
+
+        g.draw_pile.clear();
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::TwinStrike);
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.play_card_upgraded(CardClass::Forethought, None);
+        assert_eq!(g.result(), GameStatus::ForethoughtAny);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::ForethoughtAnyEnd,
+                Move::ForethoughtAny { card_index: 0 },
+                Move::ForethoughtAny { card_index: 1 }
+            ]
+        );
+        g.make_move(Move::ForethoughtAny { card_index: 0 });
+        assert_eq!(g.result(), GameStatus::ForethoughtAny);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::ForethoughtAnyEnd,
+                Move::ForethoughtAny { card_index: 1 }
+            ]
+        );
+        g.make_move(Move::ForethoughtAnyEnd);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.draw_pile.len(), 2);
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
+        match g.draw_pile[0].borrow().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => assert!(free_to_play_once),
+            _ => panic!(),
+        }
+
+        g.draw_pile.clear();
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::TwinStrike);
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.play_card_upgraded(CardClass::Forethought, None);
+        assert_eq!(g.result(), GameStatus::ForethoughtAny);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::ForethoughtAnyEnd,
+                Move::ForethoughtAny { card_index: 0 },
+                Move::ForethoughtAny { card_index: 1 }
+            ]
+        );
+        g.make_move(Move::ForethoughtAny { card_index: 1 });
+        assert_eq!(g.result(), GameStatus::ForethoughtAny);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::ForethoughtAnyEnd,
+                Move::ForethoughtAny { card_index: 0 }
+            ]
+        );
+        g.make_move(Move::ForethoughtAny { card_index: 0 });
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 0);
+        assert_eq!(g.draw_pile.len(), 3);
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::TwinStrike);
+        match g.draw_pile[0].borrow().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => assert!(free_to_play_once),
+            _ => panic!(),
+        }
+        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Strike);
+        match g.draw_pile[1].borrow().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => assert!(free_to_play_once),
+            _ => panic!(),
+        }
+        assert_eq!(g.draw_pile[2].borrow().class, CardClass::Defend);
+        match g.draw_pile[2].borrow().cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => assert!(!free_to_play_once),
+            _ => panic!(),
+        }
+
+        g.draw_pile.clear();
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::TwinStrike);
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.play_card_upgraded(CardClass::Forethought, None);
+        g.make_move(Move::ForethoughtAny { card_index: 0 });
+        g.make_move(Move::ForethoughtAny { card_index: 1 });
+        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
+        assert_eq!(g.draw_pile[1].borrow().class, CardClass::TwinStrike);
     }
 }

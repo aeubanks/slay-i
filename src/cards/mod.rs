@@ -202,7 +202,7 @@ c!(
     Enlightenment => (Uncommon, Skill, Colorless, cost(0), skills::enlightenment_behavior, false),
     Impatience => (Uncommon, Skill, Colorless, cost(0), todo, false),
     JackOfAllTrades => (Uncommon, Skill, Colorless, cost(0), todo, true),
-    Forethought => (Uncommon, Skill, Colorless, cost(0), todo, false),
+    Forethought => (Uncommon, Skill, Colorless, cost(0), skills::forethought_behavior, false),
     BandageUp => (Uncommon, Skill, Colorless, cost(0), todo, true),
     Blind => (Uncommon, Skill, Colorless, cost(0), todo, false),
     Trip => (Uncommon, Skill, Colorless, cost(0), todo, false),

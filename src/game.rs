@@ -9,6 +9,7 @@ use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::exhaust_card::ExhaustCardAction;
+use crate::actions::forethought::ForethoughtAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::place_card_in_hand::PlaceCardInHandAction;
 use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
@@ -88,6 +89,13 @@ pub enum Move {
     FetchCardFromDraw {
         card_index: usize,
     },
+    ForethoughtAny {
+        card_index: usize,
+    },
+    ForethoughtAnyEnd,
+    ForethoughtOne {
+        card_index: usize,
+    },
     UsePotion {
         potion_index: usize,
         target: Option<usize>,
@@ -106,6 +114,8 @@ pub enum GameStatus {
     ExhaustCardsInHand { num_cards_remaining: i32 },
     Exhume,
     FetchCardFromDraw(CardType),
+    ForethoughtOne,
+    ForethoughtAny,
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -129,6 +139,10 @@ pub enum GameState {
     PlaceCardInDiscardOnTopOfDraw,
     Exhume,
     FetchCardFromDraw(CardType),
+    ForethoughtAny {
+        cards_to_forethought: Vec<usize>,
+    },
+    ForethoughtOne,
     Defeat,
     Victory,
 }
@@ -550,9 +564,11 @@ impl Game {
             | GameState::PlaceCardInHandOnTopOfDraw
             | GameState::PlaceCardInDiscardOnTopOfDraw
             | GameState::ExhaustOneCardInHand
+            | GameState::ExhaustCardsInHand { .. }
             | GameState::Exhume
             | GameState::FetchCardFromDraw(_)
-            | GameState::ExhaustCardsInHand { .. } => {
+            | GameState::ForethoughtAny { .. }
+            | GameState::ForethoughtOne => {
                 unreachable!()
             }
         }
@@ -710,6 +726,8 @@ impl Game {
             GameState::ExhaustOneCardInHand => GameStatus::ExhaustOneCardInHand,
             GameState::Exhume => GameStatus::Exhume,
             GameState::FetchCardFromDraw(ty) => GameStatus::FetchCardFromDraw(ty),
+            GameState::ForethoughtAny { .. } => GameStatus::ForethoughtAny,
+            GameState::ForethoughtOne => GameStatus::ForethoughtOne,
             GameState::ExhaustCardsInHand {
                 num_cards_remaining,
                 ..
@@ -727,6 +745,22 @@ impl Game {
             let c = self.hand.remove(i);
             self.action_queue.push_top(ExhaustCardAction(c));
             for j in &mut cards_to_exhaust {
+                if *j > i {
+                    *j -= 1;
+                }
+            }
+        }
+        self.state = GameState::PlayerTurn;
+        self.run();
+    }
+
+    fn forethought_cards(&mut self, cards_to_forethought: &[usize]) {
+        let mut cards_to_forethought = cards_to_forethought.iter().copied().collect::<Vec<_>>();
+        cards_to_forethought.reverse();
+        while let Some(i) = cards_to_forethought.pop() {
+            let c = self.hand.remove(i);
+            self.action_queue.push_top(ForethoughtAction(c));
+            for j in &mut cards_to_forethought {
                 if *j > i {
                     *j -= 1;
                 }
@@ -833,6 +867,34 @@ impl Game {
                 } => {
                     let copy = cards_to_exhaust.clone();
                     self.exhaust_cards(&copy);
+                }
+                _ => unreachable!(),
+            },
+            Move::ForethoughtOne { card_index } => {
+                assert_eq!(self.state, GameState::ForethoughtOne);
+                self.action_queue
+                    .push_top(ForethoughtAction(self.hand.remove(card_index)));
+                self.state = GameState::PlayerTurn;
+                self.run();
+            }
+            Move::ForethoughtAny { card_index } => match &mut self.state {
+                GameState::ForethoughtAny {
+                    cards_to_forethought,
+                } => {
+                    cards_to_forethought.push(card_index);
+                    if cards_to_forethought.len() == self.hand.len() {
+                        let copy = cards_to_forethought.clone();
+                        self.forethought_cards(&copy);
+                    }
+                }
+                _ => unreachable!(),
+            },
+            Move::ForethoughtAnyEnd => match &mut self.state {
+                GameState::ForethoughtAny {
+                    cards_to_forethought: cards_remaining,
+                } => {
+                    let copy = cards_remaining.clone();
+                    self.forethought_cards(&copy);
                 }
                 _ => unreachable!(),
             },
@@ -968,6 +1030,21 @@ impl Game {
                 for (i, c) in self.hand.iter().enumerate() {
                     if c.borrow().can_upgrade() {
                         moves.push(Move::Armaments { card_index: i });
+                    }
+                }
+            }
+            GameState::ForethoughtOne => {
+                for i in 0..self.hand.len() {
+                    moves.push(Move::ForethoughtOne { card_index: i });
+                }
+            }
+            GameState::ForethoughtAny {
+                cards_to_forethought,
+            } => {
+                moves.push(Move::ForethoughtAnyEnd);
+                for c in 0..self.hand.len() {
+                    if !cards_to_forethought.contains(&c) {
+                        moves.push(Move::ForethoughtAny { card_index: c });
                     }
                 }
             }
