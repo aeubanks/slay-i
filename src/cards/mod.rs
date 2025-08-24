@@ -159,7 +159,7 @@ c!(
     BurningPact => (Uncommon, Skill, Red, cost(1), skills::burning_pact_behavior, false),
     SeeingRed => (Uncommon, Skill, Red, cost(1), todo, true),
     PowerThrough => (Uncommon, Skill, Red, cost(1), todo, false),
-    InfernalBlade => (Uncommon, Skill, Red, cost(1), todo, true),
+    InfernalBlade => (Uncommon, Skill, Red, cost(1), skills::infernal_blade_behavior, true),
     SecondWind => (Uncommon, Skill, Red, cost(1), todo, false),
     // Uncommon powers
     Inflame => (Uncommon, Power, Red, cost(1), powers::inflame_behavior, false),
@@ -309,6 +309,10 @@ impl CardClass {
             _ => None,
         }
     }
+    pub fn can_be_generated_in_combat(&self) -> bool {
+        use CardClass::*;
+        !matches!(self, Feed | Reaper | Bite | BandageUp)
+    }
 }
 
 lazy_static! {
@@ -327,6 +331,16 @@ lazy_static! {
         .filter(|c| c.color() == CardColor::Red)
         .filter(|c| c.rarity() != CardRarity::Basic)
         .collect();
+    static ref ALL_RED_IN_COMBAT: Vec<CardClass> = ALL_NON_BASIC_RED
+        .iter()
+        .copied()
+        .filter(|c| c.can_be_generated_in_combat())
+        .collect();
+    static ref ALL_RED_ATTACKS_IN_COMBAT: Vec<CardClass> = ALL_RED_IN_COMBAT
+        .iter()
+        .copied()
+        .filter(|c| c.ty() == CardType::Attack)
+        .collect();
     static ref ALL_CURSES: Vec<CardClass> = CardClass::all()
         .iter()
         .copied()
@@ -337,6 +351,10 @@ lazy_static! {
 
 fn random_red(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_NON_BASIC_RED)
+}
+
+pub fn random_red_attack_in_combat(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_RED_ATTACKS_IN_COMBAT)
 }
 
 fn random_colorless(rng: &mut Rand) -> CardClass {

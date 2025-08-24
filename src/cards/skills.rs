@@ -11,7 +11,8 @@ use crate::{
         double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction,
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
-        gain_energy::GainEnergyAction, gain_status::GainStatusAction, madness::MadnessAction,
+        gain_energy::GainEnergyAction, gain_status::GainStatusAction,
+        infernal_blade::InfernalBladeAction, madness::MadnessAction,
         play_top_card::PlayTopCardAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
@@ -105,6 +106,10 @@ pub fn burning_pact_behavior(game: &mut Game, info: CardPlayInfo) {
         .push_bot(ChooseCardInHandToExhaustAction());
     game.action_queue
         .push_bot(DrawAction(if info.upgraded { 3 } else { 2 }));
+}
+
+pub fn infernal_blade_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue.push_bot(InfernalBladeAction());
 }
 
 pub fn impervious_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -603,6 +608,23 @@ mod tests {
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand.len(), 2);
+    }
+
+    #[test]
+    fn test_infernal_blade() {
+        let mut g = GameBuilder::default().build_combat();
+        for _ in 0..100 {
+            g.hand.clear();
+            g.play_card_upgraded(CardClass::InfernalBlade, None);
+            let c = g.hand[0].borrow();
+            match c.cost {
+                CardCost::Cost { temporary_cost, .. } => assert_eq!(temporary_cost, Some(0)),
+                _ => {}
+            }
+            assert_eq!(c.class.ty(), CardType::Attack);
+            assert_ne!(c.class, CardClass::Reaper);
+            assert_ne!(c.class, CardClass::Feed);
+        }
     }
 
     #[test]

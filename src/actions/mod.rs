@@ -29,6 +29,7 @@ pub mod gain_status_all_monsters;
 pub mod heal;
 pub mod increase_base_amount;
 pub mod increase_max_hp;
+pub mod infernal_blade;
 pub mod madness;
 pub mod noop;
 pub mod place_card_in_hand;
