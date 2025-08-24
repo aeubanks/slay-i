@@ -65,11 +65,11 @@ impl Action for PlayCardAction {
         };
         drop(c);
 
-        match &mut self.card.borrow_mut().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => *free_to_play_once = false,
-            _ => {}
+        if let CardCost::Cost {
+            free_to_play_once, ..
+        } = &mut self.card.borrow_mut().cost
+        {
+            *free_to_play_once = false
         }
 
         game.player.creature.trigger_statuses_on_card_played(
