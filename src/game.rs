@@ -4,9 +4,11 @@ use std::rc::Rc;
 
 #[cfg(test)]
 use crate::action::Action;
+use crate::actions::choose_dual_wield::can_dual_wield;
 use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
+use crate::actions::dual_wield::DualWieldAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::exhaust_card::ExhaustCardAction;
 use crate::actions::forethought::ForethoughtAction;
@@ -83,6 +85,9 @@ pub enum Move {
         card_index: usize,
     },
     ExhaustCardsInHandEnd,
+    DualWield {
+        card_index: usize,
+    },
     Exhume {
         card_index: usize,
     },
@@ -113,6 +118,7 @@ pub enum GameStatus {
     ExhaustOneCardInHand,
     ExhaustCardsInHand { num_cards_remaining: i32 },
     Exhume,
+    DualWield,
     FetchCardFromDraw(CardType),
     ForethoughtOne,
     ForethoughtAny,
@@ -138,6 +144,7 @@ pub enum GameState {
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
     Exhume,
+    DualWield(i32),
     FetchCardFromDraw(CardType),
     ForethoughtAny {
         cards_to_forethought: Vec<usize>,
@@ -349,6 +356,12 @@ impl Game {
 
     pub fn clone_card_same_id(&self, c: &CardRef) -> CardRef {
         Rc::new(RefCell::new(c.borrow().clone()))
+    }
+
+    pub fn clone_card_new_id(&mut self, c: &CardRef) -> CardRef {
+        let mut c = c.borrow().clone();
+        c.id = self.new_card_id(c.class);
+        Rc::new(RefCell::new(c))
     }
 
     pub fn get_creature(&self, r: CreatureRef) -> &Creature {
@@ -566,6 +579,7 @@ impl Game {
             | GameState::ExhaustOneCardInHand
             | GameState::ExhaustCardsInHand { .. }
             | GameState::Exhume
+            | GameState::DualWield(_)
             | GameState::FetchCardFromDraw(_)
             | GameState::ForethoughtAny { .. }
             | GameState::ForethoughtOne => {
@@ -597,6 +611,7 @@ impl Game {
                 | GameState::PlaceCardInDiscardOnTopOfDraw
                 | GameState::ExhaustOneCardInHand
                 | GameState::Exhume
+                | GameState::DualWield(_)
         )
     }
 
@@ -725,6 +740,7 @@ impl Game {
             GameState::PlaceCardInDiscardOnTopOfDraw => GameStatus::PlaceCardInDiscardOnTopOfDraw,
             GameState::ExhaustOneCardInHand => GameStatus::ExhaustOneCardInHand,
             GameState::Exhume => GameStatus::Exhume,
+            GameState::DualWield(_) => GameStatus::DualWield,
             GameState::FetchCardFromDraw(ty) => GameStatus::FetchCardFromDraw(ty),
             GameState::ForethoughtAny { .. } => GameStatus::ForethoughtAny,
             GameState::ForethoughtOne => GameStatus::ForethoughtOne,
@@ -739,7 +755,7 @@ impl Game {
     }
 
     fn exhaust_cards(&mut self, cards_to_exhaust: &[usize]) {
-        let mut cards_to_exhaust = cards_to_exhaust.iter().copied().collect::<Vec<_>>();
+        let mut cards_to_exhaust = cards_to_exhaust.to_vec();
         cards_to_exhaust.reverse();
         while let Some(i) = cards_to_exhaust.pop() {
             let c = self.hand.remove(i);
@@ -755,7 +771,7 @@ impl Game {
     }
 
     fn forethought_cards(&mut self, cards_to_forethought: &[usize]) {
-        let mut cards_to_forethought = cards_to_forethought.iter().copied().collect::<Vec<_>>();
+        let mut cards_to_forethought = cards_to_forethought.to_vec();
         cards_to_forethought.reverse();
         while let Some(i) = cards_to_forethought.pop() {
             let c = self.hand.remove(i);
@@ -830,6 +846,19 @@ impl Game {
                 assert_eq!(self.state, GameState::ExhaustOneCardInHand);
                 self.action_queue
                     .push_top(ExhaustCardAction(self.hand.remove(card_index)));
+                self.state = GameState::PlayerTurn;
+                self.run();
+            }
+            Move::DualWield { card_index } => {
+                let amount = match self.state {
+                    GameState::DualWield(amount) => amount,
+                    _ => panic!(),
+                };
+                self.action_queue.push_top(DualWieldAction {
+                    card: self.hand.remove(card_index),
+                    amount,
+                    destroy_original: true,
+                });
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
@@ -1067,6 +1096,13 @@ impl Game {
                 for (i, c) in self.exhaust_pile.iter().enumerate() {
                     if c.borrow().class != CardClass::Exhume {
                         moves.push(Move::Exhume { card_index: i });
+                    }
+                }
+            }
+            GameState::DualWield(_) => {
+                for (i, c) in self.hand.iter().enumerate() {
+                    if can_dual_wield(c) {
+                        moves.push(Move::DualWield { card_index: i });
                     }
                 }
             }

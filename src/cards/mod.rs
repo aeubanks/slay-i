@@ -148,7 +148,7 @@ c!(
     Bloodletting => (Uncommon, Skill, Red, cost(0), skills::bloodletting_behavior, false),
     Sentinel => (Uncommon, Skill, Red, cost(1), skills::sentinel_behavior, false),
     SpotWeakness => (Uncommon, Skill, Red, cost(1), todo, false),
-    DualWield => (Uncommon, Skill, Red, cost(1), todo, false),
+    DualWield => (Uncommon, Skill, Red, cost(1), skills::dual_wield_behavior, false),
     BattleTrance => (Uncommon, Skill, Red, cost(0), skills::battle_trance_behavior, false),
     Disarm => (Uncommon, Skill, Red, cost(1), todo, true),
     Rage => (Uncommon, Skill, Red, cost(0), todo, false),

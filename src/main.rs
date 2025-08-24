@@ -83,6 +83,9 @@ fn print_state(g: &Game) {
     for c in &g.exhaust_pile {
         println!(" {:?}", c.borrow());
     }
+    if let Some(c) = &g.cur_card {
+        println!("current card being played: {:?}", c.borrow());
+    }
     if let GameStatus::ExhaustCardsInHand {
         num_cards_remaining,
     } = g.result()
@@ -150,6 +153,13 @@ fn print_state(g: &Game) {
             }
             Move::ExhaustCardsInHandEnd => {
                 print!("exhaust cards end");
+            }
+            Move::DualWield { card_index } => {
+                print!(
+                    "dual wield {} ({:?})",
+                    card_index,
+                    g.draw_pile[*card_index].borrow()
+                );
             }
             Move::Exhume { card_index } => {
                 print!(
@@ -244,6 +254,7 @@ fn main() {
             | GameStatus::PlaceCardInDiscardOnTopOfDraw
             | GameStatus::ExhaustOneCardInHand
             | GameStatus::Exhume
+            | GameStatus::DualWield
             | GameStatus::FetchCardFromDraw(_)
             | GameStatus::ExhaustCardsInHand { .. }
             | GameStatus::ForethoughtAny

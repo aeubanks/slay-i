@@ -5,6 +5,7 @@ use crate::{
         choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaustAction,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
         choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction,
+        choose_dual_wield::ChooseDualWieldAction,
         choose_forethought_any::ChooseForethoughtAnyAction,
         choose_forethought_one::ChooseForethoughtOneAction, damage::DamageAction,
         double_strength::DoubleStrengthAction, draw::DrawAction,
@@ -82,6 +83,11 @@ pub fn bloodletting_behavior(game: &mut Game, info: CardPlayInfo) {
 
 pub fn sentinel_behavior(game: &mut Game, info: CardPlayInfo) {
     push_block(game, info, 5, 8);
+}
+
+pub fn dual_wield_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue
+        .push_bot(ChooseDualWieldAction(if info.upgraded { 2 } else { 1 }));
 }
 
 pub fn battle_trance_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -453,6 +459,90 @@ mod tests {
             target: None,
         });
         assert_eq!(g.player.creature.block, 8);
+    }
+
+    #[test]
+    fn test_dual_wield() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 10;
+        g.play_card(CardClass::DualWield, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 0);
+
+        g.add_card_to_hand(CardClass::Defend);
+        g.play_card(CardClass::DualWield, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 1);
+
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Strike);
+        g.play_card(CardClass::DualWield, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 2);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
+        assert_eq!(g.hand[1].borrow().class, CardClass::Strike);
+
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Inflame);
+        g.play_card_upgraded(CardClass::DualWield, None);
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 3);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Inflame);
+        assert_eq!(g.hand[1].borrow().class, CardClass::Inflame);
+        assert_eq!(g.hand[2].borrow().class, CardClass::Inflame);
+
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Inflame);
+        g.add_card_to_hand(CardClass::Defend);
+        g.play_card(CardClass::DualWield, None);
+        assert_eq!(g.result(), GameStatus::DualWield);
+        assert_eq!(
+            g.valid_moves(),
+            vec![
+                Move::DualWield { card_index: 0 },
+                Move::DualWield { card_index: 1 },
+            ]
+        );
+        g.make_move(Move::DualWield { card_index: 0 });
+        assert_eq!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 4);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Inflame);
+        assert_eq!(g.hand[1].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand[2].borrow().class, CardClass::Strike);
+        assert_eq!(g.hand[3].borrow().class, CardClass::Strike);
+
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::RitualDagger);
+        let id = g.hand[0].borrow().id;
+        g.play_card(CardClass::DualWield, None);
+        assert_eq!(g.hand[0].borrow().class, CardClass::RitualDagger);
+        assert_eq!(g.hand[0].borrow().id, id);
+        assert_eq!(g.hand[1].borrow().class, CardClass::RitualDagger);
+        assert_ne!(g.hand[1].borrow().id, id);
+
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::RitualDagger);
+        let id = g.hand[1].borrow().id;
+        g.play_card(CardClass::DualWield, None);
+        g.make_move(Move::DualWield { card_index: 1 });
+        assert_eq!(g.hand[1].borrow().class, CardClass::RitualDagger);
+        assert_ne!(g.hand[1].borrow().id, id);
+        assert_eq!(g.hand[2].borrow().class, CardClass::RitualDagger);
+        assert_ne!(g.hand[2].borrow().id, id);
+
+        g.hand.clear();
+        g.discard_pile.clear();
+        for _ in 0..9 {
+            g.add_card_to_hand(CardClass::Defend);
+        }
+        g.add_card_to_hand(CardClass::Strike);
+        g.play_card_upgraded(CardClass::DualWield, None);
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.discard_pile[0].borrow().class, CardClass::Strike);
+        assert_eq!(g.discard_pile[1].borrow().class, CardClass::Strike);
+        assert_eq!(g.discard_pile[2].borrow().class, CardClass::DualWield);
     }
 
     #[test]
