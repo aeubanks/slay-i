@@ -14,6 +14,7 @@ mod queue;
 mod relic;
 mod rng;
 mod status;
+mod test;
 
 use game::Game;
 
@@ -255,7 +256,7 @@ fn main() {
             | GameStatus::ExhaustOneCardInHand
             | GameStatus::Exhume
             | GameStatus::DualWield
-            | GameStatus::FetchCardFromDraw(_)
+            | GameStatus::FetchCardFromDraw
             | GameStatus::ExhaustCardsInHand { .. }
             | GameStatus::ForethoughtAny
             | GameStatus::ForethoughtOne => {

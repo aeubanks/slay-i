@@ -107,7 +107,7 @@ pub enum Move {
     },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum GameStatus {
     Defeat,
     Victory,
@@ -119,7 +119,7 @@ pub enum GameStatus {
     ExhaustCardsInHand { num_cards_remaining: i32 },
     Exhume,
     DualWield,
-    FetchCardFromDraw(CardType),
+    FetchCardFromDraw,
     ForethoughtOne,
     ForethoughtAny,
 }
@@ -741,7 +741,7 @@ impl Game {
             GameState::ExhaustOneCardInHand => GameStatus::ExhaustOneCardInHand,
             GameState::Exhume => GameStatus::Exhume,
             GameState::DualWield(_) => GameStatus::DualWield,
-            GameState::FetchCardFromDraw(ty) => GameStatus::FetchCardFromDraw(ty),
+            GameState::FetchCardFromDraw(_) => GameStatus::FetchCardFromDraw,
             GameState::ForethoughtAny { .. } => GameStatus::ForethoughtAny,
             GameState::ForethoughtOne => GameStatus::ForethoughtOne,
             GameState::ExhaustCardsInHand {
