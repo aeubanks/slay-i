@@ -618,7 +618,9 @@ mod tests {
             g.hand.clear();
             g.play_card_upgraded(CardClass::InfernalBlade, None);
             let c = g.hand[0].borrow();
-            if let CardCost::Cost { temporary_cost, .. } = c.cost { assert_eq!(temporary_cost, Some(0)) }
+            if let CardCost::Cost { temporary_cost, .. } = c.cost {
+                assert_eq!(temporary_cost, Some(0))
+            }
             assert_eq!(c.class.ty(), CardType::Attack);
             assert_ne!(c.class, CardClass::Reaper);
             assert_ne!(c.class, CardClass::Feed);
