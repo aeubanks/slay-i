@@ -118,6 +118,11 @@ impl Creature {
                     target: CreatureRef::player(),
                 });
             }
+            if let Some(v) = self.statuses.get(&Status::Rage)
+                && play.card.borrow().class.ty() == CardType::Attack
+            {
+                queue.push_bot(BlockAction::player_flat_amount(*v));
+            }
         }
     }
 
@@ -208,6 +213,12 @@ impl Creature {
                 self.statuses.remove_entry(&p);
                 break;
             }
+        }
+        if self.statuses.contains_key(&Status::Rage) {
+            queue.push_bot(RemoveStatusAction {
+                status: Status::Rage,
+                target: this,
+            });
         }
     }
     pub fn trigger_statuses_round_end(&mut self, this: CreatureRef, queue: &mut ActionQueue) {

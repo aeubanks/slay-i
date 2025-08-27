@@ -50,6 +50,7 @@ s!(
     Evolve => Buff,
     FireBreathing => Buff,
     PenNib => Buff,
+    Rage => Buff,
     Rupture => Buff,
     Berserk => Buff,
     CombustHPLoss => Buff,
@@ -1014,5 +1015,22 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, 24);
         g.make_move(Move::EndTurn);
         assert_eq!(g.monsters[0].creature.cur_hp, 28);
+    }
+
+    #[test]
+    fn test_rage() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Rage, 4)
+            .build_combat();
+        assert_eq!(g.player.creature.block, 0);
+        g.play_card(CardClass::Thunderclap, None);
+        assert_eq!(g.player.creature.block, 4);
+        g.play_card(CardClass::Thunderclap, None);
+        assert_eq!(g.player.creature.block, 8);
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.creature.block, 8);
+        g.make_move(Move::EndTurn);
+        g.play_card(CardClass::Thunderclap, None);
+        assert_eq!(g.player.creature.block, 0);
     }
 }
