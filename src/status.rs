@@ -49,6 +49,8 @@ s!(
     FireBreathing => Buff,
     Rupture => Buff,
     Berserk => Buff,
+    CombustHPLoss => Buff,
+    CombustDamage => Buff,
     Barricade => Buff,
     Duplication => Buff,
     DoubleTap => Buff,
@@ -924,5 +926,23 @@ mod tests {
         assert_eq!(g.energy, 5);
         g.make_move(Move::EndTurn);
         assert_eq!(g.energy, 5);
+    }
+
+    #[test]
+    fn test_combust() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::CombustDamage, 3)
+            .add_player_status(Status::CombustHPLoss, 2)
+            .build_combat();
+        let monster_hp = g.monsters[0].creature.cur_hp;
+        let player_hp = g.player.creature.cur_hp;
+        g.run_action(BlockAction::monster(CreatureRef::monster(0), 1));
+        g.run_action(BlockAction::player_flat_amount(1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.cur_hp, monster_hp - 2);
+        assert_eq!(g.player.creature.cur_hp, player_hp - 2);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.cur_hp, monster_hp - 5);
+        assert_eq!(g.player.creature.cur_hp, player_hp - 4);
     }
 }

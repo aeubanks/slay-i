@@ -152,7 +152,13 @@ impl Creature {
         }
     }
 
-    pub fn trigger_statuses_turn_end(&mut self, _this: CreatureRef, queue: &mut ActionQueue) {
+    pub fn trigger_statuses_turn_end(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+        if let Some(v) = self.statuses.get(&Status::CombustHPLoss) {
+            queue.push_bot(DamageAction::lose_hp(*v, this));
+        }
+        if let Some(v) = self.statuses.get(&Status::CombustDamage) {
+            queue.push_bot(DamageAllMonstersAction::thorns(*v));
+        }
         if let Some(b) = self.statuses.get(&Status::Bomb1) {
             queue.push_bot(DamageAllMonstersAction::thorns(*b));
             self.statuses.remove(&Status::Bomb1);
