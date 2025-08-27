@@ -38,6 +38,8 @@ s!(
     Confusion => Debuff,
     Entangled => Debuff,
 
+    RegenPlayer => Buff,
+    RegenMonster => Buff,
     Brutality => Buff,
     DemonForm => Buff,
     Artifact => Buff,
@@ -958,5 +960,59 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 12);
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 18);
+    }
+
+    #[test]
+    fn test_regen_player() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::RegenPlayer, 4)
+            .build_combat();
+        g.run_action(SetHPAction {
+            target: CreatureRef::player(),
+            hp: 20,
+        });
+        assert_eq!(g.player.creature.cur_hp, 20);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 24);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 27);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 29);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 30);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 30);
+    }
+
+    #[test]
+    fn test_regen_combust() {
+        // regen goes before everything else
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::RegenPlayer, 11)
+            .add_player_status(Status::CombustHPLoss, 12)
+            .build_combat();
+        g.run_action(SetHPAction {
+            target: CreatureRef::player(),
+            hp: 2,
+        });
+        assert_eq!(g.player.creature.cur_hp, 2);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 1);
+    }
+
+    #[test]
+    fn test_regen_monster() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Status::RegenMonster, 4)
+            .build_combat();
+        g.run_action(SetHPAction {
+            target: CreatureRef::monster(0),
+            hp: 20,
+        });
+        assert_eq!(g.monsters[0].creature.cur_hp, 20);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.cur_hp, 24);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.cur_hp, 28);
     }
 }

@@ -4,7 +4,7 @@ use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
-        play_card::PlayCardAction, reduce_status::ReduceStatusAction,
+        heal::HealAction, play_card::PlayCardAction, reduce_status::ReduceStatusAction,
         remove_status::RemoveStatusAction,
     },
     cards::CardType,
@@ -178,6 +178,24 @@ impl Creature {
         if let Some(b) = self.statuses.get(&Status::Bomb3) {
             self.statuses.insert(Status::Bomb2, *b);
             self.statuses.remove(&Status::Bomb3);
+        }
+        if let Some(v) = self.statuses.get(&Status::RegenPlayer) {
+            // yes, this is push_top
+            queue.push_top(HealAction {
+                target: this,
+                amount: *v,
+            });
+            queue.push_top(ReduceStatusAction {
+                status: Status::RegenPlayer,
+                amount: 1,
+                target: this,
+            });
+        }
+        if let Some(v) = self.statuses.get(&Status::RegenMonster) {
+            queue.push_bot(HealAction {
+                target: this,
+                amount: *v,
+            });
         }
         for p in [
             Status::Panache4,
