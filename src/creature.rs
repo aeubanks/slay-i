@@ -112,7 +112,13 @@ impl Creature {
         }
     }
 
-    pub fn trigger_statuses_turn_begin(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    pub fn trigger_statuses_turn_begin(&mut self, _this: CreatureRef, _queue: &mut ActionQueue) {}
+
+    pub fn trigger_statuses_turn_begin_post_draw(
+        &mut self,
+        this: CreatureRef,
+        queue: &mut ActionQueue,
+    ) {
         if let Some(v) = self.statuses.get(&Status::DemonForm) {
             queue.push_bot(GainStatusAction {
                 status: Status::Strength,

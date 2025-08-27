@@ -825,6 +825,37 @@ mod tests {
     }
 
     #[test]
+    fn test_brutality() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Brutality, 2)
+            .add_cards(CardClass::Strike, 10)
+            .build_combat();
+        let hp = g.player.creature.cur_hp;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, hp - 2);
+        assert_eq!(g.hand.len(), 7);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, hp - 4);
+        assert_eq!(g.hand.len(), 7);
+    }
+
+    #[test]
+    fn test_demon_form() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::DemonForm, 2)
+            .add_cards(CardClass::Strike, 10)
+            .build_combat();
+        assert_eq!(g.player.creature.statuses.get(&Status::DemonForm), Some(&2));
+        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&2));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Status::DemonForm), Some(&2));
+        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&4));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Status::DemonForm), Some(&2));
+        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&6));
+    }
+
+    #[test]
     fn test_entangled() {
         let mut g = GameBuilder::default()
             .add_player_status(Status::Entangled, 1)

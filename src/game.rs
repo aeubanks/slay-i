@@ -528,6 +528,10 @@ impl Game {
 
                 self.player
                     .trigger_relics_turn_start(&mut self.action_queue);
+                self.player.creature.trigger_statuses_turn_begin_post_draw(
+                    CreatureRef::player(),
+                    &mut self.action_queue,
+                );
 
                 self.run_actions_until_empty();
 
