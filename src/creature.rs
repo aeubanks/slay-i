@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-        draw::DrawAction, gain_status::GainStatusAction, play_card::PlayCardAction,
-        reduce_status::ReduceStatusAction, remove_status::RemoveStatusAction,
+        draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
+        play_card::PlayCardAction, reduce_status::ReduceStatusAction,
+        remove_status::RemoveStatusAction,
     },
     cards::CardType,
     game::CreatureRef,
@@ -113,6 +114,9 @@ impl Creature {
     }
 
     pub fn trigger_statuses_turn_begin(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+        if let Some(v) = self.statuses.get(&Status::Berserk) {
+            queue.push_bot(GainEnergyAction(*v));
+        }
         if let Some(v) = self.statuses.get(&Status::NextTurnBlock) {
             queue.push_bot(BlockAction::player_flat_amount(*v));
             queue.push_bot(RemoveStatusAction {

@@ -48,6 +48,7 @@ s!(
     Evolve => Buff,
     FireBreathing => Buff,
     Rupture => Buff,
+    Berserk => Buff,
     Barricade => Buff,
     Duplication => Buff,
     DoubleTap => Buff,
@@ -913,5 +914,15 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.statuses.get(&Status::NextTurnBlock), None);
         assert_eq!(g.player.creature.block, 0);
+    }
+
+    #[test]
+    fn test_berserk() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Berserk, 2)
+            .build_combat();
+        assert_eq!(g.energy, 5);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 5);
     }
 }
