@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use crate::{
     actions::{
-        damage::DamageAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
-        gain_status::GainStatusAction, play_card::PlayCardAction,
+        block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
+        draw::DrawAction, gain_status::GainStatusAction, play_card::PlayCardAction,
         reduce_status::ReduceStatusAction, remove_status::RemoveStatusAction,
     },
     cards::CardType,
@@ -112,7 +112,15 @@ impl Creature {
         }
     }
 
-    pub fn trigger_statuses_turn_begin(&mut self, _this: CreatureRef, _queue: &mut ActionQueue) {}
+    pub fn trigger_statuses_turn_begin(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+        if let Some(v) = self.statuses.get(&Status::NextTurnBlock) {
+            queue.push_bot(BlockAction::player_flat_amount(*v));
+            queue.push_bot(RemoveStatusAction {
+                status: Status::NextTurnBlock,
+                target: this,
+            });
+        }
+    }
 
     pub fn trigger_statuses_turn_begin_post_draw(
         &mut self,

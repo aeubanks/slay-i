@@ -50,6 +50,7 @@ s!(
     Barricade => Buff,
     Duplication => Buff,
     DoubleTap => Buff,
+    NextTurnBlock => Buff,
     Bomb3 => Buff,
     Bomb2 => Buff,
     Bomb1 => Buff,
@@ -876,5 +877,22 @@ mod tests {
                 target: _
             }
         )));
+    }
+
+    #[test]
+    fn test_next_turn_block() {
+        let mut g = GameBuilder::default().build_combat();
+        assert_eq!(g.player.creature.block, 0);
+        g.run_action(GainStatusAction {
+            status: Status::NextTurnBlock,
+            amount: 5,
+            target: CreatureRef::player(),
+        });
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Status::NextTurnBlock), None);
+        assert_eq!(g.player.creature.block, 5);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Status::NextTurnBlock), None);
+        assert_eq!(g.player.creature.block, 0);
     }
 }

@@ -518,6 +518,9 @@ impl Game {
                     self.player
                         .trigger_relics_combat_start_pre_draw(&mut self.action_queue);
                 }
+                self.player
+                    .creature
+                    .trigger_statuses_turn_begin(CreatureRef::player(), &mut self.action_queue);
 
                 self.action_queue.push_bot(DrawAction(self.draw_per_turn));
 
