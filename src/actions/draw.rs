@@ -47,8 +47,7 @@ impl Action for DrawAction {
                     .creature
                     .statuses
                     .contains_key(&Status::Confusion)
-                {
-                    if let CardCost::Cost {
+                    && let CardCost::Cost {
                         base_cost,
                         temporary_cost,
                         free_to_play_once,
@@ -58,7 +57,6 @@ impl Action for DrawAction {
                         *temporary_cost = None;
                         *free_to_play_once = false;
                     }
-                }
                 let class = c.class;
                 if class == CardClass::Void {
                     game.action_queue.push_bot(GainEnergyAction(-1));

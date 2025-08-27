@@ -219,10 +219,8 @@ fn read_int_from_stdin(max: usize) -> usize {
     loop {
         s.clear();
         std::io::stdin().read_line(&mut s).unwrap();
-        if let Ok(v) = s.trim().parse() {
-            if v < max {
+        if let Ok(v) = s.trim().parse() && v < max{
                 return v;
-            }
         }
         if !s.trim().is_empty() {
             println!("invalid num \"{}\"", s.trim());

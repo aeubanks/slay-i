@@ -435,15 +435,14 @@ impl Game {
                     | DamageType::Thorns {
                         procs_rupture: true
                     }
-            ) {
-                if let Some(&v) = c.statuses.get(&Status::Rupture) {
+            )
+                && let Some(&v) = c.statuses.get(&Status::Rupture) {
                     self.action_queue.push_bot(GainStatusAction {
                         status: Status::Strength,
                         amount: v,
                         target,
                     });
                 }
-            }
         }
     }
 

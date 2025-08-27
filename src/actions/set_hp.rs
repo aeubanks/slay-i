@@ -3,6 +3,7 @@ use crate::{
     game::{CreatureRef, Game},
 };
 
+#[allow(dead_code)]
 pub struct SetHPAction {
     pub target: CreatureRef,
     pub hp: i32,

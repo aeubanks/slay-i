@@ -1,5 +1,6 @@
 use crate::{action::Action, game::Game};
 
+#[allow(dead_code)]
 pub struct NoopAction();
 
 impl Action for NoopAction {

@@ -81,6 +81,7 @@ impl MonsterBehavior for AttackMonster {
     }
 }
 
+#[allow(dead_code)]
 pub struct ApplyStatusMonster {
     pub status: Status,
     pub amount: i32,
