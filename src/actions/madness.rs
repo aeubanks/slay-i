@@ -17,12 +17,13 @@ impl Action for MadnessAction {
         let mut not_free_and_not_temp_free = vec![];
         for c in &g.hand {
             if let CardCost::Cost { base_cost, .. } = c.borrow().cost
-                && base_cost != 0 {
-                    not_free.push(c);
-                    if !temp_cost_is_zero(c) {
-                        not_free_and_not_temp_free.push(c);
-                    }
+                && base_cost != 0
+            {
+                not_free.push(c);
+                if !temp_cost_is_zero(c) {
+                    not_free_and_not_temp_free.push(c);
                 }
+            }
         }
         if not_free.is_empty() {
             return;

@@ -140,7 +140,7 @@ pub enum GameState {
     ExhaustOneCardInHand,
     ExhaustCardsInHand {
         num_cards_remaining: i32,
-        cards_to_exhaust: Vec<usize>,
+        cards_to_exhaust: Vec<CardRef>,
     },
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
@@ -148,7 +148,7 @@ pub enum GameState {
     DualWield(i32),
     FetchCardFromDraw(CardType),
     ForethoughtAny {
-        cards_to_forethought: Vec<usize>,
+        cards_to_forethought: Vec<CardRef>,
     },
     ForethoughtOne,
     Defeat,
@@ -435,14 +435,14 @@ impl Game {
                     | DamageType::Thorns {
                         procs_rupture: true
                     }
-            )
-                && let Some(&v) = c.statuses.get(&Status::Rupture) {
-                    self.action_queue.push_bot(GainStatusAction {
-                        status: Status::Strength,
-                        amount: v,
-                        target,
-                    });
-                }
+            ) && let Some(&v) = c.statuses.get(&Status::Rupture)
+            {
+                self.action_queue.push_bot(GainStatusAction {
+                    status: Status::Strength,
+                    amount: v,
+                    target,
+                });
+            }
         }
     }
 
@@ -754,33 +754,33 @@ impl Game {
         }
     }
 
-    fn exhaust_cards(&mut self, cards_to_exhaust: &[usize]) {
-        let mut cards_to_exhaust = cards_to_exhaust.to_vec();
-        cards_to_exhaust.reverse();
-        while let Some(i) = cards_to_exhaust.pop() {
-            let c = self.hand.remove(i);
-            self.action_queue.push_top(ExhaustCardAction(c));
-            for j in &mut cards_to_exhaust {
-                if *j > i {
-                    *j -= 1;
+    fn exhaust_cards(&mut self) {
+        match &mut self.state {
+            GameState::ExhaustCardsInHand {
+                cards_to_exhaust, ..
+            } => {
+                while !cards_to_exhaust.is_empty() {
+                    self.action_queue
+                        .push_top(ExhaustCardAction(cards_to_exhaust.remove(0)));
                 }
             }
+            _ => unreachable!(),
         }
         self.state = GameState::PlayerTurn;
         self.run();
     }
 
-    fn forethought_cards(&mut self, cards_to_forethought: &[usize]) {
-        let mut cards_to_forethought = cards_to_forethought.to_vec();
-        cards_to_forethought.reverse();
-        while let Some(i) = cards_to_forethought.pop() {
-            let c = self.hand.remove(i);
-            self.action_queue.push_top(ForethoughtAction(c));
-            for j in &mut cards_to_forethought {
-                if *j > i {
-                    *j -= 1;
+    fn forethought_cards(&mut self) {
+        match &mut self.state {
+            GameState::ForethoughtAny {
+                cards_to_forethought,
+            } => {
+                while !cards_to_forethought.is_empty() {
+                    self.action_queue
+                        .push_top(ForethoughtAction(cards_to_forethought.remove(0)));
                 }
             }
+            _ => unreachable!(),
         }
         self.state = GameState::PlayerTurn;
         self.run();
@@ -882,23 +882,14 @@ impl Game {
                     cards_to_exhaust,
                 } => {
                     *num_cards_remaining -= 1;
-                    cards_to_exhaust.push(card_index);
-                    if *num_cards_remaining == 0 || cards_to_exhaust.len() == self.hand.len() {
-                        let copy = cards_to_exhaust.clone();
-                        self.exhaust_cards(&copy);
+                    cards_to_exhaust.push(self.hand.remove(card_index));
+                    if *num_cards_remaining == 0 || self.hand.is_empty() {
+                        self.exhaust_cards();
                     }
                 }
                 _ => unreachable!(),
             },
-            Move::ExhaustCardsInHandEnd => match &mut self.state {
-                GameState::ExhaustCardsInHand {
-                    cards_to_exhaust, ..
-                } => {
-                    let copy = cards_to_exhaust.clone();
-                    self.exhaust_cards(&copy);
-                }
-                _ => unreachable!(),
-            },
+            Move::ExhaustCardsInHandEnd => self.exhaust_cards(),
             Move::ForethoughtOne { card_index } => {
                 assert_matches!(self.state, GameState::ForethoughtOne);
                 self.action_queue
@@ -910,23 +901,14 @@ impl Game {
                 GameState::ForethoughtAny {
                     cards_to_forethought,
                 } => {
-                    cards_to_forethought.push(card_index);
-                    if cards_to_forethought.len() == self.hand.len() {
-                        let copy = cards_to_forethought.clone();
-                        self.forethought_cards(&copy);
+                    cards_to_forethought.push(self.hand.remove(card_index));
+                    if self.hand.is_empty() {
+                        self.forethought_cards();
                     }
                 }
                 _ => unreachable!(),
             },
-            Move::ForethoughtAnyEnd => match &mut self.state {
-                GameState::ForethoughtAny {
-                    cards_to_forethought: cards_remaining,
-                } => {
-                    let copy = cards_remaining.clone();
-                    self.forethought_cards(&copy);
-                }
-                _ => unreachable!(),
-            },
+            Move::ForethoughtAnyEnd => self.forethought_cards(),
             Move::UsePotion {
                 potion_index,
                 target,
@@ -1067,14 +1049,10 @@ impl Game {
                     moves.push(Move::ForethoughtOne { card_index: i });
                 }
             }
-            GameState::ForethoughtAny {
-                cards_to_forethought,
-            } => {
+            GameState::ForethoughtAny { .. } => {
                 moves.push(Move::ForethoughtAnyEnd);
                 for c in 0..self.hand.len() {
-                    if !cards_to_forethought.contains(&c) {
-                        moves.push(Move::ForethoughtAny { card_index: c });
-                    }
+                    moves.push(Move::ForethoughtAny { card_index: c });
                 }
             }
             GameState::PlaceCardInHandOnTopOfDraw => {
@@ -1113,14 +1091,10 @@ impl Game {
                     }
                 }
             }
-            GameState::ExhaustCardsInHand {
-                cards_to_exhaust, ..
-            } => {
+            GameState::ExhaustCardsInHand { .. } => {
                 moves.push(Move::ExhaustCardsInHandEnd);
                 for c in 0..self.hand.len() {
-                    if !cards_to_exhaust.contains(&c) {
-                        moves.push(Move::ExhaustCardsInHand { card_index: c });
-                    }
+                    moves.push(Move::ExhaustCardsInHand { card_index: c });
                 }
             }
             _ => {

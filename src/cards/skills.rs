@@ -1016,13 +1016,13 @@ mod tests {
                 Move::ExhaustCardsInHand { card_index: 0 },
                 Move::ExhaustCardsInHand { card_index: 1 },
                 Move::ExhaustCardsInHand { card_index: 2 },
+                Move::ExhaustCardsInHand { card_index: 3 },
                 Move::ExhaustCardsInHand { card_index: 4 },
                 Move::ExhaustCardsInHand { card_index: 5 },
                 Move::ExhaustCardsInHand { card_index: 6 },
-                Move::ExhaustCardsInHand { card_index: 7 },
             ]
         );
-        g.make_move(Move::ExhaustCardsInHand { card_index: 7 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 6 });
         assert_matches!(
             g.result(),
             GameStatus::ExhaustCardsInHand {
@@ -1036,12 +1036,12 @@ mod tests {
                 Move::ExhaustCardsInHand { card_index: 0 },
                 Move::ExhaustCardsInHand { card_index: 1 },
                 Move::ExhaustCardsInHand { card_index: 2 },
+                Move::ExhaustCardsInHand { card_index: 3 },
                 Move::ExhaustCardsInHand { card_index: 4 },
                 Move::ExhaustCardsInHand { card_index: 5 },
-                Move::ExhaustCardsInHand { card_index: 6 },
             ]
         );
-        g.make_move(Move::ExhaustCardsInHand { card_index: 6 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 5 });
         assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.exhaust_pile.len(), 1 + 1 + 1 + 3);
@@ -1054,9 +1054,9 @@ mod tests {
         g.hand.pop();
         g.play_card_upgraded(CardClass::Purity, None);
         g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
-        g.make_move(Move::ExhaustCardsInHand { card_index: 1 });
-        g.make_move(Move::ExhaustCardsInHand { card_index: 2 });
-        g.make_move(Move::ExhaustCardsInHand { card_index: 3 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
+        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
         assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.discard_pile.len(), 0);
@@ -1261,7 +1261,7 @@ mod tests {
             g.valid_moves(),
             vec![
                 Move::ForethoughtAnyEnd,
-                Move::ForethoughtAny { card_index: 1 }
+                Move::ForethoughtAny { card_index: 0 }
             ]
         );
         g.make_move(Move::ForethoughtAnyEnd);
@@ -1333,7 +1333,7 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Forethought, None);
         g.make_move(Move::ForethoughtAny { card_index: 0 });
-        g.make_move(Move::ForethoughtAny { card_index: 1 });
+        g.make_move(Move::ForethoughtAny { card_index: 0 });
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
         assert_eq!(g.draw_pile[1].borrow().class, CardClass::TwinStrike);
     }

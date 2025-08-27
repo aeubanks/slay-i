@@ -52,11 +52,11 @@ impl Action for DrawAction {
                         temporary_cost,
                         free_to_play_once,
                     } = &mut c.cost
-                    {
-                        *base_cost = game.rng.random_range(0..=3);
-                        *temporary_cost = None;
-                        *free_to_play_once = false;
-                    }
+                {
+                    *base_cost = game.rng.random_range(0..=3);
+                    *temporary_cost = None;
+                    *free_to_play_once = false;
+                }
                 let class = c.class;
                 if class == CardClass::Void {
                     game.action_queue.push_bot(GainEnergyAction(-1));

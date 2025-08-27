@@ -41,17 +41,18 @@ impl Card {
             temporary_cost,
             ..
         } = &mut self.cost
-            && let Some(new_cost) = self.class.upgrade_cost(*base_cost) {
-                let prev_base_cost = *base_cost;
-                *base_cost = new_cost;
-                // temporary cost gets adjusted the same amount
-                if let Some(temp) = temporary_cost {
-                    *temp += new_cost - prev_base_cost;
-                    if *temp < 0 {
-                        *temp = 0;
-                    }
+            && let Some(new_cost) = self.class.upgrade_cost(*base_cost)
+        {
+            let prev_base_cost = *base_cost;
+            *base_cost = new_cost;
+            // temporary cost gets adjusted the same amount
+            if let Some(temp) = temporary_cost {
+                *temp += new_cost - prev_base_cost;
+                if *temp < 0 {
+                    *temp = 0;
                 }
             }
+        }
     }
     pub fn is_innate(&self) -> bool {
         use CardClass::*;
