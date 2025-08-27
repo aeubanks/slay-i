@@ -120,6 +120,14 @@ impl Creature {
                 target: this,
             });
         }
+        for status in [Status::NextTurnBlock, Status::FlameBarrier] {
+            if self.statuses.contains_key(&status) {
+                queue.push_bot(RemoveStatusAction {
+                    status,
+                    target: this,
+                });
+            }
+        }
     }
 
     pub fn trigger_statuses_turn_begin_post_draw(

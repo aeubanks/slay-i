@@ -405,10 +405,18 @@ impl Game {
             on_fatal: _,
         } = ty
         {
-            let c = self.get_creature_mut(target);
-            if let Some(a) = c
+            if let Some(a) = self
+                .get_creature(target)
                 .statuses
                 .get(&Status::Thorns)
+                .map(|v| DamageAction::thorns_no_rupture(*v, source))
+            {
+                self.action_queue.push_top(a);
+            }
+            if let Some(a) = self
+                .get_creature(target)
+                .statuses
+                .get(&Status::FlameBarrier)
                 .map(|v| DamageAction::thorns_no_rupture(*v, source))
             {
                 self.action_queue.push_top(a);

@@ -42,6 +42,7 @@ s!(
     DemonForm => Buff,
     Artifact => Buff,
     Thorns => Buff,
+    FlameBarrier => Buff,
     FeelNoPain => Buff,
     DarkEmbrace => Buff,
     Evolve => Buff,
@@ -377,6 +378,24 @@ mod tests {
         g.make_move(Move::EndTurn);
 
         assert_eq!(g.monsters[0].creature.cur_hp, 8);
+    }
+
+    #[test]
+    fn test_flame_barrier() {
+        let mut g = GameBuilder::default()
+            .add_monster(AttackMonster::with_hp(1, 50))
+            .add_cards(CardClass::Strike, 5)
+            .build_combat();
+
+        g.run_action(GainStatusAction {
+            status: Status::FlameBarrier,
+            amount: 5,
+            target: CreatureRef::player(),
+        });
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.cur_hp, 45);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.cur_hp, 45);
     }
 
     #[test]
