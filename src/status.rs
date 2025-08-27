@@ -47,6 +47,7 @@ s!(
     DarkEmbrace => Buff,
     Evolve => Buff,
     FireBreathing => Buff,
+    PenNib => Buff,
     Rupture => Buff,
     Berserk => Buff,
     CombustHPLoss => Buff,
@@ -944,5 +945,18 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.monsters[0].creature.cur_hp, monster_hp - 5);
         assert_eq!(g.player.creature.cur_hp, player_hp - 4);
+    }
+
+    #[test]
+    fn test_pen_nib() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::PenNib, 1)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Defend, None);
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 12);
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 18);
     }
 }

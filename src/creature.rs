@@ -110,6 +110,14 @@ impl Creature {
                     free: true,
                 });
             }
+            if self.statuses.contains_key(&Status::PenNib)
+                && play.card.borrow().class.ty() == CardType::Attack
+            {
+                queue.push_top(RemoveStatusAction {
+                    status: Status::PenNib,
+                    target: CreatureRef::player(),
+                });
+            }
         }
     }
 

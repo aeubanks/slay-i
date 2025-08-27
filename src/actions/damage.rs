@@ -73,6 +73,9 @@ pub fn calculate_damage(
     if source.statuses.contains_key(&Status::Weak) {
         amount_f *= 0.75;
     }
+    if source.statuses.contains_key(&Status::PenNib) {
+        amount_f *= 2.0;
+    }
     if target.statuses.contains_key(&Status::Vulnerable) {
         amount_f *= 1.5;
     }
