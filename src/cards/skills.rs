@@ -5,7 +5,7 @@ use crate::{
         choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaustAction,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
         choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction,
-        choose_dual_wield::ChooseDualWieldAction,
+        choose_discovery::ChooseDiscoveryAction, choose_dual_wield::ChooseDualWieldAction,
         choose_forethought_any::ChooseForethoughtAnyAction,
         choose_forethought_one::ChooseForethoughtOneAction, damage::DamageAction,
         double_strength::DoubleStrengthAction, draw::DrawAction,
@@ -153,6 +153,10 @@ pub fn forethought_behavior(game: &mut Game, info: CardPlayInfo) {
     } else {
         game.action_queue.push_bot(ChooseForethoughtOneAction());
     }
+}
+
+pub fn discovery_behavior(game: &mut Game, _: CardPlayInfo) {
+    game.action_queue.push_bot(ChooseDiscoveryAction());
 }
 
 pub fn madness_behavior(game: &mut Game, _: CardPlayInfo) {
@@ -1336,5 +1340,28 @@ mod tests {
         g.make_move(Move::ForethoughtAny { card_index: 0 });
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
         assert_eq!(g.draw_pile[1].borrow().class, CardClass::TwinStrike);
+    }
+
+    #[test]
+    fn test_discovery() {
+        for _ in 0..100 {
+            let mut g = GameBuilder::default().build_combat();
+            g.energy = 1;
+            g.play_card(CardClass::Discovery, None);
+            for m in g.valid_moves() {
+                if let Move::Discovery { card_class } = m {
+                    assert_ne!(card_class, CardClass::Reaper);
+                } else {
+                    panic!();
+                }
+            }
+            assert_eq!(g.valid_moves().len(), 3);
+            g.make_move(g.valid_moves()[0]);
+            dbg!(g.hand[0].borrow());
+            g.make_move(Move::PlayCard {
+                card_index: 0,
+                target: Some(0),
+            });
+        }
     }
 }

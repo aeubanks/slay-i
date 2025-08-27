@@ -193,6 +193,9 @@ fn print_state(g: &Game) {
             Move::ForethoughtAnyEnd => {
                 print!("forethought any end");
             }
+            Move::Discovery { card_class } => {
+                print!("discovery {:?}", card_class);
+            }
             Move::UsePotion {
                 potion_index,
                 target,
@@ -259,7 +262,8 @@ fn main() {
             | GameStatus::FetchCardFromDraw
             | GameStatus::ExhaustCardsInHand { .. }
             | GameStatus::ForethoughtAny
-            | GameStatus::ForethoughtOne => {
+            | GameStatus::ForethoughtOne
+            | GameStatus::Discovery => {
                 print_state(&game);
                 let valid_moves = game.valid_moves();
                 let i = read_int_from_stdin(valid_moves.len());

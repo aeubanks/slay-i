@@ -100,9 +100,7 @@ macro_rules! c {
 
 fn noop_behavior(_: &mut Game, _: CardPlayInfo) {}
 
-fn todo(_: &mut Game, _: CardPlayInfo) {
-    todo!();
-}
+fn todo(_: &mut Game, _: CardPlayInfo) {}
 
 c!(
     // Basic
@@ -206,7 +204,7 @@ c!(
     BandageUp => (Uncommon, Skill, Colorless, cost(0), todo, true),
     Blind => (Uncommon, Skill, Colorless, cost(0), todo, false),
     Trip => (Uncommon, Skill, Colorless, cost(0), todo, false),
-    Discovery => (Uncommon, Skill, Colorless, cost(1), todo, true),
+    Discovery => (Uncommon, Skill, Colorless, cost(1), skills::discovery_behavior, true),
     DeepBreath => (Uncommon, Skill, Colorless, cost(0), todo, false),
     DarkShackles => (Uncommon, Skill, Colorless, cost(0), todo, true),
     Apparition => (Uncommon, Skill, Colorless, cost(1), todo, true),
@@ -351,6 +349,10 @@ lazy_static! {
 
 fn random_red(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_NON_BASIC_RED)
+}
+
+pub fn random_red_in_combat(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_RED_IN_COMBAT)
 }
 
 pub fn random_red_attack_in_combat(rng: &mut Rand) -> CardClass {

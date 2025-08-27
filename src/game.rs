@@ -7,6 +7,7 @@ use crate::action::Action;
 use crate::actions::choose_dual_wield::can_dual_wield;
 use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
+use crate::actions::discovery::DiscoveryAction;
 use crate::actions::draw::DrawAction;
 use crate::actions::dual_wield::DualWieldAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
@@ -102,6 +103,9 @@ pub enum Move {
     ForethoughtOne {
         card_index: usize,
     },
+    Discovery {
+        card_class: CardClass,
+    },
     UsePotion {
         potion_index: usize,
         target: Option<usize>,
@@ -123,6 +127,7 @@ pub enum GameStatus {
     FetchCardFromDraw,
     ForethoughtOne,
     ForethoughtAny,
+    Discovery,
 }
 
 #[derive(Debug)]
@@ -151,6 +156,7 @@ pub enum GameState {
         cards_to_forethought: Vec<CardRef>,
     },
     ForethoughtOne,
+    Discovery(Vec<CardClass>),
     Defeat,
     Victory,
 }
@@ -582,7 +588,8 @@ impl Game {
             | GameState::DualWield(_)
             | GameState::FetchCardFromDraw(_)
             | GameState::ForethoughtAny { .. }
-            | GameState::ForethoughtOne => {
+            | GameState::ForethoughtOne
+            | GameState::Discovery(_) => {
                 unreachable!()
             }
         }
@@ -732,7 +739,7 @@ impl Game {
     }
 
     pub fn result(&self) -> GameStatus {
-        match self.state {
+        match &self.state {
             GameState::Victory => GameStatus::Victory,
             GameState::Defeat => GameStatus::Defeat,
             GameState::Armaments => GameStatus::Armaments,
@@ -744,12 +751,13 @@ impl Game {
             GameState::FetchCardFromDraw(_) => GameStatus::FetchCardFromDraw,
             GameState::ForethoughtAny { .. } => GameStatus::ForethoughtAny,
             GameState::ForethoughtOne => GameStatus::ForethoughtOne,
-            GameState::ExhaustCardsInHand {
+            &GameState::ExhaustCardsInHand {
                 num_cards_remaining,
                 ..
             } => GameStatus::ExhaustCardsInHand {
                 num_cards_remaining,
             },
+            GameState::Discovery(_) => GameStatus::Discovery,
             _ => GameStatus::Combat,
         }
     }
@@ -909,6 +917,11 @@ impl Game {
                 _ => unreachable!(),
             },
             Move::ForethoughtAnyEnd => self.forethought_cards(),
+            Move::Discovery { card_class } => {
+                self.action_queue.push_top(DiscoveryAction(card_class));
+                self.state = GameState::PlayerTurn;
+                self.run();
+            }
             Move::UsePotion {
                 potion_index,
                 target,
@@ -1095,6 +1108,11 @@ impl Game {
                 moves.push(Move::ExhaustCardsInHandEnd);
                 for c in 0..self.hand.len() {
                     moves.push(Move::ExhaustCardsInHand { card_index: c });
+                }
+            }
+            GameState::Discovery(classes) => {
+                for &card_class in classes {
+                    moves.push(Move::Discovery { card_class })
                 }
             }
             _ => {
