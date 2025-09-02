@@ -133,12 +133,12 @@ c!(
     SearingBlow => (Uncommon, Attack, Red, cost(2), attacks::searing_blow_behavior, false),
     Whirlwind => (Uncommon, Attack, Red, X, attacks::whirlwind_behavior, false),
     Rampage => (Uncommon, Attack, Red, cost(1), attacks::rampage_behavior, false),
-    Uppercut => (Uncommon, Attack, Red, cost(2), todo, false),
+    Uppercut => (Uncommon, Attack, Red, cost(2), attacks::uppercut_behavior, false),
     SeverSoul => (Uncommon, Attack, Red, cost(2), todo, false),
-    Carnage => (Uncommon, Attack, Red, cost(2), todo, false),
-    Hemokinesis => (Uncommon, Attack, Red, cost(1), todo, false),
+    Carnage => (Uncommon, Attack, Red, cost(2), attacks::carnage_behavior, false),
+    Hemokinesis => (Uncommon, Attack, Red, cost(1), attacks::hemokinesis_behavior, false),
     Dropkick => (Uncommon, Attack, Red, cost(1), todo, false),
-    Pummel => (Uncommon, Attack, Red, cost(1), todo, true),
+    Pummel => (Uncommon, Attack, Red, cost(1), attacks::pummel_behavior, true),
     BloodForBlood => (Uncommon, Attack, Red, cost(4), todo, false),
     RecklessCharge => (Uncommon, Attack, Red, cost(0), attacks::reckless_charge_behavior, false),
     // Uncommon skills
@@ -170,8 +170,8 @@ c!(
     Rupture => (Uncommon, Power, Red, cost(1), powers::rupture_behavior, false),
     // Rare attacks
     Reaper => (Rare, Attack, Red, cost(2), attacks::reaper_behavior, true),
-    Immolate => (Rare, Attack, Red, cost(2), todo, false),
-    Bludgeon => (Rare, Attack, Red, cost(3), todo, false),
+    Immolate => (Rare, Attack, Red, cost(2), attacks::immolate_behavior, false),
+    Bludgeon => (Rare, Attack, Red, cost(3), attacks::bludgeon_behavior, false),
     Feed => (Rare, Attack, Red, cost(1), attacks::feed_behavior, true),
     FiendFire => (Rare, Attack, Red, cost(2), todo, true),
     // Rare skills
@@ -192,7 +192,7 @@ c!(
     FlashOfSteel => (Uncommon, Attack, Colorless, cost(0), attacks::flash_of_steel_behavior, false),
     DramaticEntrance => (Uncommon, Attack, Colorless, cost(0), attacks::dramatic_entrance_behavior, true),
     MindBlast => (Uncommon, Attack, Colorless, cost(2), attacks::mind_blast_behavior, false),
-    Bite => (Uncommon, Attack, Colorless, cost(1), todo, false),
+    Bite => (Uncommon, Attack, Colorless, cost(1), attacks::bite_behavior, false),
     RitualDagger => (Uncommon, Attack, Colorless, cost(1), attacks::ritual_dagger_behavior, true),
     // Colorless uncommon skills
     GoodInstincts => (Uncommon, Skill, Colorless, cost(0), skills::good_instincts_behavior, false),

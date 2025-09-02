@@ -3,9 +3,11 @@ use crate::{
         choose_card_in_discard_to_place_on_top_of_draw::ChooseCardInDiscardToPlaceOnTopOfDrawAction,
         damage::{DamageAction, OnFatal, OnFatalType},
         damage_all_monsters::DamageAllMonstersAction,
+        discard_card::DiscardCardAction,
         draw::DrawAction,
         gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction,
+        heal::HealAction,
         increase_base_amount::IncreaseBaseAmountAction,
         shuffle_card_into_draw::ShuffleCardIntoDrawAction,
         vampire::VampireAction,
@@ -143,6 +145,37 @@ pub fn rampage_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
+pub fn uppercut_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_damage(game, info, 13, 13);
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Weak,
+        amount: if info.upgraded { 2 } else { 1 },
+        target: info.target.unwrap(),
+    });
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Vulnerable,
+        amount: if info.upgraded { 2 } else { 1 },
+        target: info.target.unwrap(),
+    });
+}
+
+pub fn carnage_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_damage(game, info, 20, 28);
+}
+
+pub fn hemokinesis_behavior(game: &mut Game, info: CardPlayInfo) {
+    game.action_queue
+        .push_bot(DamageAction::lose_hp(2, CreatureRef::player()));
+    push_damage(game, info, 15, 20);
+}
+
+pub fn pummel_behavior(game: &mut Game, info: CardPlayInfo) {
+    let count = if info.upgraded { 5 } else { 4 };
+    for _ in 0..count {
+        push_damage(game, info, 2, 2);
+    }
+}
+
 pub fn reaper_behavior(game: &mut Game, info: CardPlayInfo) {
     let alive = game
         .monsters
@@ -153,6 +186,16 @@ pub fn reaper_behavior(game: &mut Game, info: CardPlayInfo) {
         .collect::<Vec<_>>();
     push_aoe_damage(game, info, 4, 5);
     game.action_queue.push_bot(VampireAction(alive));
+}
+
+pub fn immolate_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_aoe_damage(game, info, 21, 28);
+    let card = game.new_card(CardClass::Burn);
+    game.action_queue.push_bot(DiscardCardAction(card));
+}
+
+pub fn bludgeon_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_damage(game, info, 32, 42);
 }
 
 pub fn feed_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -185,6 +228,14 @@ pub fn dramatic_entrance_behavior(game: &mut Game, info: CardPlayInfo) {
 pub fn mind_blast_behavior(game: &mut Game, info: CardPlayInfo) {
     let damage = game.draw_pile.len() as i32;
     push_damage(game, info, damage, damage);
+}
+
+pub fn bite_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_damage(game, info, 7, 8);
+    game.action_queue.push_bot(HealAction {
+        target: CreatureRef::player(),
+        amount: if info.upgraded { 3 } else { 2 },
+    });
 }
 
 pub fn ritual_dagger_behavior(game: &mut Game, info: CardPlayInfo) {
