@@ -169,7 +169,7 @@ c!(
     FireBreathing => (Uncommon, Power, Red, cost(1), powers::firebreathing_behavior, false),
     Rupture => (Uncommon, Power, Red, cost(1), powers::rupture_behavior, false),
     // Rare attacks
-    Reaper => (Rare, Attack, Red, cost(2), todo, true),
+    Reaper => (Rare, Attack, Red, cost(2), attacks::reaper_behavior, true),
     Immolate => (Rare, Attack, Red, cost(2), todo, false),
     Bludgeon => (Rare, Attack, Red, cost(3), todo, false),
     Feed => (Rare, Attack, Red, cost(1), attacks::feed_behavior, true),

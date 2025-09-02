@@ -8,10 +8,11 @@ use crate::{
         gain_status_all_monsters::GainStatusAllMonstersAction,
         increase_base_amount::IncreaseBaseAmountAction,
         shuffle_card_into_draw::ShuffleCardIntoDrawAction,
+        vampire::VampireAction,
     },
     card::CardPlayInfo,
     cards::CardClass,
-    game::Game,
+    game::{CreatureRef, Game},
     status::Status,
 };
 
@@ -140,6 +141,18 @@ pub fn rampage_behavior(game: &mut Game, info: CardPlayInfo) {
         amount: if info.upgraded { 8 } else { 5 },
         master: false,
     });
+}
+
+pub fn reaper_behavior(game: &mut Game, info: CardPlayInfo) {
+    let alive = game
+        .monsters
+        .iter()
+        .enumerate()
+        .filter(|(_, m)| m.creature.is_alive())
+        .map(|(i, _)| CreatureRef::monster(i))
+        .collect::<Vec<_>>();
+    push_aoe_damage(game, info, 4, 5);
+    game.action_queue.push_bot(VampireAction(alive));
 }
 
 pub fn feed_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -505,6 +518,59 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13 - 21 - 8);
+    }
+
+    #[test]
+    fn test_reaper() {
+        {
+            let mut g = GameBuilder::default().build_combat();
+            g.player.creature.cur_hp = 10;
+            g.play_card(CardClass::Reaper, None);
+            assert_eq!(g.player.creature.cur_hp, 14);
+        }
+        {
+            let mut g = GameBuilder::default().build_combat();
+            g.player.creature.cur_hp = 10;
+            g.monsters[0].creature.cur_hp = 2;
+            g.play_card(CardClass::Reaper, None);
+            assert_eq!(g.player.creature.cur_hp, 12);
+        }
+        {
+            let mut g = GameBuilder::default().build_combat();
+            g.player.creature.cur_hp = 10;
+            g.monsters[0].creature.block = 1;
+            g.play_card(CardClass::Reaper, None);
+            assert_eq!(g.player.creature.cur_hp, 13);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_monster_status(Status::Vulnerable, 1)
+                .add_player_status(Status::Strength, 10)
+                .build_combat();
+            g.player.creature.cur_hp = 10;
+            g.play_card(CardClass::Reaper, None);
+            assert_eq!(g.player.creature.cur_hp, 31);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_monster(NoopMonster::new())
+                .add_monster(NoopMonster::new())
+                .build_combat();
+            g.player.creature.cur_hp = 10;
+            g.play_card(CardClass::Reaper, None);
+            assert_eq!(g.player.creature.cur_hp, 18);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_monster(NoopMonster::new())
+                .add_monster(NoopMonster::new())
+                .build_combat();
+            g.player.creature.cur_hp = 10;
+            g.monsters[0].creature.cur_hp = 1;
+            g.monsters[1].creature.block = 1;
+            g.play_card(CardClass::Reaper, None);
+            assert_eq!(g.player.creature.cur_hp, 14);
+        }
     }
 
     #[test]

@@ -20,6 +20,7 @@ pub struct Creature {
     pub cur_hp: i32,
     pub block: i32,
     pub statuses: HashMap<Status, i32>,
+    pub last_damage_taken: i32,
 }
 
 impl Creature {
@@ -30,6 +31,7 @@ impl Creature {
             cur_hp: max_hp,
             block: 0,
             statuses: Default::default(),
+            last_damage_taken: 0,
         }
     }
 

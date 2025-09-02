@@ -210,15 +210,9 @@ impl GameBuilder {
     pub fn add_monster<M: MonsterBehavior + 'static>(mut self, m: M) -> Self {
         let hp = m.roll_hp(&mut self.rng);
         let name = m.name();
-        self.monsters.push(Monster {
-            creature: Creature {
-                name,
-                max_hp: hp,
-                cur_hp: hp,
-                block: 0,
-                statuses: Default::default(),
-            },
 
+        self.monsters.push(Monster {
+            creature: Creature::new(name, hp),
             behavior: Box::new(m),
         });
         self
@@ -435,11 +429,10 @@ impl Game {
                 c.block = 0;
             }
         }
+        amount = amount.min(c.cur_hp);
+        c.last_damage_taken = amount;
         if amount != 0 {
             c.cur_hp -= amount;
-            if c.cur_hp < 0 {
-                c.cur_hp = 0;
-            }
             // attack damage never procs rupture
             // hp loss always procs rupture
             // thorns proc rupture if source is player
