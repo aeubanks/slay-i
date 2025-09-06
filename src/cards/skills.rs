@@ -224,6 +224,14 @@ pub fn double_tap_behavior(game: &mut Game, info: &CardPlayInfo) {
     });
 }
 
+pub fn offering_behavior(game: &mut Game, info: &CardPlayInfo) {
+    game.action_queue
+        .push_bot(DamageAction::lose_hp(6, CreatureRef::player()));
+    game.action_queue.push_bot(GainEnergyAction(2));
+    game.action_queue
+        .push_bot(DrawAction(if info.upgraded { 5 } else { 3 }));
+}
+
 pub fn exhume_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(ExhumeAction());
 }
