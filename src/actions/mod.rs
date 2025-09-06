@@ -22,6 +22,7 @@ pub mod dual_wield;
 pub mod end_of_turn_discard;
 pub mod enlightenment;
 pub mod exhaust_card;
+pub mod exhaust_non_attack_in_hand;
 pub mod exhaust_random_card_in_hand;
 pub mod exhume;
 pub mod forethought;

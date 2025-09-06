@@ -6,6 +6,7 @@ use crate::{
         damage_random_monster::DamageRandomMonsterAction,
         discard_card::DiscardCardAction,
         draw::DrawAction,
+        exhaust_non_attack_in_hand::ExhaustNonAttackInHandAction,
         gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction,
         heal::HealAction,
@@ -205,6 +206,11 @@ pub fn uppercut_behavior(game: &mut Game, info: &CardPlayInfo) {
         amount: if info.upgraded { 2 } else { 1 },
         target: info.target.unwrap(),
     });
+}
+
+pub fn sever_soul_behavior(game: &mut Game, info: &CardPlayInfo) {
+    game.action_queue.push_bot(ExhaustNonAttackInHandAction());
+    push_damage(game, info, 16, 22);
 }
 
 pub fn carnage_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -762,6 +768,22 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13 - 21 - 8);
+    }
+
+    #[test]
+    fn test_sever_soul() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Wound);
+        g.add_card_to_hand(CardClass::AscendersBane);
+        g.play_card(CardClass::SeverSoul, Some(CreatureRef::monster(0)));
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
+        assert_eq!(g.exhaust_pile.len(), 3);
+        assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.exhaust_pile[1].borrow().class, CardClass::Wound);
+        assert_eq!(g.exhaust_pile[2].borrow().class, CardClass::AscendersBane);
     }
 
     #[test]

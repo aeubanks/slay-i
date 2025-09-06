@@ -134,7 +134,7 @@ c!(
     Whirlwind => (Uncommon, Attack, Red, X, attacks::whirlwind_behavior, false),
     Rampage => (Uncommon, Attack, Red, cost(1), attacks::rampage_behavior, false),
     Uppercut => (Uncommon, Attack, Red, cost(2), attacks::uppercut_behavior, false),
-    SeverSoul => (Uncommon, Attack, Red, cost(2), todo, false),
+    SeverSoul => (Uncommon, Attack, Red, cost(2), attacks::sever_soul_behavior, false),
     Carnage => (Uncommon, Attack, Red, cost(2), attacks::carnage_behavior, false),
     Hemokinesis => (Uncommon, Attack, Red, cost(1), attacks::hemokinesis_behavior, false),
     Dropkick => (Uncommon, Attack, Red, cost(1), todo, false),
