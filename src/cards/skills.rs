@@ -433,6 +433,11 @@ pub fn chrysalis_behavior(game: &mut Game, info: &CardPlayInfo) {
     }
 }
 
+pub fn master_of_strategy_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 4 } else { 3 };
+    game.action_queue.push_bot(DrawAction(amount));
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
