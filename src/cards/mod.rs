@@ -118,7 +118,7 @@ c!(
     WildStrike => (Common, Attack, Red, cost(1), attacks::wild_strike_behavior, false),
     Headbutt => (Common, Attack, Red, cost(1), attacks::headbutt_behavior, false),
     SwordBoomerang => (Common, Attack, Red, cost(1), attacks::sword_boomerang_behavior, false),
-    PerfectedStrike => (Common, Attack, Red, cost(2), todo, false),
+    PerfectedStrike => (Common, Attack, Red, cost(2), attacks::perfected_strike_behavior, false),
     HeavyBlade => (Common, Attack, Red, cost(2), todo, false),
     Anger => (Common, Attack, Red, cost(0), todo, false),
     Clash => (Common, Attack, Red, cost(0), todo, false),
@@ -310,6 +310,13 @@ impl CardClass {
     pub fn can_be_generated_in_combat(&self) -> bool {
         use CardClass::*;
         !matches!(self, Feed | Reaper | Bite | BandageUp)
+    }
+    pub fn is_strike(&self) -> bool {
+        use CardClass::*;
+        matches!(
+            self,
+            Strike | SwiftStrike | PommelStrike | PerfectedStrike | TwinStrike | WildStrike
+        )
     }
 }
 

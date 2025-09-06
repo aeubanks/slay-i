@@ -13,7 +13,7 @@ use crate::{
         shuffle_card_into_draw::ShuffleCardIntoDrawAction,
         vampire::VampireAction,
     },
-    card::CardPlayInfo,
+    card::{CardPlayInfo, CardRef},
     cards::{CardClass, skills::push_block},
     game::{CreatureRef, Game},
     status::Status,
@@ -125,6 +125,20 @@ pub fn sword_boomerang_behavior(game: &mut Game, info: CardPlayInfo) {
         game.action_queue
             .push_bot(DamageRandomMonsterAction { amount: 3 });
     }
+}
+
+pub fn perfected_strike_behavior(game: &mut Game, info: CardPlayInfo) {
+    let count_strikes = |cards: &[CardRef]| {
+        cards
+            .iter()
+            .filter(|c| c.borrow().class.is_strike())
+            .count() as i32
+    };
+    let num_strikes = count_strikes(&game.hand)
+        + count_strikes(&game.discard_pile)
+        + count_strikes(&game.draw_pile);
+    let base = 6 + num_strikes * if info.upgraded { 3 } else { 2 };
+    push_damage(game, info, base, base);
 }
 
 pub fn reckless_charge_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -478,6 +492,32 @@ mod tests {
             }
         }
         assert!(found_3_0 && found_2_1 && found_1_2 && found_0_3);
+    }
+
+    #[test]
+    fn test_perfected_strike() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 99;
+
+        g.monsters[0].creature.cur_hp = 100;
+        g.play_card(CardClass::PerfectedStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 6);
+
+        g.monsters[0].creature.cur_hp = 100;
+        g.play_card(CardClass::PerfectedStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 6 - 2);
+
+        g.monsters[0].creature.cur_hp = 100;
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Anger);
+        g.play_card(CardClass::PerfectedStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 6 - 2 * 3);
+
+        g.monsters[0].creature.cur_hp = 100;
+        g.add_card_to_hand_upgraded(CardClass::TwinStrike);
+        g.add_card_to_hand_upgraded(CardClass::Defend);
+        g.play_card_upgraded(CardClass::PerfectedStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 6 - 3 * 5);
     }
 
     #[test]
