@@ -433,6 +433,21 @@ pub fn chrysalis_behavior(game: &mut Game, info: &CardPlayInfo) {
     }
 }
 
+pub fn transmutation_behavior(game: &mut Game, info: &CardPlayInfo) {
+    for _ in 0..info.energy {
+        let class = random_colorless(&mut game.rng);
+        let c = if info.upgraded {
+            game.new_card_upgraded(class)
+        } else {
+            game.new_card(class)
+        };
+        if let CardCost::Cost { base_cost, .. } = &mut c.borrow_mut().cost {
+            *base_cost = 0;
+        }
+        game.action_queue.push_bot(PlaceCardInHandAction(c));
+    }
+}
+
 pub fn master_of_strategy_behavior(game: &mut Game, info: &CardPlayInfo) {
     let amount = if info.upgraded { 4 } else { 3 };
     game.action_queue.push_bot(DrawAction(amount));
@@ -1573,6 +1588,57 @@ mod tests {
                         free_to_play_once: false,
                     }
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn test_transmutation() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.energy = 0;
+        g.play_card(CardClass::Transmutation, None);
+        assert_eq!(g.hand.len(), 0);
+
+        for _ in 0..50 {
+            g.hand.clear();
+            g.energy = 2;
+            g.play_card(CardClass::Transmutation, None);
+            assert_eq!(g.energy, 0);
+            assert_eq!(g.hand.len(), 2);
+            for c in &g.hand {
+                assert_eq!(c.borrow().class.color(), CardColor::Colorless);
+                assert_eq!(c.borrow().upgrade_count, 0);
+                if let CardCost::Cost {
+                    base_cost,
+                    temporary_cost,
+                    free_to_play_once,
+                } = c.borrow().cost
+                {
+                    assert_eq!(base_cost, 0);
+                    assert_eq!(temporary_cost, None);
+                    assert!(!free_to_play_once);
+                }
+            }
+
+            g.hand.clear();
+            g.energy = 2;
+            g.play_card_upgraded(CardClass::Transmutation, None);
+            assert_eq!(g.energy, 0);
+            assert_eq!(g.hand.len(), 2);
+            for c in &g.hand {
+                assert_eq!(c.borrow().class.color(), CardColor::Colorless);
+                assert_eq!(c.borrow().upgrade_count, 1);
+                if let CardCost::Cost {
+                    base_cost,
+                    temporary_cost,
+                    free_to_play_once,
+                } = c.borrow().cost
+                {
+                    assert_eq!(base_cost, 0);
+                    assert_eq!(temporary_cost, None);
+                    assert!(!free_to_play_once);
+                }
             }
         }
     }

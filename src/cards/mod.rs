@@ -214,7 +214,7 @@ c!(
     SecretWeapon => (Rare, Skill, Colorless, cost(0), skills::secret_weapon_behavior, true),
     Metamorphosis => (Rare, Skill, Colorless, cost(2), skills::metamorphosis_behavior, true),
     Chrysalis => (Rare, Skill, Colorless, cost(2), skills::chrysalis_behavior, true),
-    Transmutation => (Rare, Skill, Colorless, X, todo, true),
+    Transmutation => (Rare, Skill, Colorless, X, skills::transmutation_behavior, true),
     MasterOfStrategy => (Rare, Skill, Colorless, cost(0), skills::master_of_strategy_behavior, true),
     Violence => (Rare, Skill, Colorless, cost(0), todo, true),
     // Colorless rare powers
