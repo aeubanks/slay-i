@@ -141,6 +141,16 @@ pub fn perfected_strike_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, base, base);
 }
 
+pub fn heavy_blade_behavior(game: &mut Game, info: CardPlayInfo) {
+    let strength = game
+        .player
+        .creature
+        .statuses
+        .get(&Status::Strength)
+        .unwrap_or(&0);
+    push_damage(game, info, 14 + strength * 2, 14 + strength * 4);
+}
+
 pub fn reckless_charge_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 7, 10);
     let card = game.new_card(CardClass::Dazed);
@@ -518,6 +528,35 @@ mod tests {
         g.add_card_to_hand_upgraded(CardClass::Defend);
         g.play_card_upgraded(CardClass::PerfectedStrike, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 6 - 3 * 5);
+    }
+
+    #[test]
+    fn test_heavy_blade() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 99;
+
+        g.monsters[0].creature.cur_hp = 100;
+        g.play_card(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14);
+
+        g.player.creature.statuses.insert(Status::Strength, 2);
+        g.monsters[0].creature.cur_hp = 100;
+        g.play_card(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14 - 2 * 3);
+
+        g.player.creature.statuses.insert(Status::Strength, 2);
+        g.monsters[0].creature.cur_hp = 100;
+        g.play_card_upgraded(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14 - 2 * 5);
+
+        g.player.creature.statuses.insert(Status::Strength, 10);
+        g.monsters[0]
+            .creature
+            .statuses
+            .insert(Status::Vulnerable, 1);
+        g.monsters[0].creature.cur_hp = 100;
+        g.play_card_upgraded(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 21 - 75);
     }
 
     #[test]
