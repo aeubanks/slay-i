@@ -173,7 +173,7 @@ c!(
     Immolate => (Rare, Attack, Red, cost(2), attacks::immolate_behavior, false),
     Bludgeon => (Rare, Attack, Red, cost(3), attacks::bludgeon_behavior, false),
     Feed => (Rare, Attack, Red, cost(1), attacks::feed_behavior, true),
-    FiendFire => (Rare, Attack, Red, cost(2), todo, true),
+    FiendFire => (Rare, Attack, Red, cost(2), attacks::fiend_fire_behavior, true),
     // Rare skills
     LimitBreak => (Rare, Skill, Red, cost(1), skills::limit_break_behavior, true),
     Impervious => (Rare, Skill, Red, cost(2), skills::impervious_behavior, true),

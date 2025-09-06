@@ -8,6 +8,7 @@ use crate::{
         draw::DrawAction,
         dropkick::DropkickAction,
         exhaust_non_attack_in_hand::ExhaustNonAttackInHandAction,
+        fiend_fire::FiendFireAction,
         gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction,
         heal::HealAction,
@@ -271,6 +272,14 @@ pub fn feed_behavior(game: &mut Game, info: &CardPlayInfo) {
                 upgraded: info.upgraded,
             },
         ));
+}
+
+pub fn fiend_fire_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 10 } else { 7 };
+    game.action_queue.push_bot(FiendFireAction {
+        target: info.target.unwrap(),
+        amount,
+    });
 }
 
 pub fn swift_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -966,6 +975,31 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, 0);
         assert_eq!(g.player.creature.max_hp, player_max_hp + 4);
         assert_eq!(g.player.creature.cur_hp, player_cur_hp + 4);
+    }
+    #[test]
+    fn test_fiend_fire() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 99;
+
+        g.monsters[0].creature.cur_hp = 100;
+        g.play_card(CardClass::FiendFire, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100);
+
+        g.monsters[0].creature.cur_hp = 100;
+        g.exhaust_pile.clear();
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Wound);
+        g.add_card_to_hand(CardClass::AscendersBane);
+        g.play_card(CardClass::FiendFire, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 100 - 7 * 4);
+        assert_eq!(g.hand.len(), 0);
+        assert_eq!(g.exhaust_pile.len(), 5);
+        assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.exhaust_pile[1].borrow().class, CardClass::Strike);
+        assert_eq!(g.exhaust_pile[2].borrow().class, CardClass::Wound);
+        assert_eq!(g.exhaust_pile[3].borrow().class, CardClass::AscendersBane);
+        assert_eq!(g.exhaust_pile[4].borrow().class, CardClass::FiendFire);
     }
 
     #[test]
