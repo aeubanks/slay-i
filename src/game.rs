@@ -1154,6 +1154,7 @@ impl Game {
     #[cfg(test)]
     pub fn play_card(&mut self, class: CardClass, target: Option<CreatureRef>) {
         let card = self.new_card(class);
+        assert!(self.can_play_card(&card.borrow()));
         self.run_action(PlayCardAction {
             card,
             target,
