@@ -153,7 +153,7 @@ c!(
     Intimidate => (Uncommon, Skill, Red, cost(0), skills::intimidate_behavior, true),
     FlameBarrier => (Uncommon, Skill, Red, cost(2), skills::flame_barrier_behavior, false),
     Shockwave => (Uncommon, Skill, Red, cost(2), skills::shockwave_behavior, true),
-    Entrench => (Uncommon, Skill, Red, cost(2), todo, false),
+    Entrench => (Uncommon, Skill, Red, cost(2), skills::entrench_behavior, false),
     BurningPact => (Uncommon, Skill, Red, cost(1), skills::burning_pact_behavior, false),
     SeeingRed => (Uncommon, Skill, Red, cost(1), skills::shockwave_behavior, true),
     PowerThrough => (Uncommon, Skill, Red, cost(1), skills::power_through_behavior, false),

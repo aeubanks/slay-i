@@ -16,6 +16,7 @@ pub mod damage_random_monster;
 pub mod discard_card;
 pub mod discard_hand;
 pub mod discovery;
+pub mod double_block;
 pub mod double_strength;
 pub mod draw;
 pub mod dropkick;

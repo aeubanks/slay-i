@@ -8,7 +8,7 @@ use crate::{
         choose_discovery::ChooseDiscoveryAction, choose_dual_wield::ChooseDualWieldAction,
         choose_forethought_any::ChooseForethoughtAnyAction,
         choose_forethought_one::ChooseForethoughtOneAction, damage::DamageAction,
-        double_strength::DoubleStrengthAction, draw::DrawAction,
+        double_block::DoubleBlockAction, double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction,
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
         gain_energy::GainEnergyAction, gain_status::GainStatusAction,
@@ -175,6 +175,10 @@ pub fn shockwave_behavior(game: &mut Game, info: &CardPlayInfo) {
         status: Status::Vulnerable,
         amount,
     });
+}
+
+pub fn entrench_behavior(game: &mut Game, _: &CardPlayInfo) {
+    game.action_queue.push_bot(DoubleBlockAction());
 }
 
 pub fn power_through_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -667,6 +671,23 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.player.creature.statuses.get(&Status::NoDraw), None);
+    }
+
+    #[test]
+    fn test_entrench() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 99;
+
+        g.play_card(CardClass::Entrench, None);
+        assert_eq!(g.player.creature.block, 0);
+
+        g.player.creature.block = 10;
+        g.play_card(CardClass::Entrench, None);
+        assert_eq!(g.player.creature.block, 20);
+
+        g.player.creature.statuses.insert(Status::Dexterity, 3);
+        g.play_card(CardClass::Entrench, None);
+        assert_eq!(g.player.creature.block, 40);
     }
 
     #[test]
