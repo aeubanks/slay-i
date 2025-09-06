@@ -168,6 +168,17 @@ impl Creature {
     }
 
     pub fn trigger_statuses_turn_end(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+        if let Some(v) = self.statuses.get(&Status::LoseStrength) {
+            queue.push_bot(GainStatusAction {
+                status: Status::Strength,
+                amount: -*v,
+                target: this,
+            });
+            queue.push_bot(RemoveStatusAction {
+                status: Status::LoseStrength,
+                target: this,
+            });
+        }
         if let Some(v) = self.statuses.get(&Status::CombustHPLoss) {
             queue.push_bot(DamageAction::lose_hp(*v, this));
         }

@@ -37,6 +37,7 @@ s!(
     NoDraw => Debuff,
     Confusion => Debuff,
     Entangled => Debuff,
+    LoseStrength => Debuff,
 
     RegenPlayer => Buff,
     RegenMonster => Buff,
@@ -903,6 +904,18 @@ mod tests {
                 target: _
             }
         )));
+    }
+
+    #[test]
+    fn test_lose_strength() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::LoseStrength, 2)
+            .build_combat();
+        assert_eq!(g.player.creature.statuses.get(&Status::Strength), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&-2));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&-2));
     }
 
     #[test]

@@ -48,6 +48,20 @@ pub fn armaments_behavior(game: &mut Game, info: &CardPlayInfo) {
     }
 }
 
+pub fn flex_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 4 } else { 2 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Strength,
+        amount,
+        target: CreatureRef::player(),
+    });
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::LoseStrength,
+        amount,
+        target: CreatureRef::player(),
+    });
+}
+
 pub fn true_grit_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 7, 9);
     if info.upgraded {

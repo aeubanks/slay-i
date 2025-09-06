@@ -124,7 +124,7 @@ c!(
     Clash => (Common, Attack, Red, cost(0), attacks::clash_behavior, false),
     // Common skills
     Armaments => (Common, Skill, Red, cost(1), skills::armaments_behavior, false),
-    Flex => (Common, Skill, Red, cost(0), todo, false),
+    Flex => (Common, Skill, Red, cost(0), skills::flex_behavior, false),
     TrueGrit => (Common, Skill, Red, cost(1), skills::true_grit_behavior, false),
     ShrugItOff => (Common, Skill, Red, cost(1), skills::shrug_it_off_behavior, false),
     Havoc => (Common, Skill, Red, cost(1), skills::havoc_behavior, false),
