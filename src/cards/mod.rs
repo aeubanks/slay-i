@@ -117,7 +117,7 @@ c!(
     IronWave => (Common, Attack, Red, cost(1), attacks::iron_wave_behavior, false),
     WildStrike => (Common, Attack, Red, cost(1), attacks::wild_strike_behavior, false),
     Headbutt => (Common, Attack, Red, cost(1), attacks::headbutt_behavior, false),
-    SwordBoomerang => (Common, Attack, Red, cost(1), todo, false),
+    SwordBoomerang => (Common, Attack, Red, cost(1), attacks::sword_boomerang_behavior, false),
     PerfectedStrike => (Common, Attack, Red, cost(2), todo, false),
     HeavyBlade => (Common, Attack, Red, cost(2), todo, false),
     Anger => (Common, Attack, Red, cost(0), todo, false),

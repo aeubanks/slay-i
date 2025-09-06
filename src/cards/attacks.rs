@@ -3,6 +3,7 @@ use crate::{
         choose_card_in_discard_to_place_on_top_of_draw::ChooseCardInDiscardToPlaceOnTopOfDrawAction,
         damage::{DamageAction, OnFatal, OnFatalType},
         damage_all_monsters::DamageAllMonstersAction,
+        damage_random_monster::DamageRandomMonsterAction,
         discard_card::DiscardCardAction,
         draw::DrawAction,
         gain_status::GainStatusAction,
@@ -116,6 +117,14 @@ pub fn headbutt_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 9, 12);
     game.action_queue
         .push_bot(ChooseCardInDiscardToPlaceOnTopOfDrawAction());
+}
+
+pub fn sword_boomerang_behavior(game: &mut Game, info: CardPlayInfo) {
+    let count = if info.upgraded { 4 } else { 3 };
+    for _ in 0..count {
+        game.action_queue
+            .push_bot(DamageRandomMonsterAction { amount: 3 });
+    }
 }
 
 pub fn reckless_charge_behavior(game: &mut Game, info: CardPlayInfo) {
@@ -430,6 +439,45 @@ mod tests {
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Headbutt);
         assert_eq!(g.draw_pile[1].borrow().class, CardClass::Strike);
+    }
+
+    #[test]
+    fn test_sword_boomerang() {
+        {
+            let mut g = GameBuilder::default()
+                .add_monster_status(Status::Thorns, 1)
+                .add_monster_status(Status::Vulnerable, 1)
+                .build_combat();
+            g.player.creature.cur_hp = 50;
+            g.monsters[0].creature.cur_hp = 20;
+            g.play_card(CardClass::SwordBoomerang, None);
+            assert_eq!(g.monsters[0].creature.cur_hp, 8);
+            assert_eq!(g.player.creature.cur_hp, 47);
+        }
+        let mut found_3_0 = false;
+        let mut found_2_1 = false;
+        let mut found_1_2 = false;
+        let mut found_0_3 = false;
+        for _ in 0..500 {
+            let mut g = GameBuilder::default()
+                .add_monster(NoopMonster::with_hp(50))
+                .add_monster(NoopMonster::with_hp(50))
+                .add_monster(NoopMonster::with_hp(50))
+                .build_combat();
+            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(1)));
+            g.play_card(CardClass::SwordBoomerang, None);
+            match (g.monsters[0].creature.cur_hp, g.monsters[2].creature.cur_hp) {
+                (41, 50) => found_3_0 = true,
+                (44, 47) => found_2_1 = true,
+                (47, 44) => found_1_2 = true,
+                (50, 41) => found_0_3 = true,
+                _ => panic!(),
+            }
+            if found_3_0 && found_2_1 && found_1_2 && found_0_3 {
+                break;
+            }
+        }
+        assert!(found_3_0 && found_2_1 && found_1_2 && found_0_3);
     }
 
     #[test]

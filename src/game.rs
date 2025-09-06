@@ -48,6 +48,10 @@ impl CreatureRef {
     pub fn is_player(&self) -> bool {
         self.0 == 0
     }
+    pub fn monster_index(&self) -> usize {
+        assert!(!self.is_player());
+        self.0 - 1
+    }
 }
 
 impl std::fmt::Debug for CreatureRef {
