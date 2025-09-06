@@ -82,9 +82,32 @@ pub fn barricade_behavior(game: &mut Game, _: &CardPlayInfo) {
     });
 }
 
+pub fn demon_form_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 3 } else { 2 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::DemonForm,
+        target: CreatureRef::player(),
+        amount,
+    });
+}
+
 pub fn brutality_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Brutality,
+        target: CreatureRef::player(),
+        amount: 1,
+    });
+}
+
+pub fn berserk_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 2 } else { 1 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Vulnerable,
+        target: CreatureRef::player(),
+        amount,
+    });
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Berserk,
         target: CreatureRef::player(),
         amount: 1,
     });
