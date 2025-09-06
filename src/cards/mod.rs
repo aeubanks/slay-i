@@ -187,8 +187,6 @@ c!(
     FlashOfSteel => (Uncommon, Attack, Colorless, cost(0), attacks::flash_of_steel_behavior, false),
     DramaticEntrance => (Uncommon, Attack, Colorless, cost(0), attacks::dramatic_entrance_behavior, true),
     MindBlast => (Uncommon, Attack, Colorless, cost(2), attacks::mind_blast_behavior, false),
-    Bite => (Uncommon, Attack, Colorless, cost(1), attacks::bite_behavior, false),
-    RitualDagger => (Uncommon, Attack, Colorless, cost(1), attacks::ritual_dagger_behavior, true),
     // Colorless uncommon skills
     GoodInstincts => (Uncommon, Skill, Colorless, cost(0), skills::good_instincts_behavior, false),
     Finesse => (Uncommon, Skill, Colorless, cost(0), skills::finesse_behavior, false),
@@ -202,8 +200,6 @@ c!(
     Discovery => (Uncommon, Skill, Colorless, cost(1), skills::discovery_behavior, true),
     DeepBreath => (Uncommon, Skill, Colorless, cost(0), todo, false),
     DarkShackles => (Uncommon, Skill, Colorless, cost(0), todo, true),
-    Apparition => (Uncommon, Skill, Colorless, cost(1), todo, true),
-    Jax => (Uncommon, Skill, Colorless, cost(0), skills::jax_behavior, false),
     PanicButton => (Uncommon, Skill, Colorless, cost(0), skills::panic_button_behavior, true),
     Purity => (Uncommon, Skill, Colorless, cost(0), skills::purity_behavior, true),
     Panacea => (Uncommon, Skill, Colorless, cost(0), skills::panacea_behavior, true),
@@ -226,6 +222,12 @@ c!(
     SadisticNature => (Rare, Power, Colorless, cost(0), todo, false),
     Mayhem => (Rare, Power, Colorless, cost(2), todo, false),
     Magnetism => (Rare, Power, Colorless, cost(2), todo, false),
+    // Colorless special attacks
+    Bite => (Special, Attack, Special, cost(1), attacks::bite_behavior, false),
+    RitualDagger => (Special, Attack, Special, cost(1), attacks::ritual_dagger_behavior, true),
+    // Colorless special skills
+    Apparition => (Special, Skill, Special, cost(1), todo, true),
+    Jax => (Special, Skill, Special, cost(0), skills::jax_behavior, false),
     // Statuses
     Wound => (Special, Status, Special, Zero, noop_behavior, true),
     Dazed => (Special, Status, Special, Zero, noop_behavior, true),
