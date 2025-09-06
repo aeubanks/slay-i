@@ -12,9 +12,9 @@ use crate::{
         enlightenment::EnlightenmentAction,
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
         gain_energy::GainEnergyAction, gain_status::GainStatusAction,
-        infernal_blade::InfernalBladeAction, madness::MadnessAction,
-        play_top_card::PlayTopCardAction, spot_weakness::SpotWeaknessAction,
-        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        gain_status_all_monsters::GainStatusAllMonstersAction, infernal_blade::InfernalBladeAction,
+        madness::MadnessAction, play_top_card::PlayTopCardAction,
+        spot_weakness::SpotWeaknessAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
     cards::CardType,
@@ -125,6 +125,54 @@ pub fn battle_trance_behavior(game: &mut Game, info: &CardPlayInfo) {
         status: Status::NoDraw,
         amount: 1,
         target: CreatureRef::player(),
+    });
+}
+
+pub fn disarm_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { -3 } else { -2 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Strength,
+        amount,
+        target: info.target.unwrap(),
+    });
+}
+
+pub fn rage_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 5 } else { 3 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Rage,
+        amount,
+        target: CreatureRef::player(),
+    });
+}
+
+pub fn intimidate_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 2 } else { 1 };
+    game.action_queue.push_bot(GainStatusAllMonstersAction {
+        status: Status::Weak,
+        amount,
+    });
+}
+
+pub fn flame_barrier_behavior(game: &mut Game, info: &CardPlayInfo) {
+    push_block(game, info, 12, 16);
+    let amount = if info.upgraded { 6 } else { 4 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::FlameBarrier,
+        amount,
+        target: CreatureRef::player(),
+    });
+}
+
+pub fn shockwave_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 5 } else { 3 };
+    game.action_queue.push_bot(GainStatusAllMonstersAction {
+        status: Status::Weak,
+        amount,
+    });
+    game.action_queue.push_bot(GainStatusAllMonstersAction {
+        status: Status::Vulnerable,
+        amount,
     });
 }
 
