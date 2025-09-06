@@ -156,7 +156,7 @@ c!(
     Entrench => (Uncommon, Skill, Red, cost(2), todo, false),
     BurningPact => (Uncommon, Skill, Red, cost(1), skills::burning_pact_behavior, false),
     SeeingRed => (Uncommon, Skill, Red, cost(1), skills::shockwave_behavior, true),
-    PowerThrough => (Uncommon, Skill, Red, cost(1), todo, false),
+    PowerThrough => (Uncommon, Skill, Red, cost(1), skills::power_through_behavior, false),
     InfernalBlade => (Uncommon, Skill, Red, cost(1), skills::infernal_blade_behavior, true),
     SecondWind => (Uncommon, Skill, Red, cost(1), todo, false),
     // Uncommon powers

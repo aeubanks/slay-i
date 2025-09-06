@@ -13,11 +13,12 @@ use crate::{
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
         gain_energy::GainEnergyAction, gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction, infernal_blade::InfernalBladeAction,
-        madness::MadnessAction, play_top_card::PlayTopCardAction,
-        spot_weakness::SpotWeaknessAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        madness::MadnessAction, place_card_in_hand::PlaceCardInHandAction,
+        play_top_card::PlayTopCardAction, spot_weakness::SpotWeaknessAction,
+        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
-    cards::CardType,
+    cards::{CardClass, CardType},
     game::{CreatureRef, Game},
     status::Status,
 };
@@ -174,6 +175,14 @@ pub fn shockwave_behavior(game: &mut Game, info: &CardPlayInfo) {
         status: Status::Vulnerable,
         amount,
     });
+}
+
+pub fn power_through_behavior(game: &mut Game, info: &CardPlayInfo) {
+    push_block(game, info, 15, 20);
+    for _ in 0..2 {
+        let c = game.new_card(CardClass::Wound);
+        game.action_queue.push_bot(PlaceCardInHandAction(c));
+    }
 }
 
 pub fn burning_pact_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -658,6 +667,15 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.player.creature.statuses.get(&Status::NoDraw), None);
+    }
+
+    #[test]
+    fn test_power_through() {
+        let mut g = GameBuilder::default().build_combat();
+        g.play_card(CardClass::PowerThrough, None);
+        assert_eq!(g.hand.len(), 2);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Wound);
+        assert_eq!(g.hand[1].borrow().class, CardClass::Wound);
     }
 
     #[test]
