@@ -622,6 +622,16 @@ mod tests {
             g.play_card(CardClass::Reaper, None);
             assert_eq!(g.player.creature.cur_hp, 14);
         }
+        {
+            let mut g = GameBuilder::default()
+                .add_monster(NoopMonster::new())
+                .add_monster(NoopMonster::new())
+                .build_combat();
+            g.player.creature.cur_hp = 10;
+            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            g.play_card(CardClass::Reaper, None);
+            assert_eq!(g.player.creature.cur_hp, 14);
+        }
     }
 
     #[test]
