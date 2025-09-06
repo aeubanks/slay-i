@@ -17,7 +17,7 @@ impl Action for FiendFireAction {
             game.action_queue.push_top(DamageAction::from_player(
                 self.amount,
                 &game.player,
-                &game.monsters[self.target.monster_index()].creature,
+                game.get_creature(self.target),
                 self.target,
             ));
         }

@@ -11,7 +11,7 @@ impl Action for DamageRandomMonsterAction {
         game.action_queue.push_top(DamageAction::from_player(
             self.amount,
             &game.player,
-            &game.monsters[alive.monster_index()].creature,
+            game.get_creature(alive),
             alive,
         ));
     }
