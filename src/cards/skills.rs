@@ -13,7 +13,8 @@ use crate::{
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
         gain_energy::GainEnergyAction, gain_status::GainStatusAction,
         infernal_blade::InfernalBladeAction, madness::MadnessAction,
-        play_top_card::PlayTopCardAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        play_top_card::PlayTopCardAction, spot_weakness::SpotWeaknessAction,
+        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
     cards::CardType,
@@ -103,6 +104,13 @@ pub fn bloodletting_behavior(game: &mut Game, info: &CardPlayInfo) {
 
 pub fn sentinel_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 5, 8);
+}
+
+pub fn spot_weakness_behavior(game: &mut Game, info: &CardPlayInfo) {
+    game.action_queue.push_bot(SpotWeaknessAction {
+        target: info.target.unwrap(),
+        amount: if info.upgraded { 4 } else { 3 },
+    });
 }
 
 pub fn dual_wield_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -225,7 +233,8 @@ mod tests {
         assert_matches,
         cards::{CardClass, CardCost, CardType},
         game::{CreatureRef, GameBuilder, GameStatus, Move},
-        monsters::test::{AttackMonster, NoopMonster},
+        monster::Intent,
+        monsters::test::{AttackMonster, IntentMonster, NoopMonster},
         status::Status,
     };
 
@@ -488,6 +497,18 @@ mod tests {
             target: None,
         });
         assert_eq!(g.player.creature.block, 8);
+    }
+
+    #[test]
+    fn test_spot_weakness() {
+        let mut g = GameBuilder::default()
+            .add_monster(IntentMonster::new(Intent::Buff))
+            .add_monster(IntentMonster::new(Intent::Attack(2, 2)))
+            .build_combat();
+        g.play_card(CardClass::SpotWeakness, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.statuses.get(&Status::Strength), None);
+        g.play_card(CardClass::SpotWeakness, Some(CreatureRef::monster(1)));
+        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&3));
     }
 
     #[test]

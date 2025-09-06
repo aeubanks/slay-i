@@ -4,7 +4,7 @@ use crate::game::{CreatureRef, Rand};
 use crate::player::Player;
 use crate::queue::ActionQueue;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 #[allow(dead_code)]
 pub enum Intent {
     Attack(i32, i32),
@@ -23,6 +23,13 @@ pub enum Intent {
 }
 
 impl Intent {
+    pub fn is_attack(&self) -> bool {
+        use Intent::*;
+        matches!(
+            self,
+            Attack(..) | AttackBuff(..) | AttackDebuff(..) | AttackDefend(..)
+        )
+    }
     pub fn modify_damage(&mut self, monster: &Creature, player: &Player) {
         use Intent::*;
         let d = match self {

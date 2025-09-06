@@ -81,6 +81,31 @@ impl MonsterBehavior for AttackMonster {
     }
 }
 
+pub struct IntentMonster {
+    intent: Intent,
+}
+
+#[allow(dead_code)]
+impl IntentMonster {
+    pub fn new(intent: Intent) -> Self {
+        Self { intent }
+    }
+}
+
+impl MonsterBehavior for IntentMonster {
+    fn name(&self) -> &'static str {
+        "intent"
+    }
+    fn roll_hp(&self, _r: &mut Rand) -> i32 {
+        50
+    }
+    fn roll_next_action(&mut self, _r: &mut Rand, _info: &MonsterInfo) {}
+    fn get_intent(&self) -> Intent {
+        self.intent
+    }
+    fn take_turn(&mut self, _: &mut ActionQueue, _: &Player, _: &Creature, _: CreatureRef) {}
+}
+
 #[allow(dead_code)]
 pub struct ApplyStatusMonster {
     pub status: Status,

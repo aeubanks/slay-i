@@ -145,7 +145,7 @@ c!(
     GhostlyArmor => (Uncommon, Skill, Red, cost(1), skills::ghostly_armor_behavior, false),
     Bloodletting => (Uncommon, Skill, Red, cost(0), skills::bloodletting_behavior, false),
     Sentinel => (Uncommon, Skill, Red, cost(1), skills::sentinel_behavior, false),
-    SpotWeakness => (Uncommon, Skill, Red, cost(1), todo, false),
+    SpotWeakness => (Uncommon, Skill, Red, cost(1), skills::spot_weakness_behavior, false),
     DualWield => (Uncommon, Skill, Red, cost(1), skills::dual_wield_behavior, false),
     BattleTrance => (Uncommon, Skill, Red, cost(0), skills::battle_trance_behavior, false),
     Disarm => (Uncommon, Skill, Red, cost(1), todo, true),
