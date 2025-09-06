@@ -1,5 +1,6 @@
 pub mod armaments;
 pub mod block;
+pub mod block_per_non_attack_in_hand;
 pub mod choose_card_in_discard_to_place_on_top_of_draw;
 pub mod choose_card_in_draw_to_place_in_hand;
 pub mod choose_card_in_hand_to_exhaust;

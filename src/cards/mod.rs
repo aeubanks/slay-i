@@ -158,7 +158,7 @@ c!(
     SeeingRed => (Uncommon, Skill, Red, cost(1), skills::shockwave_behavior, true),
     PowerThrough => (Uncommon, Skill, Red, cost(1), skills::power_through_behavior, false),
     InfernalBlade => (Uncommon, Skill, Red, cost(1), skills::infernal_blade_behavior, true),
-    SecondWind => (Uncommon, Skill, Red, cost(1), todo, false),
+    SecondWind => (Uncommon, Skill, Red, cost(1), skills::second_wind_behavior, false),
     // Uncommon powers
     Inflame => (Uncommon, Power, Red, cost(1), powers::inflame_behavior, false),
     FeelNoPain => (Uncommon, Power, Red, cost(1), powers::feel_no_pain_behavior, false),

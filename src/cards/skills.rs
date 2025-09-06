@@ -1,6 +1,7 @@
 use crate::{
     actions::{
         armaments::ArmamentsAction, block::BlockAction,
+        block_per_non_attack_in_hand::BlockPerNonAttackInHandAction,
         choose_card_in_draw_to_place_in_hand::ChooseCardInDrawToPlaceInHandAction,
         choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaustAction,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
@@ -10,6 +11,7 @@ use crate::{
         choose_forethought_one::ChooseForethoughtOneAction, damage::DamageAction,
         double_block::DoubleBlockAction, double_strength::DoubleStrengthAction, draw::DrawAction,
         enlightenment::EnlightenmentAction,
+        exhaust_non_attack_in_hand::ExhaustNonAttackInHandAction,
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
         gain_energy::GainEnergyAction, gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction, infernal_blade::InfernalBladeAction,
@@ -198,6 +200,16 @@ pub fn burning_pact_behavior(game: &mut Game, info: &CardPlayInfo) {
 
 pub fn infernal_blade_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(InfernalBladeAction());
+}
+
+pub fn second_wind_behavior(game: &mut Game, info: &CardPlayInfo) {
+    game.action_queue
+        .push_bot(BlockPerNonAttackInHandAction(if info.upgraded {
+            7
+        } else {
+            5
+        }));
+    game.action_queue.push_bot(ExhaustNonAttackInHandAction());
 }
 
 pub fn impervious_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -688,6 +700,28 @@ mod tests {
         g.player.creature.statuses.insert(Status::Dexterity, 3);
         g.play_card(CardClass::Entrench, None);
         assert_eq!(g.player.creature.block, 40);
+    }
+
+    #[test]
+    fn test_second_wind() {
+        let mut g = GameBuilder::default().build_combat();
+        g.energy = 99;
+
+        g.play_card(CardClass::SecondWind, None);
+        assert_eq!(g.player.creature.block, 0);
+
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Wound);
+        g.add_card_to_hand(CardClass::AscendersBane);
+        g.play_card(CardClass::SecondWind, None);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
+        assert_eq!(g.exhaust_pile.len(), 3);
+        assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.exhaust_pile[1].borrow().class, CardClass::Wound);
+        assert_eq!(g.exhaust_pile[2].borrow().class, CardClass::AscendersBane);
+        assert_eq!(g.player.creature.block, 15);
     }
 
     #[test]
