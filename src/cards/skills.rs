@@ -397,9 +397,8 @@ pub fn metamorphosis_behavior(game: &mut Game, info: &CardPlayInfo) {
     for _ in 0..count {
         let class = random_red_attack_in_combat(&mut game.rng);
         let c = game.new_card(class);
-        match &mut c.borrow_mut().cost {
-            CardCost::Cost { base_cost, .. } => *base_cost = 0,
-            _ => {}
+        if let CardCost::Cost { base_cost, .. } = &mut c.borrow_mut().cost {
+            *base_cost = 0
         }
         game.action_queue.push_bot(ShuffleCardIntoDrawAction(c));
     }
@@ -410,9 +409,8 @@ pub fn chrysalis_behavior(game: &mut Game, info: &CardPlayInfo) {
     for _ in 0..count {
         let class = random_red_skill_in_combat(&mut game.rng);
         let c = game.new_card(class);
-        match &mut c.borrow_mut().cost {
-            CardCost::Cost { base_cost, .. } => *base_cost = 0,
-            _ => {}
+        if let CardCost::Cost { base_cost, .. } = &mut c.borrow_mut().cost {
+            *base_cost = 0
         }
         game.action_queue.push_bot(ShuffleCardIntoDrawAction(c));
     }
