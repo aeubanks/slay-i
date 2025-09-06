@@ -98,9 +98,9 @@ macro_rules! c {
     };
 }
 
-fn noop_behavior(_: &mut Game, _: CardPlayInfo) {}
+fn noop_behavior(_: &mut Game, _: &CardPlayInfo) {}
 
-fn todo(_: &mut Game, _: CardPlayInfo) {}
+fn todo(_: &mut Game, _: &CardPlayInfo) {}
 
 c!(
     // Basic
@@ -257,7 +257,7 @@ c!(
     TestPower => (Special, Power, Special, cost(0), noop_behavior, false),
 );
 
-pub type CardBehavior = fn(&mut Game, CardPlayInfo);
+pub type CardBehavior = fn(&mut Game, &CardPlayInfo);
 pub type CardEndOfTurnBehavior = fn(&mut Game);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

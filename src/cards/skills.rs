@@ -23,7 +23,7 @@ use crate::{
 
 pub fn push_block(
     game: &mut Game,
-    info: CardPlayInfo,
+    info: &CardPlayInfo,
     unupgraded_base_block: i32,
     upgraded_base_block: i32,
 ) {
@@ -35,11 +35,11 @@ pub fn push_block(
         }));
 }
 
-pub fn defend_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn defend_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 5, 8);
 }
 
-pub fn armaments_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn armaments_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 5, 5);
     if info.upgraded {
         game.action_queue.push_bot(UpgradeAllCardsInHandAction());
@@ -48,7 +48,7 @@ pub fn armaments_behavior(game: &mut Game, info: CardPlayInfo) {
     }
 }
 
-pub fn true_grit_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn true_grit_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 7, 9);
     if info.upgraded {
         game.action_queue
@@ -58,40 +58,40 @@ pub fn true_grit_behavior(game: &mut Game, info: CardPlayInfo) {
     }
 }
 
-pub fn havoc_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn havoc_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(PlayTopCardAction {
         force_exhaust: true,
     });
 }
 
-pub fn warcry_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn warcry_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DrawAction(if info.upgraded { 2 } else { 1 }));
     game.action_queue
         .push_bot(ChooseCardInHandToPlaceOnTopOfDrawAction());
 }
 
-pub fn ghostly_armor_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn ghostly_armor_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 10, 13);
 }
 
-pub fn bloodletting_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn bloodletting_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::lose_hp(3, CreatureRef::player()));
     game.action_queue
         .push_bot(GainEnergyAction(if info.upgraded { 3 } else { 2 }));
 }
 
-pub fn sentinel_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn sentinel_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 5, 8);
 }
 
-pub fn dual_wield_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn dual_wield_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(ChooseDualWieldAction(if info.upgraded { 2 } else { 1 }));
 }
 
-pub fn battle_trance_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn battle_trance_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DrawAction(if info.upgraded { 4 } else { 3 }));
     game.action_queue.push_bot(GainStatusAction {
@@ -101,22 +101,22 @@ pub fn battle_trance_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn burning_pact_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn burning_pact_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(ChooseCardInHandToExhaustAction());
     game.action_queue
         .push_bot(DrawAction(if info.upgraded { 3 } else { 2 }));
 }
 
-pub fn infernal_blade_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn infernal_blade_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(InfernalBladeAction());
 }
 
-pub fn impervious_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn impervious_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 30, 40);
 }
 
-pub fn double_tap_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn double_tap_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::DoubleTap,
         amount: if info.upgraded { 2 } else { 1 },
@@ -124,30 +124,30 @@ pub fn double_tap_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn exhume_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn exhume_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(ExhumeAction());
 }
 
-pub fn limit_break_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn limit_break_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(DoubleStrengthAction());
 }
 
-pub fn good_instincts_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn good_instincts_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 6, 9);
 }
 
-pub fn finesse_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn finesse_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 2, 4);
     game.action_queue.push_bot(DrawAction(1));
 }
 
-pub fn enlightenment_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn enlightenment_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(EnlightenmentAction {
         for_combat: info.upgraded,
     });
 }
 
-pub fn forethought_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn forethought_behavior(game: &mut Game, info: &CardPlayInfo) {
     if info.upgraded {
         game.action_queue.push_bot(ChooseForethoughtAnyAction());
     } else {
@@ -155,15 +155,15 @@ pub fn forethought_behavior(game: &mut Game, info: CardPlayInfo) {
     }
 }
 
-pub fn discovery_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn discovery_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(ChooseDiscoveryAction());
 }
 
-pub fn madness_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn madness_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(MadnessAction());
 }
 
-pub fn purity_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn purity_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(ChooseCardsInHandToExhaustAction(if info.upgraded {
             5
@@ -172,7 +172,7 @@ pub fn purity_behavior(game: &mut Game, info: CardPlayInfo) {
         }));
 }
 
-pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn bomb_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Bomb3,
         amount: if info.upgraded { 50 } else { 40 },
@@ -180,18 +180,18 @@ pub fn bomb_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn thinking_ahead_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn thinking_ahead_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(DrawAction(2));
     game.action_queue
         .push_bot(ChooseCardInHandToPlaceOnTopOfDrawAction());
 }
 
-pub fn secret_technique_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn secret_technique_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue
         .push_bot(ChooseCardInDrawToPlaceInHandAction(CardType::Skill));
 }
 
-pub fn secret_weapon_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn secret_weapon_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue
         .push_bot(ChooseCardInDrawToPlaceInHandAction(CardType::Attack));
 }

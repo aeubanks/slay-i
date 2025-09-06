@@ -5,12 +5,12 @@ use crate::{
     game::CreatureRef,
 };
 
-#[derive(Clone, Copy)]
-pub struct CardPlayInfo {
+#[derive(Clone)]
+pub struct CardPlayInfo<'a> {
+    pub card: &'a Card,
     pub target: Option<CreatureRef>,
     pub upgraded: bool,
     pub upgrade_count: i32,
-    pub card_id: u32,
     pub base_increase: i32,
     pub energy: i32,
 }

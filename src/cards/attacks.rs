@@ -21,7 +21,7 @@ use crate::{
 
 fn push_damage(
     game: &mut Game,
-    info: CardPlayInfo,
+    info: &CardPlayInfo,
     unupgraded_base_damage: i32,
     upgraded_base_damage: i32,
 ) {
@@ -39,7 +39,7 @@ fn push_damage(
 
 fn push_aoe_damage(
     game: &mut Game,
-    info: CardPlayInfo,
+    info: &CardPlayInfo,
     unupgraded_base_damage: i32,
     upgraded_base_damage: i32,
 ) {
@@ -51,11 +51,11 @@ fn push_aoe_damage(
         }));
 }
 
-pub fn strike_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn strike_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 6, 9);
 }
 
-pub fn bash_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn bash_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 8, 10);
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Vulnerable,
@@ -64,19 +64,19 @@ pub fn bash_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn pommel_strike_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn pommel_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 9, 10);
     game.action_queue
         .push_bot(DrawAction(if info.upgraded { 2 } else { 1 }));
 }
 
-pub fn twin_strike_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn twin_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
     for _ in 0..2 {
         push_damage(game, info, 5, 7);
     }
 }
 
-pub fn clothesline_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn clothesline_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 12, 14);
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Weak,
@@ -85,11 +85,11 @@ pub fn clothesline_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn cleave_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn cleave_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_aoe_damage(game, info, 8, 11);
 }
 
-pub fn thunderclap_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn thunderclap_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_aoe_damage(game, info, 4, 7);
     game.action_queue.push_bot(GainStatusAllMonstersAction {
         status: Status::Vulnerable,
@@ -97,29 +97,29 @@ pub fn thunderclap_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn body_slam_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn body_slam_behavior(game: &mut Game, info: &CardPlayInfo) {
     let damage = game.player.creature.block;
     push_damage(game, info, damage, damage);
 }
 
-pub fn iron_wave_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn iron_wave_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 5, 7);
     push_damage(game, info, 5, 7);
 }
 
-pub fn wild_strike_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn wild_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 12, 17);
     let card = game.new_card(CardClass::Wound);
     game.action_queue.push_bot(ShuffleCardIntoDrawAction(card));
 }
 
-pub fn headbutt_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn headbutt_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 9, 12);
     game.action_queue
         .push_bot(ChooseCardInDiscardToPlaceOnTopOfDrawAction());
 }
 
-pub fn sword_boomerang_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn sword_boomerang_behavior(game: &mut Game, info: &CardPlayInfo) {
     let count = if info.upgraded { 4 } else { 3 };
     for _ in 0..count {
         game.action_queue
@@ -127,7 +127,7 @@ pub fn sword_boomerang_behavior(game: &mut Game, info: CardPlayInfo) {
     }
 }
 
-pub fn perfected_strike_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn perfected_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
     let count_strikes = |cards: &[CardRef]| {
         cards
             .iter()
@@ -141,7 +141,7 @@ pub fn perfected_strike_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, base, base);
 }
 
-pub fn heavy_blade_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn heavy_blade_behavior(game: &mut Game, info: &CardPlayInfo) {
     let strength = game
         .player
         .creature
@@ -151,13 +151,13 @@ pub fn heavy_blade_behavior(game: &mut Game, info: CardPlayInfo) {
     push_damage(game, info, 14 + strength * 2, 14 + strength * 4);
 }
 
-pub fn reckless_charge_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn reckless_charge_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 7, 10);
     let card = game.new_card(CardClass::Dazed);
     game.action_queue.push_bot(ShuffleCardIntoDrawAction(card));
 }
 
-pub fn searing_blow_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn searing_blow_behavior(game: &mut Game, info: &CardPlayInfo) {
     let n = info.upgrade_count;
     game.action_queue.push_bot(DamageAction::from_player(
         n * (n + 7) / 2 + 12,
@@ -167,23 +167,23 @@ pub fn searing_blow_behavior(game: &mut Game, info: CardPlayInfo) {
     ));
 }
 
-pub fn whirlwind_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn whirlwind_behavior(game: &mut Game, info: &CardPlayInfo) {
     for _ in 0..info.energy {
         push_aoe_damage(game, info, 5, 8);
     }
 }
 
-pub fn rampage_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn rampage_behavior(game: &mut Game, info: &CardPlayInfo) {
     let damage = 8 + info.base_increase;
     push_damage(game, info, damage, damage);
     game.action_queue.push_bot(IncreaseBaseAmountAction {
-        card_id: info.card_id,
+        card_id: info.card.id,
         amount: if info.upgraded { 8 } else { 5 },
         master: false,
     });
 }
 
-pub fn uppercut_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn uppercut_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 13, 13);
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Weak,
@@ -197,24 +197,24 @@ pub fn uppercut_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn carnage_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn carnage_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 20, 28);
 }
 
-pub fn hemokinesis_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn hemokinesis_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::lose_hp(2, CreatureRef::player()));
     push_damage(game, info, 15, 20);
 }
 
-pub fn pummel_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn pummel_behavior(game: &mut Game, info: &CardPlayInfo) {
     let count = if info.upgraded { 5 } else { 4 };
     for _ in 0..count {
         push_damage(game, info, 2, 2);
     }
 }
 
-pub fn reaper_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn reaper_behavior(game: &mut Game, info: &CardPlayInfo) {
     let alive = game
         .monsters
         .iter()
@@ -226,17 +226,17 @@ pub fn reaper_behavior(game: &mut Game, info: CardPlayInfo) {
     game.action_queue.push_bot(VampireAction(alive));
 }
 
-pub fn immolate_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn immolate_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_aoe_damage(game, info, 21, 28);
     let card = game.new_card(CardClass::Burn);
     game.action_queue.push_bot(DiscardCardAction(card));
 }
 
-pub fn bludgeon_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn bludgeon_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 32, 42);
 }
 
-pub fn feed_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn feed_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::from_player_with_on_fatal(
             if info.upgraded { 12 } else { 10 },
@@ -250,25 +250,25 @@ pub fn feed_behavior(game: &mut Game, info: CardPlayInfo) {
         ));
 }
 
-pub fn swift_strike_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn swift_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 7, 10);
 }
 
-pub fn flash_of_steel_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn flash_of_steel_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 3, 6);
     game.action_queue.push_bot(DrawAction(1));
 }
 
-pub fn dramatic_entrance_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn dramatic_entrance_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_aoe_damage(game, info, 8, 12);
 }
 
-pub fn mind_blast_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn mind_blast_behavior(game: &mut Game, info: &CardPlayInfo) {
     let damage = game.draw_pile.len() as i32;
     push_damage(game, info, damage, damage);
 }
 
-pub fn bite_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn bite_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 7, 8);
     game.action_queue.push_bot(HealAction {
         target: CreatureRef::player(),
@@ -276,7 +276,7 @@ pub fn bite_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn ritual_dagger_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn ritual_dagger_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::from_player_with_on_fatal(
             15 + info.base_increase,
@@ -285,14 +285,14 @@ pub fn ritual_dagger_behavior(game: &mut Game, info: CardPlayInfo) {
             info.target.unwrap(),
             OnFatal {
                 ty: OnFatalType::RitualDagger {
-                    card_id: info.card_id,
+                    card_id: info.card.id,
                 },
                 upgraded: info.upgraded,
             },
         ));
 }
 
-pub fn debug_kill_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn debug_kill_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 9999, 9999);
 }
 

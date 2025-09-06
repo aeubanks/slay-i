@@ -42,14 +42,14 @@ impl Action for PlayCardAction {
         };
         assert!(energy_cost <= game.energy);
         let info = CardPlayInfo {
+            card: &c,
             target: self.target,
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
-            card_id: c.id,
             base_increase: c.base_increase,
             energy: self.energy,
         };
-        (c.class.behavior())(game, info);
+        (c.class.behavior())(game, &info);
 
         enum CardDestination {
             Discard,

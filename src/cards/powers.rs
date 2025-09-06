@@ -5,7 +5,7 @@ use crate::{
     status::Status,
 };
 
-pub fn inflame_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn inflame_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Strength,
         target: CreatureRef::player(),
@@ -13,7 +13,7 @@ pub fn inflame_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn feel_no_pain_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn feel_no_pain_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::FeelNoPain,
         target: CreatureRef::player(),
@@ -21,7 +21,7 @@ pub fn feel_no_pain_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn dark_embrace_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn dark_embrace_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::DarkEmbrace,
         target: CreatureRef::player(),
@@ -29,7 +29,7 @@ pub fn dark_embrace_behavior(game: &mut Game, _: CardPlayInfo) {
     });
 }
 
-pub fn evolve_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn evolve_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Evolve,
         target: CreatureRef::player(),
@@ -37,7 +37,7 @@ pub fn evolve_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn firebreathing_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn firebreathing_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::FireBreathing,
         target: CreatureRef::player(),
@@ -45,7 +45,7 @@ pub fn firebreathing_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn rupture_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn rupture_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Rupture,
         target: CreatureRef::player(),
@@ -53,7 +53,7 @@ pub fn rupture_behavior(game: &mut Game, info: CardPlayInfo) {
     });
 }
 
-pub fn barricade_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn barricade_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Barricade,
         target: CreatureRef::player(),
@@ -61,7 +61,7 @@ pub fn barricade_behavior(game: &mut Game, _: CardPlayInfo) {
     });
 }
 
-pub fn brutality_behavior(game: &mut Game, _: CardPlayInfo) {
+pub fn brutality_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::Brutality,
         target: CreatureRef::player(),
@@ -69,7 +69,7 @@ pub fn brutality_behavior(game: &mut Game, _: CardPlayInfo) {
     });
 }
 
-pub fn panache_behavior(game: &mut Game, info: CardPlayInfo) {
+pub fn panache_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainPanacheAction {
         amount: if info.upgraded { 14 } else { 10 },
     });
