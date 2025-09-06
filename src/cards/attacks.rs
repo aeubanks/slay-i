@@ -125,8 +125,10 @@ pub fn headbutt_behavior(game: &mut Game, info: &CardPlayInfo) {
 pub fn sword_boomerang_behavior(game: &mut Game, info: &CardPlayInfo) {
     let count = if info.upgraded { 4 } else { 3 };
     for _ in 0..count {
-        game.action_queue
-            .push_bot(DamageRandomMonsterAction { amount: 3 });
+        game.action_queue.push_bot(DamageRandomMonsterAction {
+            amount: 3,
+            thorns: false,
+        });
     }
 }
 

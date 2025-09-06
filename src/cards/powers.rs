@@ -99,6 +99,15 @@ pub fn brutality_behavior(game: &mut Game, _: &CardPlayInfo) {
     });
 }
 
+pub fn juggernaut_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 7 } else { 5 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Juggernaut,
+        target: CreatureRef::player(),
+        amount,
+    });
+}
+
 pub fn berserk_behavior(game: &mut Game, info: &CardPlayInfo) {
     let amount = if info.upgraded { 2 } else { 1 };
     game.action_queue.push_bot(GainStatusAction {

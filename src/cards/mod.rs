@@ -180,7 +180,7 @@ c!(
     DemonForm => (Rare, Power, Red, cost(3), powers::demon_form_behavior, false),
     Barricade => (Rare, Power, Red, cost(3), powers::barricade_behavior, false),
     Corruption => (Rare, Power, Red, cost(3), todo, false),
-    Juggernaut => (Rare, Power, Red, cost(2), todo, false),
+    Juggernaut => (Rare, Power, Red, cost(2), powers::juggernaut_behavior, false),
     Berserk => (Rare, Power, Red, cost(0), powers::berserk_behavior, false),
     // Colorless uncommon attacks
     SwiftStrike => (Uncommon, Attack, Colorless, cost(0), attacks::swift_strike_behavior, false),

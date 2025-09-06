@@ -1,5 +1,6 @@
 use crate::{
     action::Action,
+    actions::damage_random_monster::DamageRandomMonsterAction,
     creature::Creature,
     game::{CreatureRef, Game},
     status::Status,
@@ -59,6 +60,15 @@ impl Action for BlockAction {
         c.block += amount;
         if c.block > 999 {
             c.block = 999;
+        }
+        if amount > 0
+            && self.target.is_player()
+            && let Some(j) = game.player.creature.get_status(Status::Juggernaut)
+        {
+            game.action_queue.push_bot(DamageRandomMonsterAction {
+                amount: j,
+                thorns: true,
+            });
         }
     }
 }

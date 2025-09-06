@@ -41,6 +41,7 @@ s!(
     RegenPlayer => Buff,
     RegenMonster => Buff,
     Brutality => Buff,
+    Juggernaut => Buff,
     DemonForm => Buff,
     Artifact => Buff,
     Thorns => Buff,
@@ -865,6 +866,33 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.cur_hp, hp - 4);
         assert_eq!(g.hand.len(), 7);
+    }
+
+    #[test]
+    fn test_juggernaut() {
+        {
+            let mut g = GameBuilder::default()
+                .add_player_status(Status::Juggernaut, 2)
+                .add_player_status(Status::Vulnerable, 8)
+                .build_combat();
+            g.monsters[0].creature.cur_hp = 50;
+            g.play_card(CardClass::GoodInstincts, None);
+            assert_eq!(g.monsters[0].creature.cur_hp, 48);
+        }
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Juggernaut, 2)
+            .add_monster(NoopMonster::with_hp(200))
+            .add_monster(NoopMonster::with_hp(200))
+            .build_combat();
+        for _ in 0..50 {
+            g.play_card(CardClass::GoodInstincts, None);
+        }
+        assert_ne!(g.monsters[0].creature.cur_hp, 200);
+        assert_ne!(g.monsters[1].creature.cur_hp, 200);
+        assert_eq!(
+            g.monsters[0].creature.cur_hp + g.monsters[1].creature.cur_hp,
+            300
+        );
     }
 
     #[test]
