@@ -359,12 +359,18 @@ impl Game {
         c
     }
 
-    pub fn clone_card_same_id(&self, c: &CardRef) -> CardRef {
+    pub fn clone_card_ref_same_id(&self, c: &CardRef) -> CardRef {
         Rc::new(RefCell::new(c.borrow().clone()))
     }
 
-    pub fn clone_card_new_id(&mut self, c: &CardRef) -> CardRef {
+    pub fn clone_card_ref_new_id(&mut self, c: &CardRef) -> CardRef {
         let mut c = c.borrow().clone();
+        c.id = self.new_card_id(c.class);
+        Rc::new(RefCell::new(c))
+    }
+
+    pub fn clone_card_new_id(&mut self, c: &Card) -> CardRef {
+        let mut c = c.clone();
         c.id = self.new_card_id(c.class);
         Rc::new(RefCell::new(c))
     }
@@ -462,7 +468,7 @@ impl Game {
             .player
             .master_deck
             .iter()
-            .map(|c| self.clone_card_same_id(c))
+            .map(|c| self.clone_card_ref_same_id(c))
             .collect();
         self.draw_pile.shuffle(&mut self.rng);
         self.draw_pile.sort_by_key(|c| c.borrow().is_innate());

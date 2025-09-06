@@ -120,7 +120,7 @@ c!(
     SwordBoomerang => (Common, Attack, Red, cost(1), attacks::sword_boomerang_behavior, false),
     PerfectedStrike => (Common, Attack, Red, cost(2), attacks::perfected_strike_behavior, false),
     HeavyBlade => (Common, Attack, Red, cost(2), attacks::heavy_blade_behavior, false),
-    Anger => (Common, Attack, Red, cost(0), todo, false),
+    Anger => (Common, Attack, Red, cost(0), attacks::anger_behavior, false),
     Clash => (Common, Attack, Red, cost(0), todo, false),
     // Common skills
     Armaments => (Common, Skill, Red, cost(1), skills::armaments_behavior, false),

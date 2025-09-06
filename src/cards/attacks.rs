@@ -151,6 +151,12 @@ pub fn heavy_blade_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 14 + strength * 2, 14 + strength * 4);
 }
 
+pub fn anger_behavior(game: &mut Game, info: &CardPlayInfo) {
+    push_damage(game, info, 6, 8);
+    let card = game.clone_card_new_id(info.card);
+    game.action_queue.push_bot(DiscardCardAction(card));
+}
+
 pub fn reckless_charge_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 7, 10);
     let card = game.new_card(CardClass::Dazed);
@@ -301,7 +307,7 @@ mod tests {
     use crate::{
         actions::{block::BlockAction, set_hp::SetHPAction},
         assert_matches,
-        cards::CardClass,
+        cards::{CardClass, CardCost},
         game::{CreatureRef, GameBuilder, GameStatus, Move},
         monsters::test::NoopMonster,
         status::Status,
@@ -557,6 +563,46 @@ mod tests {
         g.monsters[0].creature.cur_hp = 100;
         g.play_card_upgraded(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 21 - 75);
+    }
+
+    #[test]
+    fn test_anger() {
+        let mut g = GameBuilder::default().build_combat();
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.discard_pile.len(), 2);
+        assert_eq!(g.discard_pile[0].borrow().class, CardClass::Anger);
+        assert_eq!(g.discard_pile[1].borrow().class, CardClass::Anger);
+
+        let c = g.new_card(CardClass::Anger);
+        c.borrow_mut().cost = CardCost::Cost {
+            base_cost: 2,
+            temporary_cost: Some(1),
+            free_to_play_once: false,
+        };
+        g.hand.push(c);
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.discard_pile.len(), 4);
+        assert_eq!(g.discard_pile[2].borrow().class, CardClass::Anger);
+        assert_matches!(
+            g.discard_pile[2].borrow().cost,
+            CardCost::Cost {
+                base_cost: 2,
+                temporary_cost: None,
+                free_to_play_once: false
+            }
+        );
+        assert_eq!(g.discard_pile[3].borrow().class, CardClass::Anger);
+        assert_matches!(
+            g.discard_pile[3].borrow().cost,
+            CardCost::Cost {
+                base_cost: 2,
+                temporary_cost: None,
+                free_to_play_once: false
+            }
+        );
     }
 
     #[test]

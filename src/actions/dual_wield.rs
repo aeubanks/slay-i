@@ -12,12 +12,12 @@ impl Action for DualWieldAction {
     fn run(&self, game: &mut Game) {
         if self.destroy_original {
             for _ in 0..(self.amount + 1) {
-                let new_c = game.clone_card_new_id(&self.card);
+                let new_c = game.clone_card_ref_new_id(&self.card);
                 game.action_queue.push_top(PlaceCardInHandAction(new_c));
             }
         } else {
             for _ in 0..self.amount {
-                let new_c = game.clone_card_new_id(&self.card);
+                let new_c = game.clone_card_ref_new_id(&self.card);
                 game.action_queue.push_top(PlaceCardInHandAction(new_c));
             }
             game.action_queue
