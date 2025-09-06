@@ -15,7 +15,7 @@ use crate::{
         exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
         gain_energy::GainEnergyAction, gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
-        infernal_blade::InfernalBladeAction, madness::MadnessAction,
+        impatience::ImpatienceAction, infernal_blade::InfernalBladeAction, madness::MadnessAction,
         place_card_in_hand::PlaceCardInHandAction, play_top_card::PlayTopCardAction,
         shuffle_card_into_draw::ShuffleCardIntoDrawAction, spot_weakness::SpotWeaknessAction,
         upgrade_all::UpgradeAllAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
@@ -257,6 +257,11 @@ pub fn enlightenment_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(EnlightenmentAction {
         for_combat: info.upgraded,
     });
+}
+
+pub fn impatience_behavior(game: &mut Game, info: &CardPlayInfo) {
+    game.action_queue
+        .push_bot(ImpatienceAction(if info.upgraded { 3 } else { 2 }));
 }
 
 pub fn jack_of_all_trades_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -1110,6 +1115,31 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.energy, 2);
+    }
+
+    #[test]
+    fn test_impatience() {
+        let mut g = GameBuilder::default().build_combat();
+        for _ in 0..50 {
+            g.add_card_to_draw_pile(CardClass::Strike);
+        }
+
+        g.play_card(CardClass::Impatience, None);
+        assert_eq!(g.hand.len(), 2);
+
+        g.play_card(CardClass::Impatience, None);
+        assert_eq!(g.hand.len(), 2);
+
+        g.hand.clear();
+        g.add_card_to_hand(CardClass::Slimed);
+        g.add_card_to_hand(CardClass::AscendersBane);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_hand(CardClass::DemonForm);
+        g.play_card_upgraded(CardClass::Impatience, None);
+        assert_eq!(g.hand.len(), 7);
+
+        g.play_card_upgraded(CardClass::Impatience, None);
+        assert_eq!(g.hand.len(), 7);
     }
 
     #[test]

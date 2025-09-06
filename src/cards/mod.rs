@@ -191,7 +191,7 @@ c!(
     GoodInstincts => (Uncommon, Skill, Colorless, cost(0), skills::good_instincts_behavior, false),
     Finesse => (Uncommon, Skill, Colorless, cost(0), skills::finesse_behavior, false),
     Enlightenment => (Uncommon, Skill, Colorless, cost(0), skills::enlightenment_behavior, false),
-    Impatience => (Uncommon, Skill, Colorless, cost(0), todo, false),
+    Impatience => (Uncommon, Skill, Colorless, cost(0), skills::impatience_behavior, false),
     JackOfAllTrades => (Uncommon, Skill, Colorless, cost(0), skills::jack_of_all_trades_behavior, true),
     Forethought => (Uncommon, Skill, Colorless, cost(0), skills::forethought_behavior, false),
     BandageUp => (Uncommon, Skill, Colorless, cost(0), skills::bandage_up_behavior, true),
