@@ -214,7 +214,7 @@ c!(
     Panacea => (Uncommon, Skill, Colorless, cost(0), todo, true),
     Madness => (Uncommon, Skill, Colorless, cost(1), skills::madness_behavior, true),
     // Colorless rare attacks
-    HandOfGreed => (Rare, Attack, Colorless, cost(2), todo, false),
+    HandOfGreed => (Rare, Attack, Colorless, cost(2), attacks::hand_of_greed_behavior, false),
     // Colorless rare skills
     Bomb => (Uncommon, Skill, Colorless, cost(2), skills::bomb_behavior, false),
     Apotheosis => (Rare, Skill, Colorless, cost(2), todo, true),

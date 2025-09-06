@@ -1,7 +1,8 @@
 use crate::{
     action::Action,
     actions::{
-        increase_base_amount::IncreaseBaseAmountAction, increase_max_hp::IncreaseMaxHPAction,
+        gain_gold::GainGoldAction, increase_base_amount::IncreaseBaseAmountAction,
+        increase_max_hp::IncreaseMaxHPAction,
     },
     creature::Creature,
     game::{CreatureRef, Game},
@@ -13,6 +14,7 @@ use crate::{
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum OnFatalType {
     Feed,
+    HandOfGreed,
     RitualDagger { card_id: u32 },
 }
 
@@ -27,6 +29,9 @@ impl OnFatal {
         match self.ty {
             OnFatalType::Feed => {
                 queue.push_top(IncreaseMaxHPAction(if self.upgraded { 4 } else { 3 }))
+            }
+            OnFatalType::HandOfGreed => {
+                queue.push_top(GainGoldAction(if self.upgraded { 25 } else { 20 }))
             }
             OnFatalType::RitualDagger { card_id } => queue.push_top(IncreaseBaseAmountAction {
                 card_id,
@@ -162,6 +167,9 @@ impl DamageAction {
 
 impl Action for DamageAction {
     fn run(&self, game: &mut Game) {
+        if !game.get_creature(self.target).is_alive() {
+            return;
+        }
         game.damage(self.target, self.amount, self.ty);
         if !game.get_creature(self.target).is_alive()
             && let DamageType::Attack {

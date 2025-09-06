@@ -32,6 +32,7 @@ pub mod exhume;
 pub mod fiend_fire;
 pub mod forethought;
 pub mod gain_energy;
+pub mod gain_gold;
 pub mod gain_panache;
 pub mod gain_status;
 pub mod gain_status_all_monsters;

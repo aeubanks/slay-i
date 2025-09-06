@@ -401,9 +401,7 @@ impl Game {
     }
 
     pub fn damage(&mut self, target: CreatureRef, mut amount: i32, ty: DamageType) {
-        if !self.get_creature(target).is_alive() {
-            return;
-        }
+        assert!(self.get_creature(target).is_alive());
         if let DamageType::Attack {
             source,
             on_fatal: _,

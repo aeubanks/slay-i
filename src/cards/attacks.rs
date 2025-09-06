@@ -324,6 +324,21 @@ pub fn ritual_dagger_behavior(game: &mut Game, info: &CardPlayInfo) {
         ));
 }
 
+pub fn hand_of_greed_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let base_amount = if info.upgraded { 25 } else { 20 };
+    game.action_queue
+        .push_bot(DamageAction::from_player_with_on_fatal(
+            base_amount,
+            &game.player,
+            game.get_creature(info.target.unwrap()),
+            info.target.unwrap(),
+            OnFatal {
+                ty: OnFatalType::HandOfGreed,
+                upgraded: info.upgraded,
+            },
+        ));
+}
+
 pub fn debug_kill_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 9999, 9999);
 }
@@ -1083,6 +1098,32 @@ mod tests {
             g.player.master_deck[0].borrow().base_increase == 8
                 || g.player.master_deck[1].borrow().base_increase == 8
         );
+    }
+
+    #[test]
+    fn test_hand_of_greed() {
+        let mut g = GameBuilder::default()
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
+            .build_combat();
+        g.energy = 99;
+
+        g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.gold, 0);
+
+        g.monsters[0].creature.cur_hp = 20;
+        g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.gold, 20);
+
+        g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.gold, 20);
+
+        g.play_card_upgraded(CardClass::HandOfGreed, Some(CreatureRef::monster(1)));
+        assert_eq!(g.player.gold, 20);
+
+        g.monsters[1].creature.cur_hp = 24;
+        g.play_card_upgraded(CardClass::HandOfGreed, Some(CreatureRef::monster(1)));
+        assert_eq!(g.player.gold, 45);
     }
 
     #[test]

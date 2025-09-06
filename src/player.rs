@@ -12,6 +12,7 @@ pub struct Player {
     pub master_deck: CardPile,
     pub relics: Vec<Relic>,
     pub potions: Vec<Option<Potion>>,
+    pub gold: i32,
 }
 
 macro_rules! trigger {
@@ -41,6 +42,7 @@ impl Player {
             master_deck: vec![],
             relics: vec![],
             potions: vec![None, None],
+            gold: 0,
         }
     }
     #[cfg(test)]
