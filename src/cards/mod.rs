@@ -192,7 +192,7 @@ c!(
     Finesse => (Uncommon, Skill, Colorless, cost(0), skills::finesse_behavior, false),
     Enlightenment => (Uncommon, Skill, Colorless, cost(0), skills::enlightenment_behavior, false),
     Impatience => (Uncommon, Skill, Colorless, cost(0), todo, false),
-    JackOfAllTrades => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    JackOfAllTrades => (Uncommon, Skill, Colorless, cost(0), skills::jack_of_all_trades_behavior, true),
     Forethought => (Uncommon, Skill, Colorless, cost(0), skills::forethought_behavior, false),
     BandageUp => (Uncommon, Skill, Colorless, cost(0), skills::bandage_up_behavior, true),
     Blind => (Uncommon, Skill, Colorless, cost(0), skills::blind_behavior, false),

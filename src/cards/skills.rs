@@ -22,7 +22,8 @@ use crate::{
     },
     card::CardPlayInfo,
     cards::{
-        CardClass, CardCost, CardType, random_red_attack_in_combat, random_red_skill_in_combat,
+        CardClass, CardCost, CardType, random_colorless, random_red_attack_in_combat,
+        random_red_skill_in_combat,
     },
     game::{CreatureRef, Game},
     status::Status,
@@ -256,6 +257,15 @@ pub fn enlightenment_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(EnlightenmentAction {
         for_combat: info.upgraded,
     });
+}
+
+pub fn jack_of_all_trades_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let count = if info.upgraded { 2 } else { 1 };
+    for _ in 0..count {
+        let class = random_colorless(&mut game.rng);
+        let c = game.new_card(class);
+        game.action_queue.push_bot(PlaceCardInHandAction(c));
+    }
 }
 
 pub fn forethought_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -1100,6 +1110,19 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.energy, 2);
+    }
+
+    #[test]
+    fn test_jack_of_all_trades() {
+        let mut g = GameBuilder::default().build_combat();
+        g.play_card(CardClass::JackOfAllTrades, None);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class.color(), CardColor::Colorless);
+        g.play_card_upgraded(CardClass::JackOfAllTrades, None);
+        assert_eq!(g.hand.len(), 3);
+        assert_eq!(g.hand[0].borrow().class.color(), CardColor::Colorless);
+        assert_eq!(g.hand[1].borrow().class.color(), CardColor::Colorless);
+        assert_eq!(g.hand[2].borrow().class.color(), CardColor::Colorless);
     }
 
     #[test]
