@@ -17,7 +17,8 @@ use crate::{
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         infernal_blade::InfernalBladeAction, madness::MadnessAction,
         place_card_in_hand::PlaceCardInHandAction, play_top_card::PlayTopCardAction,
-        spot_weakness::SpotWeaknessAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        spot_weakness::SpotWeaknessAction, upgrade_all::UpgradeAllAction,
+        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
     cards::{CardClass, CardType},
@@ -352,6 +353,10 @@ pub fn bomb_behavior(game: &mut Game, info: &CardPlayInfo) {
         amount: if info.upgraded { 50 } else { 40 },
         target: CreatureRef::player(),
     });
+}
+
+pub fn apotheosis_behavior(game: &mut Game, _: &CardPlayInfo) {
+    game.action_queue.push_bot(UpgradeAllAction());
 }
 
 pub fn thinking_ahead_behavior(game: &mut Game, _: &CardPlayInfo) {
@@ -1117,6 +1122,28 @@ mod tests {
         assert_eq!(g.player.creature.statuses.get(&Status::Bomb1), Some(&40));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 90);
         assert_eq!(g.player.creature.cur_hp, player_hp - 2);
+    }
+
+    #[test]
+    fn test_apotheosis() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand_upgraded(CardClass::Strike);
+        g.add_card_to_hand_upgraded(CardClass::SearingBlow);
+        g.add_card_to_exhaust_pile(CardClass::Strike);
+        g.add_card_to_discard_pile(CardClass::Strike);
+        g.add_card_to_discard_pile(CardClass::AscendersBane);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Wound);
+        g.play_card(CardClass::Apotheosis, None);
+        assert_eq!(g.hand[0].borrow().upgrade_count, 1);
+        assert_eq!(g.hand[1].borrow().upgrade_count, 1);
+        assert_eq!(g.hand[2].borrow().upgrade_count, 2);
+        assert_eq!(g.discard_pile[0].borrow().upgrade_count, 1);
+        assert_eq!(g.discard_pile[1].borrow().upgrade_count, 0);
+        assert_eq!(g.draw_pile[0].borrow().upgrade_count, 1);
+        assert_eq!(g.draw_pile[1].borrow().upgrade_count, 0);
+        assert_eq!(g.exhaust_pile[0].borrow().upgrade_count, 1);
     }
 
     #[test]

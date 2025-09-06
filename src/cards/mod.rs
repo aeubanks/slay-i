@@ -208,7 +208,7 @@ c!(
     HandOfGreed => (Rare, Attack, Colorless, cost(2), attacks::hand_of_greed_behavior, false),
     // Colorless rare skills
     Bomb => (Uncommon, Skill, Colorless, cost(2), skills::bomb_behavior, false),
-    Apotheosis => (Rare, Skill, Colorless, cost(2), todo, true),
+    Apotheosis => (Rare, Skill, Colorless, cost(2), skills::apotheosis_behavior, true),
     ThinkingAhead => (Rare, Skill, Colorless, cost(0), skills::thinking_ahead_behavior, true),
     SecretTechnique => (Rare, Skill, Colorless, cost(0), skills::secret_technique_behavior, true),
     SecretWeapon => (Rare, Skill, Colorless, cost(0), skills::secret_weapon_behavior, true),
