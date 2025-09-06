@@ -148,9 +148,8 @@ pub fn heavy_blade_behavior(game: &mut Game, info: &CardPlayInfo) {
     let strength = game
         .player
         .creature
-        .statuses
-        .get(&Status::Strength)
-        .unwrap_or(&0);
+        .get_status(Status::Strength)
+        .unwrap_or(0);
     push_damage(game, info, 14 + strength * 2, 14 + strength * 4);
 }
 
@@ -368,7 +367,6 @@ mod tests {
         assert_eq!(g.exhaust_pile.len(), 0);
         assert_eq!(g.draw_pile.len(), 0);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6);
-        assert_eq!(g.monsters[0].creature.statuses.len(), 0);
     }
 
     #[test]
@@ -385,10 +383,9 @@ mod tests {
         let hp = g.monsters[0].creature.cur_hp;
         g.play_card(CardClass::Bash, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8);
-        assert_eq!(g.monsters[0].creature.statuses.len(), 1);
         assert_eq!(
-            g.monsters[0].creature.statuses.get(&Status::Vulnerable),
-            Some(&2)
+            g.monsters[0].creature.get_status(Status::Vulnerable),
+            Some(2)
         );
     }
 
@@ -586,21 +583,18 @@ mod tests {
         g.play_card(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14);
 
-        g.player.creature.statuses.insert(Status::Strength, 2);
+        g.player.creature.set_status(Status::Strength, 2);
         g.monsters[0].creature.cur_hp = 100;
         g.play_card(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14 - 2 * 3);
 
-        g.player.creature.statuses.insert(Status::Strength, 2);
+        g.player.creature.set_status(Status::Strength, 2);
         g.monsters[0].creature.cur_hp = 100;
         g.play_card_upgraded(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14 - 2 * 5);
 
-        g.player.creature.statuses.insert(Status::Strength, 10);
-        g.monsters[0]
-            .creature
-            .statuses
-            .insert(Status::Vulnerable, 1);
+        g.player.creature.set_status(Status::Strength, 10);
+        g.monsters[0].creature.set_status(Status::Vulnerable, 1);
         g.monsters[0].creature.cur_hp = 100;
         g.play_card_upgraded(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 21 - 75);
@@ -826,10 +820,7 @@ mod tests {
         assert_eq!(g.energy, 2);
         assert_eq!(g.hand.len(), 0);
 
-        g.monsters[0]
-            .creature
-            .statuses
-            .insert(Status::Vulnerable, 1);
+        g.monsters[0].creature.set_status(Status::Vulnerable, 1);
         g.play_card(CardClass::Dropkick, Some(CreatureRef::monster(0)));
         assert_eq!(g.energy, 2);
         assert_eq!(g.hand.len(), 1);
@@ -842,10 +833,7 @@ mod tests {
                 .add_cards(CardClass::Dropkick, 2)
                 .build_combat();
 
-            g.monsters[0]
-                .creature
-                .statuses
-                .insert(Status::Vulnerable, 1);
+            g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
             while g.monsters[0].creature.is_alive() {
                 g.make_move(Move::PlayCard {
@@ -860,10 +848,7 @@ mod tests {
                 .add_card(CardClass::Dropkick)
                 .build_combat();
 
-            g.monsters[0]
-                .creature
-                .statuses
-                .insert(Status::Vulnerable, 1);
+            g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
             while g.monsters[0].creature.is_alive() {
                 let double_tap_card_index = g

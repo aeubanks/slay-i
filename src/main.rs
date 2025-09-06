@@ -30,9 +30,9 @@ use crate::{
 
 fn creature_str(c: &Creature) -> String {
     let mut s = format!("{}: {}/{}, {} block", c.name, c.cur_hp, c.max_hp, c.block);
-    if !c.statuses.is_empty() {
+    if c.has_any_status() {
         let mut first = true;
-        for (status, amount) in &c.statuses {
+        for (status, amount) in c.all_statuses() {
             if first {
                 first = false;
                 s += ", statuses: ";

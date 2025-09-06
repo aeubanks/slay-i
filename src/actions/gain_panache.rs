@@ -18,7 +18,7 @@ impl Action for GainPanacheAction {
             Status::Panache1,
         ]
         .into_iter()
-        .find(|p| game.player.creature.statuses.contains_key(p))
+        .find(|p| game.player.creature.has_status(*p))
         .unwrap_or(Status::Panache5);
         game.action_queue.push_top(GainStatusAction {
             status: p,

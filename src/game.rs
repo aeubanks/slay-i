@@ -249,7 +249,9 @@ impl GameBuilder {
         g.state = GameState::RollCombat;
         g.run();
         for m in &mut g.monsters {
-            m.creature.statuses = monster_statuses.clone();
+            for (&k, &v) in &monster_statuses {
+                m.creature.set_status(k, v);
+            }
         }
         g
     }
@@ -258,7 +260,9 @@ impl GameBuilder {
             self = self.add_monster(NoopMonster::new());
         }
         let mut g = Game::new(self.rng, &self.master_deck, self.monsters);
-        g.player.creature.statuses = self.player_statuses;
+        for (&k, &v) in &self.player_statuses {
+            g.player.creature.set_status(k, v);
+        }
         for r in self.relics {
             g.player.add_relic(r);
         }
@@ -409,17 +413,15 @@ impl Game {
         {
             if let Some(a) = self
                 .get_creature(target)
-                .statuses
-                .get(&Status::Thorns)
-                .map(|v| DamageAction::thorns_no_rupture(*v, source))
+                .get_status(Status::Thorns)
+                .map(|v| DamageAction::thorns_no_rupture(v, source))
             {
                 self.action_queue.push_top(a);
             }
             if let Some(a) = self
                 .get_creature(target)
-                .statuses
-                .get(&Status::FlameBarrier)
-                .map(|v| DamageAction::thorns_no_rupture(*v, source))
+                .get_status(Status::FlameBarrier)
+                .map(|v| DamageAction::thorns_no_rupture(v, source))
             {
                 self.action_queue.push_top(a);
             }
@@ -450,7 +452,7 @@ impl Game {
                     | DamageType::Thorns {
                         procs_rupture: true
                     }
-            ) && let Some(&v) = c.statuses.get(&Status::Rupture)
+            ) && let Some(v) = c.get_status(Status::Rupture)
             {
                 self.action_queue.push_bot(GainStatusAction {
                     status: Status::Strength,
@@ -951,13 +953,7 @@ impl Game {
     }
 
     pub fn can_play_card(&self, c: &Card) -> bool {
-        if self
-            .player
-            .creature
-            .statuses
-            .contains_key(&Status::Entangled)
-            && c.class.ty() == CardType::Attack
-        {
+        if self.player.creature.has_status(Status::Entangled) && c.class.ty() == CardType::Attack {
             return false;
         }
         let can_play_class = match c.class {

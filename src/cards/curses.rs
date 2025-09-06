@@ -105,7 +105,7 @@ mod tests {
             .add_card(CardClass::Doubt)
             .build_combat();
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::Weak), Some(&1));
+        assert_eq!(g.player.creature.get_status(Status::Weak), Some(1));
     }
 
     #[test]
@@ -116,7 +116,7 @@ mod tests {
             .add_player_status(Status::Weak, 1)
             .build_combat();
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::Weak), Some(&1));
+        assert_eq!(g.player.creature.get_status(Status::Weak), Some(1));
     }
 
     #[test]
@@ -126,7 +126,7 @@ mod tests {
             .add_card(CardClass::Shame)
             .build_combat();
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::Frail), Some(&1));
+        assert_eq!(g.player.creature.get_status(Status::Frail), Some(1));
     }
 
     #[test]

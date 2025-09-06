@@ -19,8 +19,8 @@ pub struct Creature {
     pub max_hp: i32,
     pub cur_hp: i32,
     pub block: i32,
-    pub statuses: HashMap<Status, i32>,
     pub last_damage_taken: i32,
+    statuses: HashMap<Status, i32>,
 }
 
 impl Creature {
@@ -50,8 +50,32 @@ impl Creature {
         self.max_hp += amount;
     }
 
+    pub fn has_any_status(&self) -> bool {
+        !self.statuses.is_empty()
+    }
+
+    pub fn has_status(&self, status: Status) -> bool {
+        self.statuses.contains_key(&status)
+    }
+
+    pub fn get_status(&self, status: Status) -> Option<i32> {
+        self.statuses.get(&status).copied()
+    }
+
+    pub fn remove_status(&mut self, status: Status) {
+        self.statuses.remove(&status);
+    }
+
+    pub fn set_status(&mut self, status: Status, amount: i32) {
+        self.statuses.insert(status, amount);
+    }
+
+    pub fn all_statuses(&self) -> std::collections::hash_map::Iter<'_, Status, i32> {
+        self.statuses.iter()
+    }
+
     pub fn start_of_turn_lose_block(&mut self) {
-        if self.statuses.contains_key(&Status::Barricade) {
+        if self.has_status(Status::Barricade) {
             return;
         }
         self.block = 0;
@@ -70,9 +94,9 @@ impl Creature {
             (Status::Panache2, Status::Panache1),
             (Status::Panache1, Status::Panache5),
         ] {
-            if let Some(&v) = self.statuses.get(&p) {
-                self.statuses.insert(p_next, v);
-                self.statuses.remove_entry(&p);
+            if let Some(v) = self.get_status(p) {
+                self.set_status(p_next, v);
+                self.remove_status(p);
                 if p == Status::Panache1 {
                     queue.push_bot(DamageAllMonstersAction::thorns(v));
                 }
@@ -80,7 +104,7 @@ impl Creature {
             }
         }
         if !play.is_duplicated {
-            if self.statuses.contains_key(&Status::Duplication) {
+            if self.has_status(Status::Duplication) {
                 queue.push_top(ReduceStatusAction {
                     status: Status::Duplication,
                     amount: 1,
@@ -95,7 +119,7 @@ impl Creature {
                     free: true,
                 });
             }
-            if self.statuses.contains_key(&Status::DoubleTap)
+            if self.has_status(Status::DoubleTap)
                 && play.card.borrow().class.ty() == CardType::Attack
             {
                 queue.push_top(ReduceStatusAction {
@@ -112,35 +136,34 @@ impl Creature {
                     free: true,
                 });
             }
-            if self.statuses.contains_key(&Status::PenNib)
-                && play.card.borrow().class.ty() == CardType::Attack
+            if self.has_status(Status::PenNib) && play.card.borrow().class.ty() == CardType::Attack
             {
                 queue.push_top(RemoveStatusAction {
                     status: Status::PenNib,
                     target: CreatureRef::player(),
                 });
             }
-            if let Some(v) = self.statuses.get(&Status::Rage)
+            if let Some(v) = self.get_status(Status::Rage)
                 && play.card.borrow().class.ty() == CardType::Attack
             {
-                queue.push_bot(BlockAction::player_flat_amount(*v));
+                queue.push_bot(BlockAction::player_flat_amount(v));
             }
         }
     }
 
     pub fn trigger_statuses_turn_begin(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
-        if let Some(v) = self.statuses.get(&Status::Berserk) {
-            queue.push_bot(GainEnergyAction(*v));
+        if let Some(v) = self.get_status(Status::Berserk) {
+            queue.push_bot(GainEnergyAction(v));
         }
-        if let Some(v) = self.statuses.get(&Status::NextTurnBlock) {
-            queue.push_bot(BlockAction::player_flat_amount(*v));
+        if let Some(v) = self.get_status(Status::NextTurnBlock) {
+            queue.push_bot(BlockAction::player_flat_amount(v));
             queue.push_bot(RemoveStatusAction {
                 status: Status::NextTurnBlock,
                 target: this,
             });
         }
         for status in [Status::NextTurnBlock, Status::FlameBarrier] {
-            if self.statuses.contains_key(&status) {
+            if self.has_status(status) {
                 queue.push_bot(RemoveStatusAction {
                     status,
                     target: this,
@@ -154,24 +177,24 @@ impl Creature {
         this: CreatureRef,
         queue: &mut ActionQueue,
     ) {
-        if let Some(v) = self.statuses.get(&Status::DemonForm) {
+        if let Some(v) = self.get_status(Status::DemonForm) {
             queue.push_bot(GainStatusAction {
                 status: Status::Strength,
-                amount: *v,
+                amount: v,
                 target: this,
             });
         }
-        if let Some(v) = self.statuses.get(&Status::Brutality) {
-            queue.push_bot(DrawAction(*v));
-            queue.push_bot(DamageAction::lose_hp(*v, this));
+        if let Some(v) = self.get_status(Status::Brutality) {
+            queue.push_bot(DrawAction(v));
+            queue.push_bot(DamageAction::lose_hp(v, this));
         }
     }
 
     pub fn trigger_statuses_turn_end(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
-        if let Some(v) = self.statuses.get(&Status::LoseStrength) {
+        if let Some(v) = self.get_status(Status::LoseStrength) {
             queue.push_bot(GainStatusAction {
                 status: Status::Strength,
-                amount: -*v,
+                amount: -v,
                 target: this,
             });
             queue.push_bot(RemoveStatusAction {
@@ -179,32 +202,32 @@ impl Creature {
                 target: this,
             });
         }
-        if let Some(v) = self.statuses.get(&Status::Metallicize) {
-            queue.push_bot(BlockAction::monster(this, *v));
+        if let Some(v) = self.get_status(Status::Metallicize) {
+            queue.push_bot(BlockAction::monster(this, v));
         }
-        if let Some(v) = self.statuses.get(&Status::CombustHPLoss) {
-            queue.push_bot(DamageAction::lose_hp(*v, this));
+        if let Some(v) = self.get_status(Status::CombustHPLoss) {
+            queue.push_bot(DamageAction::lose_hp(v, this));
         }
-        if let Some(v) = self.statuses.get(&Status::CombustDamage) {
-            queue.push_bot(DamageAllMonstersAction::thorns(*v));
+        if let Some(v) = self.get_status(Status::CombustDamage) {
+            queue.push_bot(DamageAllMonstersAction::thorns(v));
         }
-        if let Some(b) = self.statuses.get(&Status::Bomb1) {
-            queue.push_bot(DamageAllMonstersAction::thorns(*b));
-            self.statuses.remove(&Status::Bomb1);
+        if let Some(b) = self.get_status(Status::Bomb1) {
+            queue.push_bot(DamageAllMonstersAction::thorns(b));
+            self.remove_status(Status::Bomb1);
         }
-        if let Some(b) = self.statuses.get(&Status::Bomb2) {
-            self.statuses.insert(Status::Bomb1, *b);
-            self.statuses.remove(&Status::Bomb2);
+        if let Some(b) = self.get_status(Status::Bomb2) {
+            self.set_status(Status::Bomb1, b);
+            self.remove_status(Status::Bomb2);
         }
-        if let Some(b) = self.statuses.get(&Status::Bomb3) {
-            self.statuses.insert(Status::Bomb2, *b);
-            self.statuses.remove(&Status::Bomb3);
+        if let Some(b) = self.get_status(Status::Bomb3) {
+            self.set_status(Status::Bomb2, b);
+            self.remove_status(Status::Bomb3);
         }
-        if let Some(v) = self.statuses.get(&Status::RegenPlayer) {
+        if let Some(v) = self.get_status(Status::RegenPlayer) {
             // yes, this is push_top
             queue.push_top(HealAction {
                 target: this,
-                amount: *v,
+                amount: v,
             });
             queue.push_top(ReduceStatusAction {
                 status: Status::RegenPlayer,
@@ -212,10 +235,10 @@ impl Creature {
                 target: this,
             });
         }
-        if let Some(v) = self.statuses.get(&Status::RegenMonster) {
+        if let Some(v) = self.get_status(Status::RegenMonster) {
             queue.push_bot(HealAction {
                 target: this,
-                amount: *v,
+                amount: v,
             });
         }
         for p in [
@@ -224,13 +247,13 @@ impl Creature {
             Status::Panache2,
             Status::Panache1,
         ] {
-            if let Some(v) = self.statuses.get(&p) {
-                self.statuses.insert(Status::Panache5, *v);
-                self.statuses.remove_entry(&p);
+            if let Some(v) = self.get_status(p) {
+                self.set_status(Status::Panache5, v);
+                self.remove_status(p);
                 break;
             }
         }
-        if self.statuses.contains_key(&Status::Rage) {
+        if self.has_status(Status::Rage) {
             queue.push_bot(RemoveStatusAction {
                 status: Status::Rage,
                 target: this,

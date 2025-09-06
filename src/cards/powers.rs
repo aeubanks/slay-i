@@ -132,7 +132,7 @@ mod tests {
     fn test_inflame() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::Inflame, None);
-        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
     }
 
     #[test]

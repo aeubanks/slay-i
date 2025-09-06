@@ -9,11 +9,7 @@ pub struct DropkickAction(pub CreatureRef);
 
 impl Action for DropkickAction {
     fn run(&self, game: &mut Game) {
-        if game
-            .get_creature(self.0)
-            .statuses
-            .contains_key(&Status::Vulnerable)
-        {
+        if game.get_creature(self.0).has_status(Status::Vulnerable) {
             game.action_queue.push_top(DrawAction(1));
             game.action_queue.push_top(GainEnergyAction(1));
         }

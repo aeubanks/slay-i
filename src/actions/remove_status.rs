@@ -12,8 +12,7 @@ pub struct RemoveStatusAction {
 impl Action for RemoveStatusAction {
     fn run(&self, game: &mut Game) {
         game.get_creature_mut(self.target)
-            .statuses
-            .remove(&self.status);
+            .remove_status(self.status);
     }
 }
 

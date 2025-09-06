@@ -11,12 +11,12 @@ pub struct ExhaustCardAction(pub CardRef);
 
 impl Action for ExhaustCardAction {
     fn run(&self, game: &mut Game) {
-        if let Some(a) = game.player.creature.statuses.get(&Status::FeelNoPain) {
+        if let Some(a) = game.player.creature.get_status(Status::FeelNoPain) {
             game.action_queue
-                .push_bot(BlockAction::player_flat_amount(*a));
+                .push_bot(BlockAction::player_flat_amount(a));
         }
-        if let Some(a) = game.player.creature.statuses.get(&Status::DarkEmbrace) {
-            game.action_queue.push_bot(DrawAction(*a));
+        if let Some(a) = game.player.creature.get_status(Status::DarkEmbrace) {
+            game.action_queue.push_bot(DrawAction(a));
         }
 
         {

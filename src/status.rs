@@ -136,7 +136,7 @@ mod tests {
             .add_monster_status(Vulnerable, 2)
             .build_combat();
 
-        assert_eq!(g.monsters[0].creature.statuses.get(&Vulnerable), Some(&2));
+        assert_eq!(g.monsters[0].creature.get_status(Vulnerable), Some(2));
 
         let hp = g.monsters[0].creature.cur_hp;
 
@@ -151,11 +151,11 @@ mod tests {
 
         g.make_move(Move::EndTurn);
 
-        assert_eq!(g.monsters[0].creature.statuses.get(&Vulnerable), Some(&1));
+        assert_eq!(g.monsters[0].creature.get_status(Vulnerable), Some(1));
 
         g.make_move(Move::EndTurn);
 
-        assert_eq!(g.monsters[0].creature.statuses.get(&Vulnerable), None);
+        assert_eq!(g.monsters[0].creature.get_status(Vulnerable), None);
     }
 
     #[test]
@@ -169,15 +169,15 @@ mod tests {
             .add_card(CardClass::DebugKill)
             .build_combat();
 
-        assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
+        assert_eq!(g.player.creature.get_status(Vulnerable), None);
 
         g.make_move(Move::EndTurn);
 
-        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&2));
+        assert_eq!(g.player.creature.get_status(Vulnerable), Some(2));
 
         g.make_move(Move::EndTurn);
 
-        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&3));
+        assert_eq!(g.player.creature.get_status(Vulnerable), Some(3));
 
         g.make_move(Move::PlayCard {
             card_index: 0,
@@ -185,15 +185,15 @@ mod tests {
         });
         g.make_move(Move::EndTurn);
 
-        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&2));
+        assert_eq!(g.player.creature.get_status(Vulnerable), Some(2));
 
         g.make_move(Move::EndTurn);
 
-        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&1));
+        assert_eq!(g.player.creature.get_status(Vulnerable), Some(1));
 
         g.make_move(Move::EndTurn);
 
-        assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
+        assert_eq!(g.player.creature.get_status(Vulnerable), None);
     }
 
     #[test]
@@ -209,11 +209,11 @@ mod tests {
             })
             .build_combat();
 
-        assert_eq!(g.player.creature.statuses.get(&Vulnerable), None);
+        assert_eq!(g.player.creature.get_status(Vulnerable), None);
 
         g.make_move(Move::EndTurn);
 
-        assert_eq!(g.player.creature.statuses.get(&Vulnerable), Some(&4));
+        assert_eq!(g.player.creature.get_status(Vulnerable), Some(4));
     }
 
     #[test]
@@ -486,31 +486,31 @@ mod tests {
             .build_combat();
 
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.statuses.get(&Strength), None);
+        assert_eq!(g.player.creature.get_status(Strength), None);
 
         g.play_card(CardClass::Bloodletting, None);
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&1));
+        assert_eq!(g.player.creature.get_status(Strength), Some(1));
 
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&1));
+        assert_eq!(g.player.creature.get_status(Strength), Some(1));
 
         g.hand.clear();
         g.add_card_to_hand(CardClass::Burn);
         g.run_action(BlockAction::player_flat_amount(2));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&1));
+        assert_eq!(g.player.creature.get_status(Strength), Some(1));
 
         g.hand.clear();
         g.add_card_to_hand(CardClass::Burn);
         g.run_action(BlockAction::player_flat_amount(1));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&2));
+        assert_eq!(g.player.creature.get_status(Strength), Some(2));
 
         g.hand.clear();
         g.add_card_to_hand(CardClass::Regret);
         g.run_action(BlockAction::player_flat_amount(2));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&3));
+        assert_eq!(g.player.creature.get_status(Strength), Some(3));
     }
 
     #[test]
@@ -522,26 +522,26 @@ mod tests {
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+        assert_eq!(g.player.creature.get_status(Confusion), Some(1));
         g.run_action(GainStatusAction {
             status: Confusion,
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+        assert_eq!(g.player.creature.get_status(Confusion), Some(1));
 
         g.run_action(GainStatusAction {
             status: NoDraw,
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&NoDraw), Some(&1));
+        assert_eq!(g.player.creature.get_status(NoDraw), Some(1));
         g.run_action(GainStatusAction {
             status: NoDraw,
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&NoDraw), Some(&1));
+        assert_eq!(g.player.creature.get_status(NoDraw), Some(1));
     }
 
     #[test]
@@ -553,26 +553,26 @@ mod tests {
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+        assert_eq!(g.player.creature.get_status(Confusion), Some(1));
         g.run_action(ReduceStatusAction {
             status: Confusion,
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Confusion), None);
+        assert_eq!(g.player.creature.get_status(Confusion), None);
 
         g.run_action(GainStatusAction {
             status: Rupture,
             amount: 4,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Rupture), Some(&4));
+        assert_eq!(g.player.creature.get_status(Rupture), Some(4));
         g.run_action(ReduceStatusAction {
             status: Rupture,
             amount: 3,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Rupture), Some(&1));
+        assert_eq!(g.player.creature.get_status(Rupture), Some(1));
     }
 
     #[test]
@@ -656,35 +656,35 @@ mod tests {
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
+        assert_eq!(g.player.creature.get_status(Artifact), Some(1));
         g.run_action(GainStatusAction {
             status: Weak,
             amount: 2,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), None);
-        assert_eq!(g.player.creature.statuses.get(&Weak), None);
+        assert_eq!(g.player.creature.get_status(Artifact), None);
+        assert_eq!(g.player.creature.get_status(Weak), None);
 
         g.run_action(GainStatusAction {
             status: Artifact,
             amount: 2,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&2));
+        assert_eq!(g.player.creature.get_status(Artifact), Some(2));
         g.run_action(GainStatusAction {
             status: Strength,
             amount: 2,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&2));
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&2));
+        assert_eq!(g.player.creature.get_status(Artifact), Some(2));
+        assert_eq!(g.player.creature.get_status(Strength), Some(2));
         g.run_action(GainStatusAction {
             status: Strength,
             amount: -2,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&2));
+        assert_eq!(g.player.creature.get_status(Artifact), Some(1));
+        assert_eq!(g.player.creature.get_status(Strength), Some(2));
     }
 
     #[test]
@@ -702,15 +702,15 @@ mod tests {
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
-        assert_eq!(g.player.creature.statuses.get(&NoDraw), Some(&1));
+        assert_eq!(g.player.creature.get_status(Artifact), Some(1));
+        assert_eq!(g.player.creature.get_status(NoDraw), Some(1));
         g.run_action(GainStatusAction {
             status: NoDraw,
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
-        assert_eq!(g.player.creature.statuses.get(&NoDraw), Some(&1));
+        assert_eq!(g.player.creature.get_status(Artifact), Some(1));
+        assert_eq!(g.player.creature.get_status(NoDraw), Some(1));
     }
 
     #[test]
@@ -728,15 +728,15 @@ mod tests {
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), Some(&1));
-        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+        assert_eq!(g.player.creature.get_status(Artifact), Some(1));
+        assert_eq!(g.player.creature.get_status(Confusion), Some(1));
         g.run_action(GainStatusAction {
             status: Confusion,
             amount: 1,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Artifact), None);
-        assert_eq!(g.player.creature.statuses.get(&Confusion), Some(&1));
+        assert_eq!(g.player.creature.get_status(Artifact), None);
+        assert_eq!(g.player.creature.get_status(Confusion), Some(1));
     }
 
     #[test]
@@ -747,13 +747,13 @@ mod tests {
             amount: 1000,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&999));
+        assert_eq!(g.player.creature.get_status(Strength), Some(999));
         g.run_action(GainStatusAction {
             status: Strength,
             amount: -2000,
             target: CreatureRef::player(),
         });
-        assert_eq!(g.player.creature.statuses.get(&Strength), Some(&-999));
+        assert_eq!(g.player.creature.get_status(Strength), Some(-999));
     }
 
     #[test]
@@ -766,7 +766,7 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5);
         assert_eq!(g.discard_pile.len(), 1);
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.statuses.get(&Duplication), None);
+        assert_eq!(g.player.creature.get_status(Duplication), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5 - 6);
     }
 
@@ -789,7 +789,7 @@ mod tests {
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 6);
         assert_eq!(g.discard_pile.len(), 1);
-        assert_eq!(g.player.creature.statuses.get(&Duplication), Some(&1));
+        assert_eq!(g.player.creature.get_status(Duplication), Some(1));
     }
 
     #[test]
@@ -803,7 +803,7 @@ mod tests {
 
         g.play_card(CardClass::Defend, None);
         assert_eq!(g.player.creature.block, 5);
-        assert_eq!(g.player.creature.statuses.get(&DoubleTap), Some(&1));
+        assert_eq!(g.player.creature.get_status(DoubleTap), Some(1));
         assert_eq!(g.discard_pile.len(), 1);
 
         g.play_card(CardClass::Rampage, Some(CreatureRef::monster(0)));
@@ -811,7 +811,7 @@ mod tests {
         assert_eq!(g.discard_pile.len(), 2);
 
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.statuses.get(&Duplication), None);
+        assert_eq!(g.player.creature.get_status(Duplication), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 8 - 5 - 6);
     }
 
@@ -872,14 +872,14 @@ mod tests {
             .add_player_status(Status::DemonForm, 2)
             .add_cards(CardClass::Strike, 10)
             .build_combat();
-        assert_eq!(g.player.creature.statuses.get(&Status::DemonForm), Some(&2));
-        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&2));
+        assert_eq!(g.player.creature.get_status(Status::DemonForm), Some(2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::DemonForm), Some(&2));
-        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&4));
+        assert_eq!(g.player.creature.get_status(Status::DemonForm), Some(2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(4));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::DemonForm), Some(&2));
-        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&6));
+        assert_eq!(g.player.creature.get_status(Status::DemonForm), Some(2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(6));
     }
 
     #[test]
@@ -910,11 +910,11 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_player_status(Status::LoseStrength, 2)
             .build_combat();
-        assert_eq!(g.player.creature.statuses.get(&Status::Strength), None);
+        assert_eq!(g.player.creature.get_status(Status::Strength), None);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&-2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(-2));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::Strength), Some(&-2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(-2));
     }
 
     #[test]
@@ -927,10 +927,10 @@ mod tests {
             target: CreatureRef::player(),
         });
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::NextTurnBlock), None);
+        assert_eq!(g.player.creature.get_status(Status::NextTurnBlock), None);
         assert_eq!(g.player.creature.block, 5);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.statuses.get(&Status::NextTurnBlock), None);
+        assert_eq!(g.player.creature.get_status(Status::NextTurnBlock), None);
         assert_eq!(g.player.creature.block, 0);
     }
 

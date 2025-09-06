@@ -16,11 +16,13 @@ impl Action for ReduceStatusAction {
         // amount statuses like strength should go through negative GainStatusActions
         assert_ne!(self.status.ty(), StatusType::Amount);
         let c = game.get_creature_mut(self.target);
-        if let Some(s) = c.statuses.get_mut(&self.status) {
-            *s -= self.amount;
-            assert!(*s >= 0);
-            if *s == 0 {
-                c.statuses.remove(&self.status);
+        if let Some(mut s) = c.get_status(self.status) {
+            s -= self.amount;
+            assert!(s >= 0);
+            if s == 0 {
+                c.remove_status(self.status);
+            } else {
+                c.set_status(self.status, s);
             }
         }
     }

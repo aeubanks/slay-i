@@ -6,14 +6,14 @@ use crate::{
 };
 
 pub fn calculate_modified_block(amount: i32, c: &Creature) -> i32 {
-    if c.statuses.contains_key(&Status::NoBlock) {
+    if c.has_status(Status::NoBlock) {
         return 0;
     }
     let mut amount_f = amount as f32;
-    if let Some(&s) = c.statuses.get(&Status::Dexterity) {
+    if let Some(s) = c.get_status(Status::Dexterity) {
         amount_f += s as f32;
     }
-    if c.statuses.contains_key(&Status::Frail) {
+    if c.has_status(Status::Frail) {
         amount_f *= 0.75;
     }
     amount_f as i32

@@ -72,16 +72,16 @@ pub fn calculate_damage(
     } else {
         (monster, &player.creature)
     };
-    if let Some(&s) = source.statuses.get(&Status::Strength) {
+    if let Some(s) = source.get_status(Status::Strength) {
         amount_f += s as f32;
     }
-    if source.statuses.contains_key(&Status::Weak) {
+    if source.has_status(Status::Weak) {
         amount_f *= 0.75;
     }
-    if source.statuses.contains_key(&Status::PenNib) {
+    if source.has_status(Status::PenNib) {
         amount_f *= 2.0;
     }
-    if target.statuses.contains_key(&Status::Vulnerable) {
+    if target.has_status(Status::Vulnerable) {
         amount_f *= 1.5;
     }
     amount_f as i32
