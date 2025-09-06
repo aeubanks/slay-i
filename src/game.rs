@@ -962,26 +962,25 @@ impl Game {
         {
             return false;
         }
-        match c.class {
-            CardClass::SecretTechnique => {
-                if !self
-                    .draw_pile
-                    .iter()
-                    .any(|c| c.borrow().class.ty() == CardType::Skill)
-                {
-                    return false;
-                }
-            }
-            CardClass::SecretWeapon => {
-                if !self
-                    .draw_pile
-                    .iter()
-                    .any(|c| c.borrow().class.ty() == CardType::Attack)
-                {
-                    return false;
-                }
-            }
-            _ => {}
+        let can_play_class = match c.class {
+            CardClass::Clash => self
+                .hand
+                .iter()
+                .all(|c| c.borrow().class.ty() == CardType::Attack),
+            CardClass::SecretTechnique => self
+                .draw_pile
+                .iter()
+                .any(|c| c.borrow().class.ty() == CardType::Skill),
+
+            CardClass::SecretWeapon => self
+                .draw_pile
+                .iter()
+                .any(|c| c.borrow().class.ty() == CardType::Attack),
+
+            _ => true,
+        };
+        if !can_play_class {
+            return false;
         }
         if self.num_cards_played_this_turn >= 3
             && self

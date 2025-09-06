@@ -121,7 +121,7 @@ c!(
     PerfectedStrike => (Common, Attack, Red, cost(2), attacks::perfected_strike_behavior, false),
     HeavyBlade => (Common, Attack, Red, cost(2), attacks::heavy_blade_behavior, false),
     Anger => (Common, Attack, Red, cost(0), attacks::anger_behavior, false),
-    Clash => (Common, Attack, Red, cost(0), todo, false),
+    Clash => (Common, Attack, Red, cost(0), attacks::clash_behavior, false),
     // Common skills
     Armaments => (Common, Skill, Red, cost(1), skills::armaments_behavior, false),
     Flex => (Common, Skill, Red, cost(0), todo, false),

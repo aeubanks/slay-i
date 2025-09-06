@@ -157,6 +157,10 @@ pub fn anger_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(DiscardCardAction(card));
 }
 
+pub fn clash_behavior(game: &mut Game, info: &CardPlayInfo) {
+    push_damage(game, info, 14, 18);
+}
+
 pub fn reckless_charge_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 7, 10);
     let card = game.new_card(CardClass::Dazed);
@@ -603,6 +607,17 @@ mod tests {
                 free_to_play_once: false
             }
         );
+    }
+
+    #[test]
+    fn test_clash() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_hand(CardClass::Clash);
+        assert!(g.can_play_card(&g.hand[0].borrow()));
+        g.add_card_to_hand(CardClass::Anger);
+        assert!(g.can_play_card(&g.hand[0].borrow()));
+        g.add_card_to_hand(CardClass::Defend);
+        assert!(!g.can_play_card(&g.hand[0].borrow()));
     }
 
     #[test]
