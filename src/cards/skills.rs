@@ -322,6 +322,23 @@ pub fn discovery_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(ChooseDiscoveryAction());
 }
 
+pub fn dark_shackles_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 15 } else { 9 };
+    let target = info.target.unwrap();
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Strength,
+        amount: -amount,
+        target,
+    });
+    if !game.get_creature(target).has_status(Status::Artifact) {
+        game.action_queue.push_bot(GainStatusAction {
+            status: Status::GainStrength,
+            amount,
+            target,
+        });
+    }
+}
+
 pub fn jax_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::lose_hp(3, CreatureRef::player()));
@@ -1758,6 +1775,35 @@ mod tests {
                 target: Some(0),
             });
         }
+    }
+
+    #[test]
+    fn test_dark_shackles() {
+        let mut g = GameBuilder::default().build_combat();
+        g.play_card(CardClass::DarkShackles, Some(CreatureRef::monster(0)));
+        assert_eq!(
+            g.monsters[0].creature.get_status(Status::Strength),
+            Some(-9)
+        );
+        assert_eq!(
+            g.monsters[0].creature.get_status(Status::GainStrength),
+            Some(9)
+        );
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.get_status(Status::Strength), None);
+        assert_eq!(
+            g.monsters[0].creature.get_status(Status::GainStrength),
+            None
+        );
+
+        g.monsters[0].creature.set_status(Status::Artifact, 2);
+        g.play_card(CardClass::DarkShackles, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.get_status(Status::Artifact), Some(1));
+        assert_eq!(g.monsters[0].creature.get_status(Status::Strength), None);
+        assert_eq!(
+            g.monsters[0].creature.get_status(Status::GainStrength),
+            None
+        );
     }
 
     #[test]

@@ -199,7 +199,7 @@ c!(
     Trip => (Uncommon, Skill, Colorless, cost(0), skills::trip_behavior, false),
     Discovery => (Uncommon, Skill, Colorless, cost(1), skills::discovery_behavior, true),
     DeepBreath => (Uncommon, Skill, Colorless, cost(0), todo, false),
-    DarkShackles => (Uncommon, Skill, Colorless, cost(0), todo, true),
+    DarkShackles => (Uncommon, Skill, Colorless, cost(0), skills::dark_shackles_behavior, true),
     PanicButton => (Uncommon, Skill, Colorless, cost(0), skills::panic_button_behavior, true),
     Purity => (Uncommon, Skill, Colorless, cost(0), skills::purity_behavior, true),
     Panacea => (Uncommon, Skill, Colorless, cost(0), skills::panacea_behavior, true),

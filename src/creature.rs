@@ -202,6 +202,17 @@ impl Creature {
                 target: this,
             });
         }
+        if let Some(v) = self.get_status(Status::GainStrength) {
+            queue.push_bot(GainStatusAction {
+                status: Status::Strength,
+                amount: v,
+                target: this,
+            });
+            queue.push_bot(RemoveStatusAction {
+                status: Status::GainStrength,
+                target: this,
+            });
+        }
         if let Some(v) = self.get_status(Status::Metallicize) {
             queue.push_bot(BlockAction::monster(this, v));
         }

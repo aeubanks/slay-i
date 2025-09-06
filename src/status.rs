@@ -36,6 +36,7 @@ s!(
     Confusion => Debuff,
     Entangled => Debuff,
     LoseStrength => Debuff,
+    GainStrength => Debuff,
 
     RegenPlayer => Buff,
     RegenMonster => Buff,
@@ -915,6 +916,18 @@ mod tests {
         assert_eq!(g.player.creature.get_status(Status::Strength), Some(-2));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.get_status(Status::Strength), Some(-2));
+    }
+
+    #[test]
+    fn test_gain_strength() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::GainStrength, 2)
+            .build_combat();
+        assert_eq!(g.player.creature.get_status(Status::Strength), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
     }
 
     #[test]
