@@ -212,8 +212,8 @@ c!(
     ThinkingAhead => (Rare, Skill, Colorless, cost(0), skills::thinking_ahead_behavior, true),
     SecretTechnique => (Rare, Skill, Colorless, cost(0), skills::secret_technique_behavior, true),
     SecretWeapon => (Rare, Skill, Colorless, cost(0), skills::secret_weapon_behavior, true),
-    Metamorphosis => (Rare, Skill, Colorless, cost(2), todo, true),
-    Chrysalis => (Rare, Skill, Colorless, cost(2), todo, true),
+    Metamorphosis => (Rare, Skill, Colorless, cost(2), skills::metamorphosis_behavior, true),
+    Chrysalis => (Rare, Skill, Colorless, cost(2), skills::chrysalis_behavior, true),
     Transmutation => (Rare, Skill, Colorless, X, todo, true),
     MasterOfStrategy => (Rare, Skill, Colorless, cost(0), todo, true),
     Violence => (Rare, Skill, Colorless, cost(0), todo, true),
@@ -343,6 +343,11 @@ lazy_static! {
         .copied()
         .filter(|c| c.ty() == CardType::Attack)
         .collect();
+    static ref ALL_RED_SKILLS_IN_COMBAT: Vec<CardClass> = ALL_RED_IN_COMBAT
+        .iter()
+        .copied()
+        .filter(|c| c.ty() == CardType::Skill)
+        .collect();
     static ref ALL_CURSES: Vec<CardClass> = CardClass::all()
         .iter()
         .copied()
@@ -361,6 +366,10 @@ pub fn random_red_in_combat(rng: &mut Rand) -> CardClass {
 
 pub fn random_red_attack_in_combat(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_RED_ATTACKS_IN_COMBAT)
+}
+
+pub fn random_red_skill_in_combat(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_RED_SKILLS_IN_COMBAT)
 }
 
 fn random_colorless(rng: &mut Rand) -> CardClass {

@@ -17,11 +17,13 @@ use crate::{
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         infernal_blade::InfernalBladeAction, madness::MadnessAction,
         place_card_in_hand::PlaceCardInHandAction, play_top_card::PlayTopCardAction,
-        spot_weakness::SpotWeaknessAction, upgrade_all::UpgradeAllAction,
-        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        shuffle_card_into_draw::ShuffleCardIntoDrawAction, spot_weakness::SpotWeaknessAction,
+        upgrade_all::UpgradeAllAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
-    cards::{CardClass, CardType},
+    cards::{
+        CardClass, CardCost, CardType, random_red_attack_in_combat, random_red_skill_in_combat,
+    },
     game::{CreatureRef, Game},
     status::Status,
 };
@@ -375,6 +377,32 @@ pub fn secret_weapon_behavior(game: &mut Game, _: &CardPlayInfo) {
         .push_bot(ChooseCardInDrawToPlaceInHandAction(CardType::Attack));
 }
 
+pub fn metamorphosis_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let count = if info.upgraded { 5 } else { 3 };
+    for _ in 0..count {
+        let class = random_red_attack_in_combat(&mut game.rng);
+        let c = game.new_card(class);
+        match &mut c.borrow_mut().cost {
+            CardCost::Cost { base_cost, .. } => *base_cost = 0,
+            _ => {}
+        }
+        game.action_queue.push_bot(ShuffleCardIntoDrawAction(c));
+    }
+}
+
+pub fn chrysalis_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let count = if info.upgraded { 5 } else { 3 };
+    for _ in 0..count {
+        let class = random_red_skill_in_combat(&mut game.rng);
+        let c = game.new_card(class);
+        match &mut c.borrow_mut().cost {
+            CardCost::Cost { base_cost, .. } => *base_cost = 0,
+            _ => {}
+        }
+        game.action_queue.push_bot(ShuffleCardIntoDrawAction(c));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -383,7 +411,7 @@ mod tests {
             remove_status::RemoveStatusAction,
         },
         assert_matches,
-        cards::{CardClass, CardCost, CardType},
+        cards::{CardClass, CardColor, CardCost, CardType},
         game::{CreatureRef, GameBuilder, GameStatus, Move},
         monster::Intent,
         monsters::test::{AttackMonster, IntentMonster, NoopMonster},
@@ -1420,6 +1448,60 @@ mod tests {
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.discard_pile[0].borrow().class, CardClass::Defend);
+    }
+
+    #[test]
+    fn test_metamorphosis() {
+        let mut g = GameBuilder::default().build_combat();
+        for _ in 0..100 {
+            g.energy = 3;
+            g.draw_pile.clear();
+            g.play_card(CardClass::Metamorphosis, None);
+            assert_eq!(g.draw_pile.len(), 3);
+
+            for c in &g.draw_pile {
+                assert_eq!(c.borrow().class.ty(), CardType::Attack);
+                assert_eq!(c.borrow().class.color(), CardColor::Red);
+                assert_ne!(c.borrow().class, CardClass::Reaper);
+                assert_ne!(c.borrow().class, CardClass::Feed);
+                if c.borrow().class != CardClass::Whirlwind {
+                    assert_matches!(
+                        c.borrow().cost,
+                        CardCost::Cost {
+                            base_cost: 0,
+                            temporary_cost: None,
+                            free_to_play_once: false,
+                        }
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_chrysalis() {
+        let mut g = GameBuilder::default().build_combat();
+        for _ in 0..100 {
+            g.energy = 3;
+            g.draw_pile.clear();
+            g.play_card(CardClass::Chrysalis, None);
+            assert_eq!(g.draw_pile.len(), 3);
+
+            for c in &g.draw_pile {
+                assert_eq!(c.borrow().class.ty(), CardType::Skill);
+                assert_eq!(c.borrow().class.color(), CardColor::Red);
+                assert_ne!(c.borrow().class, CardClass::Reaper);
+                assert_ne!(c.borrow().class, CardClass::Feed);
+                assert_matches!(
+                    c.borrow().cost,
+                    CardCost::Cost {
+                        base_cost: 0,
+                        temporary_cost: None,
+                        free_to_play_once: false,
+                    }
+                );
+            }
+        }
     }
 
     #[test]
