@@ -164,8 +164,8 @@ c!(
     FeelNoPain => (Uncommon, Power, Red, cost(1), powers::feel_no_pain_behavior, false),
     DarkEmbrace => (Uncommon, Power, Red, cost(2), powers::dark_embrace_behavior, false),
     Evolve => (Uncommon, Power, Red, cost(1), powers::evolve_behavior, false),
-    Metallicize => (Uncommon, Power, Red, cost(1), todo, false),
-    Combust => (Uncommon, Power, Red, cost(1), todo, false),
+    Metallicize => (Uncommon, Power, Red, cost(1), powers::metallicize_behavior, false),
+    Combust => (Uncommon, Power, Red, cost(1), powers::combust_behavior, false),
     FireBreathing => (Uncommon, Power, Red, cost(1), powers::firebreathing_behavior, false),
     Rupture => (Uncommon, Power, Red, cost(1), powers::rupture_behavior, false),
     // Rare attacks

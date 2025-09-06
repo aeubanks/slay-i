@@ -179,6 +179,9 @@ impl Creature {
                 target: this,
             });
         }
+        if let Some(v) = self.statuses.get(&Status::Metallicize) {
+            queue.push_bot(BlockAction::monster(this, *v));
+        }
         if let Some(v) = self.statuses.get(&Status::CombustHPLoss) {
             queue.push_bot(DamageAction::lose_hp(*v, this));
         }

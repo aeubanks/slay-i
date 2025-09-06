@@ -54,6 +54,7 @@ s!(
     Rage => Buff,
     Rupture => Buff,
     Berserk => Buff,
+    Metallicize => Buff,
     CombustHPLoss => Buff,
     CombustDamage => Buff,
     Barricade => Buff,
@@ -943,6 +944,20 @@ mod tests {
         assert_eq!(g.energy, 5);
         g.make_move(Move::EndTurn);
         assert_eq!(g.energy, 5);
+    }
+
+    #[test]
+    fn test_metallicize() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Metallicize, 2)
+            .add_player_status(Status::Dexterity, 22)
+            .add_monster(AttackMonster::new(5))
+            .build_combat();
+        let hp = g.player.creature.cur_hp;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, hp - 3);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, hp - 6);
     }
 
     #[test]

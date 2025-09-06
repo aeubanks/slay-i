@@ -37,6 +37,27 @@ pub fn evolve_behavior(game: &mut Game, info: &CardPlayInfo) {
     });
 }
 
+pub fn metallicize_behavior(game: &mut Game, info: &CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Metallicize,
+        target: CreatureRef::player(),
+        amount: if info.upgraded { 4 } else { 3 },
+    });
+}
+
+pub fn combust_behavior(game: &mut Game, info: &CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::CombustHPLoss,
+        target: CreatureRef::player(),
+        amount: 1,
+    });
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::CombustDamage,
+        target: CreatureRef::player(),
+        amount: if info.upgraded { 7 } else { 5 },
+    });
+}
+
 pub fn firebreathing_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(GainStatusAction {
         status: Status::FireBreathing,
