@@ -25,7 +25,6 @@ pub enum RelicRarity {
 
 macro_rules! r {
     ($($name:ident => $rarity:expr),+,) => {
-        #[allow(dead_code)]
         #[derive(Clone, Copy, PartialEq, Eq, Debug)]
         pub enum RelicClass {
             $(
@@ -33,7 +32,6 @@ macro_rules! r {
             )+
         }
         impl RelicClass {
-            #[allow(dead_code)]
             pub fn rarity(&self) -> RelicRarity {
                 use RelicRarity::*;
                 match self {

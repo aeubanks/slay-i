@@ -5,7 +5,6 @@ use crate::{
     status::Status,
 };
 
-#[allow(dead_code)]
 pub struct SpotWeaknessAction {
     pub target: CreatureRef,
     pub amount: i32,

@@ -20,7 +20,6 @@ type PotionBehavior = fn(Option<CreatureRef>, &mut ActionQueue);
 
 macro_rules! p {
     ($($name:ident => ($rarity:expr, $has_target:expr, $behavior:expr)),+,) => {
-        #[allow(dead_code)]
         #[derive(Clone, Copy, PartialEq, Eq, Debug)]
         pub enum Potion {
             $(

@@ -1,6 +1,5 @@
 use crate::{action::Action, actions::exhaust_card::ExhaustCardAction, game::Game};
 
-#[allow(dead_code)]
 pub struct ExhaustHandAction();
 
 impl Action for ExhaustHandAction {

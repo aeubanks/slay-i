@@ -4,7 +4,6 @@ use crate::{
     game::{CreatureRef, Game},
 };
 
-#[allow(dead_code)]
 pub struct FiendFireAction {
     pub target: CreatureRef,
     pub amount: i32,

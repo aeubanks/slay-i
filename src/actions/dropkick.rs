@@ -5,7 +5,6 @@ use crate::{
     status::Status,
 };
 
-#[allow(dead_code)]
 pub struct DropkickAction(pub CreatureRef);
 
 impl Action for DropkickAction {

@@ -1,6 +1,5 @@
 use crate::{action::Action, actions::block::BlockAction, cards::CardType, game::Game};
 
-#[allow(dead_code)]
 pub struct BlockPerNonAttackInHandAction(pub i32);
 
 impl Action for BlockPerNonAttackInHandAction {

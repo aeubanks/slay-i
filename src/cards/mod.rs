@@ -13,7 +13,6 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[allow(dead_code)]
 pub enum CardType {
     Attack,
     Skill,
@@ -23,7 +22,6 @@ pub enum CardType {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[allow(dead_code)]
 pub enum CardRarity {
     Basic,
     Common,
@@ -33,7 +31,6 @@ pub enum CardRarity {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[allow(dead_code)]
 pub enum CardColor {
     Red,
     Colorless,
@@ -43,7 +40,6 @@ pub enum CardColor {
 
 macro_rules! c {
     ($($name:ident => ($rarity:expr, $ty:expr, $color:expr, $cost:expr, $behavior:expr, $exhausts:expr)),+,) => {
-        #[allow(dead_code)]
         #[derive(Clone, Copy, PartialEq, Eq, Debug)]
         pub enum CardClass {
             $(
@@ -51,7 +47,6 @@ macro_rules! c {
             )+
         }
         impl CardClass {
-            #[allow(dead_code)]
             pub fn rarity(&self) -> CardRarity {
                 use CardRarity::*;
                 match self {

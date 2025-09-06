@@ -4,7 +4,6 @@ use crate::{
     game::{CreatureRef, Game},
 };
 
-#[allow(dead_code)]
 pub struct VampireAction(pub Vec<CreatureRef>);
 
 impl Action for VampireAction {

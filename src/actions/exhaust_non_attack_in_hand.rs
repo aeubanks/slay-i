@@ -2,7 +2,6 @@ use crate::{
     action::Action, actions::exhaust_card::ExhaustCardAction, cards::CardType, game::Game,
 };
 
-#[allow(dead_code)]
 pub struct ExhaustNonAttackInHandAction();
 
 impl Action for ExhaustNonAttackInHandAction {

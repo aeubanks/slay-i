@@ -7,7 +7,6 @@ pub enum StatusType {
 
 macro_rules! s {
     ($($name:ident => $rarity:expr),+,) => {
-        #[allow(dead_code)]
         #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
         pub enum Status {
             $(
@@ -15,7 +14,6 @@ macro_rules! s {
             )+
         }
         impl Status {
-            #[allow(dead_code)]
             pub fn ty(&self) -> StatusType {
                 use StatusType::*;
                 match self {

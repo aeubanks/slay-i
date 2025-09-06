@@ -1,6 +1,5 @@
 use crate::{action::Action, actions::damage::DamageAction, game::Game};
 
-#[allow(dead_code)]
 pub struct DamageRandomMonsterAction {
     pub amount: i32,
 }
