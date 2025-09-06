@@ -6,6 +6,7 @@ use crate::{
         damage_random_monster::DamageRandomMonsterAction,
         discard_card::DiscardCardAction,
         draw::DrawAction,
+        dropkick::DropkickAction,
         exhaust_non_attack_in_hand::ExhaustNonAttackInHandAction,
         gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction,
@@ -221,6 +222,12 @@ pub fn hemokinesis_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::lose_hp(2, CreatureRef::player()));
     push_damage(game, info, 15, 20);
+}
+
+pub fn dropkick_behavior(game: &mut Game, info: &CardPlayInfo) {
+    game.action_queue
+        .push_bot(DropkickAction(info.target.unwrap()));
+    push_damage(game, info, 5, 8);
 }
 
 pub fn pummel_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -784,6 +791,74 @@ mod tests {
         assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
         assert_eq!(g.exhaust_pile[1].borrow().class, CardClass::Wound);
         assert_eq!(g.exhaust_pile[2].borrow().class, CardClass::AscendersBane);
+    }
+
+    #[test]
+    fn test_dropkick() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_draw_pile(CardClass::Strike);
+
+        g.play_card(CardClass::Dropkick, Some(CreatureRef::monster(0)));
+        assert_eq!(g.energy, 2);
+        assert_eq!(g.hand.len(), 0);
+
+        g.monsters[0]
+            .creature
+            .statuses
+            .insert(Status::Vulnerable, 1);
+        g.play_card(CardClass::Dropkick, Some(CreatureRef::monster(0)));
+        assert_eq!(g.energy, 2);
+        assert_eq!(g.hand.len(), 1);
+    }
+
+    #[test]
+    fn test_dropkick_infinite() {
+        {
+            let mut g = GameBuilder::default()
+                .add_cards(CardClass::Dropkick, 2)
+                .build_combat();
+
+            g.monsters[0]
+                .creature
+                .statuses
+                .insert(Status::Vulnerable, 1);
+
+            while g.monsters[0].creature.is_alive() {
+                g.make_move(Move::PlayCard {
+                    card_index: 0,
+                    target: Some(0),
+                });
+            }
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_card(CardClass::DoubleTap)
+                .add_card(CardClass::Dropkick)
+                .build_combat();
+
+            g.monsters[0]
+                .creature
+                .statuses
+                .insert(Status::Vulnerable, 1);
+
+            while g.monsters[0].creature.is_alive() {
+                let double_tap_card_index = g
+                    .hand
+                    .iter()
+                    .position(|c| c.borrow().class == CardClass::DoubleTap);
+                if let Some(i) = double_tap_card_index {
+                    g.make_move(Move::PlayCard {
+                        card_index: i,
+                        target: None,
+                    });
+                } else {
+                    g.make_move(Move::PlayCard {
+                        card_index: 0,
+                        target: Some(0),
+                    });
+                }
+            }
+        }
     }
 
     #[test]

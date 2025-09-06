@@ -18,6 +18,7 @@ pub mod discard_hand;
 pub mod discovery;
 pub mod double_strength;
 pub mod draw;
+pub mod dropkick;
 pub mod dual_wield;
 pub mod end_of_turn_discard;
 pub mod enlightenment;

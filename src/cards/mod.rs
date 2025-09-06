@@ -137,7 +137,7 @@ c!(
     SeverSoul => (Uncommon, Attack, Red, cost(2), attacks::sever_soul_behavior, false),
     Carnage => (Uncommon, Attack, Red, cost(2), attacks::carnage_behavior, false),
     Hemokinesis => (Uncommon, Attack, Red, cost(1), attacks::hemokinesis_behavior, false),
-    Dropkick => (Uncommon, Attack, Red, cost(1), todo, false),
+    Dropkick => (Uncommon, Attack, Red, cost(1), attacks::dropkick_behavior, false),
     Pummel => (Uncommon, Attack, Red, cost(1), attacks::pummel_behavior, true),
     BloodForBlood => (Uncommon, Attack, Red, cost(4), todo, false),
     RecklessCharge => (Uncommon, Attack, Red, cost(0), attacks::reckless_charge_behavior, false),
