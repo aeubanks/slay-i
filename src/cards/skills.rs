@@ -21,17 +21,17 @@ use crate::{
     status::Status,
 };
 
-fn push_block(
+pub fn push_block(
     game: &mut Game,
     info: CardPlayInfo,
-    unupgraded_base_damage: i32,
-    upgraded_base_damage: i32,
+    unupgraded_base_block: i32,
+    upgraded_base_block: i32,
 ) {
     game.action_queue
         .push_bot(BlockAction::player_card(if info.upgraded {
-            upgraded_base_damage
+            upgraded_base_block
         } else {
-            unupgraded_base_damage
+            unupgraded_base_block
         }));
 }
 

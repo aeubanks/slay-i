@@ -13,7 +13,7 @@ use crate::{
         vampire::VampireAction,
     },
     card::CardPlayInfo,
-    cards::CardClass,
+    cards::{CardClass, skills::push_block},
     game::{CreatureRef, Game},
     status::Status,
 };
@@ -99,6 +99,11 @@ pub fn thunderclap_behavior(game: &mut Game, info: CardPlayInfo) {
 pub fn body_slam_behavior(game: &mut Game, info: CardPlayInfo) {
     let damage = game.player.creature.block;
     push_damage(game, info, damage, damage);
+}
+
+pub fn iron_wave_behavior(game: &mut Game, info: CardPlayInfo) {
+    push_block(game, info, 5, 7);
+    push_damage(game, info, 5, 7);
 }
 
 pub fn wild_strike_behavior(game: &mut Game, info: CardPlayInfo) {

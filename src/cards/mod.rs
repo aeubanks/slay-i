@@ -114,7 +114,7 @@ c!(
     Cleave => (Common, Attack, Red, cost(1), attacks::cleave_behavior, false),
     Thunderclap => (Common, Attack, Red, cost(1), attacks::thunderclap_behavior, false),
     BodySlam => (Common, Attack, Red, cost(1), attacks::body_slam_behavior, false),
-    IronWave => (Common, Attack, Red, cost(1), todo, false),
+    IronWave => (Common, Attack, Red, cost(1), attacks::iron_wave_behavior, false),
     WildStrike => (Common, Attack, Red, cost(1), attacks::wild_strike_behavior, false),
     Headbutt => (Common, Attack, Red, cost(1), attacks::headbutt_behavior, false),
     SwordBoomerang => (Common, Attack, Red, cost(1), todo, false),
