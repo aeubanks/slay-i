@@ -58,6 +58,11 @@ pub fn true_grit_behavior(game: &mut Game, info: &CardPlayInfo) {
     }
 }
 
+pub fn shrug_it_off_behavior(game: &mut Game, info: &CardPlayInfo) {
+    push_block(game, info, 8, 11);
+    game.action_queue.push_bot(DrawAction(1));
+}
+
 pub fn havoc_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(PlayTopCardAction {
         force_exhaust: true,
