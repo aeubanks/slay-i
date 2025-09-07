@@ -54,6 +54,7 @@ s!(
     Rage => Buff,
     Rupture => Buff,
     Berserk => Buff,
+    SadisticNature => Buff,
     Metallicize => Buff,
     CombustHPLoss => Buff,
     CombustDamage => Buff,
@@ -1010,6 +1011,41 @@ mod tests {
         assert_eq!(g.energy, 5);
         g.make_move(Move::EndTurn);
         assert_eq!(g.energy, 5);
+    }
+
+    #[test]
+    fn test_sadistic_nature() {
+        let mut g = GameBuilder::default()
+            .add_monster(ApplyStatusMonster {
+                status: Status::Vulnerable,
+                amount: 1,
+            })
+            .add_monster(ApplyStatusMonster {
+                status: Status::Vulnerable,
+                amount: 1,
+            })
+            .add_player_status(Status::SadisticNature, 2)
+            .add_player_status(Status::Strength, -99)
+            .build_combat();
+        g.energy = 99;
+        g.player.creature.cur_hp = 50;
+        g.monsters[0].creature.cur_hp = 100;
+        g.monsters[1].creature.cur_hp = 100;
+        g.play_card(CardClass::Blind, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 98);
+        g.play_card(CardClass::DarkShackles, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 96);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, 96);
+        g.play_card(CardClass::Uppercut, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, 92);
+        g.play_card_upgraded(CardClass::Blind, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, 90);
+        g.play_card_upgraded(CardClass::Berserk, None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 50);
+        assert_eq!(g.monsters[0].creature.cur_hp, 90);
+        assert_eq!(g.monsters[1].creature.cur_hp, 98);
     }
 
     #[test]

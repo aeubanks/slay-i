@@ -128,6 +128,15 @@ pub fn panache_behavior(game: &mut Game, info: &CardPlayInfo) {
     });
 }
 
+pub fn sadistic_nature_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 7 } else { 5 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::SadisticNature,
+        target: CreatureRef::player(),
+        amount,
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

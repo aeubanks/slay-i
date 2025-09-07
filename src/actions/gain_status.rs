@@ -1,6 +1,6 @@
 use crate::{
     action::Action,
-    actions::reduce_status::ReduceStatusAction,
+    actions::{damage::DamageAction, reduce_status::ReduceStatusAction},
     game::{CreatureRef, Game},
     status::{Status, StatusType},
 };
@@ -54,6 +54,14 @@ impl Action for GainStatusAction {
             creature.remove_status(self.status);
         } else {
             creature.set_status(self.status, v);
+        }
+        if self.status.is_debuff(self.amount)
+            && !self.target.is_player()
+            && self.status != Status::GainStrength
+            && let Some(v) = game.player.creature.get_status(Status::SadisticNature)
+        {
+            game.action_queue
+                .push_bot(DamageAction::thorns_no_rupture(v, self.target));
         }
     }
 }
