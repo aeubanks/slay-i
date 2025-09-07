@@ -53,6 +53,7 @@ pub mod set_energy;
 pub mod set_hp;
 pub mod shuffle_card_into_draw;
 pub mod shuffle_discard_on_top_of_draw;
+pub mod shuffle_draw;
 pub mod spot_weakness;
 pub mod start_of_turn_energy;
 pub mod upgrade;

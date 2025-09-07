@@ -17,7 +17,9 @@ use crate::{
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         impatience::ImpatienceAction, infernal_blade::InfernalBladeAction, madness::MadnessAction,
         place_card_in_hand::PlaceCardInHandAction, play_top_card::PlayTopCardAction,
-        shuffle_card_into_draw::ShuffleCardIntoDrawAction, spot_weakness::SpotWeaknessAction,
+        shuffle_card_into_draw::ShuffleCardIntoDrawAction,
+        shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
+        shuffle_draw::ShuffleDrawAction, spot_weakness::SpotWeaknessAction,
         upgrade_all::UpgradeAllAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     card::CardPlayInfo,
@@ -320,6 +322,16 @@ pub fn trip_behavior(game: &mut Game, info: &CardPlayInfo) {
 
 pub fn discovery_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(ChooseDiscoveryAction());
+}
+
+pub fn deep_breath_behavior(game: &mut Game, info: &CardPlayInfo) {
+    if !game.discard_pile.is_empty() {
+        game.action_queue
+            .push_bot(ShuffleDiscardOnTopOfDrawAction());
+        game.action_queue.push_bot(ShuffleDrawAction());
+    }
+    let amount = if info.upgraded { 2 } else { 1 };
+    game.action_queue.push_bot(DrawAction(amount));
 }
 
 pub fn dark_shackles_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -1846,6 +1858,39 @@ mod tests {
                 target: Some(0),
             });
         }
+    }
+
+    #[test]
+    fn test_deep_breath() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.play_card(CardClass::DeepBreath, None);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
+
+        let mut found_anger = false;
+        let mut found_shrug = false;
+        let mut found_strike = false;
+        for _ in 0..50 {
+            g.hand.clear();
+            g.discard_pile.clear();
+            g.draw_pile.clear();
+            g.add_card_to_discard_pile(CardClass::Anger);
+            g.add_card_to_draw_pile(CardClass::ShrugItOff);
+            g.add_card_to_draw_pile(CardClass::Strike);
+            g.play_card_upgraded(CardClass::DeepBreath, None);
+            assert_eq!(g.draw_pile.len(), 1);
+            match g.draw_pile[0].borrow().class {
+                CardClass::Anger => found_anger = true,
+                CardClass::ShrugItOff => found_shrug = true,
+                CardClass::Strike => found_strike = true,
+                _ => {}
+            }
+            if found_anger && found_shrug && found_strike {
+                break;
+            }
+        }
+        assert!(found_anger && found_shrug && found_strike);
     }
 
     #[test]
