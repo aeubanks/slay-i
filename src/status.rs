@@ -130,6 +130,33 @@ mod tests {
         ));
 
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 8);
+
+        g.player.creature.set_status(Strength, -2);
+        g.run_action(DamageAction::from_player(
+            6,
+            &g.player,
+            &g.monsters[0].creature,
+            CreatureRef::monster(0),
+        ));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 4);
+    }
+
+    #[test]
+    fn test_strength_negative() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Strength, -99)
+            .build_combat();
+
+        let hp = g.monsters[0].creature.cur_hp;
+
+        g.run_action(DamageAction::from_player(
+            6,
+            &g.player,
+            &g.monsters[0].creature,
+            CreatureRef::monster(0),
+        ));
+        assert_eq!(g.monsters[0].creature.block, 0);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp);
     }
 
     #[test]

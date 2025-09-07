@@ -84,7 +84,7 @@ pub fn calculate_damage(
     if target.has_status(Status::Vulnerable) {
         amount_f *= 1.5;
     }
-    amount_f as i32
+    0.max(amount_f as i32)
 }
 
 impl DamageAction {
