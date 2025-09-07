@@ -54,6 +54,7 @@ s!(
     Rage => Buff,
     Rupture => Buff,
     Berserk => Buff,
+    Magnetism => Buff,
     SadisticNature => Buff,
     Metallicize => Buff,
     CombustHPLoss => Buff,
@@ -109,7 +110,7 @@ mod tests {
             draw::DrawAction, gain_status::GainStatusAction, reduce_status::ReduceStatusAction,
             set_hp::SetHPAction,
         },
-        cards::{CardClass, CardCost},
+        cards::{CardClass, CardColor, CardCost},
         game::{CreatureRef, GameBuilder, Move},
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         status::Status,
@@ -1011,6 +1012,22 @@ mod tests {
         assert_eq!(g.energy, 5);
         g.make_move(Move::EndTurn);
         assert_eq!(g.energy, 5);
+    }
+
+    #[test]
+    fn test_magnetism() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Magnetism, 2)
+            .add_card(CardClass::Strike)
+            .build_combat();
+        assert_eq!(g.hand.len(), 3);
+        assert_eq!(g.hand[0].borrow().class.color(), CardColor::Colorless);
+        assert_eq!(g.hand[1].borrow().class.color(), CardColor::Colorless);
+        assert_eq!(g.hand[2].borrow().class, CardClass::Strike);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 5);
+        assert_eq!(g.hand[0].borrow().class.color(), CardColor::Colorless);
+        assert_eq!(g.hand[1].borrow().class.color(), CardColor::Colorless);
     }
 
     #[test]

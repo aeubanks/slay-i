@@ -221,7 +221,7 @@ c!(
     Panache => (Rare, Power, Colorless, cost(0), powers::panache_behavior, false),
     SadisticNature => (Rare, Power, Colorless, cost(0), powers::sadistic_nature_behavior, false),
     Mayhem => (Rare, Power, Colorless, cost(2), todo, false),
-    Magnetism => (Rare, Power, Colorless, cost(2), todo, false),
+    Magnetism => (Rare, Power, Colorless, cost(2), powers::magnetism_behavior, false),
     // Colorless special attacks
     Bite => (Special, Attack, Special, cost(1), attacks::bite_behavior, false),
     RitualDagger => (Special, Attack, Special, cost(1), attacks::ritual_dagger_behavior, true),
@@ -372,7 +372,7 @@ pub fn random_red_skill_in_combat(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_RED_SKILLS_IN_COMBAT)
 }
 
-fn random_colorless(rng: &mut Rand) -> CardClass {
+pub fn random_colorless(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_COLORLESS)
 }
 

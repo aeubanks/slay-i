@@ -137,6 +137,14 @@ pub fn sadistic_nature_behavior(game: &mut Game, info: &CardPlayInfo) {
     });
 }
 
+pub fn magnetism_behavior(game: &mut Game, _: &CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Magnetism,
+        target: CreatureRef::player(),
+        amount: 1,
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
