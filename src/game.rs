@@ -1205,6 +1205,14 @@ impl Game {
         self.exhaust_pile.push(card);
     }
 
+    #[cfg(test)]
+    pub fn clear_all_piles(&mut self) {
+        self.hand.clear();
+        self.discard_pile.clear();
+        self.draw_pile.clear();
+        self.exhaust_pile.clear();
+    }
+
     pub fn hand_is_full(&self) -> bool {
         self.hand.len() as i32 == Game::MAX_HAND_SIZE
     }

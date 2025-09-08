@@ -21,6 +21,7 @@ use crate::{
         shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
         shuffle_draw::ShuffleDrawAction, spot_weakness::SpotWeaknessAction,
         upgrade_all::UpgradeAllAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        violence::ViolenceAction,
     },
     card::CardPlayInfo,
     cards::{
@@ -471,6 +472,11 @@ pub fn transmutation_behavior(game: &mut Game, info: &CardPlayInfo) {
 pub fn master_of_strategy_behavior(game: &mut Game, info: &CardPlayInfo) {
     let amount = if info.upgraded { 4 } else { 3 };
     game.action_queue.push_bot(DrawAction(amount));
+}
+
+pub fn violence_behavior(game: &mut Game, info: &CardPlayInfo) {
+    let amount = if info.upgraded { 4 } else { 3 };
+    game.action_queue.push_bot(ViolenceAction(amount));
 }
 
 #[cfg(test)]
@@ -1939,5 +1945,46 @@ mod tests {
         g.play_card(CardClass::PanicButton, None);
         assert_eq!(g.player.creature.block, 30);
         assert_eq!(g.player.creature.get_status(Status::NoBlock), Some(2));
+    }
+
+    #[test]
+    fn test_violence() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.play_card(CardClass::Violence, None);
+        assert_eq!(g.hand.len(), 0);
+
+        g.add_card_to_draw_pile(CardClass::Anger);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.play_card(CardClass::Violence, None);
+        assert_eq!(g.hand.len(), 2);
+
+        g.hand.clear();
+        g.discard_pile.clear();
+        for _ in 0..9 {
+            g.add_card_to_hand(CardClass::Strike);
+            g.add_card_to_draw_pile(CardClass::Strike);
+        }
+        g.play_card(CardClass::Violence, None);
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.discard_pile.len(), 2);
+
+        let mut found_strike = false;
+        let mut found_twin_strike = false;
+        for _ in 0..100 {
+            g.clear_all_piles();
+            g.add_card_to_draw_pile(CardClass::Strike);
+            g.add_card_to_draw_pile(CardClass::TwinStrike);
+            g.play_card(CardClass::Violence, None);
+            match g.hand[0].borrow().class {
+                CardClass::Strike => found_strike = true,
+                CardClass::TwinStrike => found_twin_strike = true,
+                _ => panic!(),
+            }
+            if found_strike && found_twin_strike {
+                break;
+            }
+        }
+        assert!(found_strike && found_twin_strike);
     }
 }

@@ -61,3 +61,4 @@ pub mod upgrade;
 pub mod upgrade_all;
 pub mod upgrade_all_cards_in_hand;
 pub mod vampire;
+pub mod violence;

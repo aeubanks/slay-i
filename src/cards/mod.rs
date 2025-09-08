@@ -216,7 +216,7 @@ c!(
     Chrysalis => (Rare, Skill, Colorless, cost(2), skills::chrysalis_behavior, true),
     Transmutation => (Rare, Skill, Colorless, X, skills::transmutation_behavior, true),
     MasterOfStrategy => (Rare, Skill, Colorless, cost(0), skills::master_of_strategy_behavior, true),
-    Violence => (Rare, Skill, Colorless, cost(0), todo, true),
+    Violence => (Rare, Skill, Colorless, cost(0), skills::violence_behavior, true),
     // Colorless rare powers
     Panache => (Rare, Power, Colorless, cost(0), powers::panache_behavior, false),
     SadisticNature => (Rare, Power, Colorless, cost(0), powers::sadistic_nature_behavior, false),
