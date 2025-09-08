@@ -351,6 +351,14 @@ pub fn dark_shackles_behavior(game: &mut Game, info: &CardPlayInfo) {
     }
 }
 
+pub fn apparition_behavior(game: &mut Game, _: &CardPlayInfo) {
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Intangible,
+        amount: 1,
+        target: CreatureRef::player(),
+    });
+}
+
 pub fn jax_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::lose_hp(3, CreatureRef::player()));

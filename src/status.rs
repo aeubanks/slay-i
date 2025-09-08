@@ -40,6 +40,7 @@ s!(
 
     RegenPlayer => Buff,
     RegenMonster => Buff,
+    Intangible => Buff,
     Brutality => Buff,
     Juggernaut => Buff,
     DemonForm => Buff,
@@ -76,7 +77,10 @@ s!(
 impl Status {
     pub fn decays(&self) -> bool {
         use Status::*;
-        matches!(self, Vulnerable | Weak | NoBlock | Frail | Duplication)
+        matches!(
+            self,
+            Vulnerable | Weak | NoBlock | Frail | Duplication | Intangible
+        )
     }
     pub fn disappears_end_of_turn(&self) -> bool {
         use Status::*;
@@ -880,6 +884,23 @@ mod tests {
         let hp = g.monsters[0].creature.cur_hp;
         g.play_card(CardClass::Whirlwind, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 5 * 6);
+    }
+
+    #[test]
+    fn test_intangible() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Intangible, 2)
+            .add_monster(AttackMonster::new(10))
+            .build_combat();
+        g.player.creature.cur_hp = 50;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 49);
+        g.monsters[0].creature.set_status(Status::Strength, -99);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 49);
+        g.monsters[0].creature.remove_status(Status::Strength);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 39);
     }
 
     #[test]

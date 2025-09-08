@@ -84,6 +84,9 @@ pub fn calculate_damage(
     if target.has_status(Status::Vulnerable) {
         amount_f *= 1.5;
     }
+    if target.has_status(Status::Intangible) {
+        amount_f = amount_f.min(1.0);
+    }
     0.max(amount_f as i32)
 }
 

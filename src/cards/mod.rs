@@ -226,7 +226,7 @@ c!(
     Bite => (Special, Attack, Special, cost(1), attacks::bite_behavior, false),
     RitualDagger => (Special, Attack, Special, cost(1), attacks::ritual_dagger_behavior, true),
     // Colorless special skills
-    Apparition => (Special, Skill, Special, cost(1), todo, true),
+    Apparition => (Special, Skill, Special, cost(1), skills::apparition_behavior, true),
     Jax => (Special, Skill, Special, cost(0), skills::jax_behavior, false),
     // Statuses
     Wound => (Special, Status, Special, Zero, noop_behavior, true),
