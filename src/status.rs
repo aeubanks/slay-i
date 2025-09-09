@@ -56,6 +56,7 @@ s!(
     Rupture => Buff,
     Berserk => Buff,
     Magnetism => Buff,
+    Mayhem => Buff,
     SadisticNature => Buff,
     Metallicize => Buff,
     CombustHPLoss => Buff,
@@ -1050,6 +1051,26 @@ mod tests {
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.hand[0].borrow().class.color(), CardColor::Colorless);
         assert_eq!(g.hand[1].borrow().class.color(), CardColor::Colorless);
+    }
+
+    #[test]
+    fn test_mayhem() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Mayhem, 2)
+            .add_monster(NoopMonster::with_hp(50))
+            .build_combat();
+        g.player.creature.cur_hp = 50;
+        g.add_card_to_draw_pile(CardClass::Bloodletting);
+        g.add_card_to_draw_pile(CardClass::Rupture);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.cur_hp, 47);
+        assert_eq!(g.player.creature.get_status(Strength), Some(1));
+        assert_eq!(g.energy, 5);
     }
 
     #[test]

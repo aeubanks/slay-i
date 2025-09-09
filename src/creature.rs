@@ -4,8 +4,9 @@ use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
-        heal::HealAction, magnetism::MagnetismAction, play_card::PlayCardAction,
-        reduce_status::ReduceStatusAction, remove_status::RemoveStatusAction,
+        heal::HealAction, magnetism::MagnetismAction, mayhem::MayhemAction,
+        play_card::PlayCardAction, reduce_status::ReduceStatusAction,
+        remove_status::RemoveStatusAction,
     },
     cards::CardType,
     game::CreatureRef,
@@ -155,6 +156,11 @@ impl Creature {
         if let Some(v) = self.get_status(Status::Magnetism) {
             for _ in 0..v {
                 queue.push_bot(MagnetismAction());
+            }
+        }
+        if let Some(v) = self.get_status(Status::Mayhem) {
+            for _ in 0..v {
+                queue.push_bot(MayhemAction());
             }
         }
         if let Some(v) = self.get_status(Status::Berserk) {

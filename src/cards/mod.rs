@@ -220,7 +220,7 @@ c!(
     // Colorless rare powers
     Panache => (Rare, Power, Colorless, cost(0), powers::panache_behavior, false),
     SadisticNature => (Rare, Power, Colorless, cost(0), powers::sadistic_nature_behavior, false),
-    Mayhem => (Rare, Power, Colorless, cost(2), todo, false),
+    Mayhem => (Rare, Power, Colorless, cost(2), powers::mayhem_behavior, false),
     Magnetism => (Rare, Power, Colorless, cost(2), powers::magnetism_behavior, false),
     // Colorless special attacks
     Bite => (Special, Attack, Special, cost(1), attacks::bite_behavior, false),
