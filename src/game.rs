@@ -461,6 +461,22 @@ impl Game {
                     target,
                 });
             }
+
+            let update_blood_for_blood_cost = |cards: &[CardRef]| {
+                for c in cards {
+                    let mut c = c.borrow_mut();
+                    if c.class == CardClass::BloodForBlood {
+                        if let CardCost::Cost { base_cost, .. } = c.cost {
+                            c.update_cost(0.max(base_cost - 1));
+                        } else {
+                            panic!();
+                        }
+                    }
+                }
+            };
+            update_blood_for_blood_cost(&self.hand);
+            update_blood_for_blood_cost(&self.discard_pile);
+            update_blood_for_blood_cost(&self.draw_pile);
         }
     }
 

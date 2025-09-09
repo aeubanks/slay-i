@@ -95,8 +95,6 @@ macro_rules! c {
 
 fn noop_behavior(_: &mut Game, _: &CardPlayInfo) {}
 
-fn todo(_: &mut Game, _: &CardPlayInfo) {}
-
 c!(
     // Basic
     Strike => (Basic, Attack, Red, cost(1), attacks::strike_behavior, false),
@@ -134,7 +132,7 @@ c!(
     Hemokinesis => (Uncommon, Attack, Red, cost(1), attacks::hemokinesis_behavior, false),
     Dropkick => (Uncommon, Attack, Red, cost(1), attacks::dropkick_behavior, false),
     Pummel => (Uncommon, Attack, Red, cost(1), attacks::pummel_behavior, true),
-    BloodForBlood => (Uncommon, Attack, Red, cost(4), todo, false),
+    BloodForBlood => (Uncommon, Attack, Red, cost(4), attacks::blood_for_blood_behavior, false),
     RecklessCharge => (Uncommon, Attack, Red, cost(0), attacks::reckless_charge_behavior, false),
     // Uncommon skills
     GhostlyArmor => (Uncommon, Skill, Red, cost(1), skills::ghostly_armor_behavior, false),

@@ -36,12 +36,19 @@ impl Card {
         if self.class.upgrade_removes_exhaust() {
             self.exhaust = false;
         }
+        if let CardCost::Cost { base_cost, .. } = self.cost
+            && let Some(new_cost) = self.class.upgrade_cost(base_cost)
+        {
+            self.update_cost(new_cost);
+        }
+    }
+    pub fn update_cost(&mut self, new_cost: i32) {
+        assert!(new_cost >= 0);
         if let CardCost::Cost {
             base_cost,
             temporary_cost,
             ..
         } = &mut self.cost
-            && let Some(new_cost) = self.class.upgrade_cost(*base_cost)
         {
             let prev_base_cost = *base_cost;
             *base_cost = new_cost;
@@ -52,6 +59,8 @@ impl Card {
                     *temp = 0;
                 }
             }
+        } else {
+            panic!();
         }
     }
     pub fn is_innate(&self) -> bool {

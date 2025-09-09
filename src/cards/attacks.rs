@@ -239,6 +239,10 @@ pub fn pummel_behavior(game: &mut Game, info: &CardPlayInfo) {
     }
 }
 
+pub fn blood_for_blood_behavior(game: &mut Game, info: &CardPlayInfo) {
+    push_damage(game, info, 18, 22);
+}
+
 pub fn reaper_behavior(game: &mut Game, info: &CardPlayInfo) {
     let alive = game
         .monsters
@@ -350,8 +354,8 @@ mod tests {
         actions::{block::BlockAction, set_hp::SetHPAction},
         assert_matches,
         cards::{CardClass, CardCost},
-        game::{CreatureRef, GameBuilder, GameStatus, Move},
-        monsters::test::NoopMonster,
+        game::{CreatureRef, Game, GameBuilder, GameStatus, Move},
+        monsters::test::{AttackMonster, NoopMonster},
         status::Status,
     };
 
@@ -870,6 +874,45 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_blood_for_blood() {
+        let mut g = GameBuilder::default()
+            .add_monster(AttackMonster::new(1))
+            .build_combat();
+        g.add_card_to_discard_pile(CardClass::BloodForBlood);
+        g.add_card_to_hand(CardClass::BloodForBlood);
+        g.add_card_to_exhaust_pile(CardClass::BloodForBlood);
+        assert_eq!(g.discard_pile[0].borrow().get_base_cost(), 4);
+        assert_eq!(g.hand[0].borrow().get_base_cost(), 4);
+        assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);
+        g.play_card(CardClass::Bloodletting, None);
+        g.add_card_to_draw_pile(CardClass::BloodForBlood);
+        assert_eq!(g.draw_pile[0].borrow().get_base_cost(), 4);
+        assert_eq!(g.discard_pile[0].borrow().get_base_cost(), 3);
+        assert_eq!(g.hand[0].borrow().get_base_cost(), 3);
+        assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);
+
+        let cost_sum =
+            |g: &Game| -> i32 { g.hand.iter().map(|c| c.borrow().get_base_cost()).sum() };
+
+        g.player.creature.block = 2;
+        g.make_move(Move::EndTurn);
+        assert_eq!(cost_sum(&g), 4 + 3 + 3);
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(cost_sum(&g), 3 + 2 + 2);
+        g.play_card_upgraded(CardClass::Armaments, None);
+        assert_eq!(cost_sum(&g), 2 + 1 + 1);
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(cost_sum(&g), 1);
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(cost_sum(&g), 0);
+
+        assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);
+
+        
     }
 
     #[test]
