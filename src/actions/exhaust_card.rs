@@ -44,6 +44,6 @@ impl Action for ExhaustCardAction {
 
 impl std::fmt::Debug for ExhaustCardAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "exhaust {:?}", self.0)
+        write!(f, "exhaust {:?}", self.0.borrow())
     }
 }
