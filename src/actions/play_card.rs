@@ -4,6 +4,7 @@ use crate::{
     card::{CardPlayInfo, CardRef},
     cards::{CardCost, CardType},
     game::{CreatureRef, Game},
+    status::Status,
 };
 
 use super::discard_card::DiscardCardAction;
@@ -25,6 +26,9 @@ impl Action for PlayCardAction {
         game.num_cards_played_this_turn += 1;
         game.cur_card = Some(self.card.clone());
 
+        let is_corruption =
+            game.player.creature.has_status(Status::Corruption) && c.class.ty() == CardType::Skill;
+
         let energy_cost = match c.cost {
             CardCost::Zero => 0,
             CardCost::X => game.energy,
@@ -33,7 +37,7 @@ impl Action for PlayCardAction {
                 temporary_cost,
                 free_to_play_once,
             } => {
-                if free_to_play_once {
+                if free_to_play_once || is_corruption {
                     0
                 } else {
                     temporary_cost.unwrap_or(base_cost)
@@ -58,7 +62,7 @@ impl Action for PlayCardAction {
         }
         let dest = if self.is_duplicated || c.class.ty() == CardType::Power {
             CardDestination::None
-        } else if c.exhaust || self.force_exhaust {
+        } else if c.exhaust || self.force_exhaust || is_corruption {
             CardDestination::Exhaust
         } else {
             CardDestination::Discard

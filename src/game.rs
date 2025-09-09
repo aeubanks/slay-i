@@ -996,7 +996,12 @@ impl Game {
                 base_cost,
                 temporary_cost,
                 free_to_play_once,
-            } => free_to_play_once || self.energy >= temporary_cost.unwrap_or(base_cost),
+            } => {
+                free_to_play_once
+                    || self.energy >= temporary_cost.unwrap_or(base_cost)
+                    || (self.player.creature.has_status(Status::Corruption)
+                        && c.class.ty() == CardType::Skill)
+            }
         }
     }
 

@@ -179,7 +179,7 @@ c!(
     Brutality => (Rare, Power, Red, cost(0), powers::brutality_behavior, false),
     DemonForm => (Rare, Power, Red, cost(3), powers::demon_form_behavior, false),
     Barricade => (Rare, Power, Red, cost(3), powers::barricade_behavior, false),
-    Corruption => (Rare, Power, Red, cost(3), todo, false),
+    Corruption => (Rare, Power, Red, cost(3), powers::corruption_behavior, false),
     Juggernaut => (Rare, Power, Red, cost(2), powers::juggernaut_behavior, false),
     Berserk => (Rare, Power, Red, cost(0), powers::berserk_behavior, false),
     // Colorless uncommon attacks

@@ -61,6 +61,7 @@ s!(
     CombustHPLoss => Buff,
     CombustDamage => Buff,
     Barricade => Buff,
+    Corruption => Buff,
     Duplication => Buff,
     DoubleTap => Buff,
     NextTurnBlock => Buff,
@@ -88,7 +89,7 @@ impl Status {
     }
     pub fn does_not_stack(&self) -> bool {
         use Status::*;
-        matches!(self, NoDraw | Confusion | Barricade)
+        matches!(self, NoDraw | Confusion | Barricade | Corruption)
     }
     pub fn is_debuff(&self, amount: i32) -> bool {
         match self.ty() {
@@ -1200,5 +1201,30 @@ mod tests {
         g.make_move(Move::EndTurn);
         g.play_card(CardClass::Thunderclap, None);
         assert_eq!(g.player.creature.block, 0);
+    }
+
+    #[test]
+    fn test_corruption() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Corruption, 1)
+            .build_combat();
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.energy, 3);
+        assert_eq!(g.discard_pile.len(), 0);
+        assert_eq!(g.exhaust_pile.len(), 1);
+        g.play_card(CardClass::Thunderclap, None);
+        assert_eq!(g.energy, 2);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.exhaust_pile.len(), 1);
+        g.play_card(CardClass::Inflame, None);
+        assert_eq!(g.energy, 1);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.exhaust_pile.len(), 1);
+
+        g.clear_all_piles();
+        g.play_card(CardClass::Transmutation, None);
+        assert_eq!(g.discard_pile.len(), 0);
+        assert_eq!(g.exhaust_pile.len(), 1);
+        assert_eq!(g.energy, 0);
     }
 }
