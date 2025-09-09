@@ -59,6 +59,8 @@ r!(
 
     CaptainsWheel => Rare,
 
+    SacredBark => Boss,
+
     MedicalKit => Shop,
 );
 

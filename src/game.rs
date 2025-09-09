@@ -27,6 +27,7 @@ use crate::creature::Creature;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
 use crate::player::Player;
+use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::RelicClass;
 use crate::rng::rand_slice;
@@ -974,7 +975,7 @@ impl Game {
             } => {
                 assert_matches!(self.state, GameState::PlayerTurn);
                 let p = self.player.take_potion(potion_index);
-                p.behavior()(target.map(CreatureRef::monster), &mut self.action_queue);
+                self.throw_potion(p, target.map(CreatureRef::monster));
                 self.run();
             }
         }
@@ -1175,6 +1176,15 @@ impl Game {
     pub fn run_action<A: Action + 'static>(&mut self, a: A) {
         self.action_queue.push_bot(a);
         self.run_actions_until_empty();
+    }
+
+    pub fn throw_potion(&mut self, p: Potion, target: Option<CreatureRef>) {
+        p.behavior()(
+            self.player.has_relic(RelicClass::SacredBark),
+            target,
+            &mut self.action_queue,
+        );
+        self.run();
     }
 
     #[cfg(test)]

@@ -16,7 +16,7 @@ enum PotionRarity {
     Rare,
 }
 
-type PotionBehavior = fn(Option<CreatureRef>, &mut ActionQueue);
+type PotionBehavior = fn(bool, Option<CreatureRef>, &mut ActionQueue);
 
 macro_rules! p {
     ($($name:ident => ($rarity:expr, $has_target:expr, $behavior:expr)),+,) => {
@@ -90,47 +90,54 @@ p!(
     Entropic => (Rare, false, entropic),
 );
 
-fn blood(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn block(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn dex(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn energy(_: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn blood(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn block(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn dex(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn energy(_: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
     queue.push_bot(GainEnergyAction(2));
 }
-fn explosive(_: Option<CreatureRef>, queue: &mut ActionQueue) {
-    queue.push_bot(DamageAllMonstersAction::thorns(10));
+fn explosive(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+    queue.push_bot(DamageAllMonstersAction::thorns(if is_sacred {
+        20
+    } else {
+        10
+    }));
 }
-fn fire(target: Option<CreatureRef>, queue: &mut ActionQueue) {
-    queue.push_bot(DamageAction::thorns_rupture(20, target.unwrap()));
+fn fire(is_sacred: bool, target: Option<CreatureRef>, queue: &mut ActionQueue) {
+    queue.push_bot(DamageAction::thorns_rupture(
+        if is_sacred { 40 } else { 20 },
+        target.unwrap(),
+    ));
 }
-fn strength(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn swift(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn weak(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn fear(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn attack(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn skill(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn power(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn colorless(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn flex(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn speed(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn forge(_: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn strength(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn swift(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn weak(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn fear(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn attack(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn skill(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn power(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn colorless(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn flex(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn speed(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn forge(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
 
-fn elixir(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn regen(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn ancient(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn bronze(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn gamblers(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn steel(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn duplication(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn chaos(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn memories(_: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn elixir(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn regen(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn ancient(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn bronze(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn gamblers(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn steel(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn duplication(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn chaos(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn memories(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
 
-fn iron(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn cultist(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn fruit(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn snecko(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn fairy(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn smoke(_: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn entropic(_: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn iron(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn cultist(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn fruit(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn snecko(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn fairy(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn smoke(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn entropic(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
 
 lazy_static! {
     static ref ALL_COMMON: Vec<Potion> = Potion::all()
@@ -148,6 +155,7 @@ mod tests {
     use crate::{
         game::{GameBuilder, Move},
         monsters::test::NoopMonster,
+        relic::RelicClass,
     };
 
     use super::*;
@@ -166,6 +174,11 @@ mod tests {
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 20);
         assert_eq!(g.monsters[1].creature.cur_hp, hp);
+
+        g.player.add_relic(RelicClass::SacredBark);
+        g.throw_potion(Potion::Fire, Some(CreatureRef::monster(1)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 20);
+        assert_eq!(g.monsters[1].creature.cur_hp, hp - 40);
     }
 
     #[test]
@@ -182,5 +195,10 @@ mod tests {
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 10);
         assert_eq!(g.monsters[1].creature.cur_hp, hp - 10);
+
+        g.player.add_relic(RelicClass::SacredBark);
+        g.throw_potion(Potion::Explosive, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 30);
+        assert_eq!(g.monsters[1].creature.cur_hp, hp - 30);
     }
 }
