@@ -195,4 +195,16 @@ mod tests {
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Necronomicurse);
     }
+
+    #[test]
+    fn test_parasite() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Parasite)
+            .build_combat();
+        let max_hp = g.player.creature.max_hp;
+        g.player.creature.cur_hp = max_hp - 1;
+        g.remove_card_from_master_deck(0);
+        assert_eq!(g.player.creature.max_hp, max_hp - 3);
+        assert_eq!(g.player.creature.cur_hp, max_hp - 3);
+    }
 }

@@ -234,12 +234,13 @@ c!(
     BurnPlus => (Special, Status, Special, Zero, noop_behavior, true),
     Void => (Special, Status, Special, Zero, noop_behavior, true),
     // Curses
-    // TODO: pain, parasite
+    // TODO: pain
     AscendersBane => (Special, Curse, Curse, Zero, noop_behavior, true),
     CurseOfTheBell => (Special, Curse, Curse, Zero, noop_behavior, true),
     Clumsy => (Special, Curse, Curse, Zero, noop_behavior, true),
     Injury => (Special, Curse, Curse, Zero, noop_behavior, true),
     Writhe => (Special, Curse, Curse, Zero, noop_behavior, true),
+    Parasite => (Special, Curse, Curse, Zero, noop_behavior, true),
     Shame => (Special, Curse, Curse, Zero, noop_behavior, true),
     Doubt => (Special, Curse, Curse, Zero, noop_behavior, true),
     Decay => (Special, Curse, Curse, Zero, noop_behavior, true),

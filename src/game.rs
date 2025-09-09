@@ -6,6 +6,7 @@ use std::rc::Rc;
 use crate::action::Action;
 use crate::actions::choose_dual_wield::can_dual_wield;
 use crate::actions::damage::{DamageAction, DamageType};
+use crate::actions::decrease_max_hp::DecreaseMaxHPAction;
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::discovery::DiscoveryAction;
 use crate::actions::draw::DrawAction;
@@ -760,10 +761,19 @@ impl Game {
         self.run_actions_until_empty();
     }
 
-    fn transform_card(&mut self, master_deck_index: usize) {
+    pub fn remove_card_from_master_deck(&mut self, master_deck_index: usize) -> CardClass {
         let c = self.player.master_deck.remove(master_deck_index);
         let class = c.borrow().class;
         assert!(class.can_remove_from_master_deck());
+        if class == CardClass::Parasite {
+            self.action_queue.push_bot(DecreaseMaxHPAction(3));
+            self.run_actions_until_empty();
+        }
+        class
+    }
+
+    fn transform_card_in_master_deck(&mut self, master_deck_index: usize) {
+        let class = self.remove_card_from_master_deck(master_deck_index);
         let transformed = transformed(class, &mut self.rng);
         self.add_card_to_master_deck(transformed);
     }
@@ -841,7 +851,7 @@ impl Game {
             }
             Move::Transform { card_index } => {
                 assert_matches!(self.state, GameState::BlessingTransform);
-                self.transform_card(card_index);
+                self.transform_card_in_master_deck(card_index);
                 self.state = GameState::RollCombat;
                 self.run();
             }

@@ -14,6 +14,7 @@ pub mod clear_cur_card;
 pub mod damage;
 pub mod damage_all_monsters;
 pub mod damage_random_monster;
+pub mod decrease_max_hp;
 pub mod discard_card;
 pub mod discard_hand;
 pub mod discovery;

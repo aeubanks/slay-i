@@ -51,6 +51,11 @@ impl Creature {
         self.max_hp += amount;
     }
 
+    pub fn decrease_max_hp(&mut self, amount: i32) {
+        self.max_hp -= amount;
+        self.cur_hp = self.cur_hp.min(self.max_hp);
+    }
+
     pub fn has_any_status(&self) -> bool {
         !self.statuses.is_empty()
     }
