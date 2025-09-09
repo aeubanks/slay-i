@@ -1871,7 +1871,6 @@ mod tests {
             }
             assert_eq!(g.valid_moves().len(), 3);
             g.make_move(g.valid_moves()[0]);
-            dbg!(g.hand[0].borrow());
             g.make_move(Move::PlayCard {
                 card_index: 0,
                 target: Some(0),
