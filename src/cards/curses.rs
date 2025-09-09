@@ -207,4 +207,31 @@ mod tests {
         assert_eq!(g.player.creature.max_hp, max_hp - 3);
         assert_eq!(g.player.creature.cur_hp, max_hp - 3);
     }
+
+    #[test]
+    fn test_pain() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::BlueCandle)
+            .build_combat();
+        g.set_debug();
+        g.player.creature.cur_hp = 50;
+        g.add_card_to_hand(CardClass::Pain);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.creature.cur_hp, 49);
+        g.play_card(CardClass::TrueGrit, None);
+        assert_eq!(g.player.creature.cur_hp, 48);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.creature.cur_hp, 48);
+
+        g.add_card_to_hand(CardClass::Pain);
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.play_card_upgraded(CardClass::Havoc, None);
+        assert_eq!(g.player.creature.cur_hp, 46);
+
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: None,
+        });
+        assert_eq!(g.player.creature.cur_hp, 45);
+    }
 }

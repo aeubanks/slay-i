@@ -1,8 +1,10 @@
 use crate::{
     action::Action,
-    actions::{clear_cur_card::ClearCurCardAction, exhaust_card::ExhaustCardAction},
+    actions::{
+        clear_cur_card::ClearCurCardAction, damage::DamageAction, exhaust_card::ExhaustCardAction,
+    },
     card::{CardPlayInfo, CardRef},
-    cards::{CardCost, CardType},
+    cards::{CardClass, CardCost, CardType},
     game::{CreatureRef, Game},
     status::Status,
 };
@@ -54,6 +56,13 @@ impl Action for PlayCardAction {
 
         game.num_cards_played_this_turn += 1;
         game.cur_card = Some(self.card.clone());
+
+        for h in &game.hand {
+            if h.borrow().class == CardClass::Pain {
+                game.action_queue
+                    .push_top(DamageAction::lose_hp(1, CreatureRef::player()));
+            }
+        }
 
         let energy_cost = self.cost(game);
         assert!(energy_cost <= game.energy);
