@@ -911,8 +911,6 @@ mod tests {
         assert_eq!(cost_sum(&g), 0);
 
         assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);
-
-        
     }
 
     #[test]

@@ -1,6 +1,9 @@
 use crate::{
     action::Action,
-    actions::{block::BlockAction, draw::DrawAction, gain_energy::GainEnergyAction},
+    actions::{
+        block::BlockAction, draw::DrawAction, gain_energy::GainEnergyAction,
+        place_card_in_hand::PlaceCardInHandAction,
+    },
     card::CardRef,
     cards::CardClass,
     game::Game,
@@ -22,9 +25,16 @@ impl Action for ExhaustCardAction {
         {
             let mut c = self.0.borrow_mut();
             c.clear_temporary();
-            if c.class == CardClass::Sentinel {
-                game.action_queue
-                    .push_bot(GainEnergyAction(if c.upgrade_count == 0 { 2 } else { 3 }));
+            match c.class {
+                CardClass::Sentinel => {
+                    game.action_queue
+                        .push_bot(GainEnergyAction(if c.upgrade_count == 0 { 2 } else { 3 }));
+                }
+                CardClass::Necronomicurse => {
+                    let c = game.new_card(CardClass::Necronomicurse);
+                    game.action_queue.push_bot(PlaceCardInHandAction(c));
+                }
+                _ => {}
             }
         }
 

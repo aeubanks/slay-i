@@ -39,6 +39,7 @@ mod tests {
         actions::block::BlockAction,
         cards::CardClass,
         game::{GameBuilder, Move},
+        relic::RelicClass,
         status::Status,
     };
 
@@ -180,5 +181,18 @@ mod tests {
         assert_eq!(g.valid_moves().len(), 2);
         g.add_card_to_hand(CardClass::Normality);
         assert_eq!(g.valid_moves().len(), 1);
+    }
+
+    #[test]
+    fn test_necronomicurse() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::BlueCandle)
+            .build_combat();
+        g.add_card_to_hand(CardClass::Necronomicurse);
+        g.play_card(CardClass::TrueGrit, None);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Necronomicurse);
+        assert_eq!(g.exhaust_pile.len(), 1);
+        assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Necronomicurse);
     }
 }
