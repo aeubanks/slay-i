@@ -667,7 +667,7 @@ impl Game {
                 }
             } else if !self.card_queue.is_empty() {
                 let play = self.card_queue.remove(0);
-                if self.can_play_card(&play.card.borrow()) {
+                if self.can_play_card(&play) {
                     self.action_queue.push_bot(play);
                 } else {
                     self.action_queue.push_bot(DiscardCardAction(play.card));
@@ -862,15 +862,16 @@ impl Game {
             }
             Move::PlayCard { card_index, target } => {
                 assert_matches!(self.state, GameState::PlayerTurn);
-                assert!(self.can_play_card(&self.hand[card_index].borrow()));
-                self.card_queue.push(PlayCardAction {
+                let action = PlayCardAction {
                     card: self.hand.remove(card_index),
                     target: target.map(CreatureRef::monster),
                     is_duplicated: false,
                     energy: self.energy,
                     force_exhaust: false,
                     free: false,
-                });
+                };
+                assert!(self.can_play_card(&action));
+                self.card_queue.push(action);
                 self.run();
             }
             Move::Armaments { card_index } => {
@@ -979,8 +980,17 @@ impl Game {
         }
     }
 
-    pub fn can_play_card(&self, c: &Card) -> bool {
-        if self.player.creature.has_status(Status::Entangled) && c.class.ty() == CardType::Attack {
+    pub fn can_play_card(&self, play: &PlayCardAction) -> bool {
+        let c = play.card.borrow();
+        let can_play_ty = match c.class.ty() {
+            CardType::Attack => !self.player.creature.has_status(Status::Entangled),
+            CardType::Skill | CardType::Power => true,
+            CardType::Status => {
+                c.class == CardClass::Slimed || self.player.has_relic(RelicClass::MedicalKit)
+            }
+            CardType::Curse => self.player.has_relic(RelicClass::BlueCandle),
+        };
+        if !can_play_ty {
             return false;
         }
         let can_play_class = match c.class {
@@ -992,12 +1002,10 @@ impl Game {
                 .draw_pile
                 .iter()
                 .any(|c| c.borrow().class.ty() == CardType::Skill),
-
             CardClass::SecretWeapon => self
                 .draw_pile
                 .iter()
                 .any(|c| c.borrow().class.ty() == CardType::Attack),
-
             _ => true,
         };
         if !can_play_class {
@@ -1011,24 +1019,7 @@ impl Game {
         {
             return false;
         }
-        match c.cost {
-            CardCost::Zero => match c.class.ty() {
-                CardType::Curse => self.player.has_relic(RelicClass::BlueCandle),
-                CardType::Status => self.player.has_relic(RelicClass::MedicalKit),
-                _ => unreachable!(),
-            },
-            CardCost::X => true,
-            CardCost::Cost {
-                base_cost,
-                temporary_cost,
-                free_to_play_once,
-            } => {
-                free_to_play_once
-                    || self.energy >= temporary_cost.unwrap_or(base_cost)
-                    || (self.player.creature.has_status(Status::Corruption)
-                        && c.class.ty() == CardType::Skill)
-            }
-        }
+        self.energy >= play.cost(self)
     }
 
     pub fn valid_moves(&self) -> Vec<Move> {
@@ -1051,10 +1042,17 @@ impl Game {
             GameState::PlayerTurn => {
                 moves.push(Move::EndTurn);
                 for (ci, c) in self.hand.iter().enumerate() {
-                    let c = c.borrow();
-                    if !self.can_play_card(&c) {
+                    if !self.can_play_card(&PlayCardAction {
+                        card: c.clone(),
+                        target: None,
+                        is_duplicated: false,
+                        energy: self.energy,
+                        free: false,
+                        force_exhaust: false,
+                    }) {
                         continue;
                     }
+                    let c = c.borrow();
                     if c.has_target() {
                         for (mi, m) in self.monsters.iter().enumerate() {
                             if !m.creature.is_alive() {
@@ -1180,30 +1178,30 @@ impl Game {
     }
 
     #[cfg(test)]
-    pub fn play_card(&mut self, class: CardClass, target: Option<CreatureRef>) {
-        let card = self.new_card(class);
-        assert!(self.can_play_card(&card.borrow()));
-        self.run_action(PlayCardAction {
+    fn play_card_impl(&mut self, card: CardRef, target: Option<CreatureRef>) {
+        let action = PlayCardAction {
             card,
             target,
             is_duplicated: false,
             energy: self.energy,
             force_exhaust: false,
             free: false,
-        });
+        };
+        assert!(self.can_play_card(&action));
+        self.card_queue.push(action);
+        self.run_actions_until_empty();
+    }
+
+    #[cfg(test)]
+    pub fn play_card(&mut self, class: CardClass, target: Option<CreatureRef>) {
+        let card = self.new_card(class);
+        self.play_card_impl(card, target);
     }
 
     #[cfg(test)]
     pub fn play_card_upgraded(&mut self, class: CardClass, target: Option<CreatureRef>) {
         let card = self.new_card_upgraded(class);
-        self.run_action(PlayCardAction {
-            card,
-            target,
-            is_duplicated: false,
-            energy: self.energy,
-            force_exhaust: false,
-            free: false,
-        });
+        self.play_card_impl(card, target);
     }
 
     #[cfg(test)]

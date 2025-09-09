@@ -652,6 +652,11 @@ mod tests {
         g.play_card_upgraded(CardClass::Havoc, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 10 - 10);
         assert_eq!(g.energy, 2);
+
+        g.energy = 0;
+        g.add_card_to_draw_pile(CardClass::Defend);
+        g.play_card_upgraded(CardClass::Havoc, None);
+        assert_eq!(g.player.creature.block, 5);
     }
 
     #[test]

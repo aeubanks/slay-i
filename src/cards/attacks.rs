@@ -650,11 +650,11 @@ mod tests {
     fn test_clash() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::Clash);
-        assert!(g.can_play_card(&g.hand[0].borrow()));
+        assert_eq!(g.valid_moves().len(), 2);
         g.add_card_to_hand(CardClass::Anger);
-        assert!(g.can_play_card(&g.hand[0].borrow()));
+        assert_eq!(g.valid_moves().len(), 3);
         g.add_card_to_hand(CardClass::Defend);
-        assert!(!g.can_play_card(&g.hand[0].borrow()));
+        assert_eq!(g.valid_moves().len(), 3);
     }
 
     #[test]

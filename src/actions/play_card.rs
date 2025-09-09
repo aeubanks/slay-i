@@ -18,18 +18,13 @@ pub struct PlayCardAction {
     pub force_exhaust: bool,
 }
 
-impl Action for PlayCardAction {
-    fn run(&self, game: &mut Game) {
-        let c = self.card.borrow();
-        assert!(game.can_play_card(&c));
+impl PlayCardAction {
+    pub fn cost(&self, game: &Game) -> i32 {
+        if self.free {
+            return 0;
+        }
 
-        game.num_cards_played_this_turn += 1;
-        game.cur_card = Some(self.card.clone());
-
-        let is_corruption =
-            game.player.creature.has_status(Status::Corruption) && c.class.ty() == CardType::Skill;
-
-        let energy_cost = match c.cost {
+        match self.card.borrow().cost {
             CardCost::Zero => 0,
             CardCost::X => game.energy,
             CardCost::Cost {
@@ -37,13 +32,30 @@ impl Action for PlayCardAction {
                 temporary_cost,
                 free_to_play_once,
             } => {
-                if free_to_play_once || is_corruption {
+                if free_to_play_once || self.is_corruption(game) {
                     0
                 } else {
                     temporary_cost.unwrap_or(base_cost)
                 }
             }
-        };
+        }
+    }
+
+    pub fn is_corruption(&self, game: &Game) -> bool {
+        game.player.creature.has_status(Status::Corruption)
+            && self.card.borrow().class.ty() == CardType::Skill
+    }
+}
+
+impl Action for PlayCardAction {
+    fn run(&self, game: &mut Game) {
+        let c = self.card.borrow();
+        assert!(game.can_play_card(self));
+
+        game.num_cards_played_this_turn += 1;
+        game.cur_card = Some(self.card.clone());
+
+        let energy_cost = self.cost(game);
         assert!(energy_cost <= game.energy);
         let info = CardPlayInfo {
             card: &c,
@@ -62,7 +74,7 @@ impl Action for PlayCardAction {
         }
         let dest = if self.is_duplicated || c.class.ty() == CardType::Power {
             CardDestination::None
-        } else if c.exhaust || self.force_exhaust || is_corruption {
+        } else if c.exhaust || self.force_exhaust || self.is_corruption(game) {
             CardDestination::Exhaust
         } else {
             CardDestination::Discard
@@ -83,9 +95,7 @@ impl Action for PlayCardAction {
         );
         game.player
             .trigger_relics_on_card_played(&mut game.action_queue, self);
-        if !self.free {
-            game.energy -= energy_cost;
-        }
+        game.energy -= energy_cost;
         game.action_queue.push_bot(ClearCurCardAction());
         match dest {
             CardDestination::None => {}
