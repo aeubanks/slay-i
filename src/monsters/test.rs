@@ -38,6 +38,7 @@ impl MonsterBehavior for NoopMonster {
 
 pub struct AttackMonster {
     attack: i32,
+    attack_count: i32,
     max_hp: i32,
 }
 
@@ -46,11 +47,23 @@ impl AttackMonster {
     pub fn new(attack: i32) -> Self {
         Self {
             attack,
+            attack_count: 1,
             max_hp: 100,
         }
     }
     pub fn with_hp(attack: i32, max_hp: i32) -> Self {
-        Self { attack, max_hp }
+        Self {
+            attack,
+            attack_count: 1,
+            max_hp,
+        }
+    }
+    pub fn with_attack_count(attack: i32, attack_count: i32) -> Self {
+        Self {
+            attack,
+            attack_count,
+            max_hp: 50,
+        }
     }
 }
 
@@ -72,12 +85,14 @@ impl MonsterBehavior for AttackMonster {
         this: &Creature,
         this_ref: CreatureRef,
     ) {
-        queue.push_bot(DamageAction::from_monster(
-            self.attack,
-            player,
-            this,
-            this_ref,
-        ));
+        for _ in 0..self.attack_count {
+            queue.push_bot(DamageAction::from_monster(
+                self.attack,
+                player,
+                this,
+                this_ref,
+            ));
+        }
     }
 }
 

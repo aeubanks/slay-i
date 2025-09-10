@@ -87,7 +87,7 @@ p!(
     Ancient => (Uncommon, false, ancient),
     Bronze => (Uncommon, false, bronze),
     Gamblers => (Uncommon, false, gamblers),
-    Steel  => (Uncommon, false, steel),
+    Steel => (Uncommon, false, steel),
     Duplication => (Uncommon, false, duplication),
     Chaos => (Uncommon, false, chaos),
     Memories => (Uncommon, false, memories),
@@ -256,7 +256,14 @@ fn bronze(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
 fn gamblers(_: bool, _: Option<CreatureRef>, game: &mut Game) {
     game.action_queue.push_bot(ChooseGambleAction());
 }
-fn steel(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn steel(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 8 } else { 4 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::PlatedArmor,
+        amount,
+        target: CreatureRef::player(),
+    });
+}
 fn duplication(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 2 } else { 1 };
     game.action_queue.push_bot(GainStatusAction {

@@ -250,6 +250,9 @@ impl Creature {
         if let Some(v) = self.get_status(Status::Metallicize) {
             queue.push_bot(BlockAction::monster(this, v));
         }
+        if let Some(v) = self.get_status(Status::PlatedArmor) {
+            queue.push_bot(BlockAction::monster(this, v));
+        }
         if let Some(v) = self.get_status(Status::CombustHPLoss) {
             queue.push_bot(DamageAction::lose_hp(v, this));
         }

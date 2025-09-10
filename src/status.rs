@@ -60,6 +60,7 @@ s!(
     Magnetism => Buff,
     Mayhem => Buff,
     SadisticNature => Buff,
+    PlatedArmor => Buff,
     Metallicize => Buff,
     CombustHPLoss => Buff,
     CombustDamage => Buff,
@@ -1138,6 +1139,35 @@ mod tests {
         assert_eq!(g.player.creature.cur_hp, hp - 3);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.cur_hp, hp - 6);
+    }
+
+    #[test]
+    fn test_plated_armor() {
+        {
+            let mut g = GameBuilder::default()
+                .add_player_status(Status::PlatedArmor, 2)
+                .add_player_status(Status::Dexterity, 22)
+                .add_monster(AttackMonster::new(5))
+                .build_combat();
+            let hp = g.player.creature.cur_hp;
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.creature.cur_hp, hp - 3);
+            assert_eq!(g.player.creature.get_status(Status::PlatedArmor), Some(1));
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.creature.cur_hp, hp - 3 - 4);
+            assert_eq!(g.player.creature.get_status(Status::PlatedArmor), None);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_player_status(Status::PlatedArmor, 6)
+                .add_player_status(Status::Dexterity, 22)
+                .add_monster(AttackMonster::with_attack_count(5, 3))
+                .build_combat();
+            let hp = g.player.creature.cur_hp;
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.creature.cur_hp, hp - 9);
+            assert_eq!(g.player.creature.get_status(Status::PlatedArmor), Some(4));
+        }
     }
 
     #[test]

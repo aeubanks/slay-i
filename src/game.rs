@@ -18,6 +18,7 @@ use crate::actions::gain_status::GainStatusAction;
 use crate::actions::place_card_in_hand::PlaceCardInHandAction;
 use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
 use crate::actions::play_card::PlayCardAction;
+use crate::actions::reduce_status::ReduceStatusAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade::UpgradeAction;
 use crate::blessings::Blessing;
@@ -465,11 +466,20 @@ impl Game {
                     | DamageType::Thorns {
                         procs_rupture: true
                     }
-            ) && let Some(v) = c.get_status(Status::Rupture)
+            ) && let Some(v) = self.get_creature(target).get_status(Status::Rupture)
             {
                 self.action_queue.push_bot(GainStatusAction {
                     status: Status::Strength,
                     amount: v,
+                    target,
+                });
+            }
+            if matches!(ty, DamageType::Attack { .. })
+                && self.get_creature(target).has_status(Status::PlatedArmor)
+            {
+                self.action_queue.push_bot(ReduceStatusAction {
+                    status: Status::PlatedArmor,
+                    amount: 1,
                     target,
                 });
             }
