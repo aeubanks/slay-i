@@ -2,7 +2,8 @@ use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
-        heal::HealAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        heal::HealAction, increase_max_hp::IncreaseMaxHPAction,
+        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     game::{CreatureRef, Game, Rand},
     rng::rand_slice,
@@ -238,7 +239,10 @@ fn cultist(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
         target: CreatureRef::player(),
     });
 }
-fn fruit(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn fruit(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 10 } else { 5 };
+    game.action_queue.push_bot(IncreaseMaxHPAction(amount));
+}
 fn snecko(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn fairy(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn smoke(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
