@@ -339,7 +339,7 @@ mod tests {
         assert_matches,
         cards::{CardClass, CardColor, CardCost, CardType, random_red_in_combat},
         game::{GameBuilder, GameStatus, Move},
-        monsters::test::NoopMonster,
+        monsters::test::{AttackMonster, NoopMonster},
         relic::RelicClass,
     };
 
@@ -717,17 +717,62 @@ mod tests {
 
     #[test]
     fn test_fairy() {
-        let mut g = GameBuilder::default().build_combat();
-        g.player.add_potion(Potion::Fairy);
-        assert!(
-            g.valid_moves()
-                .into_iter()
-                .any(|m| matches!(m, Move::DiscardPotion { .. }))
-        );
-        assert!(
-            g.valid_moves()
-                .into_iter()
-                .all(|m| !matches!(m, Move::UsePotion { .. }))
-        );
+        {
+            let mut g = GameBuilder::default()
+                .add_monster(AttackMonster::new(1000))
+                .build_combat();
+            g.player.add_potion(Potion::Fairy);
+            assert!(
+                g.valid_moves()
+                    .into_iter()
+                    .any(|m| matches!(m, Move::DiscardPotion { .. }))
+            );
+            assert!(
+                g.valid_moves()
+                    .into_iter()
+                    .all(|m| !matches!(m, Move::UsePotion { .. }))
+            );
+
+            g.make_move(Move::EndTurn);
+            assert!(g.player.creature.is_alive());
+            assert_eq!(
+                g.player.creature.cur_hp,
+                (g.player.creature.max_hp as f32 * 0.3) as i32
+            );
+            assert!(g.player.potions.iter().all(|p| *p == None));
+
+            g.player.add_potion(Potion::Fairy);
+            g.player.add_relic(RelicClass::SacredBark);
+            g.make_move(Move::EndTurn);
+            assert_eq!(
+                g.player.creature.cur_hp,
+                (g.player.creature.max_hp as f32 * 0.6) as i32
+            );
+            assert!(g.player.potions.iter().all(|p| *p == None));
+
+            g.player
+                .creature
+                .decrease_max_hp(g.player.creature.max_hp - 1);
+            g.player.add_potion(Potion::Fairy);
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.creature.cur_hp, 1);
+            assert!(g.player.potions.iter().all(|p| *p == None));
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_monster(AttackMonster::with_attack_count(1000, 2))
+                .build_combat();
+
+            g.player.add_potion(Potion::Fairy);
+            g.player.add_potion(Potion::Fairy);
+            g.make_move(Move::EndTurn);
+            assert!(g.player.creature.is_alive());
+            assert!(g.player.potions.iter().all(|p| *p == None));
+
+            g.player.add_potion(Potion::Fairy);
+            g.make_move(Move::EndTurn);
+            assert!(!g.player.creature.is_alive());
+            assert!(g.player.potions.iter().all(|p| *p == None));
+        }
     }
 }

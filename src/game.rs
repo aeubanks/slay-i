@@ -512,6 +512,24 @@ impl Game {
             update_blood_for_blood_cost(&self.discard_pile);
             update_blood_for_blood_cost(&self.draw_pile);
         }
+
+        if !self.get_creature(target).is_alive()
+            && target.is_player()
+            && let Some(i) = self
+                .player
+                .potions
+                .iter()
+                .position(|p| *p == Some(Potion::Fairy))
+        {
+            self.player.take_potion(i);
+            let percent = if self.player.has_relic(RelicClass::SacredBark) {
+                0.6
+            } else {
+                0.3
+            };
+            let amount = ((self.player.creature.max_hp as f32 * percent) as i32).max(1);
+            self.player.creature.heal(amount);
+        }
     }
 
     fn setup_combat_draw_pile(&mut self) {
