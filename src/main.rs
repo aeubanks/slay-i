@@ -216,6 +216,12 @@ fn print_state(g: &Game) {
             Move::Discovery { card_class } => {
                 print!("discovery {:?}", card_class);
             }
+            Move::DiscardPotion { potion_index } => {
+                print!(
+                    "discard potion {potion_index} ({:?})",
+                    g.player.potions[*potion_index].unwrap()
+                );
+            }
             Move::UsePotion {
                 potion_index,
                 target,

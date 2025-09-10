@@ -103,6 +103,12 @@ p!(
     Entropic => (Rare, false, entropic),
 );
 
+impl Potion {
+    pub fn can_use(&self) -> bool {
+        !matches!(self, Potion::Fairy)
+    }
+}
+
 fn blood(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let percent = if is_sacred { 40 } else { 20 };
     let amount = game.player.creature.max_hp as f32 * percent as f32 / 100.0;
@@ -338,6 +344,16 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn test_discard_potion() {
+        let mut g = GameBuilder::default().build_combat();
+        g.player.add_potion(Potion::Fire);
+        g.make_move(Move::DiscardPotion { potion_index: 0 });
+        assert_eq!(g.player.potions[0], None);
+        assert_eq!(g.player.potions[1], None);
+        assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
+    }
 
     #[test]
     fn test_fire() {
@@ -697,5 +713,21 @@ mod tests {
         assert_eq!(g.hand[9].borrow().class, CardClass::FlameBarrier);
         assert_eq!(g.hand[9].borrow().get_temporary_cost(), Some(0));
         assert_eq!(g.discard_pile.len(), 2);
+    }
+
+    #[test]
+    fn test_fairy() {
+        let mut g = GameBuilder::default().build_combat();
+        g.player.add_potion(Potion::Fairy);
+        assert!(
+            g.valid_moves()
+                .into_iter()
+                .any(|m| matches!(m, Move::DiscardPotion { .. }))
+        );
+        assert!(
+            g.valid_moves()
+                .into_iter()
+                .all(|m| !matches!(m, Move::UsePotion { .. }))
+        );
     }
 }

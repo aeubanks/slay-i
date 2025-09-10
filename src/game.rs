@@ -121,6 +121,9 @@ pub enum Move {
     Discovery {
         card_class: CardClass,
     },
+    DiscardPotion {
+        potion_index: usize,
+    },
     UsePotion {
         potion_index: usize,
         target: Option<usize>,
@@ -1076,6 +1079,10 @@ impl Game {
                 self.throw_potion(p, target.map(CreatureRef::monster));
                 self.run();
             }
+            Move::DiscardPotion { potion_index } => {
+                assert_matches!(self.state, GameState::PlayerTurn);
+                self.player.take_potion(potion_index);
+            }
         }
     }
 
@@ -1171,6 +1178,10 @@ impl Game {
                 }
                 for (pi, p) in self.player.potions.iter().enumerate() {
                     if let Some(p) = p {
+                        moves.push(Move::DiscardPotion { potion_index: pi });
+                        if !p.can_use() {
+                            continue;
+                        }
                         if p.has_target() {
                             for (mi, m) in self.monsters.iter().enumerate() {
                                 if !m.creature.is_alive() {
