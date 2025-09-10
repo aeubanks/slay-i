@@ -117,6 +117,16 @@ impl Card {
             _ => unreachable!(),
         }
     }
+    pub fn set_free_to_play_once(&mut self) {
+        match &mut self.cost {
+            CardCost::Cost {
+                free_to_play_once, ..
+            } => {
+                *free_to_play_once = true;
+            }
+            _ => unreachable!(),
+        }
+    }
     pub fn get_base_cost(&self) -> i32 {
         match self.cost {
             CardCost::Cost { base_cost, .. } => base_cost,

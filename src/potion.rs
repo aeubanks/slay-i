@@ -12,6 +12,7 @@ use crate::{
         heal::HealAction,
         increase_max_hp::IncreaseMaxHPAction,
         play_top_card::PlayTopCardAction,
+        randomize_hand_cost::RandomizeHandCostAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     game::{CreatureRef, Game, Rand},
@@ -302,7 +303,11 @@ fn fruit(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 10 } else { 5 };
     game.action_queue.push_bot(IncreaseMaxHPAction(amount));
 }
-fn snecko(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn snecko(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 10 } else { 5 };
+    game.action_queue.push_bot(DrawAction(amount));
+    game.action_queue.push_bot(RandomizeHandCostAction());
+}
 fn fairy(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn smoke(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn entropic(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
@@ -322,7 +327,7 @@ pub fn random_common_potion(rng: &mut Rand) -> Potion {
 mod tests {
     use crate::{
         assert_matches,
-        cards::{CardClass, CardColor, CardCost, CardType},
+        cards::{CardClass, CardColor, CardCost, CardType, random_red_in_combat},
         game::{GameBuilder, GameStatus, Move},
         monsters::test::NoopMonster,
         relic::RelicClass,
@@ -532,5 +537,59 @@ mod tests {
         assert_eq!(g.hand[1].borrow().class, CardClass::Inflame);
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.discard_pile[0].borrow().class, CardClass::Strike);
+    }
+
+    #[test]
+    fn test_snecko_oil() {
+        let mut g = GameBuilder::default().build_combat();
+        let c = g.new_card(CardClass::Strike);
+        c.borrow_mut().set_cost(1, Some(2));
+        c.borrow_mut().set_free_to_play_once();
+        g.draw_pile.push(c);
+        g.throw_potion(Potion::Snecko, None);
+        assert_eq!(g.hand.len(), 1);
+        if let CardCost::Cost {
+            base_cost,
+            temporary_cost,
+            free_to_play_once,
+        } = g.hand[0].borrow().cost
+        {
+            assert!(base_cost >= 0 && base_cost <= 3);
+            assert!(temporary_cost.is_none());
+            assert!(free_to_play_once);
+        } else {
+            panic!();
+        }
+        g.clear_all_piles();
+        g.player.add_relic(RelicClass::SacredBark);
+        let mut found_cost = [false; 4];
+        for _ in 0..100 {
+            g.clear_all_piles();
+            for _ in 0..11 {
+                let class = random_red_in_combat(&mut g.rng);
+                g.add_card_to_draw_pile(class);
+            }
+            g.throw_potion(Potion::Snecko, None);
+            assert_eq!(g.hand.len(), 10);
+            for c in &g.hand {
+                match c.borrow().cost {
+                    CardCost::Cost {
+                        base_cost,
+                        temporary_cost,
+                        free_to_play_once,
+                    } => {
+                        assert!(base_cost >= 0 && base_cost <= 3);
+                        assert!(temporary_cost.is_none());
+                        assert!(!free_to_play_once);
+                        found_cost[base_cost as usize] = true;
+                    }
+                    CardCost::X | CardCost::Zero => {}
+                }
+            }
+            if found_cost.iter().all(|b| *b) {
+                break;
+            }
+        }
+        assert!(found_cost.iter().all(|b| *b));
     }
 }

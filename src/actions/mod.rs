@@ -51,6 +51,7 @@ pub mod place_card_in_hand;
 pub mod place_card_on_top_of_draw;
 pub mod play_card;
 pub mod play_top_card;
+pub mod randomize_hand_cost;
 pub mod reduce_status;
 pub mod remove_status;
 pub mod set_energy;
