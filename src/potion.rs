@@ -10,6 +10,7 @@ use crate::{
         gain_status::GainStatusAction,
         heal::HealAction,
         increase_max_hp::IncreaseMaxHPAction,
+        play_top_card::PlayTopCardAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     game::{CreatureRef, Game, Rand},
@@ -261,7 +262,14 @@ fn duplication(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
         target: CreatureRef::player(),
     });
 }
-fn chaos(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn chaos(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 6 } else { 3 };
+    for _ in 0..amount {
+        game.action_queue.push_bot(PlayTopCardAction {
+            force_exhaust: false,
+        });
+    }
+}
 fn memories(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 
 fn iron(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
@@ -461,5 +469,25 @@ mod tests {
         g.make_move(Move::ExhaustCardsInHandEnd);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.exhaust_pile.len(), 1);
+    }
+
+    #[test]
+    fn test_chaos() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_draw_pile(CardClass::PerfectedStrike);
+        g.add_card_to_draw_pile(CardClass::PerfectedStrike);
+        g.add_card_to_discard_pile(CardClass::PerfectedStrike);
+        let hp = g.monsters[0].creature.cur_hp;
+        g.throw_potion(Potion::Chaos, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 8 - 10);
+
+        g.player.add_relic(RelicClass::SacredBark);
+        for _ in 0..10 {
+            g.add_card_to_draw_pile(CardClass::Defend);
+        }
+        g.throw_potion(Potion::Chaos, None);
+        assert_eq!(g.player.creature.block, 6 * 5);
+
+        assert_eq!(g.energy, 3);
     }
 }
