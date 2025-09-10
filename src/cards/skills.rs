@@ -575,7 +575,6 @@ mod tests {
                 card_index: 0,
                 target: None,
             });
-            assert_matches!(g.result(), GameStatus::Combat);
             for c in g.hand {
                 assert!(!c.borrow().can_upgrade());
             }
@@ -591,7 +590,6 @@ mod tests {
                 card_index: 0,
                 target: None,
             });
-            assert_matches!(g.result(), GameStatus::Combat);
             for c in g.hand {
                 assert!(!c.borrow().can_upgrade());
             }
@@ -679,11 +677,9 @@ mod tests {
     fn test_warcry() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::Warcry, None);
-        assert_matches!(g.result(), GameStatus::Combat);
 
         g.add_card_to_draw_pile(CardClass::Strike);
         g.play_card(CardClass::Warcry, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.hand.len(), 0);
 
@@ -694,7 +690,6 @@ mod tests {
         });
         g.add_card_to_hand(CardClass::Defend);
         g.play_card(CardClass::Warcry, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
         assert_eq!(g.draw_pile[1].borrow().class, CardClass::Defend);
@@ -713,7 +708,6 @@ mod tests {
             ]
         );
         g.make_move(Move::PlaceCardInHandOnTopOfDraw { card_index: 0 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand.len(), 1);
@@ -793,18 +787,15 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
         g.energy = 10;
         g.play_card(CardClass::DualWield, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
 
         g.add_card_to_hand(CardClass::Defend);
         g.play_card(CardClass::DualWield, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 1);
 
         g.hand.clear();
         g.add_card_to_hand(CardClass::Strike);
         g.play_card(CardClass::DualWield, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 2);
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
         assert_eq!(g.hand[1].borrow().class, CardClass::Strike);
@@ -812,7 +803,6 @@ mod tests {
         g.hand.clear();
         g.add_card_to_hand(CardClass::Inflame);
         g.play_card_upgraded(CardClass::DualWield, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 3);
         assert_eq!(g.hand[0].borrow().class, CardClass::Inflame);
         assert_eq!(g.hand[1].borrow().class, CardClass::Inflame);
@@ -823,7 +813,6 @@ mod tests {
         g.add_card_to_hand(CardClass::Inflame);
         g.add_card_to_hand(CardClass::Defend);
         g.play_card(CardClass::DualWield, None);
-        assert_matches!(g.result(), GameStatus::DualWield);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -832,7 +821,6 @@ mod tests {
             ]
         );
         g.make_move(Move::DualWield { card_index: 0 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 4);
         assert_eq!(g.hand[0].borrow().class, CardClass::Inflame);
         assert_eq!(g.hand[1].borrow().class, CardClass::Defend);
@@ -942,13 +930,11 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
 
         g.play_card(CardClass::BurningPact, None);
-        assert_matches!(g.result(), GameStatus::Combat);
 
         g.discard_pile.clear();
         g.add_card_to_draw_pile(CardClass::Strike);
         g.add_card_to_hand(CardClass::Strike);
         g.play_card(CardClass::BurningPact, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.discard_pile.len(), 1);
@@ -965,7 +951,6 @@ mod tests {
             g.cur_card.clone().unwrap().borrow().class,
             CardClass::BurningPact
         );
-        assert_matches!(g.result(), GameStatus::ExhaustOneCardInHand);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -974,7 +959,6 @@ mod tests {
             ]
         );
         g.make_move(Move::ExhaustOneCardInHand { card_index: 1 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand.len(), 2);
@@ -1011,7 +995,6 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
 
         g.play_card_upgraded(CardClass::Exhume, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.exhaust_pile.len(), 1);
 
@@ -1019,7 +1002,6 @@ mod tests {
         g.exhaust_pile.clear();
         g.add_card_to_exhaust_pile(CardClass::Strike);
         g.play_card_upgraded(CardClass::Exhume, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
         assert_eq!(g.exhaust_pile.len(), 1);
@@ -1028,7 +1010,6 @@ mod tests {
         g.exhaust_pile.clear();
         g.add_card_to_exhaust_pile(CardClass::Exhume);
         g.play_card_upgraded(CardClass::Exhume, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.exhaust_pile.len(), 2);
 
@@ -1037,7 +1018,6 @@ mod tests {
         g.add_card_to_exhaust_pile(CardClass::Strike);
         g.add_card_to_exhaust_pile(CardClass::Exhume);
         g.play_card_upgraded(CardClass::Exhume, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
         assert_eq!(g.exhaust_pile.len(), 2);
@@ -1048,7 +1028,6 @@ mod tests {
         g.add_card_to_exhaust_pile(CardClass::Exhume);
         g.add_card_to_exhaust_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Exhume, None);
-        assert_matches!(g.result(), GameStatus::Exhume);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1377,7 +1356,6 @@ mod tests {
     fn test_purity() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::Purity, None);
-        assert_matches!(g.result(), GameStatus::Combat);
 
         for _ in 0..4 {
             g.add_card_to_hand(CardClass::Strike);
@@ -1471,7 +1449,6 @@ mod tests {
             ]
         );
         g.make_move(Move::ExhaustCardsInHand { card_index: 5 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.exhaust_pile.len(), 1 + 1 + 1 + 3);
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
@@ -1486,7 +1463,6 @@ mod tests {
         g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
         g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
         g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.discard_pile.len(), 0);
     }
@@ -1501,7 +1477,6 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Strike);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card(CardClass::SecretWeapon, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
@@ -1512,7 +1487,6 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Defend);
         g.add_card_to_draw_pile(CardClass::TwinStrike);
         g.play_card(CardClass::SecretWeapon, None);
-        assert_matches!(g.result(), GameStatus::FetchCardFromDraw);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1521,7 +1495,6 @@ mod tests {
             ]
         );
         g.make_move(Move::FetchCardFromDraw { card_index: 2 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::TwinStrike);
@@ -1548,7 +1521,6 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Defend);
         g.add_card_to_draw_pile(CardClass::Strike);
         g.play_card(CardClass::SecretTechnique, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
@@ -1559,7 +1531,6 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Strike);
         g.add_card_to_draw_pile(CardClass::FlameBarrier);
         g.play_card(CardClass::SecretTechnique, None);
-        assert_matches!(g.result(), GameStatus::FetchCardFromDraw);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1568,7 +1539,6 @@ mod tests {
             ]
         );
         g.make_move(Move::FetchCardFromDraw { card_index: 2 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::FlameBarrier);
@@ -1695,12 +1665,10 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
 
         g.play_card(CardClass::Forethought, None);
-        assert_matches!(g.result(), GameStatus::Combat);
 
         g.add_card_to_draw_pile(CardClass::Defend);
         g.add_card_to_hand(CardClass::Strike);
         g.play_card(CardClass::Forethought, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
         match g.draw_pile[0].borrow().cost {
@@ -1723,7 +1691,6 @@ mod tests {
         g.add_card_to_hand(CardClass::Strike);
         g.add_card_to_hand(CardClass::TwinStrike);
         g.play_card(CardClass::Forethought, None);
-        assert_matches!(g.result(), GameStatus::ForethoughtOne);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1732,7 +1699,6 @@ mod tests {
             ]
         );
         g.make_move(Move::ForethoughtOne { card_index: 0 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
@@ -1756,13 +1722,11 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
 
         g.play_card_upgraded(CardClass::Forethought, None);
-        assert_matches!(g.result(), GameStatus::Combat);
 
         g.add_card_to_hand(CardClass::Strike);
         g.add_card_to_hand(CardClass::TwinStrike);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Forethought, None);
-        assert_matches!(g.result(), GameStatus::ForethoughtAny);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1780,7 +1744,6 @@ mod tests {
         g.add_card_to_hand(CardClass::TwinStrike);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Forethought, None);
-        assert_matches!(g.result(), GameStatus::ForethoughtAny);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1790,7 +1753,6 @@ mod tests {
             ]
         );
         g.make_move(Move::ForethoughtAny { card_index: 0 });
-        assert_matches!(g.result(), GameStatus::ForethoughtAny);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1799,7 +1761,6 @@ mod tests {
             ]
         );
         g.make_move(Move::ForethoughtAnyEnd);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
@@ -1816,7 +1777,6 @@ mod tests {
         g.add_card_to_hand(CardClass::TwinStrike);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Forethought, None);
-        assert_matches!(g.result(), GameStatus::ForethoughtAny);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1826,7 +1786,6 @@ mod tests {
             ]
         );
         g.make_move(Move::ForethoughtAny { card_index: 1 });
-        assert_matches!(g.result(), GameStatus::ForethoughtAny);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -1835,7 +1794,6 @@ mod tests {
             ]
         );
         g.make_move(Move::ForethoughtAny { card_index: 0 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.draw_pile.len(), 3);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::TwinStrike);

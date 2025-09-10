@@ -491,16 +491,13 @@ mod tests {
         g.play_card(CardClass::Headbutt, Some(CreatureRef::monster(0)));
         assert_eq!(g.draw_pile.len(), 0);
         assert_eq!(g.discard_pile.len(), 1);
-        assert_matches!(g.result(), GameStatus::Combat);
 
         g.play_card(CardClass::Headbutt, Some(CreatureRef::monster(0)));
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.discard_pile.len(), 1);
-        assert_matches!(g.result(), GameStatus::Combat);
 
         g.add_card_to_discard_pile(CardClass::Strike);
         g.play_card(CardClass::Headbutt, Some(CreatureRef::monster(0)));
-        assert_matches!(g.result(), GameStatus::PlaceCardInDiscardOnTopOfDraw);
         assert_eq!(
             g.valid_moves(),
             vec![
@@ -509,7 +506,6 @@ mod tests {
             ]
         );
         g.make_move(Move::PlaceCardInDiscardOnTopOfDraw { card_index: 1 });
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Headbutt);
         assert_eq!(g.draw_pile[1].borrow().class, CardClass::Strike);

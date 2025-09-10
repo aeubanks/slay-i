@@ -135,18 +135,8 @@ pub enum GameStatus {
     Defeat,
     Victory,
     Combat,
-    Armaments,
-    PlaceCardInHandOnTopOfDraw,
-    PlaceCardInDiscardOnTopOfDraw,
-    ExhaustOneCardInHand,
     ExhaustCardsInHand { num_cards_remaining: i32 },
     Memories { num_cards_remaining: i32 },
-    Exhume,
-    DualWield,
-    FetchCardFromDraw,
-    ForethoughtOne,
-    ForethoughtAny,
-    Discovery,
 }
 
 #[derive(Debug)]
@@ -843,15 +833,6 @@ impl Game {
         match &self.state {
             GameState::Victory => GameStatus::Victory,
             GameState::Defeat => GameStatus::Defeat,
-            GameState::Armaments => GameStatus::Armaments,
-            GameState::PlaceCardInHandOnTopOfDraw => GameStatus::PlaceCardInHandOnTopOfDraw,
-            GameState::PlaceCardInDiscardOnTopOfDraw => GameStatus::PlaceCardInDiscardOnTopOfDraw,
-            GameState::ExhaustOneCardInHand => GameStatus::ExhaustOneCardInHand,
-            GameState::Exhume => GameStatus::Exhume,
-            GameState::DualWield(_) => GameStatus::DualWield,
-            GameState::FetchCardFromDraw(_) => GameStatus::FetchCardFromDraw,
-            GameState::ForethoughtAny { .. } => GameStatus::ForethoughtAny,
-            GameState::ForethoughtOne => GameStatus::ForethoughtOne,
             &GameState::Memories {
                 num_cards_remaining,
                 ..
@@ -864,7 +845,6 @@ impl Game {
             } => GameStatus::ExhaustCardsInHand {
                 num_cards_remaining,
             },
-            GameState::Discovery { .. } => GameStatus::Discovery,
             _ => GameStatus::Combat,
         }
     }

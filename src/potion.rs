@@ -538,7 +538,6 @@ mod tests {
     fn test_gamble() {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Gamblers, None);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 0);
 
         g.add_card_to_hand(CardClass::Strike);
@@ -546,12 +545,10 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Inflame);
         g.throw_potion(Potion::Gamblers, None);
         g.make_move(Move::GambleEnd);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 2);
         g.throw_potion(Potion::Gamblers, None);
         g.make_move(Move::Gamble { card_index: 0 });
         g.make_move(Move::GambleEnd);
-        assert_matches!(g.result(), GameStatus::Combat);
         assert_eq!(g.hand.len(), 2);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand[1].borrow().class, CardClass::Inflame);
@@ -631,6 +628,12 @@ mod tests {
         g.add_card_to_discard_pile(CardClass::Strike);
         g.add_card_to_discard_pile(CardClass::Defend);
         g.throw_potion(Potion::Memories, None);
+        assert_matches!(
+            g.result(),
+            GameStatus::Memories {
+                num_cards_remaining: 1
+            }
+        );
         g.make_move(Move::Memories { card_index: 1 });
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
@@ -641,6 +644,12 @@ mod tests {
         g.add_card_to_discard_pile(CardClass::Strike);
         g.add_card_to_discard_pile(CardClass::Defend);
         g.throw_potion(Potion::Memories, None);
+        assert_matches!(
+            g.result(),
+            GameStatus::Memories {
+                num_cards_remaining: 1
+            }
+        );
         g.make_move(Move::Memories { card_index: 1 });
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
@@ -691,7 +700,19 @@ mod tests {
             g.add_card_to_hand(CardClass::Strike);
         }
         g.throw_potion(Potion::Memories, None);
+        assert_matches!(
+            g.result(),
+            GameStatus::Memories {
+                num_cards_remaining: 2
+            }
+        );
         g.make_move(Move::Memories { card_index: 1 });
+        assert_matches!(
+            g.result(),
+            GameStatus::Memories {
+                num_cards_remaining: 1
+            }
+        );
         g.make_move(Move::Memories { card_index: 1 });
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.hand[8].borrow().class, CardClass::FlameBarrier);
@@ -708,6 +729,12 @@ mod tests {
             g.add_card_to_hand(CardClass::Strike);
         }
         g.throw_potion(Potion::Memories, None);
+        assert_matches!(
+            g.result(),
+            GameStatus::Memories {
+                num_cards_remaining: 1
+            }
+        );
         g.make_move(Move::Memories { card_index: 1 });
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.hand[9].borrow().class, CardClass::FlameBarrier);

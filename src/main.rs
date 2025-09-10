@@ -279,18 +279,8 @@ fn main() {
                 break;
             }
             GameStatus::Combat
-            | GameStatus::Armaments
-            | GameStatus::PlaceCardInHandOnTopOfDraw
-            | GameStatus::PlaceCardInDiscardOnTopOfDraw
-            | GameStatus::ExhaustOneCardInHand
-            | GameStatus::Exhume
-            | GameStatus::DualWield
-            | GameStatus::FetchCardFromDraw
             | GameStatus::ExhaustCardsInHand { .. }
-            | GameStatus::Memories { .. }
-            | GameStatus::ForethoughtAny
-            | GameStatus::ForethoughtOne
-            | GameStatus::Discovery => {
+            | GameStatus::Memories { .. } => {
                 print_state(&game);
                 let valid_moves = game.valid_moves();
                 let i = read_int_from_stdin(valid_moves.len());
