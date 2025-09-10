@@ -354,7 +354,7 @@ mod tests {
         actions::block::BlockAction,
         assert_matches,
         cards::{CardClass, CardCost},
-        game::{CreatureRef, Game, GameBuilder, GameStatus, Move},
+        game::{CreatureRef, Game, GameBuilder, Move},
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
     };

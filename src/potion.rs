@@ -571,7 +571,7 @@ mod tests {
             free_to_play_once,
         } = g.hand[0].borrow().cost
         {
-            assert!(base_cost >= 0 && base_cost <= 3);
+            assert!((0..=3).contains(&base_cost));
             assert!(temporary_cost.is_none());
             assert!(free_to_play_once);
         } else {
@@ -595,7 +595,7 @@ mod tests {
                         temporary_cost,
                         free_to_play_once,
                     } => {
-                        assert!(base_cost >= 0 && base_cost <= 3);
+                        assert!((0..=3).contains(&base_cost));
                         assert!(temporary_cost.is_none());
                         assert!(!free_to_play_once);
                         found_cost[base_cost as usize] = true;
@@ -766,7 +766,7 @@ mod tests {
                 g.player.creature.cur_hp,
                 (g.player.creature.max_hp as f32 * 0.3) as i32
             );
-            assert!(g.player.potions.iter().all(|p| *p == None));
+            assert!(g.player.potions.iter().all(|p| p.is_none()));
 
             g.player.add_potion(Potion::Fairy);
             g.player.add_relic(RelicClass::SacredBark);
@@ -775,7 +775,7 @@ mod tests {
                 g.player.creature.cur_hp,
                 (g.player.creature.max_hp as f32 * 0.6) as i32
             );
-            assert!(g.player.potions.iter().all(|p| *p == None));
+            assert!(g.player.potions.iter().all(|p| p.is_none()));
 
             g.player
                 .creature
@@ -783,7 +783,7 @@ mod tests {
             g.player.add_potion(Potion::Fairy);
             g.make_move(Move::EndTurn);
             assert_eq!(g.player.creature.cur_hp, 1);
-            assert!(g.player.potions.iter().all(|p| *p == None));
+            assert!(g.player.potions.iter().all(|p| p.is_none()));
         }
         {
             let mut g = GameBuilder::default()
@@ -794,12 +794,12 @@ mod tests {
             g.player.add_potion(Potion::Fairy);
             g.make_move(Move::EndTurn);
             assert!(g.player.creature.is_alive());
-            assert!(g.player.potions.iter().all(|p| *p == None));
+            assert!(g.player.potions.iter().all(|p| p.is_none()));
 
             g.player.add_potion(Potion::Fairy);
             g.make_move(Move::EndTurn);
             assert!(!g.player.creature.is_alive());
-            assert!(g.player.potions.iter().all(|p| *p == None));
+            assert!(g.player.potions.iter().all(|p| p.is_none()));
         }
     }
 }
