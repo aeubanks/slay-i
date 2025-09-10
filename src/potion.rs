@@ -275,7 +275,14 @@ fn chaos(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
 }
 fn memories(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 
-fn iron(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn iron(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 12 } else { 6 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Metallicize,
+        amount,
+        target: CreatureRef::player(),
+    });
+}
 fn cultist(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 2 } else { 1 };
     game.action_queue.push_bot(GainStatusAction {
