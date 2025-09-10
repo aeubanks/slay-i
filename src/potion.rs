@@ -230,7 +230,14 @@ fn chaos(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn memories(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 
 fn iron(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
-fn cultist(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn cultist(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 2 } else { 1 };
+    game.action_queue.push_bot(GainStatusAction {
+        status: Status::Ritual,
+        amount,
+        target: CreatureRef::player(),
+    });
+}
 fn fruit(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn snecko(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn fairy(_: bool, _: Option<CreatureRef>, _: &mut Game) {}

@@ -45,6 +45,7 @@ s!(
     Brutality => Buff,
     Juggernaut => Buff,
     DemonForm => Buff,
+    Ritual => Buff,
     Artifact => Buff,
     Thorns => Buff,
     FlameBarrier => Buff,
@@ -949,10 +950,24 @@ mod tests {
     }
 
     #[test]
+    fn test_ritual() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Ritual, 2)
+            .build_combat();
+        assert_eq!(g.player.creature.get_status(Status::Ritual), Some(2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.get_status(Status::Ritual), Some(2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.get_status(Status::Ritual), Some(2));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(4));
+    }
+
+    #[test]
     fn test_demon_form() {
         let mut g = GameBuilder::default()
             .add_player_status(Status::DemonForm, 2)
-            .add_cards(CardClass::Strike, 10)
             .build_combat();
         assert_eq!(g.player.creature.get_status(Status::DemonForm), Some(2));
         assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));

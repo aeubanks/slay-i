@@ -229,6 +229,13 @@ impl Creature {
                 target: this,
             });
         }
+        if let Some(v) = self.get_status(Status::Ritual) {
+            queue.push_bot(GainStatusAction {
+                status: Status::Strength,
+                amount: v,
+                target: this,
+            });
+        }
         if let Some(v) = self.get_status(Status::GainStrength) {
             queue.push_bot(GainStatusAction {
                 status: Status::Strength,
