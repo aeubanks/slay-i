@@ -1,11 +1,12 @@
 use crate::{
     actions::{
         damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-        gain_energy::GainEnergyAction,
+        gain_energy::GainEnergyAction, gain_status::GainStatusAction,
     },
     game::{CreatureRef, Rand},
     queue::ActionQueue,
     rng::rand_slice,
+    status::Status,
 };
 use lazy_static::lazy_static;
 
@@ -118,7 +119,19 @@ fn skill(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
 fn power(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
 fn colorless(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
 fn flex(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn speed(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn speed(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+    let amount = if is_sacred { 10 } else { 5 };
+    queue.push_bot(GainStatusAction {
+        status: Status::Dexterity,
+        amount,
+        target: CreatureRef::player(),
+    });
+    queue.push_bot(GainStatusAction {
+        status: Status::LoseDexterity,
+        amount,
+        target: CreatureRef::player(),
+    });
+}
 fn forge(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
 
 fn elixir(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
@@ -153,6 +166,7 @@ pub fn random_common_potion(rng: &mut Rand) -> Potion {
 #[cfg(test)]
 mod tests {
     use crate::{
+        cards::CardClass,
         game::{GameBuilder, Move},
         monsters::test::NoopMonster,
         relic::RelicClass,
@@ -200,5 +214,23 @@ mod tests {
         g.throw_potion(Potion::Explosive, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 30);
         assert_eq!(g.monsters[1].creature.cur_hp, hp - 30);
+    }
+
+    #[test]
+    fn test_speed() {
+        let mut g = GameBuilder::default().build_combat();
+        g.throw_potion(Potion::Speed, None);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.creature.block, 10);
+
+        g.make_move(Move::EndTurn);
+        g.player.add_relic(RelicClass::SacredBark);
+        g.throw_potion(Potion::Speed, None);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.creature.block, 15);
+
+        g.make_move(Move::EndTurn);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.creature.block, 5);
     }
 }

@@ -35,6 +35,7 @@ s!(
     NoDraw => Debuff,
     Confusion => Debuff,
     Entangled => Debuff,
+    LoseDexterity => Debuff,
     LoseStrength => Debuff,
     GainStrength => Debuff,
 
@@ -984,6 +985,18 @@ mod tests {
                 target: _
             }
         )));
+    }
+
+    #[test]
+    fn test_lose_dexterity() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::LoseDexterity, 2)
+            .build_combat();
+        assert_eq!(g.player.creature.get_status(Status::Dexterity), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(-2));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(-2));
     }
 
     #[test]

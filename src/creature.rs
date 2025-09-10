@@ -207,6 +207,17 @@ impl Creature {
     }
 
     pub fn trigger_statuses_turn_end(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+        if let Some(v) = self.get_status(Status::LoseDexterity) {
+            queue.push_bot(GainStatusAction {
+                status: Status::Dexterity,
+                amount: -v,
+                target: this,
+            });
+            queue.push_bot(RemoveStatusAction {
+                status: Status::LoseDexterity,
+                target: this,
+            });
+        }
         if let Some(v) = self.get_status(Status::LoseStrength) {
             queue.push_bot(GainStatusAction {
                 status: Status::Strength,
