@@ -3,6 +3,7 @@ use crate::{
         block::BlockAction,
         choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction,
         choose_discovery::{ChooseDiscoveryAction, ChooseDiscoveryType},
+        choose_gamble::ChooseGambleAction,
         damage::DamageAction,
         damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction,
@@ -252,7 +253,9 @@ fn bronze(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
         target: CreatureRef::player(),
     });
 }
-fn gamblers(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn gamblers(_: bool, _: Option<CreatureRef>, game: &mut Game) {
+    game.action_queue.push_bot(ChooseGambleAction());
+}
 fn steel(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn duplication(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 2 } else { 1 };
@@ -304,8 +307,9 @@ pub fn random_common_potion(rng: &mut Rand) -> Potion {
 #[cfg(test)]
 mod tests {
     use crate::{
+        assert_matches,
         cards::{CardClass, CardColor, CardCost, CardType},
-        game::{GameBuilder, Move},
+        game::{GameBuilder, GameStatus, Move},
         monsters::test::NoopMonster,
         relic::RelicClass,
     };
@@ -489,5 +493,30 @@ mod tests {
         assert_eq!(g.player.creature.block, 6 * 5);
 
         assert_eq!(g.energy, 3);
+    }
+
+    #[test]
+    fn test_gamble() {
+        let mut g = GameBuilder::default().build_combat();
+        g.throw_potion(Potion::Gamblers, None);
+        assert_matches!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 0);
+
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Defend);
+        g.add_card_to_draw_pile(CardClass::Inflame);
+        g.throw_potion(Potion::Gamblers, None);
+        g.make_move(Move::GambleEnd);
+        assert_matches!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 2);
+        g.throw_potion(Potion::Gamblers, None);
+        g.make_move(Move::Gamble { card_index: 0 });
+        g.make_move(Move::GambleEnd);
+        assert_matches!(g.result(), GameStatus::Combat);
+        assert_eq!(g.hand.len(), 2);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand[1].borrow().class, CardClass::Inflame);
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.discard_pile[0].borrow().class, CardClass::Strike);
     }
 }

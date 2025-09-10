@@ -155,6 +155,16 @@ fn print_state(g: &Game) {
             Move::ExhaustCardsInHandEnd => {
                 print!("exhaust cards end");
             }
+            Move::Gamble { card_index } => {
+                print!(
+                    "gamble card {} ({:?})",
+                    card_index,
+                    g.hand[*card_index].borrow()
+                );
+            }
+            Move::GambleEnd => {
+                print!("gamble end");
+            }
             Move::DualWield { card_index } => {
                 print!(
                     "dual wield {} ({:?})",

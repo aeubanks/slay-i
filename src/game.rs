@@ -93,6 +93,10 @@ pub enum Move {
         card_index: usize,
     },
     ExhaustCardsInHandEnd,
+    Gamble {
+        card_index: usize,
+    },
+    GambleEnd,
     DualWield {
         card_index: usize,
     },
@@ -152,6 +156,9 @@ pub enum GameState {
     ExhaustCardsInHand {
         num_cards_remaining: i32,
         cards_to_exhaust: Vec<CardRef>,
+    },
+    Gamble {
+        cards_to_gamble: Vec<CardRef>,
     },
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
@@ -624,6 +631,7 @@ impl Game {
             | GameState::PlaceCardInDiscardOnTopOfDraw
             | GameState::ExhaustOneCardInHand
             | GameState::ExhaustCardsInHand { .. }
+            | GameState::Gamble { .. }
             | GameState::Exhume
             | GameState::DualWield(_)
             | GameState::FetchCardFromDraw(_)
@@ -657,6 +665,7 @@ impl Game {
                 | GameState::PlaceCardInHandOnTopOfDraw
                 | GameState::PlaceCardInDiscardOnTopOfDraw
                 | GameState::ExhaustOneCardInHand
+                | GameState::Gamble { .. }
                 | GameState::Exhume
                 | GameState::DualWield(_)
                 | GameState::Discovery { .. }
@@ -828,6 +837,22 @@ impl Game {
         self.run();
     }
 
+    fn gamble_cards(&mut self) {
+        match &mut self.state {
+            GameState::Gamble { cards_to_gamble } => {
+                let count = cards_to_gamble.len() as i32;
+                self.action_queue.push_top(DrawAction(count));
+                while !cards_to_gamble.is_empty() {
+                    self.action_queue
+                        .push_top(DiscardCardAction(cards_to_gamble.remove(0)));
+                }
+            }
+            _ => unreachable!(),
+        }
+        self.state = GameState::PlayerTurn;
+        self.run();
+    }
+
     fn forethought_cards(&mut self) {
         match &mut self.state {
             GameState::ForethoughtAny {
@@ -949,6 +974,16 @@ impl Game {
                 _ => unreachable!(),
             },
             Move::ExhaustCardsInHandEnd => self.exhaust_cards(),
+            Move::Gamble { card_index } => match &mut self.state {
+                GameState::Gamble { cards_to_gamble } => {
+                    cards_to_gamble.push(self.hand.remove(card_index));
+                    if self.hand.is_empty() {
+                        self.gamble_cards();
+                    }
+                }
+                _ => unreachable!(),
+            },
+            Move::GambleEnd => self.gamble_cards(),
             Move::ForethoughtOne { card_index } => {
                 assert_matches!(self.state, GameState::ForethoughtOne);
                 self.action_queue
@@ -1160,6 +1195,12 @@ impl Game {
                 moves.push(Move::ExhaustCardsInHandEnd);
                 for c in 0..self.hand.len() {
                     moves.push(Move::ExhaustCardsInHand { card_index: c });
+                }
+            }
+            GameState::Gamble { .. } => {
+                moves.push(Move::GambleEnd);
+                for c in 0..self.hand.len() {
+                    moves.push(Move::Gamble { card_index: c });
                 }
             }
             GameState::Discovery { classes, .. } => {

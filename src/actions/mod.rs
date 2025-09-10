@@ -10,6 +10,7 @@ pub mod choose_discovery;
 pub mod choose_dual_wield;
 pub mod choose_forethought_any;
 pub mod choose_forethought_one;
+pub mod choose_gamble;
 pub mod clear_cur_card;
 pub mod damage;
 pub mod damage_all_monsters;
