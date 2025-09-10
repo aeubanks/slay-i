@@ -4,6 +4,7 @@ use crate::{
         choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction,
         choose_discovery::{ChooseDiscoveryAction, ChooseDiscoveryType},
         choose_gamble::ChooseGambleAction,
+        choose_memories::ChooseMemoriesAction,
         damage::DamageAction,
         damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction,
@@ -281,7 +282,10 @@ fn chaos(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
         });
     }
 }
-fn memories(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn memories(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 2 } else { 1 };
+    game.action_queue.push_bot(ChooseMemoriesAction(amount));
+}
 
 fn iron(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 12 } else { 6 };
@@ -591,5 +595,107 @@ mod tests {
             }
         }
         assert!(found_cost.iter().all(|b| *b));
+    }
+
+    #[test]
+    fn test_memories() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.throw_potion(Potion::Memories, None);
+        assert_eq!(g.hand.len(), 0);
+        assert_eq!(g.discard_pile.len(), 0);
+
+        g.add_card_to_discard_pile(CardClass::Strike);
+        g.throw_potion(Potion::Memories, None);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.discard_pile.len(), 0);
+
+        g.clear_all_piles();
+        g.add_card_to_discard_pile(CardClass::Strike);
+        g.add_card_to_discard_pile(CardClass::Defend);
+        g.throw_potion(Potion::Memories, None);
+        g.make_move(Move::Memories { card_index: 1 });
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.discard_pile.len(), 1);
+
+        g.clear_all_piles();
+        g.add_card_to_discard_pile(CardClass::Strike);
+        g.add_card_to_discard_pile(CardClass::Defend);
+        g.throw_potion(Potion::Memories, None);
+        g.make_move(Move::Memories { card_index: 1 });
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.discard_pile.len(), 1);
+
+        g.clear_all_piles();
+        g.add_card_to_discard_pile(CardClass::Strike);
+        for _ in 0..10 {
+            g.add_card_to_hand(CardClass::Strike);
+        }
+        g.throw_potion(Potion::Memories, None);
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.discard_pile.len(), 1);
+
+        g.player.add_relic(RelicClass::SacredBark);
+        g.clear_all_piles();
+        g.add_card_to_discard_pile(CardClass::Defend);
+        g.add_card_to_discard_pile(CardClass::Defend);
+        for _ in 0..9 {
+            g.add_card_to_hand(CardClass::Strike);
+        }
+        g.throw_potion(Potion::Memories, None);
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.hand[9].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand[9].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.discard_pile.len(), 1);
+
+        g.clear_all_piles();
+        g.add_card_to_discard_pile(CardClass::Defend);
+        g.add_card_to_discard_pile(CardClass::Defend);
+        for _ in 0..8 {
+            g.add_card_to_hand(CardClass::Strike);
+        }
+        g.throw_potion(Potion::Memories, None);
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.hand[8].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand[8].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.hand[9].borrow().class, CardClass::Defend);
+        assert_eq!(g.hand[9].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.discard_pile.len(), 0);
+
+        g.clear_all_piles();
+        g.add_card_to_discard_pile(CardClass::Defend);
+        g.add_card_to_discard_pile(CardClass::FlameBarrier);
+        g.add_card_to_discard_pile(CardClass::Inflame);
+        for _ in 0..8 {
+            g.add_card_to_hand(CardClass::Strike);
+        }
+        g.throw_potion(Potion::Memories, None);
+        g.make_move(Move::Memories { card_index: 1 });
+        g.make_move(Move::Memories { card_index: 1 });
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.hand[8].borrow().class, CardClass::FlameBarrier);
+        assert_eq!(g.hand[8].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.hand[9].borrow().class, CardClass::Inflame);
+        assert_eq!(g.hand[9].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.discard_pile.len(), 1);
+
+        g.clear_all_piles();
+        g.add_card_to_discard_pile(CardClass::Defend);
+        g.add_card_to_discard_pile(CardClass::FlameBarrier);
+        g.add_card_to_discard_pile(CardClass::Inflame);
+        for _ in 0..9 {
+            g.add_card_to_hand(CardClass::Strike);
+        }
+        g.throw_potion(Potion::Memories, None);
+        g.make_move(Move::Memories { card_index: 1 });
+        assert_eq!(g.hand.len(), 10);
+        assert_eq!(g.hand[9].borrow().class, CardClass::FlameBarrier);
+        assert_eq!(g.hand[9].borrow().get_temporary_cost(), Some(0));
+        assert_eq!(g.discard_pile.len(), 2);
     }
 }

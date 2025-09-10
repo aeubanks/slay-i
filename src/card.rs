@@ -133,6 +133,12 @@ impl Card {
             _ => unreachable!(),
         }
     }
+    pub fn get_temporary_cost(&self) -> Option<i32> {
+        match self.cost {
+            CardCost::Cost { temporary_cost, .. } => temporary_cost,
+            _ => unreachable!(),
+        }
+    }
 }
 
 impl std::fmt::Debug for Card {

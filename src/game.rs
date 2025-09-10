@@ -15,6 +15,7 @@ use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::exhaust_card::ExhaustCardAction;
 use crate::actions::forethought::ForethoughtAction;
 use crate::actions::gain_status::GainStatusAction;
+use crate::actions::memories::MemoriesAction;
 use crate::actions::place_card_in_hand::PlaceCardInHandAction;
 use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
 use crate::actions::play_card::PlayCardAction;
@@ -87,6 +88,9 @@ pub enum Move {
     PlaceCardInDiscardOnTopOfDraw {
         card_index: usize,
     },
+    Memories {
+        card_index: usize,
+    },
     ExhaustOneCardInHand {
         card_index: usize,
     },
@@ -133,6 +137,7 @@ pub enum GameStatus {
     PlaceCardInDiscardOnTopOfDraw,
     ExhaustOneCardInHand,
     ExhaustCardsInHand { num_cards_remaining: i32 },
+    Memories { num_cards_remaining: i32 },
     Exhume,
     DualWield,
     FetchCardFromDraw,
@@ -153,6 +158,10 @@ pub enum GameState {
     MonsterTurn,
     EndOfRound,
     Armaments,
+    Memories {
+        num_cards_remaining: i32,
+        cards_to_memories: Vec<CardRef>,
+    },
     ExhaustOneCardInHand,
     ExhaustCardsInHand {
         num_cards_remaining: i32,
@@ -641,6 +650,7 @@ impl Game {
             | GameState::PlaceCardInDiscardOnTopOfDraw
             | GameState::ExhaustOneCardInHand
             | GameState::ExhaustCardsInHand { .. }
+            | GameState::Memories { .. }
             | GameState::Gamble { .. }
             | GameState::Exhume
             | GameState::DualWield(_)
@@ -672,6 +682,7 @@ impl Game {
             self.state,
             GameState::Armaments
                 | GameState::ExhaustCardsInHand { .. }
+                | GameState::Memories { .. }
                 | GameState::PlaceCardInHandOnTopOfDraw
                 | GameState::PlaceCardInDiscardOnTopOfDraw
                 | GameState::ExhaustOneCardInHand
@@ -820,6 +831,12 @@ impl Game {
             GameState::FetchCardFromDraw(_) => GameStatus::FetchCardFromDraw,
             GameState::ForethoughtAny { .. } => GameStatus::ForethoughtAny,
             GameState::ForethoughtOne => GameStatus::ForethoughtOne,
+            &GameState::Memories {
+                num_cards_remaining,
+                ..
+            } => GameStatus::Memories {
+                num_cards_remaining,
+            },
             &GameState::ExhaustCardsInHand {
                 num_cards_remaining,
                 ..
@@ -831,14 +848,28 @@ impl Game {
         }
     }
 
+    fn memories_cards(&mut self) {
+        match &mut self.state {
+            GameState::Memories {
+                cards_to_memories, ..
+            } => {
+                while let Some(c) = cards_to_memories.pop() {
+                    self.action_queue.push_top(MemoriesAction(c));
+                }
+            }
+            _ => unreachable!(),
+        }
+        self.state = GameState::PlayerTurn;
+        self.run();
+    }
+
     fn exhaust_cards(&mut self) {
         match &mut self.state {
             GameState::ExhaustCardsInHand {
                 cards_to_exhaust, ..
             } => {
-                while !cards_to_exhaust.is_empty() {
-                    self.action_queue
-                        .push_top(ExhaustCardAction(cards_to_exhaust.remove(0)));
+                while let Some(c) = cards_to_exhaust.pop() {
+                    self.action_queue.push_top(ExhaustCardAction(c));
                 }
             }
             _ => unreachable!(),
@@ -852,9 +883,8 @@ impl Game {
             GameState::Gamble { cards_to_gamble } => {
                 let count = cards_to_gamble.len() as i32;
                 self.action_queue.push_top(DrawAction(count));
-                while !cards_to_gamble.is_empty() {
-                    self.action_queue
-                        .push_top(DiscardCardAction(cards_to_gamble.remove(0)));
+                while let Some(c) = cards_to_gamble.pop() {
+                    self.action_queue.push_top(DiscardCardAction(c));
                 }
             }
             _ => unreachable!(),
@@ -970,6 +1000,19 @@ impl Game {
                 self.state = GameState::PlayerTurn;
                 self.run();
             }
+            Move::Memories { card_index } => match &mut self.state {
+                GameState::Memories {
+                    num_cards_remaining,
+                    cards_to_memories,
+                } => {
+                    *num_cards_remaining -= 1;
+                    cards_to_memories.push(self.discard_pile.remove(card_index));
+                    if *num_cards_remaining == 0 {
+                        self.memories_cards();
+                    }
+                }
+                _ => unreachable!(),
+            },
             Move::ExhaustCardsInHand { card_index } => match &mut self.state {
                 GameState::ExhaustCardsInHand {
                     num_cards_remaining,
@@ -1205,6 +1248,11 @@ impl Game {
                 moves.push(Move::ExhaustCardsInHandEnd);
                 for c in 0..self.hand.len() {
                     moves.push(Move::ExhaustCardsInHand { card_index: c });
+                }
+            }
+            GameState::Memories { .. } => {
+                for c in 0..self.discard_pile.len() {
+                    moves.push(Move::Memories { card_index: c });
                 }
             }
             GameState::Gamble { .. } => {

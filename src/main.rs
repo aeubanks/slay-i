@@ -87,11 +87,14 @@ fn print_state(g: &Game) {
     if let Some(c) = &g.cur_card {
         println!("current card being played: {:?}", c.borrow());
     }
-    if let GameStatus::ExhaustCardsInHand {
-        num_cards_remaining,
-    } = g.result()
-    {
-        println!("exhaust cards in hand: {num_cards_remaining} cards left");
+    match g.result() {
+        GameStatus::ExhaustCardsInHand {
+            num_cards_remaining,
+        } => println!("exhaust cards in hand: {num_cards_remaining} cards left"),
+        GameStatus::Memories {
+            num_cards_remaining,
+        } => println!("memories: {num_cards_remaining} cards left"),
+        _ => {}
     }
     println!("moves:");
     for (mi, m) in g.valid_moves().iter().enumerate() {
@@ -154,6 +157,13 @@ fn print_state(g: &Game) {
             }
             Move::ExhaustCardsInHandEnd => {
                 print!("exhaust cards end");
+            }
+            Move::Memories { card_index } => {
+                print!(
+                    "memories card {} ({:?})",
+                    card_index,
+                    g.discard_pile[*card_index].borrow()
+                );
             }
             Move::Gamble { card_index } => {
                 print!(
@@ -271,6 +281,7 @@ fn main() {
             | GameStatus::DualWield
             | GameStatus::FetchCardFromDraw
             | GameStatus::ExhaustCardsInHand { .. }
+            | GameStatus::Memories { .. }
             | GameStatus::ForethoughtAny
             | GameStatus::ForethoughtOne
             | GameStatus::Discovery => {
