@@ -1,6 +1,7 @@
 use crate::{
     actions::{
         block::BlockAction,
+        choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction,
         choose_discovery::{ChooseDiscoveryAction, ChooseDiscoveryType},
         damage::DamageAction,
         damage_all_monsters::DamageAllMonstersAction,
@@ -222,7 +223,10 @@ fn forge(_: bool, _: Option<CreatureRef>, game: &mut Game) {
     game.action_queue.push_bot(UpgradeAllCardsInHandAction());
 }
 
-fn elixir(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn elixir(_: bool, _: Option<CreatureRef>, game: &mut Game) {
+    game.action_queue
+        .push_bot(ChooseCardsInHandToExhaustAction(10));
+}
 fn regen(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 10 } else { 5 };
     game.action_queue.push_bot(GainStatusAction {
@@ -434,5 +438,28 @@ mod tests {
                 assert_eq!(temporary_cost, Some(0));
             }
         }
+    }
+
+    #[test]
+    fn test_elixir() {
+        let mut g = GameBuilder::default().build_combat();
+        for _ in 0..10 {
+            g.add_card_to_hand(CardClass::Strike);
+        }
+        g.throw_potion(Potion::Elixir, None);
+        for _ in 0..10 {
+            g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
+        }
+        assert_eq!(g.hand.len(), 0);
+        assert_eq!(g.exhaust_pile.len(), 10);
+
+        g.clear_all_piles();
+        g.add_card_to_hand(CardClass::Strike);
+        g.add_card_to_hand(CardClass::Strike);
+        g.throw_potion(Potion::Elixir, None);
+        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
+        g.make_move(Move::ExhaustCardsInHandEnd);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.exhaust_pile.len(), 1);
     }
 }
