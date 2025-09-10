@@ -38,6 +38,7 @@ pub mod gain_panache;
 pub mod gain_status;
 pub mod gain_status_all_monsters;
 pub mod heal;
+pub mod heal_percent;
 pub mod impatience;
 pub mod increase_base_amount;
 pub mod increase_max_hp;
