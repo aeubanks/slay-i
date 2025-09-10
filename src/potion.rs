@@ -1,11 +1,10 @@
 use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-        draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction, heal_percent::HealPercentAction,
-        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
+        heal::HealAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
-    game::{CreatureRef, Rand},
-    queue::ActionQueue,
+    game::{CreatureRef, Game, Rand},
     rng::rand_slice,
     status::Status,
 };
@@ -18,7 +17,7 @@ enum PotionRarity {
     Rare,
 }
 
-type PotionBehavior = fn(bool, Option<CreatureRef>, &mut ActionQueue);
+type PotionBehavior = fn(bool, Option<CreatureRef>, &mut Game);
 
 macro_rules! p {
     ($($name:ident => ($rarity:expr, $has_target:expr, $behavior:expr)),+,) => {
@@ -92,148 +91,151 @@ p!(
     Entropic => (Rare, false, entropic),
 );
 
-fn blood(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn blood(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let percent = if is_sacred { 40 } else { 20 };
-    queue.push_bot(HealPercentAction {
+    let amount = game.player.creature.max_hp as f32 * percent as f32 / 100.0;
+    game.action_queue.push_top(HealAction {
         target: CreatureRef::player(),
-        percent,
+        amount: amount as i32,
     });
 }
-fn block(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn block(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 24 } else { 12 };
-    queue.push_bot(BlockAction::player_flat_amount(amount));
+    game.action_queue
+        .push_bot(BlockAction::player_flat_amount(amount));
 }
-fn dex(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn dex(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 4 } else { 2 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Dexterity,
         amount,
         target: CreatureRef::player(),
     });
 }
-fn energy(_: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
-    queue.push_bot(GainEnergyAction(2));
+fn energy(_: bool, _: Option<CreatureRef>, game: &mut Game) {
+    game.action_queue.push_bot(GainEnergyAction(2));
 }
-fn explosive(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
-    queue.push_bot(DamageAllMonstersAction::thorns(if is_sacred {
-        20
-    } else {
-        10
-    }));
+fn explosive(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    game.action_queue
+        .push_bot(DamageAllMonstersAction::thorns(if is_sacred {
+            20
+        } else {
+            10
+        }));
 }
-fn fire(is_sacred: bool, target: Option<CreatureRef>, queue: &mut ActionQueue) {
-    queue.push_bot(DamageAction::thorns_rupture(
+fn fire(is_sacred: bool, target: Option<CreatureRef>, game: &mut Game) {
+    game.action_queue.push_bot(DamageAction::thorns_rupture(
         if is_sacred { 40 } else { 20 },
         target.unwrap(),
     ));
 }
-fn strength(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn strength(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 4 } else { 2 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Strength,
         amount,
         target: CreatureRef::player(),
     });
 }
-fn swift(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn swift(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 6 } else { 3 };
-    queue.push_bot(DrawAction(amount));
+    game.action_queue.push_bot(DrawAction(amount));
 }
-fn weak(is_sacred: bool, target: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn weak(is_sacred: bool, target: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 6 } else { 3 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Weak,
         amount,
         target: target.unwrap(),
     });
 }
-fn fear(is_sacred: bool, target: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn fear(is_sacred: bool, target: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 6 } else { 3 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Vulnerable,
         amount,
         target: target.unwrap(),
     });
 }
-fn attack(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn skill(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn power(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn colorless(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn flex(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn attack(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn skill(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn power(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn colorless(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn flex(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 10 } else { 5 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Strength,
         amount,
         target: CreatureRef::player(),
     });
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::LoseStrength,
         amount,
         target: CreatureRef::player(),
     });
 }
-fn speed(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn speed(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 10 } else { 5 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Dexterity,
         amount,
         target: CreatureRef::player(),
     });
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::LoseDexterity,
         amount,
         target: CreatureRef::player(),
     });
 }
-fn forge(_: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
-    queue.push_bot(UpgradeAllCardsInHandAction());
+fn forge(_: bool, _: Option<CreatureRef>, game: &mut Game) {
+    game.action_queue.push_bot(UpgradeAllCardsInHandAction());
 }
 
-fn elixir(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn regen(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn elixir(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn regen(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 10 } else { 5 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::RegenPlayer,
         amount,
         target: CreatureRef::player(),
     });
 }
-fn ancient(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn ancient(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 2 } else { 1 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Artifact,
         amount,
         target: CreatureRef::player(),
     });
 }
-fn bronze(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn bronze(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 6 } else { 3 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Thorns,
         amount,
         target: CreatureRef::player(),
     });
 }
-fn gamblers(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn steel(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn duplication(is_sacred: bool, _: Option<CreatureRef>, queue: &mut ActionQueue) {
+fn gamblers(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn steel(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn duplication(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 2 } else { 1 };
-    queue.push_bot(GainStatusAction {
+    game.action_queue.push_bot(GainStatusAction {
         status: Status::Duplication,
         amount,
         target: CreatureRef::player(),
     });
 }
-fn chaos(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn memories(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn chaos(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn memories(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 
-fn iron(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn cultist(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn fruit(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn snecko(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn fairy(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn smoke(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
-fn entropic(_: bool, _: Option<CreatureRef>, _: &mut ActionQueue) {}
+fn iron(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn cultist(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn fruit(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn snecko(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn fairy(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn smoke(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn entropic(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 
 lazy_static! {
     static ref ALL_COMMON: Vec<Potion> = Potion::all()
@@ -315,5 +317,17 @@ mod tests {
         g.make_move(Move::EndTurn);
         g.play_card(CardClass::Defend, None);
         assert_eq!(g.player.creature.block, 5);
+    }
+
+    #[test]
+    fn test_blood() {
+        let mut g = GameBuilder::default().build_combat();
+        g.player.creature.cur_hp = 10;
+        g.player.creature.max_hp = 100;
+        g.throw_potion(Potion::Blood, None);
+        assert_eq!(g.player.creature.cur_hp, 10 + 20);
+        g.player.add_relic(RelicClass::SacredBark);
+        g.throw_potion(Potion::Blood, None);
+        assert_eq!(g.player.creature.cur_hp, 10 + 20 + 40);
     }
 }

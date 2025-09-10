@@ -1179,11 +1179,8 @@ impl Game {
     }
 
     pub fn throw_potion(&mut self, p: Potion, target: Option<CreatureRef>) {
-        p.behavior()(
-            self.player.has_relic(RelicClass::SacredBark),
-            target,
-            &mut self.action_queue,
-        );
+        let is_sacred = self.player.has_relic(RelicClass::SacredBark);
+        p.behavior()(is_sacred, target, self);
         self.run();
     }
 
