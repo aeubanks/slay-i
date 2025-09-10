@@ -162,7 +162,10 @@ pub enum GameState {
         cards_to_forethought: Vec<CardRef>,
     },
     ForethoughtOne,
-    Discovery(Vec<CardClass>),
+    Discovery {
+        classes: Vec<CardClass>,
+        amount: i32,
+    },
     Defeat,
     Victory,
 }
@@ -626,7 +629,7 @@ impl Game {
             | GameState::FetchCardFromDraw(_)
             | GameState::ForethoughtAny { .. }
             | GameState::ForethoughtOne
-            | GameState::Discovery(_) => {
+            | GameState::Discovery { .. } => {
                 unreachable!()
             }
         }
@@ -656,6 +659,7 @@ impl Game {
                 | GameState::ExhaustOneCardInHand
                 | GameState::Exhume
                 | GameState::DualWield(_)
+                | GameState::Discovery { .. }
         )
     }
 
@@ -803,7 +807,7 @@ impl Game {
             } => GameStatus::ExhaustCardsInHand {
                 num_cards_remaining,
             },
-            GameState::Discovery(_) => GameStatus::Discovery,
+            GameState::Discovery { .. } => GameStatus::Discovery,
             _ => GameStatus::Combat,
         }
     }
@@ -964,11 +968,17 @@ impl Game {
                 _ => unreachable!(),
             },
             Move::ForethoughtAnyEnd => self.forethought_cards(),
-            Move::Discovery { card_class } => {
-                self.action_queue.push_top(DiscoveryAction(card_class));
-                self.state = GameState::PlayerTurn;
-                self.run();
-            }
+            Move::Discovery { card_class } => match self.state {
+                GameState::Discovery { amount, .. } => {
+                    self.action_queue.push_top(DiscoveryAction {
+                        class: card_class,
+                        amount,
+                    });
+                    self.state = GameState::PlayerTurn;
+                    self.run();
+                }
+                _ => unreachable!(),
+            },
             Move::UsePotion {
                 potion_index,
                 target,
@@ -1152,7 +1162,7 @@ impl Game {
                     moves.push(Move::ExhaustCardsInHand { card_index: c });
                 }
             }
-            GameState::Discovery(classes) => {
+            GameState::Discovery { classes, .. } => {
                 for &card_class in classes {
                     moves.push(Move::Discovery { card_class })
                 }

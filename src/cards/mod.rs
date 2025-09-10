@@ -327,6 +327,11 @@ lazy_static! {
         .copied()
         .filter(|c| c.rarity() == CardRarity::Uncommon)
         .collect();
+    static ref ALL_COLORLESS_IN_COMBAT: Vec<CardClass> = ALL_COLORLESS
+        .iter()
+        .copied()
+        .filter(|c| c.can_be_generated_in_combat())
+        .collect();
     static ref ALL_NON_BASIC_RED: Vec<CardClass> = CardClass::all()
         .iter()
         .copied()
@@ -347,6 +352,11 @@ lazy_static! {
         .iter()
         .copied()
         .filter(|c| c.ty() == CardType::Skill)
+        .collect();
+    static ref ALL_RED_POWERS_IN_COMBAT: Vec<CardClass> = ALL_RED_IN_COMBAT
+        .iter()
+        .copied()
+        .filter(|c| c.ty() == CardType::Power)
         .collect();
     static ref ALL_CURSES: Vec<CardClass> = CardClass::all()
         .iter()
@@ -372,8 +382,16 @@ pub fn random_red_skill_in_combat(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_RED_SKILLS_IN_COMBAT)
 }
 
+pub fn random_red_power_in_combat(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_RED_POWERS_IN_COMBAT)
+}
+
 pub fn random_colorless(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_COLORLESS)
+}
+
+pub fn random_colorless_in_combat(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_COLORLESS_IN_COMBAT)
 }
 
 pub fn random_uncommon_colorless(rng: &mut Rand) -> CardClass {

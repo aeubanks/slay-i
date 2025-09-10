@@ -1,26 +1,39 @@
 use crate::{
     actions::{
-        armaments::ArmamentsAction, block::BlockAction,
+        armaments::ArmamentsAction,
+        block::BlockAction,
         block_per_non_attack_in_hand::BlockPerNonAttackInHandAction,
         choose_card_in_draw_to_place_in_hand::ChooseCardInDrawToPlaceInHandAction,
         choose_card_in_hand_to_exhaust::ChooseCardInHandToExhaustAction,
         choose_card_in_hand_to_place_on_top_of_draw::ChooseCardInHandToPlaceOnTopOfDrawAction,
         choose_cards_in_hand_to_exhaust::ChooseCardsInHandToExhaustAction,
-        choose_discovery::ChooseDiscoveryAction, choose_dual_wield::ChooseDualWieldAction,
+        choose_discovery::{ChooseDiscoveryAction, ChooseDiscoveryType},
+        choose_dual_wield::ChooseDualWieldAction,
         choose_forethought_any::ChooseForethoughtAnyAction,
-        choose_forethought_one::ChooseForethoughtOneAction, damage::DamageAction,
-        double_block::DoubleBlockAction, double_strength::DoubleStrengthAction, draw::DrawAction,
+        choose_forethought_one::ChooseForethoughtOneAction,
+        damage::DamageAction,
+        double_block::DoubleBlockAction,
+        double_strength::DoubleStrengthAction,
+        draw::DrawAction,
         enlightenment::EnlightenmentAction,
         exhaust_non_attack_in_hand::ExhaustNonAttackInHandAction,
-        exhaust_random_card_in_hand::ExhaustRandomCardInHandAction, exhume::ExhumeAction,
-        gain_energy::GainEnergyAction, gain_status::GainStatusAction,
-        gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
-        impatience::ImpatienceAction, infernal_blade::InfernalBladeAction, madness::MadnessAction,
-        place_card_in_hand::PlaceCardInHandAction, play_top_card::PlayTopCardAction,
+        exhaust_random_card_in_hand::ExhaustRandomCardInHandAction,
+        exhume::ExhumeAction,
+        gain_energy::GainEnergyAction,
+        gain_status::GainStatusAction,
+        gain_status_all_monsters::GainStatusAllMonstersAction,
+        heal::HealAction,
+        impatience::ImpatienceAction,
+        infernal_blade::InfernalBladeAction,
+        madness::MadnessAction,
+        place_card_in_hand::PlaceCardInHandAction,
+        play_top_card::PlayTopCardAction,
         shuffle_card_into_draw::ShuffleCardIntoDrawAction,
         shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
-        shuffle_draw::ShuffleDrawAction, spot_weakness::SpotWeaknessAction,
-        upgrade_all::UpgradeAllAction, upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
+        shuffle_draw::ShuffleDrawAction,
+        spot_weakness::SpotWeaknessAction,
+        upgrade_all::UpgradeAllAction,
+        upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
         violence::ViolenceAction,
     },
     card::CardPlayInfo,
@@ -322,7 +335,10 @@ pub fn trip_behavior(game: &mut Game, info: &CardPlayInfo) {
 }
 
 pub fn discovery_behavior(game: &mut Game, _: &CardPlayInfo) {
-    game.action_queue.push_bot(ChooseDiscoveryAction());
+    game.action_queue.push_bot(ChooseDiscoveryAction {
+        ty: ChooseDiscoveryType::Red,
+        amount: 1,
+    });
 }
 
 pub fn deep_breath_behavior(game: &mut Game, info: &CardPlayInfo) {

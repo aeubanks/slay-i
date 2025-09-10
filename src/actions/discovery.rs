@@ -5,15 +5,20 @@ use crate::{
     game::Game,
 };
 
-pub struct DiscoveryAction(pub CardClass);
+pub struct DiscoveryAction {
+    pub class: CardClass,
+    pub amount: i32,
+}
 
 impl Action for DiscoveryAction {
     fn run(&self, game: &mut Game) {
-        let c = game.new_card(self.0);
-        if let CardCost::Cost { temporary_cost, .. } = &mut c.borrow_mut().cost {
-            *temporary_cost = Some(0)
+        for _ in 0..self.amount {
+            let c = game.new_card(self.class);
+            if let CardCost::Cost { temporary_cost, .. } = &mut c.borrow_mut().cost {
+                *temporary_cost = Some(0)
+            }
+            game.action_queue.push_top(PlaceCardInHandAction(c));
         }
-        game.action_queue.push_top(PlaceCardInHandAction(c));
     }
 }
 

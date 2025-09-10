@@ -1,8 +1,14 @@
 use crate::{
     actions::{
-        block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-        draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
-        heal::HealAction, increase_max_hp::IncreaseMaxHPAction,
+        block::BlockAction,
+        choose_discovery::{ChooseDiscoveryAction, ChooseDiscoveryType},
+        damage::DamageAction,
+        damage_all_monsters::DamageAllMonstersAction,
+        draw::DrawAction,
+        gain_energy::GainEnergyAction,
+        gain_status::GainStatusAction,
+        heal::HealAction,
+        increase_max_hp::IncreaseMaxHPAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
     },
     game::{CreatureRef, Game, Rand},
@@ -158,10 +164,34 @@ fn fear(is_sacred: bool, target: Option<CreatureRef>, game: &mut Game) {
         target: target.unwrap(),
     });
 }
-fn attack(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
-fn skill(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
-fn power(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
-fn colorless(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn attack(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 2 } else { 1 };
+    game.action_queue.push_bot(ChooseDiscoveryAction {
+        ty: ChooseDiscoveryType::RedAttack,
+        amount,
+    });
+}
+fn skill(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 2 } else { 1 };
+    game.action_queue.push_bot(ChooseDiscoveryAction {
+        ty: ChooseDiscoveryType::RedSkill,
+        amount,
+    });
+}
+fn power(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 2 } else { 1 };
+    game.action_queue.push_bot(ChooseDiscoveryAction {
+        ty: ChooseDiscoveryType::RedPower,
+        amount,
+    });
+}
+fn colorless(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
+    let amount = if is_sacred { 2 } else { 1 };
+    game.action_queue.push_bot(ChooseDiscoveryAction {
+        ty: ChooseDiscoveryType::Colorless,
+        amount,
+    });
+}
 fn flex(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let amount = if is_sacred { 10 } else { 5 };
     game.action_queue.push_bot(GainStatusAction {
@@ -262,7 +292,7 @@ pub fn random_common_potion(rng: &mut Rand) -> Potion {
 #[cfg(test)]
 mod tests {
     use crate::{
-        cards::CardClass,
+        cards::{CardClass, CardColor, CardCost, CardType},
         game::{GameBuilder, Move},
         monsters::test::NoopMonster,
         relic::RelicClass,
@@ -340,5 +370,69 @@ mod tests {
         g.player.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Blood, None);
         assert_eq!(g.player.creature.cur_hp, 10 + 20 + 40);
+    }
+
+    #[test]
+    fn test_attack() {
+        let mut g = GameBuilder::default().build_combat();
+        g.throw_potion(Potion::Attack, None);
+        g.make_move(g.valid_moves()[0]);
+        assert_eq!(g.hand.len(), 1);
+        g.player.add_relic(RelicClass::SacredBark);
+        g.throw_potion(Potion::Attack, None);
+        g.make_move(g.valid_moves()[0]);
+        assert_eq!(g.hand.len(), 3);
+
+        for c in &g.hand {
+            let c = c.borrow();
+            assert_ne!(c.class, CardClass::Reaper);
+            assert_eq!(c.class.ty(), CardType::Attack);
+            assert_eq!(c.class.color(), CardColor::Red);
+            if let CardCost::Cost { temporary_cost, .. } = c.cost {
+                assert_eq!(temporary_cost, Some(0));
+            }
+        }
+    }
+
+    #[test]
+    fn test_skill() {
+        let mut g = GameBuilder::default().build_combat();
+        g.throw_potion(Potion::Skill, None);
+        g.make_move(g.valid_moves()[0]);
+        assert_eq!(g.hand.len(), 1);
+        g.player.add_relic(RelicClass::SacredBark);
+        g.throw_potion(Potion::Skill, None);
+        g.make_move(g.valid_moves()[0]);
+        assert_eq!(g.hand.len(), 3);
+
+        for c in &g.hand {
+            let c = c.borrow();
+            assert_eq!(c.class.ty(), CardType::Skill);
+            assert_eq!(c.class.color(), CardColor::Red);
+            if let CardCost::Cost { temporary_cost, .. } = c.cost {
+                assert_eq!(temporary_cost, Some(0));
+            }
+        }
+    }
+
+    #[test]
+    fn test_power() {
+        let mut g = GameBuilder::default().build_combat();
+        g.throw_potion(Potion::Power, None);
+        g.make_move(g.valid_moves()[0]);
+        assert_eq!(g.hand.len(), 1);
+        g.player.add_relic(RelicClass::SacredBark);
+        g.throw_potion(Potion::Power, None);
+        g.make_move(g.valid_moves()[0]);
+        assert_eq!(g.hand.len(), 3);
+
+        for c in &g.hand {
+            let c = c.borrow();
+            assert_eq!(c.class.ty(), CardType::Power);
+            assert_eq!(c.class.color(), CardColor::Red);
+            if let CardCost::Cost { temporary_cost, .. } = c.cost {
+                assert_eq!(temporary_cost, Some(0));
+            }
+        }
     }
 }
