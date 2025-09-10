@@ -351,7 +351,7 @@ pub fn debug_kill_behavior(game: &mut Game, info: &CardPlayInfo) {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::{block::BlockAction, set_hp::SetHPAction},
+        actions::block::BlockAction,
         assert_matches,
         cards::{CardClass, CardCost},
         game::{CreatureRef, Game, GameBuilder, GameStatus, Move},
@@ -988,10 +988,7 @@ mod tests {
         assert_eq!(g.player.creature.max_hp, player_max_hp);
         assert_eq!(g.player.creature.cur_hp, player_cur_hp);
 
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(0),
-            hp: 8,
-        });
+        g.monsters[0].creature.cur_hp = 8;
         g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 0);
         assert_eq!(g.player.creature.max_hp, player_max_hp + 3);
@@ -1010,10 +1007,7 @@ mod tests {
         assert_eq!(g.player.creature.max_hp, player_max_hp);
         assert_eq!(g.player.creature.cur_hp, player_cur_hp);
 
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(0),
-            hp: 11,
-        });
+        g.monsters[0].creature.cur_hp = 11;
         g.play_card_upgraded(CardClass::Feed, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 0);
         assert_eq!(g.player.creature.max_hp, player_max_hp + 4);
@@ -1078,10 +1072,7 @@ mod tests {
         assert_eq!(g.player.master_deck[0].borrow().base_increase, 0);
         assert_eq!(g.player.master_deck[1].borrow().base_increase, 0);
 
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(0),
-            hp: 10,
-        });
+        g.monsters[0].creature.cur_hp = 10;
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: Some(0),
@@ -1106,10 +1097,7 @@ mod tests {
         });
         assert_eq!(g.monsters[1].creature.cur_hp, hp1 - 18);
 
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(1),
-            hp: 17,
-        });
+        g.monsters[1].creature.cur_hp = 17;
         let c = g.exhaust_pile.pop().unwrap();
         c.borrow_mut().upgrade();
         g.hand.push(c);

@@ -116,7 +116,6 @@ mod tests {
         actions::{
             block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
             draw::DrawAction, gain_status::GainStatusAction, reduce_status::ReduceStatusAction,
-            set_hp::SetHPAction,
         },
         cards::{CardClass, CardColor, CardCost},
         game::{CreatureRef, GameBuilder, Move},
@@ -375,10 +374,7 @@ mod tests {
         assert_eq!(g.player.creature.block, 1);
         assert_eq!(g.player.creature.cur_hp, hp - 2);
 
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(0),
-            hp: 3,
-        });
+        g.monsters[0].creature.cur_hp = 3;
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: Some(0),
@@ -397,10 +393,7 @@ mod tests {
 
         let hp = g.player.creature.cur_hp;
 
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(0),
-            hp: 3,
-        });
+        g.monsters[0].creature.cur_hp = 3;
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: Some(0),
@@ -416,10 +409,7 @@ mod tests {
             .add_monster(AttackMonster::new(2))
             .build_combat();
 
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(0),
-            hp: 10,
-        });
+        g.monsters[0].creature.cur_hp = 10;
         g.run_action(BlockAction::player_flat_amount(5));
         g.make_move(Move::EndTurn);
 
@@ -1186,10 +1176,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_player_status(Status::RegenPlayer, 4)
             .build_combat();
-        g.run_action(SetHPAction {
-            target: CreatureRef::player(),
-            hp: 20,
-        });
+        g.player.creature.cur_hp = 20;
         assert_eq!(g.player.creature.cur_hp, 20);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.cur_hp, 24);
@@ -1210,10 +1197,7 @@ mod tests {
             .add_player_status(Status::RegenPlayer, 11)
             .add_player_status(Status::CombustHPLoss, 12)
             .build_combat();
-        g.run_action(SetHPAction {
-            target: CreatureRef::player(),
-            hp: 2,
-        });
+        g.player.creature.cur_hp = 2;
         assert_eq!(g.player.creature.cur_hp, 2);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.cur_hp, 1);
@@ -1224,10 +1208,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_monster_status(Status::RegenMonster, 4)
             .build_combat();
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(0),
-            hp: 20,
-        });
+        g.monsters[0].creature.cur_hp = 20;
         assert_eq!(g.monsters[0].creature.cur_hp, 20);
         g.make_move(Move::EndTurn);
         assert_eq!(g.monsters[0].creature.cur_hp, 24);

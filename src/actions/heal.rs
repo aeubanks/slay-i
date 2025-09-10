@@ -25,7 +25,7 @@ impl std::fmt::Debug for HealAction {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::{damage::DamageAction, heal::HealAction, set_hp::SetHPAction},
+        actions::{damage::DamageAction, heal::HealAction},
         game::{CreatureRef, GameBuilder},
         monsters::test::NoopMonster,
     };
@@ -40,10 +40,7 @@ mod tests {
             100,
             CreatureRef::monster(0),
         ));
-        g.run_action(SetHPAction {
-            target: CreatureRef::monster(1),
-            hp: 10,
-        });
+        g.monsters[1].creature.cur_hp = 10;
         g.run_action(HealAction {
             target: CreatureRef::monster(0),
             amount: 5,

@@ -54,7 +54,6 @@ pub mod play_top_card;
 pub mod reduce_status;
 pub mod remove_status;
 pub mod set_energy;
-pub mod set_hp;
 pub mod shuffle_card_into_draw;
 pub mod shuffle_discard_on_top_of_draw;
 pub mod shuffle_draw;
