@@ -2,13 +2,14 @@ use lazy_static::lazy_static;
 
 use crate::{
     actions::{
-        block::BlockAction, damage::DamageAction, draw::DrawAction, heal::HealAction,
-        play_card::PlayCardAction,
+        block::BlockAction, damage::DamageAction, draw::DrawAction, gain_status::GainStatusAction,
+        heal::HealAction, play_card::PlayCardAction,
     },
     cards::CardType,
     game::{CreatureRef, Rand},
     queue::ActionQueue,
     rng::rand_slice,
+    status::Status,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -94,7 +95,7 @@ r!(
     GremlinHorn => Uncommon, // TODO
     HornCleat => Uncommon,
     InkBottle => Uncommon, // TODO
-    Kunai => Uncommon, // TODO
+    Kunai => Uncommon,
     LetterOpener => Uncommon, // TODO
     Matryoshka => Uncommon, // TODO
     MeatOnTheBone => Uncommon, // TODO
@@ -105,7 +106,7 @@ r!(
     Pantograph => Uncommon, // TODO
     Pear => Uncommon, // TODO
     QuestionCard => Uncommon, // TODO
-    Shruiken => Uncommon, // TODO
+    Shruiken => Uncommon,
     SingingBowl => Uncommon, // TODO
     StrikeDummy => Uncommon, // TODO
     Sundial => Uncommon, // TODO
@@ -239,12 +240,15 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             BlueCandle => Some(blue_candle),
+            Kunai => Some(kunai),
+            Shruiken => Some(shruiken),
             _ => None,
         }
     }
     pub fn turn_start(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
+            Kunai | Shruiken => Some(set_value_zero),
             HornCleat => Some(horn_cleat),
             CaptainsWheel => Some(captains_wheel),
             _ => None,
@@ -257,6 +261,36 @@ impl RelicClass {
 
 fn set_value_zero(v: &mut i32, _: &mut ActionQueue) {
     *v = 0;
+}
+
+fn inc_wrap(v: &mut i32, max: i32) -> bool {
+    *v += 1;
+    if *v == max {
+        *v = 0;
+        true
+    } else {
+        false
+    }
+}
+
+fn kunai(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
+    if play_card.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 3) {
+        queue.push_bot(GainStatusAction {
+            status: Status::Dexterity,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+    }
+}
+
+fn shruiken(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
+    if play_card.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 3) {
+        queue.push_bot(GainStatusAction {
+            status: Status::Strength,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+    }
 }
 
 fn burning_blood(_: &mut i32, queue: &mut ActionQueue) {
@@ -488,5 +522,50 @@ mod tests {
         assert_eq!(g.player.creature.block, 18);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.creature.block, 0);
+    }
+
+    #[test]
+    fn test_kunai() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Kunai)
+            .build_combat();
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.get_status(Status::Dexterity), None);
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(1));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(1));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(1));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(2));
+    }
+
+    #[test]
+    fn test_shruiken() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Shruiken)
+            .build_combat();
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.get_status(Status::Strength), None);
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(1));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(1));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Berserk, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(1));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
     }
 }
