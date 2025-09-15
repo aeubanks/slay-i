@@ -94,7 +94,7 @@ r!(
     FrozenEgg => Uncommon, // TODO
     GremlinHorn => Uncommon, // TODO
     HornCleat => Uncommon,
-    InkBottle => Uncommon, // TODO
+    InkBottle => Uncommon,
     Kunai => Uncommon,
     LetterOpener => Uncommon, // TODO
     Matryoshka => Uncommon, // TODO
@@ -242,6 +242,7 @@ impl RelicClass {
             BlueCandle => Some(blue_candle),
             Kunai => Some(kunai),
             Shruiken => Some(shruiken),
+            InkBottle => Some(ink_bottle),
             _ => None,
         }
     }
@@ -290,6 +291,12 @@ fn shruiken(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
             amount: 1,
             target: CreatureRef::player(),
         });
+    }
+}
+
+fn ink_bottle(v: &mut i32, queue: &mut ActionQueue, _: &PlayCardAction) {
+    if inc_wrap(v, 10) {
+        queue.push_bot(DrawAction(1));
     }
 }
 
@@ -570,5 +577,25 @@ mod tests {
         assert_eq!(g.player.creature.get_status(Status::Strength), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
+    }
+
+    #[test]
+    fn test_ink_bottle() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::InkBottle)
+            .build_combat();
+        g.add_card_to_draw_pile(CardClass::Strike);
+        for i in 0..9 {
+            g.play_card(CardClass::Bloodletting, None);
+            assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(i + 1));
+            assert_eq!(g.hand.len(), 0);
+        }
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(0));
+        assert_eq!(g.hand.len(), 1);
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(1));
     }
 }
