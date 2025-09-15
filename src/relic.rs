@@ -344,6 +344,9 @@ impl Relic {
     pub fn get_class(&self) -> RelicClass {
         self.class
     }
+    pub fn get_value(&self) -> i32 {
+        self.value
+    }
 }
 
 macro_rules! trigger {

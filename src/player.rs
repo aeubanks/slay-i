@@ -62,6 +62,13 @@ impl Player {
     pub fn has_relic(&self, class: RelicClass) -> bool {
         self.relics.iter().any(|r| r.get_class() == class)
     }
+    #[cfg(test)]
+    pub fn get_relic_value(&self, class: RelicClass) -> Option<i32> {
+        self.relics
+            .iter()
+            .find(|r| r.get_class() == class)
+            .map(|r| r.get_value())
+    }
     trigger!(trigger_relics_pre_combat, pre_combat);
     trigger!(trigger_relics_combat_start_pre_draw, combat_start_pre_draw);
     trigger!(

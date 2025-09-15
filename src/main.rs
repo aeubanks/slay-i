@@ -53,6 +53,10 @@ fn monster_str(m: &Monster, player: &Player) -> String {
 
 fn print_state(g: &Game) {
     println!("{}", creature_str(&g.player.creature));
+    println!("relics:");
+    for r in &g.player.relics {
+        println!(" {:?}: {}", r.get_class(), r.get_value());
+    }
     if g.player.potions.iter().any(|p| p.is_some()) {
         print!("potions:");
         for p in g.player.potions.iter().flatten() {
