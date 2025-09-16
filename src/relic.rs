@@ -2,8 +2,9 @@ use lazy_static::lazy_static;
 
 use crate::{
     actions::{
-        block::BlockAction, damage::DamageAction, draw::DrawAction, gain_status::GainStatusAction,
-        heal::HealAction, play_card::PlayCardAction,
+        block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
+        draw::DrawAction, gain_status::GainStatusAction, heal::HealAction,
+        play_card::PlayCardAction,
     },
     cards::CardType,
     game::{CreatureRef, Rand},
@@ -96,13 +97,13 @@ r!(
     HornCleat => Uncommon,
     InkBottle => Uncommon,
     Kunai => Uncommon,
-    LetterOpener => Uncommon, // TODO
+    LetterOpener => Uncommon,
     Matryoshka => Uncommon, // TODO
     MeatOnTheBone => Uncommon, // TODO
     MercuryHourglass => Uncommon, // TODO
     MoltenEgg => Uncommon, // TODO
     MummifiedHand => Uncommon, // TODO
-    OrnamentalFan => Uncommon, // TODO
+    OrnamentalFan => Uncommon,
     Pantograph => Uncommon, // TODO
     Pear => Uncommon, // TODO
     QuestionCard => Uncommon, // TODO
@@ -243,13 +244,15 @@ impl RelicClass {
             Kunai => Some(kunai),
             Shruiken => Some(shruiken),
             InkBottle => Some(ink_bottle),
+            LetterOpener => Some(letter_opener),
+            OrnamentalFan => Some(ornamental_fan),
             _ => None,
         }
     }
     pub fn turn_start(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
-            Kunai | Shruiken => Some(set_value_zero),
+            Kunai | Shruiken | LetterOpener | OrnamentalFan => Some(set_value_zero),
             HornCleat => Some(horn_cleat),
             CaptainsWheel => Some(captains_wheel),
             _ => None,
@@ -297,6 +300,18 @@ fn shruiken(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
 fn ink_bottle(v: &mut i32, queue: &mut ActionQueue, _: &PlayCardAction) {
     if inc_wrap(v, 10) {
         queue.push_bot(DrawAction(1));
+    }
+}
+
+fn ornamental_fan(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+    if play.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 3) {
+        queue.push_bot(BlockAction::player_flat_amount(4));
+    }
+}
+
+fn letter_opener(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+    if play.card.borrow().class.ty() == CardType::Skill && inc_wrap(v, 3) {
+        queue.push_bot(DamageAllMonstersAction::thorns(5));
     }
 }
 
@@ -407,6 +422,7 @@ mod tests {
         actions::block::BlockAction,
         cards::CardClass,
         game::{GameBuilder, Move},
+        monsters::test::NoopMonster,
         status::Status,
     };
 
@@ -615,5 +631,51 @@ mod tests {
             g.monsters[0].creature.cur_hp,
             hp - (6 + 3) - (5 + 3) * 2 - 8
         );
+    }
+
+    #[test]
+    fn test_letter_opener() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::LetterOpener)
+            .add_monster(NoopMonster::with_hp(50))
+            .add_monster(NoopMonster::with_hp(50))
+            .build_combat();
+        g.energy = 99;
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Defend, None);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::LetterOpener), Some(2));
+        assert_eq!(g.monsters[0].creature.cur_hp, 50 - 6);
+        assert_eq!(g.monsters[1].creature.cur_hp, 50);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::LetterOpener), Some(0));
+        assert_eq!(g.monsters[0].creature.cur_hp, 50 - 6 - 5);
+        assert_eq!(g.monsters[1].creature.cur_hp, 50 - 5);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::LetterOpener), Some(1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_relic_value(RelicClass::LetterOpener), Some(0));
+    }
+
+    #[test]
+    fn test_ornamental_fan() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::OrnamentalFan)
+            .build_combat();
+        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
+        g.play_card(CardClass::Intimidate, None);
+        g.play_card(CardClass::Whirlwind, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(1));
+        g.play_card(CardClass::Whirlwind, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(2));
+        assert_eq!(g.player.creature.block, 0);
+        g.play_card(CardClass::Whirlwind, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
+        assert_eq!(g.player.creature.block, 4);
+        g.play_card(CardClass::Intimidate, None);
+        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
+        g.play_card(CardClass::Whirlwind, None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
     }
 }
