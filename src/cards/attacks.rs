@@ -19,8 +19,17 @@ use crate::{
     card::{CardPlayInfo, CardRef},
     cards::{CardClass, skills::push_block},
     game::{CreatureRef, Game},
+    relic::RelicClass,
     status::Status,
 };
+
+fn extra_base_damage(game: &Game, info: &CardPlayInfo) -> i32 {
+    if game.player.has_relic(RelicClass::StrikeDummy) && info.card.class.is_strike() {
+        3
+    } else {
+        0
+    }
+}
 
 fn push_damage(
     game: &mut Game,
@@ -33,7 +42,7 @@ fn push_damage(
             upgraded_base_damage
         } else {
             unupgraded_base_damage
-        },
+        } + extra_base_damage(game, info),
         &game.player,
         game.get_creature(info.target.unwrap()),
         info.target.unwrap(),
@@ -47,11 +56,13 @@ fn push_aoe_damage(
     upgraded_base_damage: i32,
 ) {
     game.action_queue
-        .push_bot(DamageAllMonstersAction::from_player(if info.upgraded {
-            upgraded_base_damage
-        } else {
-            unupgraded_base_damage
-        }));
+        .push_bot(DamageAllMonstersAction::from_player(
+            if info.upgraded {
+                upgraded_base_damage
+            } else {
+                unupgraded_base_damage
+            } + extra_base_damage(game, info),
+        ));
 }
 
 pub fn strike_behavior(game: &mut Game, info: &CardPlayInfo) {

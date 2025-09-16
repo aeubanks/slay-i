@@ -108,7 +108,7 @@ r!(
     QuestionCard => Uncommon, // TODO
     Shruiken => Uncommon,
     SingingBowl => Uncommon, // TODO
-    StrikeDummy => Uncommon, // TODO
+    StrikeDummy => Uncommon,
     Sundial => Uncommon, // TODO
     TheCourier => Uncommon, // TODO
     ToxicEgg => Uncommon, // TODO
@@ -597,5 +597,23 @@ mod tests {
         assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(1));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(1));
+    }
+
+    #[test]
+    fn test_strike_dummy() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::StrikeDummy)
+            .build_combat();
+        g.energy = 99;
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 9);
+        g.play_card(CardClass::TwinStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - (6 + 3) - (5 + 3) * 2);
+        g.play_card(CardClass::Bash, Some(CreatureRef::monster(0)));
+        assert_eq!(
+            g.monsters[0].creature.cur_hp,
+            hp - (6 + 3) - (5 + 3) * 2 - 8
+        );
     }
 }
