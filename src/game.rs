@@ -911,6 +911,7 @@ impl Game {
     }
 
     pub fn make_move(&mut self, m: Move) {
+        assert!(!self.finished());
         match m {
             Move::ChooseBlessing(b) => {
                 assert_matches!(self.state, GameState::Blessing);
