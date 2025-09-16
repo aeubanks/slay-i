@@ -7,6 +7,11 @@ impl Action for ShuffleDiscardOnTopOfDrawAction {
     fn run(&self, game: &mut Game) {
         game.discard_pile.shuffle(&mut game.rng);
         game.draw_pile.append(&mut game.discard_pile);
+        // In the actual game the shuffle relics trigger on
+        // ShuffleDiscardOnTopOfDrawAction creation, but they add to the bottom
+        // of the queue. Having the add to the top of the queue within
+        // ShuffleDiscardOnTopOfDrawAction is close enough.
+        game.player.trigger_relics_shuffle(&mut game.action_queue);
     }
 }
 

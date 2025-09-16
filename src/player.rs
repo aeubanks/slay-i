@@ -69,6 +69,7 @@ impl Player {
             .find(|r| r.get_class() == class)
             .map(|r| r.get_value())
     }
+    trigger!(trigger_relics_shuffle, shuffle);
     trigger!(trigger_relics_pre_combat, pre_combat);
     trigger!(trigger_relics_combat_start_pre_draw, combat_start_pre_draw);
     trigger!(

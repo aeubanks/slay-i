@@ -3,8 +3,8 @@ use lazy_static::lazy_static;
 use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-        draw::DrawAction, gain_status::GainStatusAction, heal::HealAction,
-        play_card::PlayCardAction,
+        draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
+        heal::HealAction, play_card::PlayCardAction,
     },
     cards::CardType,
     game::{CreatureRef, Rand},
@@ -211,6 +211,14 @@ type RelicCallback = fn(&mut i32, &mut ActionQueue);
 type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &PlayCardAction);
 
 impl RelicClass {
+    pub fn shuffle(&self) -> Option<RelicCallback> {
+        use RelicClass::*;
+        match self {
+            Sundial => Some(sundial),
+            TheAbacus => Some(abacus),
+            _ => None,
+        }
+    }
     pub fn pre_combat(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
@@ -357,6 +365,16 @@ fn blue_candle(_: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
     }
 }
 
+fn abacus(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_top(BlockAction::player_flat_amount(6));
+}
+
+fn sundial(v: &mut i32, queue: &mut ActionQueue) {
+    if inc_wrap(v, 3) {
+        queue.push_top(GainEnergyAction(2));
+    }
+}
+
 pub struct Relic {
     class: RelicClass,
     value: i32,
@@ -391,6 +409,7 @@ macro_rules! trigger_card {
 }
 
 impl Relic {
+    trigger!(shuffle);
     trigger!(pre_combat);
     trigger!(combat_start_pre_draw);
     trigger!(combat_start_post_draw);
@@ -677,5 +696,90 @@ mod tests {
         g.play_card(CardClass::Whirlwind, None);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
+    }
+
+    #[test]
+    fn test_abacus() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::TheAbacus)
+            .build_combat();
+        assert_eq!(g.player.creature.block, 0);
+        g.play_card(CardClass::Thunderclap, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.block, 0);
+        g.play_card(CardClass::PommelStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.block, 6);
+        g.play_card(CardClass::PommelStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.block, 12);
+        g.play_card(CardClass::MasterOfStrategy, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.block, 24);
+        g.play_card(CardClass::MasterOfStrategy, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.creature.block, 24);
+    }
+
+    #[test]
+    fn test_sundial() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Sundial)
+            .build_combat();
+
+        g.add_cards_to_discard_pile(CardClass::Strike, 10);
+        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(0));
+        g.play_card(CardClass::FlashOfSteel, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(1));
+        assert_eq!(g.energy, 3);
+
+        g.clear_all_piles();
+        g.add_cards_to_discard_pile(CardClass::Strike, 10);
+        g.play_card(CardClass::FlashOfSteel, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(2));
+        assert_eq!(g.energy, 3);
+
+        g.clear_all_piles();
+        g.add_cards_to_discard_pile(CardClass::Strike, 10);
+        g.play_card(CardClass::FlashOfSteel, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(0));
+        assert_eq!(g.energy, 5);
+
+        g.clear_all_piles();
+        g.add_cards_to_discard_pile(CardClass::Strike, 10);
+        g.play_card(CardClass::FlashOfSteel, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(1));
+        assert_eq!(g.energy, 5);
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(1));
+    }
+
+    #[test]
+    fn test_sundial_infinite() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::Sundial)
+                .add_monster(NoopMonster::with_hp(10000))
+                .add_cards_upgraded(CardClass::PommelStrike, 2)
+                .build_combat();
+            for _ in 0..100 {
+                g.make_move(Move::PlayCard {
+                    card_index: 0,
+                    target: Some(0),
+                });
+            }
+            assert!(g.energy > 10);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::Sundial)
+                .add_monster(NoopMonster::with_hp(10000))
+                .add_card(CardClass::PommelStrike)
+                .add_card_upgraded(CardClass::PommelStrike)
+                .build_combat();
+            for _ in 0..100 {
+                g.make_move(Move::PlayCard {
+                    card_index: 0,
+                    target: Some(0),
+                });
+            }
+            assert!(g.energy < 10);
+        }
     }
 }
