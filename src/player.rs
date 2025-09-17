@@ -69,16 +69,19 @@ impl Player {
             .find(|r| r.get_class() == class)
             .map(|r| r.get_value())
     }
-    trigger!(trigger_relics_shuffle, shuffle);
-    trigger!(trigger_relics_pre_combat, pre_combat);
-    trigger!(trigger_relics_combat_start_pre_draw, combat_start_pre_draw);
+    trigger!(trigger_relics_on_shuffle, on_shuffle);
+    trigger!(trigger_relics_at_pre_combat, at_pre_combat);
     trigger!(
-        trigger_relics_combat_start_post_draw,
-        combat_start_post_draw
+        trigger_relics_at_combat_start_pre_draw,
+        at_combat_start_pre_draw
     );
-    trigger!(trigger_relics_turn_start, turn_start);
-    trigger!(trigger_relics_turn_end, turn_end);
-    trigger!(trigger_relics_combat_finish, combat_finish);
+    trigger!(
+        trigger_relics_at_combat_start_post_draw,
+        at_combat_start_post_draw
+    );
+    trigger!(trigger_relics_at_turn_start, at_turn_start);
+    trigger!(trigger_relics_at_turn_end, at_turn_end);
+    trigger!(trigger_relics_at_combat_finish, at_combat_finish);
     trigger_card!(trigger_relics_on_card_played, on_card_played);
 }
 

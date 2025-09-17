@@ -211,7 +211,7 @@ type RelicCallback = fn(&mut i32, &mut ActionQueue);
 type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &PlayCardAction);
 
 impl RelicClass {
-    pub fn shuffle(&self) -> Option<RelicCallback> {
+    pub fn on_shuffle(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             Sundial => Some(sundial),
@@ -219,21 +219,21 @@ impl RelicClass {
             _ => None,
         }
     }
-    pub fn pre_combat(&self) -> Option<RelicCallback> {
+    pub fn at_pre_combat(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             HornCleat | CaptainsWheel => Some(set_value_zero),
             _ => None,
         }
     }
-    pub fn combat_finish(&self) -> Option<RelicCallback> {
+    pub fn at_combat_finish(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             BurningBlood => Some(burning_blood),
             _ => None,
         }
     }
-    pub fn combat_start_pre_draw(&self) -> Option<RelicCallback> {
+    pub fn at_combat_start_pre_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             BloodVial => Some(blood_vial),
@@ -243,7 +243,7 @@ impl RelicClass {
             _ => None,
         }
     }
-    pub fn combat_start_post_draw(&self) -> Option<RelicCallback> {
+    pub fn at_combat_start_post_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             BagOfPrep => Some(bag_of_prep),
@@ -263,7 +263,7 @@ impl RelicClass {
             _ => None,
         }
     }
-    pub fn turn_start(&self) -> Option<RelicCallback> {
+    pub fn at_turn_start(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             Kunai | Shruiken | LetterOpener | OrnamentalFan => Some(set_value_zero),
@@ -272,7 +272,7 @@ impl RelicClass {
             _ => None,
         }
     }
-    pub fn turn_end(&self) -> Option<RelicCallback> {
+    pub fn at_turn_end(&self) -> Option<RelicCallback> {
         None
     }
 }
@@ -444,13 +444,13 @@ macro_rules! trigger_card {
 }
 
 impl Relic {
-    trigger!(shuffle);
-    trigger!(pre_combat);
-    trigger!(combat_start_pre_draw);
-    trigger!(combat_start_post_draw);
-    trigger!(turn_start);
-    trigger!(turn_end);
-    trigger!(combat_finish);
+    trigger!(on_shuffle);
+    trigger!(at_pre_combat);
+    trigger!(at_combat_start_pre_draw);
+    trigger!(at_combat_start_post_draw);
+    trigger!(at_turn_start);
+    trigger!(at_turn_end);
+    trigger!(at_combat_finish);
     trigger_card!(on_card_played);
 }
 

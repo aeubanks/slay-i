@@ -11,7 +11,8 @@ impl Action for ShuffleDiscardOnTopOfDrawAction {
         // ShuffleDiscardOnTopOfDrawAction creation, but they add to the bottom
         // of the queue. Having the add to the top of the queue within
         // ShuffleDiscardOnTopOfDrawAction is close enough.
-        game.player.trigger_relics_shuffle(&mut game.action_queue);
+        game.player
+            .trigger_relics_on_shuffle(&mut game.action_queue);
     }
 }
 

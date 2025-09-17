@@ -560,7 +560,7 @@ impl Game {
 
                 // player pre-combat relic setup
                 self.player
-                    .trigger_relics_pre_combat(&mut self.action_queue);
+                    .trigger_relics_at_pre_combat(&mut self.action_queue);
                 self.run_actions_until_empty();
 
                 // monster pre-combat setup
@@ -586,7 +586,7 @@ impl Game {
 
                 if self.turn == 0 {
                     self.player
-                        .trigger_relics_combat_start_pre_draw(&mut self.action_queue);
+                        .trigger_relics_at_combat_start_pre_draw(&mut self.action_queue);
                 }
                 self.player
                     .creature
@@ -596,11 +596,11 @@ impl Game {
 
                 if self.turn == 0 {
                     self.player
-                        .trigger_relics_combat_start_post_draw(&mut self.action_queue);
+                        .trigger_relics_at_combat_start_post_draw(&mut self.action_queue);
                 }
 
                 self.player
-                    .trigger_relics_turn_start(&mut self.action_queue);
+                    .trigger_relics_at_turn_start(&mut self.action_queue);
                 self.player.creature.trigger_statuses_turn_begin_post_draw(
                     CreatureRef::player(),
                     &mut self.action_queue,
@@ -743,7 +743,8 @@ impl Game {
     }
 
     fn player_end_of_turn(&mut self) {
-        self.player.trigger_relics_turn_end(&mut self.action_queue);
+        self.player
+            .trigger_relics_at_turn_end(&mut self.action_queue);
         self.player
             .creature
             .trigger_statuses_turn_end(CreatureRef::player(), &mut self.action_queue);
@@ -1390,7 +1391,7 @@ impl Game {
         {
             self.state = GameState::Victory;
             self.player
-                .trigger_relics_combat_finish(&mut self.action_queue);
+                .trigger_relics_at_combat_finish(&mut self.action_queue);
             self.run_actions_until_empty();
             return true;
         }
