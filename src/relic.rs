@@ -148,7 +148,7 @@ r!(
 
     Cauldron => Shop, // TODO
     ChemicalX => Shop, // TODO
-    ClockworkSouvenir => Shop, // TODO
+    ClockworkSouvenir => Shop,
     DollysMirror => Shop, // TODO
     FrozenEye => Shop, // TODO
     HandDrill => Shop, // TODO
@@ -192,9 +192,9 @@ r!(
     Enchiridion => Event, // TODO
     FaceOfCleric => Event, // TODO
     GoldenIdol => Event, // TODO
-    GremlinVisage => Event, // TODO
+    GremlinVisage => Event,
     MarkOfTheBloom => Event, // TODO
-    MutagenicStrength => Event, // TODO
+    MutagenicStrength => Event,
     NlothsGift => Event, // TODO
     NlothsHungryFace => Event, // TODO
     Necronomicon => Event, // TODO
@@ -222,7 +222,6 @@ impl RelicClass {
     pub fn pre_combat(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
-            BloodVial => Some(blood_vial),
             HornCleat | CaptainsWheel => Some(set_value_zero),
             _ => None,
         }
@@ -235,7 +234,14 @@ impl RelicClass {
         }
     }
     pub fn combat_start_pre_draw(&self) -> Option<RelicCallback> {
-        None
+        use RelicClass::*;
+        match self {
+            BloodVial => Some(blood_vial),
+            GremlinVisage => Some(gremlin_visage),
+            MutagenicStrength => Some(mutagenic_strength),
+            ClockworkSouvenir => Some(clockwork_souvenir),
+            _ => None,
+        }
     }
     pub fn combat_start_post_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
@@ -334,6 +340,35 @@ fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(HealAction {
         target: CreatureRef::player(),
         amount: 2,
+    });
+}
+
+fn gremlin_visage(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAction {
+        status: Status::Weak,
+        amount: 1,
+        target: CreatureRef::player(),
+    });
+}
+
+fn clockwork_souvenir(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_top(GainStatusAction {
+        status: Status::Artifact,
+        amount: 1,
+        target: CreatureRef::player(),
+    });
+}
+
+fn mutagenic_strength(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_top(GainStatusAction {
+        status: Status::LoseStrength,
+        amount: 3,
+        target: CreatureRef::player(),
+    });
+    queue.push_top(GainStatusAction {
+        status: Status::Strength,
+        amount: 3,
+        target: CreatureRef::player(),
     });
 }
 
@@ -780,6 +815,43 @@ mod tests {
                 });
             }
             assert!(g.energy < 10);
+        }
+    }
+
+    #[test]
+    fn test_combat_start() {
+        {
+            let g = GameBuilder::default()
+                .add_relic(RelicClass::MutagenicStrength)
+                .add_relic(RelicClass::ClockworkSouvenir)
+                .add_relic(RelicClass::GremlinVisage)
+                .build_combat();
+            assert_eq!(g.player.creature.get_status(Status::Weak), Some(1));
+            assert_eq!(g.player.creature.get_status(Status::Artifact), None);
+            assert_eq!(g.player.creature.get_status(Status::Strength), Some(3));
+            assert_eq!(g.player.creature.get_status(Status::LoseStrength), None);
+        }
+        {
+            let g = GameBuilder::default()
+                .add_relic(RelicClass::ClockworkSouvenir)
+                .add_relic(RelicClass::MutagenicStrength)
+                .add_relic(RelicClass::GremlinVisage)
+                .build_combat();
+            assert_eq!(g.player.creature.get_status(Status::Weak), None);
+            assert_eq!(g.player.creature.get_status(Status::Artifact), None);
+            assert_eq!(g.player.creature.get_status(Status::Strength), Some(3));
+            assert_eq!(g.player.creature.get_status(Status::LoseStrength), Some(3));
+        }
+        {
+            let g = GameBuilder::default()
+                .add_relic(RelicClass::GremlinVisage)
+                .add_relic(RelicClass::ClockworkSouvenir)
+                .add_relic(RelicClass::MutagenicStrength)
+                .build_combat();
+            assert_eq!(g.player.creature.get_status(Status::Weak), None);
+            assert_eq!(g.player.creature.get_status(Status::Artifact), None);
+            assert_eq!(g.player.creature.get_status(Status::Strength), Some(3));
+            assert_eq!(g.player.creature.get_status(Status::LoseStrength), Some(3));
         }
     }
 }
