@@ -337,7 +337,7 @@ fn burning_blood(_: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
-    queue.push_bot(HealAction {
+    queue.push_top(HealAction {
         target: CreatureRef::player(),
         amount: 2,
     });
