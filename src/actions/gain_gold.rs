@@ -4,7 +4,7 @@ pub struct GainGoldAction(pub i32);
 
 impl Action for GainGoldAction {
     fn run(&self, game: &mut Game) {
-        game.player.gold += self.0;
+        game.gold += self.0;
     }
 }
 

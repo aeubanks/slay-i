@@ -40,7 +40,7 @@ impl Action for GainStatusAction {
         let extra = self.target.is_player()
             && game.should_add_extra_decay_status()
             && self.status.decays()
-            && !game.player.creature.has_status(self.status);
+            && !game.player.has_status(self.status);
         let creature = game.get_creature_mut(self.target);
         let mut v = creature.get_status(self.status).unwrap_or(0);
         v += self.amount;
@@ -58,7 +58,7 @@ impl Action for GainStatusAction {
         if self.status.is_debuff(self.amount)
             && !self.target.is_player()
             && self.status != Status::GainStrength
-            && let Some(v) = game.player.creature.get_status(Status::SadisticNature)
+            && let Some(v) = game.player.get_status(Status::SadisticNature)
         {
             game.action_queue
                 .push_bot(DamageAction::thorns_no_rupture(v, self.target));

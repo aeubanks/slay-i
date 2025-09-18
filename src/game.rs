@@ -28,10 +28,9 @@ use crate::cards::{CardClass, CardCost, CardType, transformed};
 use crate::creature::Creature;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
-use crate::player::Player;
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
-use crate::relic::RelicClass;
+use crate::relic::{Relic, RelicClass, new_relic};
 use crate::rng::rand_slice;
 use crate::status::Status;
 use crate::{assert_matches, assert_not_matches};
@@ -276,22 +275,45 @@ impl GameBuilder {
         }
         let mut g = Game::new(self.rng, &self.master_deck, self.monsters);
         for (&k, &v) in &self.player_statuses {
-            g.player.creature.set_status(k, v);
+            g.player.set_status(k, v);
         }
         for r in self.relics {
-            g.player.add_relic(r);
+            g.add_relic(r);
         }
         if let Some(hp) = self.player_hp {
-            g.player.creature.cur_hp = hp;
+            g.player.cur_hp = hp;
         }
         g
     }
 }
 
+macro_rules! trigger {
+    ($func_name:ident, $name:ident) => {
+        pub fn $func_name(&mut self) {
+            for r in &mut self.relics {
+                r.$name(&mut self.action_queue);
+            }
+        }
+    };
+}
+
+macro_rules! trigger_card {
+    ($func_name:ident, $name:ident) => {
+        pub fn $func_name(&mut self, play: &PlayCardAction) {
+            for r in &mut self.relics {
+                r.$name(&mut self.action_queue, play);
+            }
+        }
+    };
+}
+
 pub struct Game {
-    pub player: Player,
-    pub combat_monsters_queue: Vec<Vec<Monster>>,
+    pub player: Creature,
+    pub relics: Vec<Relic>,
+    pub potions: Vec<Option<Potion>>,
+    pub gold: i32,
     pub monsters: Vec<Monster>,
+    pub master_deck: CardPile,
     pub turn: i32,
     pub energy: i32,
     pub draw_per_turn: i32,
@@ -303,6 +325,7 @@ pub struct Game {
     pub action_queue: ActionQueue,
     pub card_queue: Vec<PlayCardAction>,
     pub num_cards_played_this_turn: i32,
+    pub combat_monsters_queue: Vec<Vec<Monster>>,
     pub rng: Rand,
     pub state: GameState,
     next_id: u32,
@@ -313,9 +336,12 @@ impl Game {
 
     fn new(rng: Rand, master_deck: &[(CardClass, bool)], monsters: Vec<Monster>) -> Self {
         let mut g = Self {
-            player: Player::new("Ironclad", 80),
-            combat_monsters_queue: vec![monsters],
+            player: Creature::new("Ironclad", 80),
+            relics: Default::default(),
             monsters: Default::default(),
+            potions: vec![None; 2],
+            gold: 0,
+            master_deck: Default::default(),
             turn: 0,
             energy: 0,
             draw_per_turn: 5,
@@ -327,6 +353,7 @@ impl Game {
             action_queue: Default::default(),
             card_queue: Default::default(),
             num_cards_played_this_turn: 0,
+            combat_monsters_queue: vec![monsters],
             rng,
             state: GameState::Blessing,
             next_id: 1,
@@ -338,9 +365,9 @@ impl Game {
             } else {
                 g.new_card(*c)
             };
-            g.player.master_deck.push(card);
+            g.master_deck.push(card);
         }
-        g.player.creature.cur_hp = (g.player.creature.cur_hp as f32 * 0.9) as i32;
+        g.player.cur_hp = (g.player.cur_hp as f32 * 0.9) as i32;
 
         g
     }
@@ -396,27 +423,54 @@ impl Game {
 
     pub fn get_creature(&self, r: CreatureRef) -> &Creature {
         match r.0 {
-            0 => &self.player.creature,
+            0 => &self.player,
             r => &self.monsters[r - 1].creature,
         }
     }
 
     pub fn get_creature_mut(&mut self, r: CreatureRef) -> &mut Creature {
         match r.0 {
-            0 => &mut self.player.creature,
+            0 => &mut self.player,
             r => &mut self.monsters[r - 1].creature,
         }
     }
 
-    pub fn get_random_alive_monster(&mut self) -> CreatureRef {
+    pub fn get_alive_monsters(&self) -> Vec<CreatureRef> {
         let mut alive = vec![];
         for (i, m) in self.monsters.iter().enumerate() {
             if !m.creature.is_alive() {
                 continue;
             }
-            alive.push(i);
+            alive.push(CreatureRef::monster(i));
         }
-        CreatureRef::monster(rand_slice(&mut self.rng, &alive))
+        alive
+    }
+
+    pub fn get_random_alive_monster(&mut self) -> CreatureRef {
+        let alive = self.get_alive_monsters();
+        rand_slice(&mut self.rng, &alive)
+    }
+
+    fn calculate_damage(&self, amount: i32, source: CreatureRef, target: CreatureRef) -> i32 {
+        let mut amount_f = amount as f32;
+        let source = self.get_creature(source);
+        let target = self.get_creature(target);
+        if let Some(s) = source.get_status(Status::Strength) {
+            amount_f += s as f32;
+        }
+        if source.has_status(Status::Weak) {
+            amount_f *= 0.75;
+        }
+        if source.has_status(Status::PenNib) {
+            amount_f *= 2.0;
+        }
+        if target.has_status(Status::Vulnerable) {
+            amount_f *= 1.5;
+        }
+        if target.has_status(Status::Intangible) {
+            amount_f = amount_f.min(1.0);
+        }
+        0.max(amount_f as i32)
     }
 
     pub fn damage(&mut self, target: CreatureRef, mut amount: i32, ty: DamageType) {
@@ -427,6 +481,7 @@ impl Game {
             on_fatal: _,
         } = ty
         {
+            amount = self.calculate_damage(amount, source, target);
             if let Some(a) = self
                 .get_creature(target)
                 .get_status(Status::Thorns)
@@ -505,26 +560,21 @@ impl Game {
 
         if !self.get_creature(target).is_alive()
             && target.is_player()
-            && let Some(i) = self
-                .player
-                .potions
-                .iter()
-                .position(|p| *p == Some(Potion::Fairy))
+            && let Some(i) = self.potions.iter().position(|p| *p == Some(Potion::Fairy))
         {
-            self.player.take_potion(i);
-            let percent = if self.player.has_relic(RelicClass::SacredBark) {
+            self.take_potion(i);
+            let percent = if self.has_relic(RelicClass::SacredBark) {
                 0.6
             } else {
                 0.3
             };
-            let amount = ((self.player.creature.max_hp as f32 * percent) as i32).max(1);
-            self.player.creature.heal(amount);
+            let amount = ((self.player.max_hp as f32 * percent) as i32).max(1);
+            self.player.heal(amount);
         }
     }
 
     fn setup_combat_draw_pile(&mut self) {
         self.draw_pile = self
-            .player
             .master_deck
             .iter()
             .map(|c| self.clone_card_ref_same_id(c))
@@ -532,7 +582,6 @@ impl Game {
         self.draw_pile.shuffle(&mut self.rng);
         self.draw_pile.sort_by_key(|c| c.borrow().is_innate());
         let num_innate = self
-            .player
             .master_deck
             .iter()
             .filter(|c| c.borrow().is_innate())
@@ -559,8 +608,7 @@ impl Game {
                 self.setup_combat_draw_pile();
 
                 // player pre-combat relic setup
-                self.player
-                    .trigger_relics_at_pre_combat(&mut self.action_queue);
+                self.trigger_relics_at_pre_combat();
                 self.run_actions_until_empty();
 
                 // monster pre-combat setup
@@ -582,26 +630,22 @@ impl Game {
                 self.num_cards_played_this_turn = 0;
 
                 self.action_queue.push_top(StartOfTurnEnergyAction());
-                self.player.creature.start_of_turn_lose_block();
+                self.player.start_of_turn_lose_block();
 
                 if self.turn == 0 {
-                    self.player
-                        .trigger_relics_at_combat_start_pre_draw(&mut self.action_queue);
+                    self.trigger_relics_at_combat_start_pre_draw();
                 }
                 self.player
-                    .creature
                     .trigger_statuses_turn_begin(CreatureRef::player(), &mut self.action_queue);
 
                 self.action_queue.push_bot(DrawAction(self.draw_per_turn));
 
                 if self.turn == 0 {
-                    self.player
-                        .trigger_relics_at_combat_start_post_draw(&mut self.action_queue);
+                    self.trigger_relics_at_combat_start_post_draw();
                 }
 
-                self.player
-                    .trigger_relics_at_turn_start(&mut self.action_queue);
-                self.player.creature.trigger_statuses_turn_begin_post_draw(
+                self.trigger_relics_at_turn_start();
+                self.player.trigger_statuses_turn_begin_post_draw(
                     CreatureRef::player(),
                     &mut self.action_queue,
                 );
@@ -637,7 +681,6 @@ impl Game {
             }
             GameState::EndOfRound => {
                 self.player
-                    .creature
                     .trigger_statuses_round_end(CreatureRef::player(), &mut self.action_queue);
                 for (i, m) in self.monsters.iter_mut().enumerate() {
                     m.creature.trigger_statuses_round_end(
@@ -743,10 +786,8 @@ impl Game {
     }
 
     fn player_end_of_turn(&mut self) {
+        self.trigger_relics_at_turn_end();
         self.player
-            .trigger_relics_at_turn_end(&mut self.action_queue);
-        self.player
-            .creature
             .trigger_statuses_turn_end(CreatureRef::player(), &mut self.action_queue);
         self.run_actions_until_empty();
 
@@ -786,12 +827,8 @@ impl Game {
             if !m.creature.is_alive() {
                 continue;
             }
-            m.behavior.take_turn(
-                &mut self.action_queue,
-                &self.player,
-                &m.creature,
-                CreatureRef::monster(i),
-            );
+            m.behavior
+                .take_turn(CreatureRef::monster(i), &mut self.action_queue);
             self.run_actions_until_empty();
         }
     }
@@ -809,7 +846,7 @@ impl Game {
     }
 
     pub fn remove_card_from_master_deck(&mut self, master_deck_index: usize) -> CardClass {
-        let c = self.player.master_deck.remove(master_deck_index);
+        let c = self.master_deck.remove(master_deck_index);
         let class = c.borrow().class;
         assert!(class.can_remove_from_master_deck());
         if class == CardClass::Parasite {
@@ -827,7 +864,7 @@ impl Game {
 
     pub fn add_card_to_master_deck(&mut self, class: CardClass) {
         let c = self.new_card(class);
-        self.player.master_deck.push(c);
+        self.master_deck.push(c);
     }
 
     pub fn result(&self) -> GameStatus {
@@ -1075,13 +1112,13 @@ impl Game {
                 target,
             } => {
                 assert_matches!(self.state, GameState::PlayerTurn);
-                let p = self.player.take_potion(potion_index);
+                let p = self.take_potion(potion_index);
                 self.throw_potion(p, target.map(CreatureRef::monster));
                 self.run();
             }
             Move::DiscardPotion { potion_index } => {
                 assert_matches!(self.state, GameState::PlayerTurn);
-                self.player.take_potion(potion_index);
+                self.take_potion(potion_index);
             }
         }
     }
@@ -1089,12 +1126,12 @@ impl Game {
     pub fn can_play_card(&self, play: &PlayCardAction) -> bool {
         let c = play.card.borrow();
         let can_play_ty = match c.class.ty() {
-            CardType::Attack => !self.player.creature.has_status(Status::Entangled),
+            CardType::Attack => !self.player.has_status(Status::Entangled),
             CardType::Skill | CardType::Power => true,
             CardType::Status => {
-                c.class == CardClass::Slimed || self.player.has_relic(RelicClass::MedicalKit)
+                c.class == CardClass::Slimed || self.has_relic(RelicClass::MedicalKit)
             }
-            CardType::Curse => self.player.has_relic(RelicClass::BlueCandle),
+            CardType::Curse => self.has_relic(RelicClass::BlueCandle),
         };
         if !can_play_ty {
             return false;
@@ -1139,7 +1176,7 @@ impl Game {
                 moves.push(Move::ChooseBlessing(Blessing::RandomPotion));
             }
             GameState::BlessingTransform => {
-                for (i, c) in self.player.master_deck.iter().enumerate() {
+                for (i, c) in self.master_deck.iter().enumerate() {
                     if c.borrow().class.can_remove_from_master_deck() {
                         moves.push(Move::Transform { card_index: i });
                     }
@@ -1176,7 +1213,7 @@ impl Game {
                         });
                     }
                 }
-                for (pi, p) in self.player.potions.iter().enumerate() {
+                for (pi, p) in self.potions.iter().enumerate() {
                     if let Some(p) = p {
                         moves.push(Move::DiscardPotion { potion_index: pi });
                         if !p.can_use() {
@@ -1299,7 +1336,7 @@ impl Game {
     }
 
     pub fn throw_potion(&mut self, p: Potion, target: Option<CreatureRef>) {
-        let is_sacred = self.player.has_relic(RelicClass::SacredBark);
+        let is_sacred = self.has_relic(RelicClass::SacredBark);
         p.behavior()(is_sacred, target, self);
         self.run();
     }
@@ -1382,7 +1419,7 @@ impl Game {
 
     fn finished(&mut self) -> bool {
         assert_not_matches!(self.state, GameState::Defeat | GameState::Victory);
-        if !self.player.creature.is_alive() {
+        if !self.player.is_alive() {
             self.state = GameState::Defeat;
             return true;
         }
@@ -1390,8 +1427,7 @@ impl Game {
             && self.monsters.iter().all(|m| !m.creature.is_alive())
         {
             self.state = GameState::Victory;
-            self.player
-                .trigger_relics_at_combat_finish(&mut self.action_queue);
+            self.trigger_relics_at_combat_finish();
             self.run_actions_until_empty();
             return true;
         }
@@ -1414,9 +1450,57 @@ impl Game {
     }
 
     pub fn increase_max_hp(&mut self, amount: i32) {
-        self.player.creature.increase_max_hp(amount);
+        self.player.increase_max_hp(amount);
         self.heal(CreatureRef::player(), amount);
     }
+
+    pub fn add_potion(&mut self, potion: Potion) {
+        let mut added = false;
+        for p in &mut self.potions {
+            if p.is_none() {
+                *p = Some(potion);
+                added = true;
+                break;
+            }
+        }
+        assert!(added);
+    }
+    pub fn take_potion(&mut self, i: usize) -> Potion {
+        let p = self.potions[i].unwrap();
+        self.potions[i] = None;
+        p
+    }
+    pub fn add_relic(&mut self, class: RelicClass) {
+        self.relics.push(new_relic(class));
+    }
+    #[cfg(test)]
+    pub fn remove_relic(&mut self, class: RelicClass) {
+        self.relics.retain(|r| r.get_class() != class);
+    }
+    pub fn has_relic(&self, class: RelicClass) -> bool {
+        self.relics.iter().any(|r| r.get_class() == class)
+    }
+    #[cfg(test)]
+    pub fn get_relic_value(&self, class: RelicClass) -> Option<i32> {
+        self.relics
+            .iter()
+            .find(|r| r.get_class() == class)
+            .map(|r| r.get_value())
+    }
+    trigger!(trigger_relics_on_shuffle, on_shuffle);
+    trigger!(trigger_relics_at_pre_combat, at_pre_combat);
+    trigger!(
+        trigger_relics_at_combat_start_pre_draw,
+        at_combat_start_pre_draw
+    );
+    trigger!(
+        trigger_relics_at_combat_start_post_draw,
+        at_combat_start_post_draw
+    );
+    trigger!(trigger_relics_at_turn_start, at_turn_start);
+    trigger!(trigger_relics_at_turn_end, at_turn_end);
+    trigger!(trigger_relics_at_combat_finish, at_combat_finish);
+    trigger_card!(trigger_relics_on_card_played, on_card_played);
 }
 
 #[cfg(test)]
@@ -1433,8 +1517,8 @@ mod tests {
             .build_combat();
         g.add_card_to_hand(CardClass::DebugKill);
         g.add_card_to_hand(CardClass::Defend);
-        g.player.add_potion(Potion::Fire);
-        g.player.add_potion(Potion::Flex);
+        g.add_potion(Potion::Fire);
+        g.add_potion(Potion::Flex);
         assert_eq!(
             g.valid_moves()
                 .iter()
@@ -1510,9 +1594,9 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
 
         g.run_action(BlockAction::player_flat_amount(7));
-        assert_eq!(g.player.creature.block, 7);
+        assert_eq!(g.player.block, 7);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
     }
 
     #[test]
@@ -1533,7 +1617,7 @@ mod tests {
         g.run_action(BlockAction::monster(CreatureRef::player(), 7));
         g.run_action(BlockAction::monster(CreatureRef::monster(0), 7));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 7);
+        assert_eq!(g.player.block, 7);
         assert_eq!(g.monsters[0].creature.block, 7);
     }
 
@@ -1593,5 +1677,44 @@ mod tests {
             target: None,
         });
         assert_eq!(g.energy, 3);
+    }
+
+    #[test]
+    fn test_has_relic() {
+        use RelicClass::{BagOfPrep, BloodVial};
+        let mut g = GameBuilder::default().build();
+
+        assert!(!g.has_relic(BagOfPrep));
+        assert!(!g.has_relic(BloodVial));
+
+        g.add_relic(BagOfPrep);
+        assert!(g.has_relic(BagOfPrep));
+        assert!(!g.has_relic(BloodVial));
+
+        g.remove_relic(BagOfPrep);
+        assert!(!g.has_relic(BagOfPrep));
+        assert!(!g.has_relic(BloodVial));
+    }
+
+    #[test]
+    fn test_potions() {
+        use Potion::{Attack, Skill};
+        let mut g = GameBuilder::default().build();
+        assert_eq!(g.potions, vec![None, None]);
+
+        g.add_potion(Attack);
+        assert_eq!(g.potions, vec![Some(Attack), None]);
+
+        g.add_potion(Skill);
+        assert_eq!(g.potions, vec![Some(Attack), Some(Skill)]);
+
+        assert_eq!(g.take_potion(0), Attack);
+        assert_eq!(g.potions, vec![None, Some(Skill)]);
+
+        g.add_potion(Attack);
+        assert_eq!(g.potions, vec![Some(Attack), Some(Skill)]);
+
+        assert_eq!(g.take_potion(1), Skill);
+        assert_eq!(g.potions, vec![Some(Attack), None]);
     }
 }

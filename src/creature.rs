@@ -111,7 +111,7 @@ impl Creature {
         }
         if !play.is_duplicated {
             if self.has_status(Status::Duplication) {
-                queue.push_top(ReduceStatusAction {
+                queue.push_bot(ReduceStatusAction {
                     status: Status::Duplication,
                     amount: 1,
                     target: CreatureRef::player(),
@@ -128,7 +128,7 @@ impl Creature {
             if self.has_status(Status::DoubleTap)
                 && play.card.borrow().class.ty() == CardType::Attack
             {
-                queue.push_top(ReduceStatusAction {
+                queue.push_bot(ReduceStatusAction {
                     status: Status::DoubleTap,
                     amount: 1,
                     target: CreatureRef::player(),
@@ -144,7 +144,7 @@ impl Creature {
             }
             if self.has_status(Status::PenNib) && play.card.borrow().class.ty() == CardType::Attack
             {
-                queue.push_top(RemoveStatusAction {
+                queue.push_bot(RemoveStatusAction {
                     status: Status::PenNib,
                     target: CreatureRef::player(),
                 });

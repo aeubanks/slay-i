@@ -34,12 +34,7 @@ impl Action for DamageAllMonstersAction {
             game.action_queue.push_top(if self.thorns {
                 DamageAction::thorns_no_rupture(self.amount, target)
             } else {
-                DamageAction::from_player(
-                    self.amount,
-                    &game.player,
-                    &game.monsters[mi].creature,
-                    target,
-                )
+                DamageAction::from_player(self.amount, target)
             });
         }
     }

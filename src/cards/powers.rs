@@ -174,7 +174,7 @@ mod tests {
     fn test_inflame() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::Inflame, None);
-        assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
+        assert_eq!(g.player.get_status(Status::Strength), Some(2));
     }
 
     #[test]
@@ -185,11 +185,11 @@ mod tests {
         g.play_card(CardClass::FeelNoPain, None);
         let card = g.hand.pop().unwrap();
         g.run_action(ExhaustCardAction(card));
-        assert_eq!(g.player.creature.block, 3);
+        assert_eq!(g.player.block, 3);
         g.play_card(CardClass::FeelNoPain, None);
         let card = g.hand.pop().unwrap();
         g.run_action(ExhaustCardAction(card));
-        assert_eq!(g.player.creature.block, 9);
+        assert_eq!(g.player.block, 9);
     }
 
     #[test]
@@ -276,7 +276,7 @@ mod tests {
         g.play_card(CardClass::Barricade, None);
         g.run_action(BlockAction::player_flat_amount(5));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 5);
+        assert_eq!(g.player.block, 5);
     }
 
     #[test]

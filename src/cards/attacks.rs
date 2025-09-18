@@ -24,7 +24,7 @@ use crate::{
 };
 
 fn extra_base_damage(game: &Game, info: &CardPlayInfo) -> i32 {
-    if game.player.has_relic(RelicClass::StrikeDummy) && info.card.class.is_strike() {
+    if game.has_relic(RelicClass::StrikeDummy) && info.card.class.is_strike() {
         3
     } else {
         0
@@ -43,8 +43,6 @@ fn push_damage(
         } else {
             unupgraded_base_damage
         } + extra_base_damage(game, info),
-        &game.player,
-        game.get_creature(info.target.unwrap()),
         info.target.unwrap(),
     ));
 }
@@ -112,7 +110,7 @@ pub fn thunderclap_behavior(game: &mut Game, info: &CardPlayInfo) {
 }
 
 pub fn body_slam_behavior(game: &mut Game, info: &CardPlayInfo) {
-    let damage = game.player.creature.block;
+    let damage = game.player.block;
     push_damage(game, info, damage, damage);
 }
 
@@ -158,11 +156,7 @@ pub fn perfected_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
 }
 
 pub fn heavy_blade_behavior(game: &mut Game, info: &CardPlayInfo) {
-    let strength = game
-        .player
-        .creature
-        .get_status(Status::Strength)
-        .unwrap_or(0);
+    let strength = game.player.get_status(Status::Strength).unwrap_or(0);
     push_damage(game, info, 14 + strength * 2, 14 + strength * 4);
 }
 
@@ -186,8 +180,6 @@ pub fn searing_blow_behavior(game: &mut Game, info: &CardPlayInfo) {
     let n = info.upgrade_count;
     game.action_queue.push_bot(DamageAction::from_player(
         n * (n + 7) / 2 + 12,
-        &game.player,
-        game.get_creature(info.target.unwrap()),
         info.target.unwrap(),
     ));
 }
@@ -280,8 +272,6 @@ pub fn feed_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::from_player_with_on_fatal(
             if info.upgraded { 12 } else { 10 },
-            &game.player,
-            game.get_creature(info.target.unwrap()),
             info.target.unwrap(),
             OnFatal {
                 ty: OnFatalType::Feed,
@@ -328,8 +318,6 @@ pub fn ritual_dagger_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::from_player_with_on_fatal(
             15 + info.base_increase,
-            &game.player,
-            game.get_creature(info.target.unwrap()),
             info.target.unwrap(),
             OnFatal {
                 ty: OnFatalType::RitualDagger {
@@ -345,8 +333,6 @@ pub fn hand_of_greed_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue
         .push_bot(DamageAction::from_player_with_on_fatal(
             base_amount,
-            &game.player,
-            game.get_creature(info.target.unwrap()),
             info.target.unwrap(),
             OnFatal {
                 ty: OnFatalType::HandOfGreed,
@@ -529,11 +515,11 @@ mod tests {
                 .add_monster_status(Status::Thorns, 1)
                 .add_monster_status(Status::Vulnerable, 1)
                 .build_combat();
-            g.player.creature.cur_hp = 50;
+            g.player.cur_hp = 50;
             g.monsters[0].creature.cur_hp = 20;
             g.play_card(CardClass::SwordBoomerang, None);
             assert_eq!(g.monsters[0].creature.cur_hp, 8);
-            assert_eq!(g.player.creature.cur_hp, 47);
+            assert_eq!(g.player.cur_hp, 47);
         }
         let mut found_3_0 = false;
         let mut found_2_1 = false;
@@ -596,17 +582,17 @@ mod tests {
         g.play_card(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14);
 
-        g.player.creature.set_status(Status::Strength, 2);
+        g.player.set_status(Status::Strength, 2);
         g.monsters[0].creature.cur_hp = 100;
         g.play_card(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14 - 2 * 3);
 
-        g.player.creature.set_status(Status::Strength, 2);
+        g.player.set_status(Status::Strength, 2);
         g.monsters[0].creature.cur_hp = 100;
         g.play_card_upgraded(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 100 - 14 - 2 * 5);
 
-        g.player.creature.set_status(Status::Strength, 10);
+        g.player.set_status(Status::Strength, 10);
         g.monsters[0].creature.set_status(Status::Vulnerable, 1);
         g.monsters[0].creature.cur_hp = 100;
         g.play_card_upgraded(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
@@ -904,7 +890,7 @@ mod tests {
         let cost_sum =
             |g: &Game| -> i32 { g.hand.iter().map(|c| c.borrow().get_base_cost()).sum() };
 
-        g.player.creature.block = 2;
+        g.player.block = 2;
         g.make_move(Move::EndTurn);
         assert_eq!(cost_sum(&g), 4 + 3 + 3);
 
@@ -924,101 +910,101 @@ mod tests {
     fn test_reaper() {
         {
             let mut g = GameBuilder::default().build_combat();
-            g.player.creature.cur_hp = 10;
+            g.player.cur_hp = 10;
             g.play_card(CardClass::Reaper, None);
-            assert_eq!(g.player.creature.cur_hp, 14);
+            assert_eq!(g.player.cur_hp, 14);
         }
         {
             let mut g = GameBuilder::default().build_combat();
-            g.player.creature.cur_hp = 10;
+            g.player.cur_hp = 10;
             g.monsters[0].creature.cur_hp = 2;
             g.play_card(CardClass::Reaper, None);
-            assert_eq!(g.player.creature.cur_hp, 12);
+            assert_eq!(g.player.cur_hp, 12);
         }
         {
             let mut g = GameBuilder::default().build_combat();
-            g.player.creature.cur_hp = 10;
+            g.player.cur_hp = 10;
             g.monsters[0].creature.block = 1;
             g.play_card(CardClass::Reaper, None);
-            assert_eq!(g.player.creature.cur_hp, 13);
+            assert_eq!(g.player.cur_hp, 13);
         }
         {
             let mut g = GameBuilder::default()
                 .add_monster_status(Status::Vulnerable, 1)
                 .add_player_status(Status::Strength, 10)
                 .build_combat();
-            g.player.creature.cur_hp = 10;
+            g.player.cur_hp = 10;
             g.play_card(CardClass::Reaper, None);
-            assert_eq!(g.player.creature.cur_hp, 31);
+            assert_eq!(g.player.cur_hp, 31);
         }
         {
             let mut g = GameBuilder::default()
                 .add_monster(NoopMonster::new())
                 .add_monster(NoopMonster::new())
                 .build_combat();
-            g.player.creature.cur_hp = 10;
+            g.player.cur_hp = 10;
             g.play_card(CardClass::Reaper, None);
-            assert_eq!(g.player.creature.cur_hp, 18);
+            assert_eq!(g.player.cur_hp, 18);
         }
         {
             let mut g = GameBuilder::default()
                 .add_monster(NoopMonster::new())
                 .add_monster(NoopMonster::new())
                 .build_combat();
-            g.player.creature.cur_hp = 10;
+            g.player.cur_hp = 10;
             g.monsters[0].creature.cur_hp = 1;
             g.monsters[1].creature.block = 1;
             g.play_card(CardClass::Reaper, None);
-            assert_eq!(g.player.creature.cur_hp, 14);
+            assert_eq!(g.player.cur_hp, 14);
         }
         {
             let mut g = GameBuilder::default()
                 .add_monster(NoopMonster::new())
                 .add_monster(NoopMonster::new())
                 .build_combat();
-            g.player.creature.cur_hp = 10;
+            g.player.cur_hp = 10;
             g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
             g.play_card(CardClass::Reaper, None);
-            assert_eq!(g.player.creature.cur_hp, 14);
+            assert_eq!(g.player.cur_hp, 14);
         }
     }
 
     #[test]
     fn test_feed() {
         let mut g = GameBuilder::default().build_combat();
-        let player_max_hp = g.player.creature.max_hp;
-        let player_cur_hp = g.player.creature.cur_hp;
+        let player_max_hp = g.player.max_hp;
+        let player_cur_hp = g.player.cur_hp;
         let monster_hp = g.monsters[0].creature.cur_hp;
 
         g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, monster_hp - 10);
-        assert_eq!(g.player.creature.max_hp, player_max_hp);
-        assert_eq!(g.player.creature.cur_hp, player_cur_hp);
+        assert_eq!(g.player.max_hp, player_max_hp);
+        assert_eq!(g.player.cur_hp, player_cur_hp);
 
         g.monsters[0].creature.cur_hp = 8;
         g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 0);
-        assert_eq!(g.player.creature.max_hp, player_max_hp + 3);
-        assert_eq!(g.player.creature.cur_hp, player_cur_hp + 3);
+        assert_eq!(g.player.max_hp, player_max_hp + 3);
+        assert_eq!(g.player.cur_hp, player_cur_hp + 3);
     }
 
     #[test]
     fn test_feed_upgrade() {
         let mut g = GameBuilder::default().build_combat();
-        let player_max_hp = g.player.creature.max_hp;
-        let player_cur_hp = g.player.creature.cur_hp;
+        let player_max_hp = g.player.max_hp;
+        let player_cur_hp = g.player.cur_hp;
         let monster_hp = g.monsters[0].creature.cur_hp;
 
         g.play_card_upgraded(CardClass::Feed, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, monster_hp - 12);
-        assert_eq!(g.player.creature.max_hp, player_max_hp);
-        assert_eq!(g.player.creature.cur_hp, player_cur_hp);
+        assert_eq!(g.player.max_hp, player_max_hp);
+        assert_eq!(g.player.cur_hp, player_cur_hp);
 
         g.monsters[0].creature.cur_hp = 11;
         g.play_card_upgraded(CardClass::Feed, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, 0);
-        assert_eq!(g.player.creature.max_hp, player_max_hp + 4);
-        assert_eq!(g.player.creature.cur_hp, player_cur_hp + 4);
+        assert_eq!(g.player.max_hp, player_max_hp + 4);
+        assert_eq!(g.player.cur_hp, player_cur_hp + 4);
     }
     #[test]
     fn test_fiend_fire() {
@@ -1076,8 +1062,8 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
-        assert_eq!(g.player.master_deck[0].borrow().base_increase, 0);
-        assert_eq!(g.player.master_deck[1].borrow().base_increase, 0);
+        assert_eq!(g.master_deck[0].borrow().base_increase, 0);
+        assert_eq!(g.master_deck[1].borrow().base_increase, 0);
 
         g.monsters[0].creature.cur_hp = 10;
         g.make_move(Move::PlayCard {
@@ -1087,12 +1073,12 @@ mod tests {
         assert_eq!(g.exhaust_pile[0].borrow().base_increase, 0);
         assert_eq!(g.exhaust_pile[1].borrow().base_increase, 3);
         assert!(
-            g.player.master_deck[0].borrow().base_increase == 0
-                || g.player.master_deck[1].borrow().base_increase == 0
+            g.master_deck[0].borrow().base_increase == 0
+                || g.master_deck[1].borrow().base_increase == 0
         );
         assert!(
-            g.player.master_deck[0].borrow().base_increase == 3
-                || g.player.master_deck[1].borrow().base_increase == 3
+            g.master_deck[0].borrow().base_increase == 3
+                || g.master_deck[1].borrow().base_increase == 3
         );
 
         let hp1 = g.monsters[1].creature.cur_hp;
@@ -1114,12 +1100,12 @@ mod tests {
         });
 
         assert!(
-            g.player.master_deck[0].borrow().base_increase == 0
-                || g.player.master_deck[1].borrow().base_increase == 0
+            g.master_deck[0].borrow().base_increase == 0
+                || g.master_deck[1].borrow().base_increase == 0
         );
         assert!(
-            g.player.master_deck[0].borrow().base_increase == 8
-                || g.player.master_deck[1].borrow().base_increase == 8
+            g.master_deck[0].borrow().base_increase == 8
+                || g.master_deck[1].borrow().base_increase == 8
         );
     }
 
@@ -1132,21 +1118,21 @@ mod tests {
         g.energy = 99;
 
         g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.gold, 0);
+        assert_eq!(g.gold, 0);
 
         g.monsters[0].creature.cur_hp = 20;
         g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.gold, 20);
+        assert_eq!(g.gold, 20);
 
         g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.gold, 20);
+        assert_eq!(g.gold, 20);
 
         g.play_card_upgraded(CardClass::HandOfGreed, Some(CreatureRef::monster(1)));
-        assert_eq!(g.player.gold, 20);
+        assert_eq!(g.gold, 20);
 
         g.monsters[1].creature.cur_hp = 24;
         g.play_card_upgraded(CardClass::HandOfGreed, Some(CreatureRef::monster(1)));
-        assert_eq!(g.player.gold, 45);
+        assert_eq!(g.gold, 45);
     }
 
     #[test]

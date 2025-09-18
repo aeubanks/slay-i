@@ -69,9 +69,9 @@ mod tests {
             .set_player_hp(50)
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(4));
-        assert_eq!(g.player.creature.cur_hp, 50);
+        assert_eq!(g.player.cur_hp, 50);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.cur_hp, 45);
+        assert_eq!(g.player.cur_hp, 45);
     }
 
     #[test]
@@ -82,9 +82,9 @@ mod tests {
             .set_player_hp(50)
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(4));
-        assert_eq!(g.player.creature.cur_hp, 50);
+        assert_eq!(g.player.cur_hp, 50);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.cur_hp, 40);
+        assert_eq!(g.player.cur_hp, 40);
     }
 
     #[test]
@@ -94,9 +94,9 @@ mod tests {
             .set_player_hp(50)
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(1));
-        assert_eq!(g.player.creature.cur_hp, 50);
+        assert_eq!(g.player.cur_hp, 50);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.cur_hp, 49);
+        assert_eq!(g.player.cur_hp, 49);
     }
 
     #[test]
@@ -106,7 +106,7 @@ mod tests {
             .add_card(CardClass::Doubt)
             .build_combat();
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.get_status(Status::Weak), Some(1));
+        assert_eq!(g.player.get_status(Status::Weak), Some(1));
     }
 
     #[test]
@@ -117,7 +117,7 @@ mod tests {
             .add_player_status(Status::Weak, 1)
             .build_combat();
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.get_status(Status::Weak), Some(1));
+        assert_eq!(g.player.get_status(Status::Weak), Some(1));
     }
 
     #[test]
@@ -127,7 +127,7 @@ mod tests {
             .add_card(CardClass::Shame)
             .build_combat();
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.get_status(Status::Frail), Some(1));
+        assert_eq!(g.player.get_status(Status::Frail), Some(1));
     }
 
     #[test]
@@ -201,11 +201,11 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_card(CardClass::Parasite)
             .build_combat();
-        let max_hp = g.player.creature.max_hp;
-        g.player.creature.cur_hp = max_hp - 1;
+        let max_hp = g.player.max_hp;
+        g.player.cur_hp = max_hp - 1;
         g.remove_card_from_master_deck(0);
-        assert_eq!(g.player.creature.max_hp, max_hp - 3);
-        assert_eq!(g.player.creature.cur_hp, max_hp - 3);
+        assert_eq!(g.player.max_hp, max_hp - 3);
+        assert_eq!(g.player.cur_hp, max_hp - 3);
     }
 
     #[test]
@@ -214,24 +214,24 @@ mod tests {
             .add_relic(RelicClass::BlueCandle)
             .build_combat();
         g.set_debug();
-        g.player.creature.cur_hp = 50;
+        g.player.cur_hp = 50;
         g.add_card_to_hand(CardClass::Pain);
         g.play_card(CardClass::Defend, None);
-        assert_eq!(g.player.creature.cur_hp, 49);
+        assert_eq!(g.player.cur_hp, 49);
         g.play_card(CardClass::TrueGrit, None);
-        assert_eq!(g.player.creature.cur_hp, 48);
+        assert_eq!(g.player.cur_hp, 48);
         g.play_card(CardClass::Defend, None);
-        assert_eq!(g.player.creature.cur_hp, 48);
+        assert_eq!(g.player.cur_hp, 48);
 
         g.add_card_to_hand(CardClass::Pain);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Havoc, None);
-        assert_eq!(g.player.creature.cur_hp, 46);
+        assert_eq!(g.player.cur_hp, 46);
 
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: None,
         });
-        assert_eq!(g.player.creature.cur_hp, 45);
+        assert_eq!(g.player.cur_hp, 45);
     }
 }

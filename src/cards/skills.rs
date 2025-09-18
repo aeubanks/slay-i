@@ -519,7 +519,7 @@ mod tests {
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.exhaust_pile.len(), 0);
         assert_eq!(g.draw_pile.len(), 0);
-        assert_eq!(g.player.creature.block, 5);
+        assert_eq!(g.player.block, 5);
     }
 
     #[test]
@@ -531,7 +531,7 @@ mod tests {
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.exhaust_pile.len(), 0);
         assert_eq!(g.draw_pile.len(), 0);
-        assert_eq!(g.player.creature.block, 8);
+        assert_eq!(g.player.block, 8);
     }
 
     #[test]
@@ -670,7 +670,7 @@ mod tests {
         g.energy = 0;
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Havoc, None);
-        assert_eq!(g.player.creature.block, 5);
+        assert_eq!(g.player.block, 5);
     }
 
     #[test]
@@ -731,11 +731,11 @@ mod tests {
     #[test]
     fn test_bloodletting() {
         let mut g = GameBuilder::default().build_combat();
-        let hp = g.player.creature.cur_hp;
+        let hp = g.player.cur_hp;
         g.run_action(BlockAction::player_flat_amount(5));
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.energy, 5);
-        assert_eq!(g.player.creature.cur_hp, hp - 3);
+        assert_eq!(g.player.cur_hp, hp - 3);
     }
 
     #[test]
@@ -751,7 +751,7 @@ mod tests {
             card_index: 0,
             target: None,
         });
-        assert_eq!(g.player.creature.block, 5);
+        assert_eq!(g.player.block, 5);
     }
 
     #[test]
@@ -767,7 +767,7 @@ mod tests {
             card_index: 0,
             target: None,
         });
-        assert_eq!(g.player.creature.block, 8);
+        assert_eq!(g.player.block, 8);
     }
 
     #[test]
@@ -777,9 +777,9 @@ mod tests {
             .add_monster(IntentMonster::new(Intent::Attack(2, 2)))
             .build_combat();
         g.play_card(CardClass::SpotWeakness, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Strength), None);
+        assert_eq!(g.player.get_status(Status::Strength), None);
         g.play_card(CardClass::SpotWeakness, Some(CreatureRef::monster(1)));
-        assert_eq!(g.player.creature.get_status(Status::Strength), Some(3));
+        assert_eq!(g.player.get_status(Status::Strength), Some(3));
     }
 
     #[test]
@@ -868,13 +868,13 @@ mod tests {
         assert_eq!(g.hand.len(), 5);
         g.play_card(CardClass::BattleTrance, None);
         assert_eq!(g.hand.len(), 8);
-        assert_eq!(g.player.creature.get_status(Status::NoDraw), Some(1));
+        assert_eq!(g.player.get_status(Status::NoDraw), Some(1));
         g.play_card(CardClass::BattleTrance, None);
         assert_eq!(g.hand.len(), 8);
-        assert_eq!(g.player.creature.get_status(Status::NoDraw), Some(1));
+        assert_eq!(g.player.get_status(Status::NoDraw), Some(1));
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 5);
-        assert_eq!(g.player.creature.get_status(Status::NoDraw), None);
+        assert_eq!(g.player.get_status(Status::NoDraw), None);
     }
 
     #[test]
@@ -883,15 +883,15 @@ mod tests {
         g.energy = 99;
 
         g.play_card(CardClass::Entrench, None);
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
 
-        g.player.creature.block = 10;
+        g.player.block = 10;
         g.play_card(CardClass::Entrench, None);
-        assert_eq!(g.player.creature.block, 20);
+        assert_eq!(g.player.block, 20);
 
-        g.player.creature.set_status(Status::Dexterity, 3);
+        g.player.set_status(Status::Dexterity, 3);
         g.play_card(CardClass::Entrench, None);
-        assert_eq!(g.player.creature.block, 40);
+        assert_eq!(g.player.block, 40);
     }
 
     #[test]
@@ -900,7 +900,7 @@ mod tests {
         g.energy = 99;
 
         g.play_card(CardClass::SecondWind, None);
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
 
         g.add_card_to_hand(CardClass::Defend);
         g.add_card_to_hand(CardClass::Strike);
@@ -913,7 +913,7 @@ mod tests {
         assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
         assert_eq!(g.exhaust_pile[1].borrow().class, CardClass::Wound);
         assert_eq!(g.exhaust_pile[2].borrow().class, CardClass::AscendersBane);
-        assert_eq!(g.player.creature.block, 15);
+        assert_eq!(g.player.block, 15);
     }
 
     #[test]
@@ -987,7 +987,7 @@ mod tests {
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.draw_pile.len(), 0);
-        assert_eq!(g.player.creature.block, 30);
+        assert_eq!(g.player.block, 30);
     }
 
     #[test]
@@ -1050,11 +1050,11 @@ mod tests {
             g.play_card(CardClass::LimitBreak, None);
             assert_eq!(g.discard_pile.len(), 0);
             assert_eq!(g.exhaust_pile.len(), 1);
-            assert_eq!(g.player.creature.get_status(Status::Strength), Some(6));
+            assert_eq!(g.player.get_status(Status::Strength), Some(6));
             g.play_card_upgraded(CardClass::LimitBreak, None);
             assert_eq!(g.discard_pile.len(), 1);
             assert_eq!(g.exhaust_pile.len(), 1);
-            assert_eq!(g.player.creature.get_status(Status::Strength), Some(12));
+            assert_eq!(g.player.get_status(Status::Strength), Some(12));
         }
         {
             let mut g = GameBuilder::default()
@@ -1065,7 +1065,7 @@ mod tests {
                 card_index: 0,
                 target: None,
             });
-            assert_eq!(g.player.creature.get_status(Status::Strength), Some(-6));
+            assert_eq!(g.player.get_status(Status::Strength), Some(-6));
         }
     }
 
@@ -1227,43 +1227,43 @@ mod tests {
         let hp = g.monsters[0].creature.cur_hp;
 
         g.play_card_upgraded(CardClass::Bomb, None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb3), Some(50));
-        assert_eq!(g.player.creature.get_status(Status::Bomb2), None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb1), None);
+        assert_eq!(g.player.get_status(Status::Bomb3), Some(50));
+        assert_eq!(g.player.get_status(Status::Bomb2), None);
+        assert_eq!(g.player.get_status(Status::Bomb1), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
 
         g.play_card(CardClass::Bomb, None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb3), Some(90));
-        assert_eq!(g.player.creature.get_status(Status::Bomb2), None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb1), None);
+        assert_eq!(g.player.get_status(Status::Bomb3), Some(90));
+        assert_eq!(g.player.get_status(Status::Bomb2), None);
+        assert_eq!(g.player.get_status(Status::Bomb1), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
 
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.get_status(Status::Bomb3), None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb2), Some(90));
-        assert_eq!(g.player.creature.get_status(Status::Bomb1), None);
+        assert_eq!(g.player.get_status(Status::Bomb3), None);
+        assert_eq!(g.player.get_status(Status::Bomb2), Some(90));
+        assert_eq!(g.player.get_status(Status::Bomb1), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
 
         g.play_card(CardClass::Bomb, None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb3), Some(40));
-        assert_eq!(g.player.creature.get_status(Status::Bomb2), Some(90));
-        assert_eq!(g.player.creature.get_status(Status::Bomb1), None);
+        assert_eq!(g.player.get_status(Status::Bomb3), Some(40));
+        assert_eq!(g.player.get_status(Status::Bomb2), Some(90));
+        assert_eq!(g.player.get_status(Status::Bomb1), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
 
-        let player_hp = g.player.creature.cur_hp;
+        let player_hp = g.player.cur_hp;
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.get_status(Status::Bomb3), None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb2), Some(40));
-        assert_eq!(g.player.creature.get_status(Status::Bomb1), Some(90));
+        assert_eq!(g.player.get_status(Status::Bomb3), None);
+        assert_eq!(g.player.get_status(Status::Bomb2), Some(40));
+        assert_eq!(g.player.get_status(Status::Bomb1), Some(90));
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
-        assert_eq!(g.player.creature.cur_hp, player_hp - 2);
+        assert_eq!(g.player.cur_hp, player_hp - 2);
 
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.get_status(Status::Bomb3), None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb2), None);
-        assert_eq!(g.player.creature.get_status(Status::Bomb1), Some(40));
+        assert_eq!(g.player.get_status(Status::Bomb3), None);
+        assert_eq!(g.player.get_status(Status::Bomb2), None);
+        assert_eq!(g.player.get_status(Status::Bomb1), Some(40));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 90);
-        assert_eq!(g.player.creature.cur_hp, player_hp - 2);
+        assert_eq!(g.player.cur_hp, player_hp - 2);
     }
 
     #[test]
@@ -1918,11 +1918,11 @@ mod tests {
     fn test_panic_button() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::PanicButton, None);
-        assert_eq!(g.player.creature.block, 30);
-        assert_eq!(g.player.creature.get_status(Status::NoBlock), Some(1));
+        assert_eq!(g.player.block, 30);
+        assert_eq!(g.player.get_status(Status::NoBlock), Some(1));
         g.play_card(CardClass::PanicButton, None);
-        assert_eq!(g.player.creature.block, 30);
-        assert_eq!(g.player.creature.get_status(Status::NoBlock), Some(2));
+        assert_eq!(g.player.block, 30);
+        assert_eq!(g.player.get_status(Status::NoBlock), Some(2));
     }
 
     #[test]

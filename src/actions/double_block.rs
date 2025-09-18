@@ -4,11 +4,11 @@ pub struct DoubleBlockAction();
 
 impl Action for DoubleBlockAction {
     fn run(&self, game: &mut Game) {
-        if game.player.creature.block == 0 {
+        if game.player.block == 0 {
             return;
         }
         game.action_queue
-            .push_top(BlockAction::player_flat_amount(game.player.creature.block));
+            .push_top(BlockAction::player_flat_amount(game.player.block));
     }
 }
 

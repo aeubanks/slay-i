@@ -1,7 +1,6 @@
 use crate::actions::damage::calculate_damage;
 use crate::creature::Creature;
-use crate::game::{CreatureRef, Rand};
-use crate::player::Player;
+use crate::game::{CreatureRef, Game, Rand};
 use crate::queue::ActionQueue;
 
 #[derive(Debug, Clone, Copy)]
@@ -30,7 +29,7 @@ impl Intent {
             Attack(..) | AttackBuff(..) | AttackDebuff(..) | AttackDefend(..)
         )
     }
-    pub fn modify_damage(&mut self, monster: &Creature, player: &Player) {
+    pub fn modify_damage(&mut self, this: CreatureRef, game: &Game) {
         use Intent::*;
         let d = match self {
             Attack(d, _) => d,
@@ -41,7 +40,7 @@ impl Intent {
                 return;
             }
         };
-        *d = calculate_damage(*d, false, monster, player);
+        *d = calculate_damage(*d, this, CreatureRef::player(), game);
     }
 }
 
@@ -55,13 +54,7 @@ pub trait MonsterBehavior {
     fn roll_hp(&self, r: &mut Rand) -> i32;
     fn pre_combat(&self, _queue: &mut ActionQueue, _this: CreatureRef) {}
     fn roll_next_action(&mut self, r: &mut Rand, info: &MonsterInfo);
-    fn take_turn(
-        &mut self,
-        queue: &mut ActionQueue,
-        player: &Player,
-        this: &Creature,
-        this_ref: CreatureRef,
-    );
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue);
     fn get_intent(&self) -> Intent;
 }
 

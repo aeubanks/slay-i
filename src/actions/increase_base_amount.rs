@@ -21,7 +21,7 @@ impl Action for IncreaseBaseAmountAction {
     fn run(&self, g: &mut Game) {
         if self.master {
             let mut done = false;
-            for c in &g.player.master_deck {
+            for c in &g.master_deck {
                 maybe_increase_base_amount(c, self.card_id, self.amount, &mut done);
             }
         }

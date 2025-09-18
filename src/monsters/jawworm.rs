@@ -2,11 +2,9 @@ use rand::Rng;
 
 use crate::{
     actions::{block::BlockAction, damage::DamageAction, gain_status::GainStatusAction},
-    creature::Creature,
     game::{CreatureRef, Rand},
     monster::{Intent, MonsterBehavior, MonsterInfo},
     move_history::MoveHistory,
-    player::Player,
     queue::ActionQueue,
     status::Status,
 };
@@ -41,29 +39,23 @@ impl MonsterBehavior for JawWorm {
         r.random_range(42..=46)
     }
 
-    fn take_turn(
-        &mut self,
-        queue: &mut ActionQueue,
-        player: &Player,
-        this: &Creature,
-        this_ref: CreatureRef,
-    ) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
         match self.action {
             Action::Chomp => {
-                queue.push_bot(DamageAction::from_monster(12, player, this, this_ref));
+                queue.push_bot(DamageAction::from_monster(12, this));
             }
             Action::Thrash => {
-                queue.push_bot(DamageAction::from_monster(7, player, this, this_ref));
+                queue.push_bot(DamageAction::from_monster(7, this));
 
-                queue.push_bot(BlockAction::monster(this_ref, 5));
+                queue.push_bot(BlockAction::monster(this, 5));
             }
             Action::Bellow => {
                 queue.push_bot(GainStatusAction {
                     status: Status::Strength,
                     amount: 5,
-                    target: this_ref,
+                    target: this,
                 });
-                queue.push_bot(BlockAction::monster(this_ref, 9));
+                queue.push_bot(BlockAction::monster(this, 9));
             }
             Action::None => unreachable!(),
         }

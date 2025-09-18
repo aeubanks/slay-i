@@ -486,12 +486,12 @@ mod tests {
             .add_card(CardClass::DebugKill)
             .add_relic(RelicClass::BurningBlood)
             .build_combat();
-        let hp = g.player.creature.cur_hp;
+        let hp = g.player.cur_hp;
         g.make_move(Move::PlayCard {
             card_index: 0,
             target: Some(0),
         });
-        assert_eq!(g.player.creature.cur_hp, hp + 6);
+        assert_eq!(g.player.cur_hp, hp + 6);
     }
 
     #[test]
@@ -500,7 +500,7 @@ mod tests {
             .add_relic(RelicClass::BloodVial)
             .set_player_hp(50)
             .build_combat();
-        assert_eq!(g.player.creature.cur_hp, 52);
+        assert_eq!(g.player.cur_hp, 52);
     }
 
     #[test]
@@ -529,7 +529,7 @@ mod tests {
             target: None,
         });
         assert_eq!(g.energy, 3);
-        assert_eq!(g.player.creature.cur_hp, 50);
+        assert_eq!(g.player.cur_hp, 50);
         assert_eq!(g.exhaust_pile.len(), 2);
         assert_eq!(g.discard_pile.len(), 0);
     }
@@ -552,7 +552,7 @@ mod tests {
             target: None,
         });
         assert_eq!(g.energy, 3);
-        assert_eq!(g.player.creature.cur_hp, 48);
+        assert_eq!(g.player.cur_hp, 48);
         assert_eq!(g.exhaust_pile.len(), 2);
         assert_eq!(g.discard_pile.len(), 0);
     }
@@ -562,9 +562,9 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Anchor)
             .build_combat();
-        assert_eq!(g.player.creature.block, 10);
+        assert_eq!(g.player.block, 10);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
     }
 
     #[test]
@@ -573,9 +573,9 @@ mod tests {
             .add_relic(RelicClass::Anchor)
             .add_player_status(Status::Dexterity, 55)
             .build_combat();
-        assert_eq!(g.player.creature.block, 10);
+        assert_eq!(g.player.block, 10);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
     }
 
     #[test]
@@ -583,11 +583,11 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::HornCleat)
             .build_combat();
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 14);
+        assert_eq!(g.player.block, 14);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
     }
 
     #[test]
@@ -595,13 +595,13 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::CaptainsWheel)
             .build_combat();
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 18);
+        assert_eq!(g.player.block, 18);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
     }
 
     #[test]
@@ -611,17 +611,17 @@ mod tests {
             .build_combat();
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Dexterity), None);
+        assert_eq!(g.player.get_status(Status::Dexterity), None);
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(1));
+        assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(1));
+        assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(1));
+        assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Dexterity), Some(2));
+        assert_eq!(g.player.get_status(Status::Dexterity), Some(2));
     }
 
     #[test]
@@ -632,21 +632,21 @@ mod tests {
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Strength), None);
+        assert_eq!(g.player.get_status(Status::Strength), None);
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Strength), Some(1));
+        assert_eq!(g.player.get_status(Status::Strength), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.get_status(Status::Strength), Some(1));
+        assert_eq!(g.player.get_status(Status::Strength), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Berserk, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Strength), Some(1));
+        assert_eq!(g.player.get_status(Status::Strength), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.get_status(Status::Strength), Some(2));
+        assert_eq!(g.player.get_status(Status::Strength), Some(2));
     }
 
     #[test]
@@ -657,16 +657,16 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Strike);
         for i in 0..9 {
             g.play_card(CardClass::Bloodletting, None);
-            assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(i + 1));
+            assert_eq!(g.get_relic_value(RelicClass::InkBottle), Some(i + 1));
             assert_eq!(g.hand.len(), 0);
         }
         g.play_card(CardClass::Bloodletting, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(0));
+        assert_eq!(g.get_relic_value(RelicClass::InkBottle), Some(0));
         assert_eq!(g.hand.len(), 1);
         g.play_card(CardClass::Bloodletting, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(1));
+        assert_eq!(g.get_relic_value(RelicClass::InkBottle), Some(1));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.get_relic_value(RelicClass::InkBottle), Some(1));
+        assert_eq!(g.get_relic_value(RelicClass::InkBottle), Some(1));
     }
 
     #[test]
@@ -698,17 +698,17 @@ mod tests {
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Defend, None);
         g.play_card(CardClass::Defend, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::LetterOpener), Some(2));
+        assert_eq!(g.get_relic_value(RelicClass::LetterOpener), Some(2));
         assert_eq!(g.monsters[0].creature.cur_hp, 50 - 6);
         assert_eq!(g.monsters[1].creature.cur_hp, 50);
         g.play_card(CardClass::Defend, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::LetterOpener), Some(0));
+        assert_eq!(g.get_relic_value(RelicClass::LetterOpener), Some(0));
         assert_eq!(g.monsters[0].creature.cur_hp, 50 - 6 - 5);
         assert_eq!(g.monsters[1].creature.cur_hp, 50 - 5);
         g.play_card(CardClass::Defend, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::LetterOpener), Some(1));
+        assert_eq!(g.get_relic_value(RelicClass::LetterOpener), Some(1));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.get_relic_value(RelicClass::LetterOpener), Some(0));
+        assert_eq!(g.get_relic_value(RelicClass::LetterOpener), Some(0));
     }
 
     #[test]
@@ -716,21 +716,21 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::OrnamentalFan)
             .build_combat();
-        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
+        assert_eq!(g.get_relic_value(RelicClass::OrnamentalFan), Some(0));
         g.play_card(CardClass::Intimidate, None);
         g.play_card(CardClass::Whirlwind, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(1));
+        assert_eq!(g.get_relic_value(RelicClass::OrnamentalFan), Some(1));
         g.play_card(CardClass::Whirlwind, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(2));
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.get_relic_value(RelicClass::OrnamentalFan), Some(2));
+        assert_eq!(g.player.block, 0);
         g.play_card(CardClass::Whirlwind, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
-        assert_eq!(g.player.creature.block, 4);
+        assert_eq!(g.get_relic_value(RelicClass::OrnamentalFan), Some(0));
+        assert_eq!(g.player.block, 4);
         g.play_card(CardClass::Intimidate, None);
-        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
+        assert_eq!(g.get_relic_value(RelicClass::OrnamentalFan), Some(0));
         g.play_card(CardClass::Whirlwind, None);
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.get_relic_value(RelicClass::OrnamentalFan), Some(0));
+        assert_eq!(g.get_relic_value(RelicClass::OrnamentalFan), Some(0));
     }
 
     #[test]
@@ -738,17 +738,17 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::TheAbacus)
             .build_combat();
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
         g.play_card(CardClass::Thunderclap, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.block, 0);
+        assert_eq!(g.player.block, 0);
         g.play_card(CardClass::PommelStrike, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.block, 6);
+        assert_eq!(g.player.block, 6);
         g.play_card(CardClass::PommelStrike, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.block, 12);
+        assert_eq!(g.player.block, 12);
         g.play_card(CardClass::MasterOfStrategy, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.block, 24);
+        assert_eq!(g.player.block, 24);
         g.play_card(CardClass::MasterOfStrategy, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.creature.block, 24);
+        assert_eq!(g.player.block, 24);
     }
 
     #[test]
@@ -758,31 +758,31 @@ mod tests {
             .build_combat();
 
         g.add_cards_to_discard_pile(CardClass::Strike, 10);
-        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(0));
+        assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(0));
         g.play_card(CardClass::FlashOfSteel, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(1));
+        assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(1));
         assert_eq!(g.energy, 3);
 
         g.clear_all_piles();
         g.add_cards_to_discard_pile(CardClass::Strike, 10);
         g.play_card(CardClass::FlashOfSteel, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(2));
+        assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(2));
         assert_eq!(g.energy, 3);
 
         g.clear_all_piles();
         g.add_cards_to_discard_pile(CardClass::Strike, 10);
         g.play_card(CardClass::FlashOfSteel, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(0));
+        assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(0));
         assert_eq!(g.energy, 5);
 
         g.clear_all_piles();
         g.add_cards_to_discard_pile(CardClass::Strike, 10);
         g.play_card(CardClass::FlashOfSteel, Some(CreatureRef::monster(0)));
-        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(1));
+        assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(1));
         assert_eq!(g.energy, 5);
 
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.get_relic_value(RelicClass::Sundial), Some(1));
+        assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(1));
     }
 
     #[test]
@@ -826,10 +826,10 @@ mod tests {
                 .add_relic(RelicClass::ClockworkSouvenir)
                 .add_relic(RelicClass::GremlinVisage)
                 .build_combat();
-            assert_eq!(g.player.creature.get_status(Status::Weak), Some(1));
-            assert_eq!(g.player.creature.get_status(Status::Artifact), None);
-            assert_eq!(g.player.creature.get_status(Status::Strength), Some(3));
-            assert_eq!(g.player.creature.get_status(Status::LoseStrength), None);
+            assert_eq!(g.player.get_status(Status::Weak), Some(1));
+            assert_eq!(g.player.get_status(Status::Artifact), None);
+            assert_eq!(g.player.get_status(Status::Strength), Some(3));
+            assert_eq!(g.player.get_status(Status::LoseStrength), None);
         }
         {
             let g = GameBuilder::default()
@@ -837,10 +837,10 @@ mod tests {
                 .add_relic(RelicClass::MutagenicStrength)
                 .add_relic(RelicClass::GremlinVisage)
                 .build_combat();
-            assert_eq!(g.player.creature.get_status(Status::Weak), None);
-            assert_eq!(g.player.creature.get_status(Status::Artifact), None);
-            assert_eq!(g.player.creature.get_status(Status::Strength), Some(3));
-            assert_eq!(g.player.creature.get_status(Status::LoseStrength), Some(3));
+            assert_eq!(g.player.get_status(Status::Weak), None);
+            assert_eq!(g.player.get_status(Status::Artifact), None);
+            assert_eq!(g.player.get_status(Status::Strength), Some(3));
+            assert_eq!(g.player.get_status(Status::LoseStrength), Some(3));
         }
         {
             let g = GameBuilder::default()
@@ -848,10 +848,10 @@ mod tests {
                 .add_relic(RelicClass::ClockworkSouvenir)
                 .add_relic(RelicClass::MutagenicStrength)
                 .build_combat();
-            assert_eq!(g.player.creature.get_status(Status::Weak), None);
-            assert_eq!(g.player.creature.get_status(Status::Artifact), None);
-            assert_eq!(g.player.creature.get_status(Status::Strength), Some(3));
-            assert_eq!(g.player.creature.get_status(Status::LoseStrength), Some(3));
+            assert_eq!(g.player.get_status(Status::Weak), None);
+            assert_eq!(g.player.get_status(Status::Artifact), None);
+            assert_eq!(g.player.get_status(Status::Strength), Some(3));
+            assert_eq!(g.player.get_status(Status::LoseStrength), Some(3));
         }
     }
 }

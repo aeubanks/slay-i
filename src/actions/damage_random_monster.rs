@@ -12,12 +12,8 @@ impl Action for DamageRandomMonsterAction {
             game.action_queue
                 .push_top(DamageAction::thorns_no_rupture(self.amount, alive));
         } else {
-            game.action_queue.push_top(DamageAction::from_player(
-                self.amount,
-                &game.player,
-                game.get_creature(alive),
-                alive,
-            ));
+            game.action_queue
+                .push_top(DamageAction::from_player(self.amount, alive));
         }
     }
 }

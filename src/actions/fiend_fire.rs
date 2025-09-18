@@ -13,12 +13,8 @@ impl Action for FiendFireAction {
     fn run(&self, game: &mut Game) {
         let count = game.hand.len();
         for _ in 0..count {
-            game.action_queue.push_top(DamageAction::from_player(
-                self.amount,
-                &game.player,
-                game.get_creature(self.target),
-                self.target,
-            ));
+            game.action_queue
+                .push_top(DamageAction::from_player(self.amount, self.target));
         }
         game.action_queue.push_top(ExhaustHandAction());
     }

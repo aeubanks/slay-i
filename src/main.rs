@@ -8,7 +8,6 @@ mod game;
 mod monster;
 mod monsters;
 mod move_history;
-mod player;
 mod potion;
 mod queue;
 mod relic;
@@ -21,10 +20,8 @@ use game::Game;
 use crate::{
     cards::CardClass,
     creature::Creature,
-    game::{GameBuilder, GameStatus, Move},
-    monster::Monster,
+    game::{CreatureRef, GameBuilder, GameStatus, Move},
     monsters::jawworm::JawWorm,
-    player::Player,
     relic::RelicClass,
 };
 
@@ -45,32 +42,29 @@ fn creature_str(c: &Creature) -> String {
     s
 }
 
-fn monster_str(m: &Monster, player: &Player) -> String {
-    let mut i = m.behavior.get_intent();
-    i.modify_damage(&m.creature, player);
-    format!("{}, intent: {:?}", creature_str(&m.creature), i)
+fn monster_str(c: CreatureRef, game: &Game) -> String {
+    let mut i = game.monsters[c.monster_index()].behavior.get_intent();
+    i.modify_damage(c, game);
+    format!("{}, intent: {:?}", creature_str(game.get_creature(c)), i)
 }
 
 fn print_state(g: &Game) {
-    println!("{}", creature_str(&g.player.creature));
+    println!("{}", creature_str(&g.player));
     println!("relics:");
-    for r in &g.player.relics {
+    for r in &g.relics {
         println!(" {:?}: {}", r.get_class(), r.get_value());
     }
-    if g.player.potions.iter().any(|p| p.is_some()) {
+    if g.potions.iter().any(|p| p.is_some()) {
         print!("potions:");
-        for p in g.player.potions.iter().flatten() {
+        for p in g.potions.iter().flatten() {
             print!(" {p:?}");
         }
         println!();
     }
     println!("energy: {}", g.energy);
     println!("monsters:");
-    for m in &g.monsters {
-        if !m.creature.is_alive() {
-            continue;
-        }
-        println!(" {}", monster_str(m, &g.player));
+    for m in g.get_alive_monsters() {
+        println!(" {}", monster_str(m, g));
     }
     println!("hand:");
     for c in &g.hand {
@@ -108,7 +102,7 @@ fn print_state(g: &Game) {
                 print!("choose blessing {b:?}");
             }
             Move::Transform { card_index } => {
-                print!("transform {:?}", g.player.master_deck[*card_index].borrow());
+                print!("transform {:?}", g.master_deck[*card_index].borrow());
             }
             Move::EndTurn => print!("end turn"),
             Move::PlayCard {
@@ -120,7 +114,7 @@ fn print_state(g: &Game) {
                     print!(
                         " on monster {} ({})",
                         t,
-                        monster_str(&g.monsters[*t], &g.player)
+                        monster_str(CreatureRef::monster(*t), g)
                     );
                 }
             }
@@ -223,7 +217,7 @@ fn print_state(g: &Game) {
             Move::DiscardPotion { potion_index } => {
                 print!(
                     "discard potion {potion_index} ({:?})",
-                    g.player.potions[*potion_index].unwrap()
+                    g.potions[*potion_index].unwrap()
                 );
             }
             Move::UsePotion {
@@ -232,13 +226,13 @@ fn print_state(g: &Game) {
             } => {
                 print!(
                     "use potion {potion_index} ({:?})",
-                    g.player.potions[*potion_index].unwrap()
+                    g.potions[*potion_index].unwrap()
                 );
                 if let Some(t) = target {
                     print!(
                         " on monster {} ({})",
                         t,
-                        monster_str(&g.monsters[*t], &g.player)
+                        monster_str(CreatureRef::monster(*t), g)
                     );
                 }
             }

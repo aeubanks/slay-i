@@ -9,7 +9,7 @@ pub struct DoubleStrengthAction();
 
 impl Action for DoubleStrengthAction {
     fn run(&self, game: &mut Game) {
-        if let Some(v) = game.player.creature.get_status(Status::Strength) {
+        if let Some(v) = game.player.get_status(Status::Strength) {
             game.action_queue.push_top(GainStatusAction {
                 status: Status::Strength,
                 amount: v,

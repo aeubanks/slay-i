@@ -15,7 +15,7 @@ pub struct DrawAction(pub i32);
 
 impl Action for DrawAction {
     fn run(&self, game: &mut Game) {
-        if game.player.creature.has_status(Status::NoDraw) {
+        if game.player.has_status(Status::NoDraw) {
             return;
         }
         let discard_size = game.discard_pile.len() as i32;
@@ -42,7 +42,7 @@ impl Action for DrawAction {
             let c = game.draw_pile.pop().unwrap();
             {
                 let mut c = c.borrow_mut();
-                if game.player.creature.has_status(Status::Confusion)
+                if game.player.has_status(Status::Confusion)
                     && let CardCost::Cost {
                         base_cost,
                         temporary_cost,
@@ -58,11 +58,11 @@ impl Action for DrawAction {
                     game.action_queue.push_bot(GainEnergyAction(-1));
                 }
                 if class.ty() == CardType::Status {
-                    if let Some(v) = game.player.creature.get_status(Status::FireBreathing) {
+                    if let Some(v) = game.player.get_status(Status::FireBreathing) {
                         game.action_queue
                             .push_bot(DamageAllMonstersAction::thorns(v));
                     }
-                    if let Some(v) = game.player.creature.get_status(Status::Evolve) {
+                    if let Some(v) = game.player.get_status(Status::Evolve) {
                         game.action_queue.push_bot(DrawAction(v));
                     }
                 }

@@ -4,7 +4,7 @@ pub struct DecreaseMaxHPAction(pub i32);
 
 impl Action for DecreaseMaxHPAction {
     fn run(&self, g: &mut Game) {
-        g.player.creature.decrease_max_hp(self.0);
+        g.player.decrease_max_hp(self.0);
     }
 }
 

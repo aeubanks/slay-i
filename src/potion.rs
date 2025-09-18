@@ -111,7 +111,7 @@ impl Potion {
 
 fn blood(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     let percent = if is_sacred { 40 } else { 20 };
-    let amount = game.player.creature.max_hp as f32 * percent as f32 / 100.0;
+    let amount = game.player.max_hp as f32 * percent as f32 / 100.0;
     game.action_queue.push_top(HealAction {
         target: CreatureRef::player(),
         amount: amount as i32,
@@ -348,10 +348,10 @@ mod tests {
     #[test]
     fn test_discard_potion() {
         let mut g = GameBuilder::default().build_combat();
-        g.player.add_potion(Potion::Fire);
+        g.add_potion(Potion::Fire);
         g.make_move(Move::DiscardPotion { potion_index: 0 });
-        assert_eq!(g.player.potions[0], None);
-        assert_eq!(g.player.potions[1], None);
+        assert_eq!(g.potions[0], None);
+        assert_eq!(g.potions[1], None);
         assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
     }
 
@@ -361,7 +361,7 @@ mod tests {
             .add_monster(NoopMonster::new())
             .add_monster(NoopMonster::new())
             .build_combat();
-        g.player.add_potion(Potion::Fire);
+        g.add_potion(Potion::Fire);
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::UsePotion {
             potion_index: 0,
@@ -370,7 +370,7 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 20);
         assert_eq!(g.monsters[1].creature.cur_hp, hp);
 
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Fire, Some(CreatureRef::monster(1)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 20);
         assert_eq!(g.monsters[1].creature.cur_hp, hp - 40);
@@ -382,7 +382,7 @@ mod tests {
             .add_monster(NoopMonster::new())
             .add_monster(NoopMonster::new())
             .build_combat();
-        g.player.add_potion(Potion::Explosive);
+        g.add_potion(Potion::Explosive);
         let hp = g.monsters[0].creature.cur_hp;
         g.make_move(Move::UsePotion {
             potion_index: 0,
@@ -391,7 +391,7 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 10);
         assert_eq!(g.monsters[1].creature.cur_hp, hp - 10);
 
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Explosive, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 30);
         assert_eq!(g.monsters[1].creature.cur_hp, hp - 30);
@@ -402,29 +402,29 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Speed, None);
         g.play_card(CardClass::Defend, None);
-        assert_eq!(g.player.creature.block, 10);
+        assert_eq!(g.player.block, 10);
 
         g.make_move(Move::EndTurn);
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Speed, None);
         g.play_card(CardClass::Defend, None);
-        assert_eq!(g.player.creature.block, 15);
+        assert_eq!(g.player.block, 15);
 
         g.make_move(Move::EndTurn);
         g.play_card(CardClass::Defend, None);
-        assert_eq!(g.player.creature.block, 5);
+        assert_eq!(g.player.block, 5);
     }
 
     #[test]
     fn test_blood() {
         let mut g = GameBuilder::default().build_combat();
-        g.player.creature.cur_hp = 10;
-        g.player.creature.max_hp = 100;
+        g.player.cur_hp = 10;
+        g.player.max_hp = 100;
         g.throw_potion(Potion::Blood, None);
-        assert_eq!(g.player.creature.cur_hp, 10 + 20);
-        g.player.add_relic(RelicClass::SacredBark);
+        assert_eq!(g.player.cur_hp, 10 + 20);
+        g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Blood, None);
-        assert_eq!(g.player.creature.cur_hp, 10 + 20 + 40);
+        assert_eq!(g.player.cur_hp, 10 + 20 + 40);
     }
 
     #[test]
@@ -433,7 +433,7 @@ mod tests {
         g.throw_potion(Potion::Attack, None);
         g.make_move(g.valid_moves()[0]);
         assert_eq!(g.hand.len(), 1);
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Attack, None);
         g.make_move(g.valid_moves()[0]);
         assert_eq!(g.hand.len(), 3);
@@ -455,7 +455,7 @@ mod tests {
         g.throw_potion(Potion::Skill, None);
         g.make_move(g.valid_moves()[0]);
         assert_eq!(g.hand.len(), 1);
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Skill, None);
         g.make_move(g.valid_moves()[0]);
         assert_eq!(g.hand.len(), 3);
@@ -476,7 +476,7 @@ mod tests {
         g.throw_potion(Potion::Power, None);
         g.make_move(g.valid_moves()[0]);
         assert_eq!(g.hand.len(), 1);
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Power, None);
         g.make_move(g.valid_moves()[0]);
         assert_eq!(g.hand.len(), 3);
@@ -524,12 +524,12 @@ mod tests {
         g.throw_potion(Potion::Chaos, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 8 - 10);
 
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         for _ in 0..10 {
             g.add_card_to_draw_pile(CardClass::Defend);
         }
         g.throw_potion(Potion::Chaos, None);
-        assert_eq!(g.player.creature.block, 6 * 5);
+        assert_eq!(g.player.block, 6 * 5);
 
         assert_eq!(g.energy, 3);
     }
@@ -578,7 +578,7 @@ mod tests {
             panic!();
         }
         g.clear_all_piles();
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         let mut found_cost = [false; 4];
         for _ in 0..100 {
             g.clear_all_piles();
@@ -665,7 +665,7 @@ mod tests {
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.discard_pile.len(), 1);
 
-        g.player.add_relic(RelicClass::SacredBark);
+        g.add_relic(RelicClass::SacredBark);
         g.clear_all_piles();
         g.add_card_to_discard_pile(CardClass::Defend);
         g.add_card_to_discard_pile(CardClass::Defend);
@@ -748,7 +748,7 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_monster(AttackMonster::new(1000))
                 .build_combat();
-            g.player.add_potion(Potion::Fairy);
+            g.add_potion(Potion::Fairy);
             assert!(
                 g.valid_moves()
                     .into_iter()
@@ -761,45 +761,37 @@ mod tests {
             );
 
             g.make_move(Move::EndTurn);
-            assert!(g.player.creature.is_alive());
-            assert_eq!(
-                g.player.creature.cur_hp,
-                (g.player.creature.max_hp as f32 * 0.3) as i32
-            );
-            assert!(g.player.potions.iter().all(|p| p.is_none()));
+            assert!(g.player.is_alive());
+            assert_eq!(g.player.cur_hp, (g.player.max_hp as f32 * 0.3) as i32);
+            assert!(g.potions.iter().all(|p| p.is_none()));
 
-            g.player.add_potion(Potion::Fairy);
-            g.player.add_relic(RelicClass::SacredBark);
+            g.add_potion(Potion::Fairy);
+            g.add_relic(RelicClass::SacredBark);
             g.make_move(Move::EndTurn);
-            assert_eq!(
-                g.player.creature.cur_hp,
-                (g.player.creature.max_hp as f32 * 0.6) as i32
-            );
-            assert!(g.player.potions.iter().all(|p| p.is_none()));
+            assert_eq!(g.player.cur_hp, (g.player.max_hp as f32 * 0.6) as i32);
+            assert!(g.potions.iter().all(|p| p.is_none()));
 
-            g.player
-                .creature
-                .decrease_max_hp(g.player.creature.max_hp - 1);
-            g.player.add_potion(Potion::Fairy);
+            g.player.decrease_max_hp(g.player.max_hp - 1);
+            g.add_potion(Potion::Fairy);
             g.make_move(Move::EndTurn);
-            assert_eq!(g.player.creature.cur_hp, 1);
-            assert!(g.player.potions.iter().all(|p| p.is_none()));
+            assert_eq!(g.player.cur_hp, 1);
+            assert!(g.potions.iter().all(|p| p.is_none()));
         }
         {
             let mut g = GameBuilder::default()
                 .add_monster(AttackMonster::with_attack_count(1000, 2))
                 .build_combat();
 
-            g.player.add_potion(Potion::Fairy);
-            g.player.add_potion(Potion::Fairy);
+            g.add_potion(Potion::Fairy);
+            g.add_potion(Potion::Fairy);
             g.make_move(Move::EndTurn);
-            assert!(g.player.creature.is_alive());
-            assert!(g.player.potions.iter().all(|p| p.is_none()));
+            assert!(g.player.is_alive());
+            assert!(g.potions.iter().all(|p| p.is_none()));
 
-            g.player.add_potion(Potion::Fairy);
+            g.add_potion(Potion::Fairy);
             g.make_move(Move::EndTurn);
-            assert!(!g.player.creature.is_alive());
-            assert!(g.player.potions.iter().all(|p| p.is_none()));
+            assert!(!g.player.is_alive());
+            assert!(g.potions.iter().all(|p| p.is_none()));
         }
     }
 }

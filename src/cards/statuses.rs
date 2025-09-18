@@ -52,7 +52,7 @@ mod tests {
             .set_player_hp(50)
             .build_combat();
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.cur_hp, 48);
+        assert_eq!(g.player.cur_hp, 48);
     }
 
     #[test]
@@ -63,7 +63,7 @@ mod tests {
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(1));
         g.make_move(Move::EndTurn);
-        assert_eq!(g.player.creature.cur_hp, 47);
+        assert_eq!(g.player.cur_hp, 47);
     }
 
     #[test]

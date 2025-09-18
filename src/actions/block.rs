@@ -54,7 +54,7 @@ impl Action for BlockAction {
     fn run(&self, game: &mut Game) {
         let mut amount = self.amount;
         if self.modify {
-            amount = calculate_modified_block(amount, &game.player.creature);
+            amount = calculate_modified_block(amount, &game.player);
         }
         let c = game.get_creature_mut(self.target);
         c.block += amount;
@@ -63,7 +63,7 @@ impl Action for BlockAction {
         }
         if amount > 0
             && self.target.is_player()
-            && let Some(j) = game.player.creature.get_status(Status::Juggernaut)
+            && let Some(j) = game.player.get_status(Status::Juggernaut)
         {
             game.action_queue.push_bot(DamageRandomMonsterAction {
                 amount: j,
@@ -87,8 +87,8 @@ mod tests {
     fn test_999() {
         let mut g = GameBuilder::default().build_combat();
         g.run_action(BlockAction::player_flat_amount(1000));
-        assert_eq!(g.player.creature.block, 999);
+        assert_eq!(g.player.block, 999);
         g.run_action(BlockAction::player_card(1000));
-        assert_eq!(g.player.creature.block, 999);
+        assert_eq!(g.player.block, 999);
     }
 }

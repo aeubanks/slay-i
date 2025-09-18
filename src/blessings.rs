@@ -22,7 +22,8 @@ impl Blessing {
                 game.increase_max_hp(8);
             }
             CommonRelic => {
-                game.player.add_relic(random_common_relic(&mut game.rng));
+                let r = random_common_relic(&mut game.rng);
+                game.add_relic(r);
             }
             TransformOne => {
                 game.state = GameState::BlessingTransform;
@@ -33,7 +34,7 @@ impl Blessing {
             }
             RandomPotion => {
                 let p = random_common_potion(&mut game.rng);
-                game.player.add_potion(p);
+                game.add_potion(p);
             }
         }
     }

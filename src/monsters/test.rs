@@ -1,9 +1,7 @@
 use crate::{
     actions::{damage::DamageAction, gain_status::GainStatusAction},
-    creature::Creature,
     game::{CreatureRef, Rand},
     monster::{Intent, MonsterBehavior, MonsterInfo},
-    player::Player,
     queue::ActionQueue,
     status::Status,
 };
@@ -33,7 +31,7 @@ impl MonsterBehavior for NoopMonster {
     fn get_intent(&self) -> Intent {
         Intent::Sleep
     }
-    fn take_turn(&mut self, _: &mut ActionQueue, _: &Player, _: &Creature, _: CreatureRef) {}
+    fn take_turn(&mut self, _: CreatureRef, _: &mut ActionQueue) {}
 }
 
 pub struct AttackMonster {
@@ -78,20 +76,9 @@ impl MonsterBehavior for AttackMonster {
     fn get_intent(&self) -> Intent {
         Intent::Attack(self.attack, 1)
     }
-    fn take_turn(
-        &mut self,
-        queue: &mut ActionQueue,
-        player: &Player,
-        this: &Creature,
-        this_ref: CreatureRef,
-    ) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
         for _ in 0..self.attack_count {
-            queue.push_bot(DamageAction::from_monster(
-                self.attack,
-                player,
-                this,
-                this_ref,
-            ));
+            queue.push_bot(DamageAction::from_monster(self.attack, this));
         }
     }
 }
@@ -118,7 +105,7 @@ impl MonsterBehavior for IntentMonster {
     fn get_intent(&self) -> Intent {
         self.intent
     }
-    fn take_turn(&mut self, _: &mut ActionQueue, _: &Player, _: &Creature, _: CreatureRef) {}
+    fn take_turn(&mut self, _: CreatureRef, _: &mut ActionQueue) {}
 }
 
 #[allow(dead_code)]
@@ -138,7 +125,7 @@ impl MonsterBehavior for ApplyStatusMonster {
     fn get_intent(&self) -> Intent {
         Intent::Debuff
     }
-    fn take_turn(&mut self, queue: &mut ActionQueue, _: &Player, _: &Creature, _: CreatureRef) {
+    fn take_turn(&mut self, _: CreatureRef, queue: &mut ActionQueue) {
         queue.push_bot(GainStatusAction {
             status: self.status,
             amount: self.amount,

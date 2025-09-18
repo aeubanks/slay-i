@@ -4,9 +4,7 @@ use crate::{
         gain_gold::GainGoldAction, increase_base_amount::IncreaseBaseAmountAction,
         increase_max_hp::IncreaseMaxHPAction,
     },
-    creature::Creature,
     game::{CreatureRef, Game},
-    player::Player,
     queue::ActionQueue,
     status::Status,
 };
@@ -60,18 +58,10 @@ pub struct DamageAction {
     ty: DamageType,
 }
 
-pub fn calculate_damage(
-    amount: i32,
-    player_is_source: bool,
-    monster: &Creature,
-    player: &Player,
-) -> i32 {
+pub fn calculate_damage(amount: i32, source: CreatureRef, target: CreatureRef, game: &Game) -> i32 {
     let mut amount_f = amount as f32;
-    let (source, target) = if player_is_source {
-        (&player.creature, monster)
-    } else {
-        (monster, &player.creature)
-    };
+    let source = game.get_creature(source);
+    let target = game.get_creature(target);
     if let Some(s) = source.get_status(Status::Strength) {
         amount_f += s as f32;
     }
@@ -91,16 +81,11 @@ pub fn calculate_damage(
 }
 
 impl DamageAction {
-    pub fn from_player(
-        base_amount: i32,
-        player: &Player,
-        target: &Creature,
-        target_ref: CreatureRef,
-    ) -> Self {
-        let amount = calculate_damage(base_amount, true, target, player);
+    pub fn from_player(base_amount: i32, target: CreatureRef) -> Self {
+        // let amount = calculate_damage(base_amount, CreatureRef::player(), target, game);
         Self {
-            target: target_ref,
-            amount,
+            target,
+            amount: base_amount,
             ty: DamageType::Attack {
                 source: CreatureRef::player(),
                 on_fatal: None,
@@ -109,34 +94,26 @@ impl DamageAction {
     }
     pub fn from_player_with_on_fatal(
         base_amount: i32,
-        player: &Player,
-        target: &Creature,
-        target_ref: CreatureRef,
+        target: CreatureRef,
         on_fatal: OnFatal,
     ) -> Self {
-        let amount = calculate_damage(base_amount, true, target, player);
+        // let amount = calculate_damage(base_amount, CreatureRef::player(), target, game);
         Self {
-            target: target_ref,
-            amount,
+            target,
+            amount: base_amount,
             ty: DamageType::Attack {
                 source: CreatureRef::player(),
                 on_fatal: Some(on_fatal),
             },
         }
     }
-    pub fn from_monster(
-        base_amount: i32,
-        player: &Player,
-        source: &Creature,
-        source_ref: CreatureRef,
-    ) -> Self {
-        let target = CreatureRef::player();
-        let amount = calculate_damage(base_amount, false, source, player);
+    pub fn from_monster(base_amount: i32, source: CreatureRef) -> Self {
+        // let amount = calculate_damage(base_amount, source, CreatureRef::player(), game);
         Self {
-            target,
-            amount,
+            target: CreatureRef::player(),
+            amount: base_amount,
             ty: DamageType::Attack {
-                source: source_ref,
+                source,
                 on_fatal: None,
             },
         }

@@ -44,7 +44,7 @@ impl PlayCardAction {
     }
 
     pub fn is_corruption(&self, game: &Game) -> bool {
-        game.player.creature.has_status(Status::Corruption)
+        game.player.has_status(Status::Corruption)
             && self.card.borrow().class.ty() == CardType::Skill
     }
 }
@@ -97,13 +97,12 @@ impl Action for PlayCardAction {
             *free_to_play_once = false
         }
 
-        game.player.creature.trigger_statuses_on_card_played(
+        game.player.trigger_statuses_on_card_played(
             &mut game.action_queue,
             &mut game.card_queue,
             self,
         );
-        game.player
-            .trigger_relics_on_card_played(&mut game.action_queue, self);
+        game.trigger_relics_on_card_played(self);
         game.energy -= energy_cost;
         game.action_queue.push_bot(ClearCurCardAction());
         match dest {
