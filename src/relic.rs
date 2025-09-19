@@ -176,7 +176,7 @@ r!(
     FusionHammer => Boss, // TODO
     PandorasBox => Boss, // TODO
     PhilosophersStone => Boss, // TODO
-    RunicDome => Boss, // not supported
+    // RunicDome => Boss, // not supported
     RunicPyramid => Boss, // TODO
     SacredBark => Boss,
     SlaversCollar => Boss, // TODO
