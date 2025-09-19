@@ -115,8 +115,8 @@ mod tests {
     use super::Status::*;
     use crate::{
         actions::{
-            block::BlockAction, damage_all_monsters::DamageAllMonstersAction,
-            draw::DrawAction, gain_status::GainStatusAction, reduce_status::ReduceStatusAction,
+            block::BlockAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
+            gain_status::GainStatusAction, reduce_status::ReduceStatusAction,
         },
         cards::{CardClass, CardColor, CardCost},
         game::{CreatureRef, GameBuilder, Move},
