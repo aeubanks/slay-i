@@ -481,6 +481,9 @@ impl Game {
             on_fatal: _,
         } = ty
         {
+            if !self.get_creature(source).is_alive() {
+                return;
+            }
             amount = self.calculate_damage(amount, source, target);
             if let Some(a) = self
                 .get_creature(target)
@@ -1511,7 +1514,7 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
-    use crate::{actions::block::BlockAction, potion::Potion};
+    use crate::{actions::block::BlockAction, monsters::test::AttackMonster, potion::Potion};
 
     use super::*;
 
@@ -1722,5 +1725,16 @@ mod tests {
 
         assert_eq!(g.take_potion(1), Skill);
         assert_eq!(g.potions, vec![Some(Attack), None]);
+    }
+
+    #[test]
+    fn test_multi_attack_die_to_thorns() {
+        let mut g = GameBuilder::default()
+            .add_monster(AttackMonster::with_attack_count(10, 10))
+            .add_player_status(Status::Thorns, 999)
+            .build_combat();
+        g.player.cur_hp = 50;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, 40);
     }
 }
