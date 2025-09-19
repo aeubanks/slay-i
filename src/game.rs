@@ -26,6 +26,7 @@ use crate::blessings::Blessing;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
 use crate::creature::Creature;
+use crate::map::Map;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
 use crate::potion::Potion;
@@ -308,6 +309,7 @@ macro_rules! trigger_card {
 }
 
 pub struct Game {
+    // pub map: Map,
     pub player: Creature,
     pub relics: Vec<Relic>,
     pub potions: Vec<Option<Potion>>,

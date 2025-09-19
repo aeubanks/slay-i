@@ -5,6 +5,7 @@ mod card;
 mod cards;
 mod creature;
 mod game;
+mod map;
 mod monster;
 mod monsters;
 mod move_history;
