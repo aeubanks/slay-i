@@ -9,6 +9,7 @@ use crate::{
 pub enum Blessing {
     GainMaxHPSmall,
     CommonRelic,
+    RemoveRelic, // just to prevent dead code warnings
     TransformOne,
     RandomUncommonColorless,
     RandomPotion,
@@ -24,6 +25,9 @@ impl Blessing {
             CommonRelic => {
                 let r = random_common_relic(&mut game.rng);
                 game.add_relic(r);
+            }
+            RemoveRelic => {
+                game.remove_relic(game.relics[0].get_class());
             }
             TransformOne => {
                 game.state = GameState::BlessingTransform;

@@ -42,6 +42,7 @@ pub mod gain_status_all_monsters;
 pub mod heal;
 pub mod impatience;
 pub mod increase_base_amount;
+pub mod increase_draw_per_turn;
 pub mod increase_max_hp;
 pub mod infernal_blade;
 pub mod madness;

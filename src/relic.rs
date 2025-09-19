@@ -4,7 +4,8 @@ use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
-        heal::HealAction, play_card::PlayCardAction,
+        heal::HealAction, increase_draw_per_turn::IncreaseDrawPerTurnAction,
+        play_card::PlayCardAction,
     },
     cards::CardType,
     game::{CreatureRef, Rand},
@@ -179,7 +180,7 @@ r!(
     RunicPyramid => Boss, // TODO
     SacredBark => Boss,
     SlaversCollar => Boss, // TODO
-    SneckoEye => Boss, // TODO
+    SneckoEye => Boss,
     Sozu => Boss, // TODO
     TinyHouse => Boss, // TODO
     VelvetChoker => Boss, // TODO
@@ -211,6 +212,20 @@ type RelicCallback = fn(&mut i32, &mut ActionQueue);
 type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &PlayCardAction);
 
 impl RelicClass {
+    pub fn on_equip(&self) -> Option<RelicCallback> {
+        use RelicClass::*;
+        match self {
+            SneckoEye => Some(snecko_eye_equip),
+            _ => None,
+        }
+    }
+    pub fn on_unequip(&self) -> Option<RelicCallback> {
+        use RelicClass::*;
+        match self {
+            SneckoEye => Some(snecko_eye_unequip),
+            _ => None,
+        }
+    }
     pub fn on_shuffle(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
@@ -223,6 +238,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             HornCleat | CaptainsWheel => Some(set_value_zero),
+            SneckoEye => Some(snecko_eye_confused),
             _ => None,
         }
     }
@@ -401,13 +417,31 @@ fn blue_candle(_: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
 }
 
 fn abacus(_: &mut i32, queue: &mut ActionQueue) {
+    // intentionally push_top, see ShuffleDiscardOnTopOfDrawAction
     queue.push_top(BlockAction::player_flat_amount(6));
 }
 
 fn sundial(v: &mut i32, queue: &mut ActionQueue) {
     if inc_wrap(v, 3) {
+        // intentionally push_top, see ShuffleDiscardOnTopOfDrawAction
         queue.push_top(GainEnergyAction(2));
     }
+}
+
+fn snecko_eye_confused(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAction {
+        status: Status::Confusion,
+        amount: 1,
+        target: CreatureRef::player(),
+    });
+}
+
+fn snecko_eye_equip(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(IncreaseDrawPerTurnAction(2));
+}
+
+fn snecko_eye_unequip(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(IncreaseDrawPerTurnAction(-2));
 }
 
 pub struct Relic {
@@ -444,6 +478,8 @@ macro_rules! trigger_card {
 }
 
 impl Relic {
+    trigger!(on_equip);
+    trigger!(on_unequip);
     trigger!(on_shuffle);
     trigger!(at_pre_combat);
     trigger!(at_combat_start_pre_draw);
@@ -853,5 +889,19 @@ mod tests {
             assert_eq!(g.player.get_status(Status::Strength), Some(3));
             assert_eq!(g.player.get_status(Status::LoseStrength), Some(3));
         }
+    }
+
+    #[test]
+    fn test_snecko_eye() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::ClockworkSouvenir)
+            .add_relic(RelicClass::SneckoEye)
+            .add_cards(CardClass::Strike, 10)
+            .build_combat();
+        assert_eq!(g.player.get_status(Status::Confusion), Some(1));
+        assert_eq!(g.hand.len(), 7);
+        g.remove_relic(RelicClass::SneckoEye);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 5);
     }
 }

@@ -1171,6 +1171,7 @@ impl Game {
             GameState::Blessing => {
                 moves.push(Move::ChooseBlessing(Blessing::GainMaxHPSmall));
                 moves.push(Move::ChooseBlessing(Blessing::CommonRelic));
+                moves.push(Move::ChooseBlessing(Blessing::RemoveRelic));
                 moves.push(Move::ChooseBlessing(Blessing::TransformOne));
                 moves.push(Move::ChooseBlessing(Blessing::RandomUncommonColorless));
                 moves.push(Move::ChooseBlessing(Blessing::RandomPotion));
@@ -1471,11 +1472,16 @@ impl Game {
         p
     }
     pub fn add_relic(&mut self, class: RelicClass) {
-        self.relics.push(new_relic(class));
+        let mut r = new_relic(class);
+        r.on_equip(&mut self.action_queue);
+        self.relics.push(r);
+        self.run_actions_until_empty();
     }
-    #[cfg(test)]
     pub fn remove_relic(&mut self, class: RelicClass) {
-        self.relics.retain(|r| r.get_class() != class);
+        let idx = self.relics.iter().position(|r| r.get_class() == class);
+        let mut r = self.relics.remove(idx.unwrap());
+        r.on_unequip(&mut self.action_queue);
+        self.run_actions_until_empty();
     }
     pub fn has_relic(&self, class: RelicClass) -> bool {
         self.relics.iter().any(|r| r.get_class() == class)
