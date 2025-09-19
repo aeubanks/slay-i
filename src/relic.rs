@@ -171,7 +171,7 @@ r!(
     CallingBell => Boss, // TODO
     CoffeeDripper => Boss, // TODO
     CursedKey => Boss, // TODO
-    Ectoplasm => Boss, // TODO
+    Ectoplasm => Boss,
     EmptyCage => Boss, // TODO
     FusionHammer => Boss, // TODO
     PandorasBox => Boss, // TODO
@@ -903,5 +903,16 @@ mod tests {
         g.remove_relic(RelicClass::SneckoEye);
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 5);
+    }
+
+    #[test]
+    fn test_ectoplasm() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Ectoplasm)
+            .add_monster(NoopMonster::with_hp(1))
+            .build_combat();
+        assert_eq!(g.energy, 4);
+        g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.gold, 0);
     }
 }

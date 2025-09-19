@@ -1,10 +1,12 @@
-use crate::{action::Action, game::Game};
+use crate::{action::Action, game::Game, relic::RelicClass};
 
 pub struct GainGoldAction(pub i32);
 
 impl Action for GainGoldAction {
     fn run(&self, game: &mut Game) {
-        game.gold += self.0;
+        if !game.has_relic(RelicClass::Ectoplasm) {
+            game.gold += self.0;
+        }
     }
 }
 
