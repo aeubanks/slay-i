@@ -1,4 +1,6 @@
-use rand::Rng;
+use std::collections::HashSet;
+
+use rand::{Rng, seq::SliceRandom};
 
 use crate::{game::Rand, rng::rand_slice};
 
@@ -6,8 +8,32 @@ pub struct Map {
     nodes: Vec<Vec<Node>>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RoomType {
+    Monster,
+    Elite,
+    Event,
+    Campfire,
+    Shop,
+    Treasure,
+}
+
+impl RoomType {
+    fn char(&self) -> char {
+        match self {
+            RoomType::Monster => 'm',
+            RoomType::Elite => 'E',
+            RoomType::Event => '?',
+            RoomType::Campfire => '*',
+            RoomType::Shop => '$',
+            RoomType::Treasure => 'X',
+        }
+    }
+}
+
 #[derive(Default, Clone)]
 struct Node {
+    ty: Option<RoomType>,
     // x of connected nodes above
     edges: Vec<usize>,
 }
@@ -99,7 +125,24 @@ impl Map {
         }
         ret
     }
-
+    fn node_indexes(&self) -> Vec<(usize, usize)> {
+        let mut ret = Vec::new();
+        let mut cur_row = (0..WIDTH)
+            .filter(|x| !self.nodes[*x][0].edges.is_empty())
+            .collect::<Vec<_>>();
+        for y in 0..HEIGHT {
+            let mut next_row = HashSet::new();
+            for x in cur_row {
+                ret.push((x, y));
+                for e in &self.nodes[x][y].edges {
+                    next_row.insert(*e);
+                }
+            }
+            cur_row = next_row.into_iter().collect::<Vec<_>>();
+            cur_row.sort();
+        }
+        ret
+    }
     fn print(&self) {
         print!("{}", self.str());
     }
@@ -108,7 +151,7 @@ impl Map {
         for y in 0..HEIGHT {
             for x in 0..WIDTH {
                 if !self.nodes[x][y].edges.is_empty() || !self.parents(x, y).is_empty() {
-                    print.set(x * 2, y * 2, '.');
+                    print.set(x * 2, y * 2, self.nodes[x][y].ty.unwrap().char());
                     for &e in &self.nodes[x][y].edges {
                         if e + 1 == x {
                             print.set(x * 2 - 1, y * 2 + 1, '\\');
@@ -128,8 +171,7 @@ impl Map {
 }
 
 impl Map {
-    pub fn generate(rng: &mut Rand) -> Self {
-        let mut map = Map::new();
+    fn generate_nodes(rng: &mut Rand, map: &mut Map) {
         let mut first_x = None;
         for _ in 0..6 {
             let mut cur_x = rng.random_range(0..WIDTH);
@@ -161,12 +203,10 @@ impl Map {
                             }
                         } else if next_x == cur_x {
                             next_x = rand_slice(rng, &Map::x_neighbors(cur_x));
+                        } else if cur_x == WIDTH - 1 {
+                            next_x = WIDTH - 1;
                         } else {
-                            if cur_x == WIDTH - 1 {
-                                next_x = WIDTH - 1;
-                            } else {
-                                next_x = cur_x + rng.random_range(0..=1);
-                            }
+                            next_x = cur_x + rng.random_range(0..=1);
                         }
                     }
                 }
@@ -181,12 +221,117 @@ impl Map {
                 cur_x = next_x;
             }
         }
+    }
+    fn generate_rooms_bag(rng: &mut Rand, map: &Map) -> Vec<RoomType> {
+        let mut ret = Vec::new();
+        let count1 = map
+            .node_indexes()
+            .iter()
+            .filter(|(_, y)| *y != HEIGHT - 2)
+            .count() as f32;
+        let num_shops = (0.05 * count1) as usize;
+        let num_campfires = (0.12 * count1) as usize;
+        let num_events = (0.22 * count1) as usize;
+        let num_elites = (0.08 * 1.6 * count1) as usize;
+        for _ in 0..num_shops {
+            ret.push(RoomType::Shop);
+        }
+        for _ in 0..num_campfires {
+            ret.push(RoomType::Campfire);
+        }
+        for _ in 0..num_events {
+            ret.push(RoomType::Event);
+        }
+        for _ in 0..num_elites {
+            ret.push(RoomType::Elite);
+        }
+        let total_count = map
+            .node_indexes()
+            .iter()
+            .filter(|(x, y)| map.nodes[*x][*y].ty.is_none())
+            .count();
+        while ret.len() < total_count {
+            ret.push(RoomType::Monster);
+        }
+        ret.shuffle(rng);
+        ret
+    }
+    fn is_valid_room(map: &Map, x: usize, y: usize, room: RoomType) -> bool {
+        // campfires/elites cannot spawn in first 5 rows
+        if y <= 4 && matches!(room, RoomType::Campfire | RoomType::Elite) {
+            return false;
+        }
+        // row 14 is campfires, so no campfires in 13
+        if y == 13 && room == RoomType::Campfire {
+            return false;
+        }
+        // cannot have two campfires/elites/shops in a row
+        if matches!(room, RoomType::Campfire | RoomType::Elite | RoomType::Shop) {
+            for p_x in map.parents(x, y) {
+                if let Some(parent_room) = map.nodes[p_x][y - 1].ty
+                    && parent_room == room
+                {
+                    return false;
+                }
+            }
+        }
+        // cannot be same room type as a sibling
+        for p_x in map.parents(x, y) {
+            for &c_x in &map.nodes[p_x][y - 1].edges {
+                if c_x == x {
+                    continue;
+                }
+                if let Some(sibling_room_type) = map.nodes[c_x][y].ty
+                    && sibling_room_type == room
+                {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+    fn generate_rooms(rng: &mut Rand, map: &mut Map) {
+        for x in 0..WIDTH {
+            map.nodes[x][0].ty = Some(RoomType::Monster);
+            map.nodes[x][8].ty = Some(RoomType::Treasure);
+            map.nodes[x][HEIGHT - 1].ty = Some(RoomType::Campfire);
+        }
+        let mut rooms = Map::generate_rooms_bag(rng, map);
+        for (x, y) in map.node_indexes() {
+            if map.nodes[x][y].ty.is_some() {
+                continue;
+            }
+            // choose first room from bag that's valid
+            // TODO: skip over already checked room types
+            let idx = rooms
+                .iter()
+                .position(|&room| Map::is_valid_room(map, x, y, room));
+            if let Some(idx) = idx {
+                let room = rooms.remove(idx);
+                map.nodes[x][y].ty = Some(room);
+            }
+        }
+        // mark unassigned rooms as monster
+        // this can happen when the bag runs out of a specific room type early
+        for (x, y) in map.node_indexes() {
+            if map.nodes[x][y].ty.is_none() {
+                map.nodes[x][y].ty = Some(RoomType::Monster);
+            }
+        }
+    }
+    pub fn generate(rng: &mut Rand) -> Self {
+        let mut map = Map::new();
+        Map::generate_nodes(rng, &mut map);
+        Map::generate_rooms(rng, &mut map);
         map
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::assert_not_matches;
+
     use super::*;
 
     #[test]
@@ -226,6 +371,56 @@ mod tests {
     }
 
     #[test]
+    fn test_node_indexes() {
+        let mut map = Map::new();
+        // (0, 0) -> (0, 1)
+        // (0, 0) -> (1, 1)
+        // (0, 1) -> (0, 2)
+        // (1, 1) -> (1, 2)
+        map.nodes[0][0].edges = vec![0, 1];
+        map.nodes[0][1].edges = vec![0];
+        map.nodes[1][1].edges = vec![1];
+
+        // (6, 0) -> (6, 1)
+        // (6, 1) -> (6, 2)
+        map.nodes[6][0].edges = vec![6];
+        map.nodes[6][1].edges = vec![6];
+
+        // (2, 1) -> (1, 2)
+        // (2, 1) -> (2, 2)
+        // (2, 1) -> (3, 2)
+        // (3, 0) -> (2, 1)
+        // (3, 0) -> (4, 1)
+        // (4, 1) -> (3, 2)
+        // (4, 1) -> (4, 2)
+        // (4, 1) -> (5, 2)
+        map.nodes[2][1].edges = vec![1, 2, 3];
+        map.nodes[3][0].edges = vec![2, 4];
+        map.nodes[4][1].edges = vec![3, 4, 5];
+
+        assert_eq!(
+            map.node_indexes(),
+            vec![
+                (0, 0),
+                (3, 0),
+                (6, 0),
+                (0, 1),
+                (1, 1),
+                (2, 1),
+                (4, 1),
+                (6, 1),
+                (0, 2),
+                (1, 2),
+                (2, 2),
+                (3, 2),
+                (4, 2),
+                (5, 2),
+                (6, 2)
+            ]
+        );
+    }
+
+    #[test]
     fn test_map() {
         let mut rng = Rand::default();
         for _ in 0..20 {
@@ -242,6 +437,36 @@ mod tests {
                         !(map.nodes[x][y].edges.contains(&(x + 1))
                             && map.nodes[x + 1][y].edges.contains(&x))
                     );
+                }
+            }
+
+            for (x, y) in map.node_indexes() {
+                let ty = map.nodes[x][y].ty.unwrap();
+                match y {
+                    0 => assert_eq!(ty, RoomType::Monster),
+                    8 => assert_eq!(ty, RoomType::Treasure),
+                    14 => assert_eq!(ty, RoomType::Campfire),
+                    _ => {}
+                }
+                if y < 5 {
+                    assert_not_matches!(ty, RoomType::Campfire | RoomType::Elite);
+                }
+                if matches!(
+                    ty,
+                    RoomType::Campfire | RoomType::Elite | RoomType::Shop | RoomType::Treasure
+                ) {
+                    for p_x in map.parents(x, y) {
+                        assert_ne!(ty, map.nodes[p_x][y - 1].ty.unwrap());
+                    }
+                }
+                if ty != RoomType::Monster && y != 8 && y != 14 {
+                    for p_x in map.parents(x, y) {
+                        for &e in &map.nodes[p_x][y - 1].edges {
+                            if e != x {
+                                assert_ne!(ty, map.nodes[e][y].ty.unwrap());
+                            }
+                        }
+                    }
                 }
             }
         }
