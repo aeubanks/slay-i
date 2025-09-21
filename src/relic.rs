@@ -3,9 +3,10 @@ use lazy_static::lazy_static;
 use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-        draw::DrawAction, gain_energy::GainEnergyAction, gain_status::GainStatusAction,
-        heal::HealAction, increase_draw_per_turn::IncreaseDrawPerTurnAction,
-        play_card::PlayCardAction,
+        draw::DrawAction, gain_energy::GainEnergyAction, gain_gold::GainGoldAction,
+        gain_status::GainStatusAction, heal::HealAction,
+        increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
+        increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
     },
     cards::CardType,
     game::{CreatureRef, Rand},
@@ -216,6 +217,12 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             SneckoEye => Some(snecko_eye_equip),
+            OldCoin => Some(old_coin),
+            PotionBelt => Some(potion_belt),
+            LeesWaffle => Some(lees_waffle),
+            Mango => Some(mango),
+            Pear => Some(pear),
+            Strawberry => Some(strawberry),
             _ => None,
         }
     }
@@ -428,6 +435,34 @@ fn sundial(v: &mut i32, queue: &mut ActionQueue) {
     }
 }
 
+fn potion_belt(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(IncreasePotionSlotsAction(2));
+}
+
+fn old_coin(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainGoldAction(300));
+}
+
+fn lees_waffle(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(IncreaseMaxHPAction(7));
+    queue.push_bot(HealAction {
+        target: CreatureRef::player(),
+        amount: 9999,
+    });
+}
+
+fn mango(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(IncreaseMaxHPAction(14));
+}
+
+fn pear(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(IncreaseMaxHPAction(10));
+}
+
+fn strawberry(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(IncreaseMaxHPAction(7));
+}
+
 fn snecko_eye_confused(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainStatusAction {
         status: Status::Confusion,
@@ -513,6 +548,7 @@ mod tests {
         cards::CardClass,
         game::{GameBuilder, Move},
         monsters::test::NoopMonster,
+        potion::Potion,
         status::Status,
     };
 
@@ -914,5 +950,34 @@ mod tests {
         assert_eq!(g.energy, 4);
         g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
         assert_eq!(g.gold, 0);
+    }
+
+    #[test]
+    fn test_food() {
+        let mut g = GameBuilder::default().build_combat();
+        let max_hp = g.player.max_hp;
+        g.add_relic(RelicClass::Mango);
+        assert_eq!(g.player.max_hp, max_hp + 14);
+        g.add_relic(RelicClass::Pear);
+        assert_eq!(g.player.max_hp, max_hp + 14 + 10);
+        g.add_relic(RelicClass::Strawberry);
+        assert_eq!(g.player.max_hp, max_hp + 14 + 10 + 7);
+        assert_ne!(g.player.max_hp, g.player.cur_hp);
+        g.add_relic(RelicClass::LeesWaffle);
+        assert_eq!(g.player.max_hp, max_hp + 14 + 10 + 7 + 7);
+        assert_eq!(g.player.max_hp, g.player.cur_hp);
+    }
+
+    #[test]
+    fn test_potion_belt() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::PotionBelt)
+            .build_combat();
+        assert_eq!(g.potions, vec![None; 4]);
+        g.remove_relic(RelicClass::PotionBelt);
+        assert_eq!(g.potions, vec![None; 4]);
+        for _ in 0..4 {
+            g.add_potion(Potion::Ancient);
+        }
     }
 }

@@ -44,6 +44,7 @@ pub mod impatience;
 pub mod increase_base_amount;
 pub mod increase_draw_per_turn;
 pub mod increase_max_hp;
+pub mod increase_potion_slots;
 pub mod infernal_blade;
 pub mod madness;
 pub mod magnetism;
