@@ -7,6 +7,7 @@ use crate::{
         gain_status::GainStatusAction, heal::HealAction,
         increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
         increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
+        upgrade_random_in_master::UpgradeRandomInMasterAction,
     },
     cards::CardType,
     game::{CreatureRef, Rand},
@@ -84,8 +85,8 @@ r!(
     TinyChest => Common, // TODO
     ToyOrnithopter => Common, // TODO
     Vajra => Common, // TODO
-    WarPaint => Common, // TODO
-    Whetstone => Common, // TODO
+    WarPaint => Common,
+    Whetstone => Common,
     RedSkull => Common, // TODO
 
     BlueCandle => Uncommon,
@@ -216,6 +217,8 @@ impl RelicClass {
     pub fn on_equip(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
+            WarPaint => Some(war_paint),
+            Whetstone => Some(whetstone),
             SneckoEye => Some(snecko_eye_equip),
             OldCoin => Some(old_coin),
             PotionBelt => Some(potion_belt),
@@ -477,6 +480,14 @@ fn snecko_eye_equip(_: &mut i32, queue: &mut ActionQueue) {
 
 fn snecko_eye_unequip(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(IncreaseDrawPerTurnAction(-2));
+}
+
+fn war_paint(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(UpgradeRandomInMasterAction(CardType::Skill));
+}
+
+fn whetstone(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(UpgradeRandomInMasterAction(CardType::Attack));
 }
 
 pub struct Relic {
@@ -978,6 +989,104 @@ mod tests {
         assert_eq!(g.potions, vec![None; 4]);
         for _ in 0..4 {
             g.add_potion(Potion::Ancient);
+        }
+    }
+
+    #[test]
+    fn test_war_paint() {
+        {
+            let mut g = GameBuilder::default().build_combat();
+            g.add_relic(RelicClass::WarPaint);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_card(CardClass::Strike)
+                .add_card(CardClass::Defend)
+                .add_card(CardClass::ShrugItOff)
+                .add_card_upgraded(CardClass::BandageUp)
+                .build_combat();
+            g.add_relic(RelicClass::WarPaint);
+            assert_eq!(
+                g.master_deck
+                    .iter()
+                    .map(|c| c.borrow().upgrade_count)
+                    .sum::<i32>(),
+                3
+            );
+            assert!(g.master_deck.iter().any(
+                |c| c.borrow().class == CardClass::Strike && c.borrow().upgrade_count == 0
+            ));
+        }
+        {
+            let mut found_unupgraded_defend = false;
+            let mut found_unupgraded_shrug = false;
+            let mut found_unupgraded_bandage = false;
+            for _ in 0..100 {
+                let mut g = GameBuilder::default()
+                    .add_card(CardClass::Strike)
+                    .add_card(CardClass::Defend)
+                    .add_card(CardClass::ShrugItOff)
+                    .add_card(CardClass::BandageUp)
+                    .build_combat();
+                g.add_relic(RelicClass::WarPaint);
+                assert_eq!(
+                    g.master_deck
+                        .iter()
+                        .map(|c| c.borrow().upgrade_count)
+                        .sum::<i32>(),
+                    2
+                );
+                assert!(g.master_deck.iter().any(
+                    |c| c.borrow().class == CardClass::Strike && c.borrow().upgrade_count == 0
+                ));
+                for c in &g.master_deck {
+                    if c.borrow().upgrade_count != 0 {
+                        continue;
+                    }
+                    match c.borrow().class {
+                        CardClass::Defend => found_unupgraded_defend = true,
+                        CardClass::ShrugItOff => found_unupgraded_shrug = true,
+                        CardClass::BandageUp => found_unupgraded_bandage = true,
+                        _ => {}
+                    }
+                }
+                if found_unupgraded_defend && found_unupgraded_shrug && found_unupgraded_bandage {
+                    break;
+                }
+            }
+            assert!(found_unupgraded_defend && found_unupgraded_shrug && found_unupgraded_bandage);
+        }
+    }
+
+    #[test]
+    fn test_whetstone() {
+        {
+            let mut g = GameBuilder::default().build_combat();
+            g.add_relic(RelicClass::Whetstone);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_card(CardClass::Bash)
+                .build_combat();
+            g.add_relic(RelicClass::Whetstone);
+            assert_eq!(g.master_deck[0].borrow().upgrade_count, 1);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_card(CardClass::Defend)
+                .add_card(CardClass::Strike)
+                .add_card_upgraded(CardClass::SearingBlow)
+                .build_combat();
+            g.add_relic(RelicClass::Whetstone);
+            for c in &g.master_deck {
+                let c = c.borrow();
+                match c.class {
+                    CardClass::Defend => assert_eq!(c.upgrade_count, 0),
+                    CardClass::Strike => assert_eq!(c.upgrade_count, 1),
+                    CardClass::SearingBlow => assert_eq!(c.upgrade_count, 2),
+                    _ => panic!(),
+                }
+            }
         }
     }
 }
