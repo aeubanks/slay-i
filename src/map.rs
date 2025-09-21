@@ -143,7 +143,7 @@ impl Map {
         }
         ret
     }
-    fn print(&self) {
+    pub fn print(&self) {
         print!("{}", self.str());
     }
     fn str(&self) -> String {

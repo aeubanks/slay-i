@@ -309,7 +309,7 @@ macro_rules! trigger_card {
 }
 
 pub struct Game {
-    // pub map: Map,
+    pub map: Map,
     pub player: Creature,
     pub relics: Vec<Relic>,
     pub potions: Vec<Option<Potion>>,
@@ -336,8 +336,10 @@ pub struct Game {
 impl Game {
     pub const MAX_HAND_SIZE: i32 = 10;
 
-    fn new(rng: Rand, master_deck: &[(CardClass, bool)], monsters: Vec<Monster>) -> Self {
+    fn new(mut rng: Rand, master_deck: &[(CardClass, bool)], monsters: Vec<Monster>) -> Self {
+        let map = Map::generate(&mut rng);
         let mut g = Self {
+            map,
             player: Creature::new("Ironclad", 80),
             relics: Default::default(),
             monsters: Default::default(),

@@ -267,6 +267,7 @@ fn main() {
         .add_relic(RelicClass::BurningBlood)
         .add_monster(JawWorm::new())
         .build();
+    game.map.print();
     loop {
         match game.result() {
             GameStatus::Defeat => {
