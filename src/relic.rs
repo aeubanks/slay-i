@@ -56,7 +56,7 @@ macro_rules! r {
 r!(
     BurningBlood => Starter,
 
-    Akabeko => Common, // TODO
+    Akabeko => Common,
     Anchor => Common,
     AncientTeaSet => Common, // TODO
     ArtOfWar => Common, // TODO
@@ -273,6 +273,7 @@ impl RelicClass {
             Vajra => Some(vajra),
             OddlySmoothStone => Some(oddly_smooth_stone),
             DuVuDoll => Some(du_vu_doll),
+            Akabeko => Some(akabeko),
             _ => None,
         }
     }
@@ -410,6 +411,14 @@ fn bag_of_marbles(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainStatusAllMonstersAction {
         status: Status::Vulnerable,
         amount: 1,
+    });
+}
+
+fn akabeko(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAction {
+        status: Status::Vigor,
+        amount: 8,
+        target: CreatureRef::player(),
     });
 }
 
@@ -1344,5 +1353,15 @@ mod tests {
         g.add_relic(RelicClass::Ectoplasm);
         g.make_move(Move::EndTurn);
         assert_eq!(g.energy, 9);
+    }
+
+    #[test]
+    fn test_akabeko() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Akabeko)
+            .build_combat();
+        assert_eq!(g.player.get_status(Status::Vigor), Some(8));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_status(Status::Vigor), Some(8));
     }
 }
