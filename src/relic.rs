@@ -68,7 +68,7 @@ r!(
     DreamCatcher => Common, // TODO
     HappyFlower => Common,
     JuzuBracelet => Common, // TODO
-    Lantern => Common, // TODO
+    Lantern => Common,
     MawBank => Common, // TODO
     MealTicket => Common, // TODO
     Nunchaku => Common, // TODO
@@ -263,6 +263,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             BloodVial => Some(blood_vial),
+            Lantern => Some(lantern),
             GremlinVisage => Some(gremlin_visage),
             MutagenicStrength => Some(mutagenic_strength),
             ClockworkSouvenir => Some(clockwork_souvenir),
@@ -368,6 +369,10 @@ fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
         target: CreatureRef::player(),
         amount: 2,
     });
+}
+
+fn lantern(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainEnergyAction(1));
 }
 
 fn gremlin_visage(_: &mut i32, queue: &mut ActionQueue) {
@@ -957,6 +962,17 @@ mod tests {
         g.remove_relic(RelicClass::SneckoEye);
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 5);
+    }
+
+    #[test]
+    fn test_lantern() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Lantern)
+            .build_combat();
+        g.set_debug();
+        assert_eq!(g.energy, 4);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 3);
     }
 
     #[test]
