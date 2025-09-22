@@ -63,7 +63,7 @@ r!(
     BagOfMarbles => Common,
     BagOfPrep => Common,
     BloodVial => Common,
-    BronzeScales => Common, // TODO
+    BronzeScales => Common,
     CentennialPuzzle => Common, // TODO
     CeramicFish => Common, // TODO
     DreamCatcher => Common, // TODO
@@ -271,6 +271,7 @@ impl RelicClass {
             ClockworkSouvenir => Some(clockwork_souvenir),
             RedMask => Some(red_mask),
             BagOfMarbles => Some(bag_of_marbles),
+            BronzeScales => Some(bronze_scales),
             Vajra => Some(vajra),
             OddlySmoothStone => Some(oddly_smooth_stone),
             DuVuDoll => Some(du_vu_doll),
@@ -438,6 +439,15 @@ fn akabeko(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainStatusAction {
         status: Status::Vigor,
         amount: 8,
+        target: CreatureRef::player(),
+    });
+}
+
+fn bronze_scales(_: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
+    queue.push_top(GainStatusAction {
+        status: Status::Thorns,
+        amount: 3,
         target: CreatureRef::player(),
     });
 }
@@ -1448,5 +1458,15 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(0));
+    }
+
+    #[test]
+    fn test_bronze_scales() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::BronzeScales)
+            .build_combat();
+        assert_eq!(g.player.get_status(Status::Thorns), Some(3));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_status(Status::Thorns), Some(3));
     }
 }
