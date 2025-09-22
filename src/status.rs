@@ -39,6 +39,7 @@ s!(
     LoseStrength => Debuff,
     GainStrength => Debuff,
 
+    Vigor => Buff,
     RegenPlayer => Buff,
     RegenMonster => Buff,
     Intangible => Buff,
@@ -1256,5 +1257,36 @@ mod tests {
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.energy, 0);
+    }
+
+    #[test]
+    fn test_vigor() {
+        {
+            let mut g = GameBuilder::default()
+                .add_player_status(Vigor, 2)
+                .build_combat();
+
+            let hp = g.monsters[0].creature.cur_hp;
+
+            g.play_card(CardClass::Defend, Some(CreatureRef::monster(0)));
+            assert_eq!(g.player.get_status(Status::Vigor), Some(2));
+
+            g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+            assert_eq!(g.monsters[0].creature.cur_hp, hp - 8);
+            assert_eq!(g.player.get_status(Status::Vigor), None);
+
+            g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+            assert_eq!(g.monsters[0].creature.cur_hp, hp - 8 - 6);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_player_status(Vigor, 10)
+                .build_combat();
+
+            let hp = g.monsters[0].creature.cur_hp;
+
+            g.play_card(CardClass::Pummel, Some(CreatureRef::monster(0)));
+            assert_eq!(g.monsters[0].creature.cur_hp, hp - (10 + 2) * 4);
+        }
     }
 }

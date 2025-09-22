@@ -146,12 +146,19 @@ impl Creature {
                     free: true,
                 });
             }
-            if self.has_status(Status::PenNib) && play.card.borrow().class.ty() == CardType::Attack
-            {
-                queue.push_bot(RemoveStatusAction {
-                    status: Status::PenNib,
-                    target: CreatureRef::player(),
-                });
+            if play.card.borrow().class.ty() == CardType::Attack {
+                if self.has_status(Status::PenNib) {
+                    queue.push_bot(RemoveStatusAction {
+                        status: Status::PenNib,
+                        target: CreatureRef::player(),
+                    });
+                }
+                if self.has_status(Status::Vigor) {
+                    queue.push_bot(RemoveStatusAction {
+                        status: Status::Vigor,
+                        target: CreatureRef::player(),
+                    });
+                }
             }
             if let Some(v) = self.get_status(Status::Rage)
                 && play.card.borrow().class.ty() == CardType::Attack

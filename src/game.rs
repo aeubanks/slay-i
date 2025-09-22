@@ -467,6 +467,9 @@ impl Game {
         if let Some(s) = source.get_status(Status::Strength) {
             amount_f += s as f32;
         }
+        if let Some(s) = source.get_status(Status::Vigor) {
+            amount_f += s as f32;
+        }
         if source.has_status(Status::Weak) {
             amount_f *= 0.75;
         }
