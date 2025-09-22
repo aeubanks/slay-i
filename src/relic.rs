@@ -4,10 +4,10 @@ use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction, gain_energy::GainEnergyAction, gain_gold::GainGoldAction,
-        gain_status::GainStatusAction, heal::HealAction,
-        increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
-        increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
-        upgrade_random_in_master::UpgradeRandomInMasterAction,
+        gain_status::GainStatusAction, gain_status_all_monsters::GainStatusAllMonstersAction,
+        heal::HealAction, increase_draw_per_turn::IncreaseDrawPerTurnAction,
+        increase_max_hp::IncreaseMaxHPAction, increase_potion_slots::IncreasePotionSlotsAction,
+        play_card::PlayCardAction, upgrade_random_in_master::UpgradeRandomInMasterAction,
     },
     cards::CardType,
     game::{CreatureRef, Rand},
@@ -59,7 +59,7 @@ r!(
     Anchor => Common,
     AncientTeaSet => Common, // TODO
     ArtOfWar => Common, // TODO
-    BagOfMarbles => Common, // TODO
+    BagOfMarbles => Common,
     BagOfPrep => Common,
     BloodVial => Common,
     BronzeScales => Common, // TODO
@@ -204,7 +204,7 @@ r!(
     NeowsLament => Event, // TODO
     NilryCodex => Event, // TODO
     OddMushroom => Event, // TODO
-    RedMask => Event, // TODO
+    RedMask => Event,
     SpiritPoop => Event, // TODO
     SsserpentHead => Event, // TODO
     WarpedTongs => Event, // TODO
@@ -267,6 +267,8 @@ impl RelicClass {
             GremlinVisage => Some(gremlin_visage),
             MutagenicStrength => Some(mutagenic_strength),
             ClockworkSouvenir => Some(clockwork_souvenir),
+            RedMask => Some(red_mask),
+            BagOfMarbles => Some(bag_of_marbles),
             _ => None,
         }
     }
@@ -374,6 +376,20 @@ fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
 
 fn lantern(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainEnergyAction(1));
+}
+
+fn red_mask(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAllMonstersAction {
+        status: Status::Weak,
+        amount: 1,
+    });
+}
+
+fn bag_of_marbles(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAllMonstersAction {
+        status: Status::Vulnerable,
+        amount: 1,
+    });
 }
 
 fn gremlin_visage(_: &mut i32, queue: &mut ActionQueue) {
@@ -1132,5 +1148,24 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_red_mask() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::RedMask)
+            .build_combat();
+        assert_eq!(g.monsters[0].creature.get_status(Status::Weak), Some(1));
+    }
+
+    #[test]
+    fn test_bag_of_marbles() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::BagOfMarbles)
+            .build_combat();
+        assert_eq!(
+            g.monsters[0].creature.get_status(Status::Vulnerable),
+            Some(1)
+        );
     }
 }
