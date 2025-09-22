@@ -136,7 +136,7 @@ r!(
     Mango => Rare,
     OldCoin => Rare,
     PeacePipe => Rare, // TODO
-    Pocketwatch => Rare, // TODO
+    Pocketwatch => Rare,
     PrayerWheel => Rare, // TODO
     Shovel => Rare, // TODO
     StoneCalendar => Rare, // TODO
@@ -249,6 +249,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             HornCleat | CaptainsWheel | ArtOfWar => Some(set_value_zero),
+            Pocketwatch => Some(set_value_99),
             SneckoEye => Some(snecko_eye_confused),
             _ => None,
         }
@@ -297,6 +298,7 @@ impl RelicClass {
             Nunchaku => Some(nunchaku),
             BirdFacedUrn => Some(bird_faced_urn),
             ArtOfWar => Some(art_of_war_card_played),
+            Pocketwatch => Some(pocketwatch_card_played),
             _ => None,
         }
     }
@@ -308,6 +310,7 @@ impl RelicClass {
             CaptainsWheel => Some(captains_wheel),
             HappyFlower => Some(happy_flower),
             ArtOfWar => Some(art_of_war),
+            Pocketwatch => Some(pocketwatch),
             _ => None,
         }
     }
@@ -320,6 +323,10 @@ fn set_value_zero(v: &mut i32, _: &mut ActionQueue) {
     *v = 0;
 }
 
+fn set_value_99(v: &mut i32, _: &mut ActionQueue) {
+    *v = 99;
+}
+
 fn inc_wrap(v: &mut i32, max: i32) -> bool {
     *v += 1;
     if *v == max {
@@ -328,6 +335,17 @@ fn inc_wrap(v: &mut i32, max: i32) -> bool {
     } else {
         false
     }
+}
+
+fn pocketwatch_card_played(v: &mut i32, _: &mut ActionQueue, _: &PlayCardAction) {
+    *v += 1;
+}
+
+fn pocketwatch(v: &mut i32, queue: &mut ActionQueue) {
+    if *v <= 3 {
+        queue.push_bot(DrawAction(3));
+    }
+    *v = 0;
 }
 
 fn kunai(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
@@ -1400,5 +1418,35 @@ mod tests {
         assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(0));
         g.make_move(Move::EndTurn);
         assert_eq!(g.energy, 3);
+    }
+
+    #[test]
+    fn test_pocketwatch() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Strike, 10)
+            .add_relic(RelicClass::Pocketwatch)
+            .build_combat();
+
+        assert_eq!(g.hand.len(), 5);
+        assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(0));
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 8);
+
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(3));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 8);
+
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(4));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 5);
+        assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(0));
     }
 }
