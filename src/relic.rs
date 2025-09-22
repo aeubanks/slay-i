@@ -72,7 +72,7 @@ r!(
     Lantern => Common,
     MawBank => Common, // TODO
     MealTicket => Common, // TODO
-    Nunchaku => Common, // TODO
+    Nunchaku => Common,
     OddlySmoothStone => Common,
     Omamori => Common, // TODO
     Orichalcum => Common, // TODO
@@ -81,7 +81,7 @@ r!(
     PreservedInsect => Common, // TODO
     RegalPillow => Common, // TODO
     SmilingMask => Common, // TODO
-    Strawberry => Common, // TODO
+    Strawberry => Common,
     Boot => Common, // TODO
     TinyChest => Common, // TODO
     ToyOrnithopter => Common, // TODO
@@ -192,7 +192,7 @@ r!(
     RunicCube => Boss, // TODO
 
     BloodyIdol => Event, // TODO
-    CultistHeadpiece => Event, // TODO
+    CultistHeadpiece => Event,
     Enchiridion => Event, // TODO
     FaceOfCleric => Event, // TODO
     GoldenIdol => Event, // TODO
