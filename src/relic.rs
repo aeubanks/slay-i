@@ -122,7 +122,7 @@ r!(
     SelfFormingClay => Uncommon, // TODO
 
     BirdFacedUrn => Rare,
-    Calipers => Rare, // TODO
+    Calipers => Rare,
     CaptainsWheel => Rare,
     DeadBranch => Rare, // TODO
     DuVuDoll => Rare,
@@ -1317,5 +1317,17 @@ mod tests {
         assert_eq!(g.player.cur_hp, hp);
         g.play_card(CardClass::Inflame, Some(CreatureRef::monster(0)));
         assert_eq!(g.player.cur_hp, hp + 2);
+    }
+
+    #[test]
+    fn test_calipers() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Calipers)
+            .build_combat();
+        g.player.block = 20;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.block, 5);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.block, 0);
     }
 }

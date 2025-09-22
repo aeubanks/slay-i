@@ -653,7 +653,8 @@ impl Game {
 
                 self.num_cards_played_this_turn = 0;
 
-                self.player.start_of_turn_lose_block();
+                self.player
+                    .start_of_turn_lose_block(self.has_relic(RelicClass::Calipers));
 
                 if self.turn == 0 {
                     self.trigger_relics_at_combat_start_pre_draw();
@@ -839,7 +840,7 @@ impl Game {
             if !self.monsters[i].creature.is_alive() {
                 continue;
             }
-            self.monsters[i].creature.start_of_turn_lose_block();
+            self.monsters[i].creature.start_of_turn_lose_block(false);
             self.monsters[i]
                 .creature
                 .trigger_statuses_turn_begin(CreatureRef::monster(i), &mut self.action_queue);

@@ -80,11 +80,15 @@ impl Creature {
         self.statuses.iter()
     }
 
-    pub fn start_of_turn_lose_block(&mut self) {
+    pub fn start_of_turn_lose_block(&mut self, has_calipers: bool) {
         if self.has_status(Status::Barricade) {
             return;
         }
-        self.block = 0;
+        if has_calipers {
+            self.block = 0.max(self.block - 15);
+        } else {
+            self.block = 0;
+        }
     }
 
     pub fn trigger_statuses_on_card_played(
