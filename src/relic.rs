@@ -121,7 +121,7 @@ r!(
     PaperPhrog => Uncommon,
     SelfFormingClay => Uncommon, // TODO
 
-    BirdFacedUrn => Rare, // TODO
+    BirdFacedUrn => Rare,
     Calipers => Rare, // TODO
     CaptainsWheel => Rare,
     DeadBranch => Rare, // TODO
@@ -294,6 +294,7 @@ impl RelicClass {
             LetterOpener => Some(letter_opener),
             OrnamentalFan => Some(ornamental_fan),
             Nunchaku => Some(nunchaku),
+            BirdFacedUrn => Some(bird_faced_urn),
             _ => None,
         }
     }
@@ -361,6 +362,15 @@ fn ornamental_fan(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
 fn nunchaku(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
     if play.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 10) {
         queue.push_bot(GainEnergyAction(1));
+    }
+}
+
+fn bird_faced_urn(_: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+    if play.card.borrow().class.ty() == CardType::Power {
+        queue.push_bot(HealAction {
+            target: CreatureRef::player(),
+            amount: 2,
+        });
     }
 }
 
@@ -1295,5 +1305,17 @@ mod tests {
         }
         g.make_move(Move::EndTurn);
         assert_eq!(g.get_relic_value(RelicClass::Nunchaku), Some(4));
+    }
+
+    #[test]
+    fn test_bird_faced_urn() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::BirdFacedUrn)
+            .build_combat();
+        let hp = g.player.cur_hp;
+        g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.cur_hp, hp);
+        g.play_card(CardClass::Inflame, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.cur_hp, hp + 2);
     }
 }
