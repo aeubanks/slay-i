@@ -66,7 +66,7 @@ r!(
     CentennialPuzzle => Common, // TODO
     CeramicFish => Common, // TODO
     DreamCatcher => Common, // TODO
-    HappyFlower => Common, // TODO
+    HappyFlower => Common,
     JuzuBracelet => Common, // TODO
     Lantern => Common, // TODO
     MawBank => Common, // TODO
@@ -295,6 +295,7 @@ impl RelicClass {
             Kunai | Shruiken | LetterOpener | OrnamentalFan => Some(set_value_zero),
             HornCleat => Some(horn_cleat),
             CaptainsWheel => Some(captains_wheel),
+            HappyFlower => Some(happy_flower),
             _ => None,
         }
     }
@@ -417,6 +418,12 @@ fn captains_wheel(v: &mut i32, queue: &mut ActionQueue) {
     *v += 1;
     if *v == 3 {
         queue.push_bot(BlockAction::player_flat_amount(18));
+    }
+}
+
+fn happy_flower(v: &mut i32, queue: &mut ActionQueue) {
+    if inc_wrap(v, 3) {
+        queue.push_bot(GainEnergyAction(1));
     }
 }
 
@@ -950,6 +957,24 @@ mod tests {
         g.remove_relic(RelicClass::SneckoEye);
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 5);
+    }
+
+    #[test]
+    fn test_happy_flower() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::HappyFlower)
+            .build_combat();
+        assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(1));
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(2));
+        assert_eq!(g.energy, 3);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(0));
+        assert_eq!(g.energy, 4);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(1));
+        assert_eq!(g.energy, 3);
     }
 
     #[test]
