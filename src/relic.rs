@@ -3,11 +3,12 @@ use lazy_static::lazy_static;
 use crate::{
     actions::{
         block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-        draw::DrawAction, gain_energy::GainEnergyAction, gain_gold::GainGoldAction,
-        gain_status::GainStatusAction, gain_status_all_monsters::GainStatusAllMonstersAction,
-        heal::HealAction, increase_draw_per_turn::IncreaseDrawPerTurnAction,
-        increase_max_hp::IncreaseMaxHPAction, increase_potion_slots::IncreasePotionSlotsAction,
-        play_card::PlayCardAction, upgrade_random_in_master::UpgradeRandomInMasterAction,
+        draw::DrawAction, duvu::DuvuAction, gain_energy::GainEnergyAction,
+        gain_gold::GainGoldAction, gain_status::GainStatusAction,
+        gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
+        increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
+        increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
+        upgrade_random_in_master::UpgradeRandomInMasterAction,
     },
     cards::CardType,
     game::{CreatureRef, Rand},
@@ -72,7 +73,7 @@ r!(
     MawBank => Common, // TODO
     MealTicket => Common, // TODO
     Nunchaku => Common, // TODO
-    OddlySmoothStone => Common, // TODO
+    OddlySmoothStone => Common,
     Omamori => Common, // TODO
     Orichalcum => Common, // TODO
     PenNib => Common, // TODO
@@ -84,7 +85,7 @@ r!(
     Boot => Common, // TODO
     TinyChest => Common, // TODO
     ToyOrnithopter => Common, // TODO
-    Vajra => Common, // TODO
+    Vajra => Common,
     WarPaint => Common,
     Whetstone => Common,
     RedSkull => Common, // TODO
@@ -124,7 +125,7 @@ r!(
     Calipers => Rare, // TODO
     CaptainsWheel => Rare,
     DeadBranch => Rare, // TODO
-    DuVuDoll => Rare, // TODO
+    DuVuDoll => Rare,
     FossilizedHelix => Rare, // TODO
     GamblingChip => Rare, // TODO
     Ginger => Rare, // TODO
@@ -269,6 +270,9 @@ impl RelicClass {
             ClockworkSouvenir => Some(clockwork_souvenir),
             RedMask => Some(red_mask),
             BagOfMarbles => Some(bag_of_marbles),
+            Vajra => Some(vajra),
+            OddlySmoothStone => Some(oddly_smooth_stone),
+            DuVuDoll => Some(du_vu_doll),
             _ => None,
         }
     }
@@ -389,6 +393,26 @@ fn bag_of_marbles(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainStatusAllMonstersAction {
         status: Status::Vulnerable,
         amount: 1,
+    });
+}
+
+fn du_vu_doll(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(DuvuAction());
+}
+
+fn vajra(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAction {
+        status: Status::Strength,
+        amount: 1,
+        target: CreatureRef::player(),
+    });
+}
+
+fn oddly_smooth_stone(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAction {
+        status: Status::Dexterity,
+        amount: 1,
+        target: CreatureRef::player(),
     });
 }
 
@@ -1167,5 +1191,61 @@ mod tests {
             g.monsters[0].creature.get_status(Status::Vulnerable),
             Some(1)
         );
+    }
+
+    #[test]
+    fn test_duvu_doll() {
+        assert_eq!(
+            GameBuilder::default()
+                .add_relic(RelicClass::DuVuDoll)
+                .build_combat()
+                .player
+                .get_status(Status::Strength),
+            None
+        );
+        assert_eq!(
+            GameBuilder::default()
+                .add_card(CardClass::Strike)
+                .add_relic(RelicClass::DuVuDoll)
+                .build_combat()
+                .player
+                .get_status(Status::Strength),
+            None
+        );
+        assert_eq!(
+            GameBuilder::default()
+                .add_card(CardClass::AscendersBane)
+                .add_relic(RelicClass::DuVuDoll)
+                .build_combat()
+                .player
+                .get_status(Status::Strength),
+            Some(1)
+        );
+        assert_eq!(
+            GameBuilder::default()
+                .add_card(CardClass::AscendersBane)
+                .add_card(CardClass::CurseOfTheBell)
+                .add_relic(RelicClass::DuVuDoll)
+                .build_combat()
+                .player
+                .get_status(Status::Strength),
+            Some(2)
+        );
+    }
+
+    #[test]
+    fn test_vajra() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::Vajra)
+            .build_combat();
+        assert_eq!(g.player.get_status(Status::Strength), Some(1));
+    }
+
+    #[test]
+    fn test_oddly_smooth_stone() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::OddlySmoothStone)
+            .build_combat();
+        assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
     }
 }

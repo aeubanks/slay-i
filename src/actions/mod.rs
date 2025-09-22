@@ -25,6 +25,7 @@ pub mod double_strength;
 pub mod draw;
 pub mod dropkick;
 pub mod dual_wield;
+pub mod duvu;
 pub mod end_of_turn_discard;
 pub mod enlightenment;
 pub mod exhaust_card;
