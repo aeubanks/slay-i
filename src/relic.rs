@@ -59,7 +59,7 @@ r!(
     Akabeko => Common,
     Anchor => Common,
     AncientTeaSet => Common, // TODO
-    ArtOfWar => Common, // TODO
+    ArtOfWar => Common,
     BagOfMarbles => Common,
     BagOfPrep => Common,
     BloodVial => Common,
@@ -248,7 +248,7 @@ impl RelicClass {
     pub fn at_pre_combat(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
-            HornCleat | CaptainsWheel => Some(set_value_zero),
+            HornCleat | CaptainsWheel | ArtOfWar => Some(set_value_zero),
             SneckoEye => Some(snecko_eye_confused),
             _ => None,
         }
@@ -296,6 +296,7 @@ impl RelicClass {
             OrnamentalFan => Some(ornamental_fan),
             Nunchaku => Some(nunchaku),
             BirdFacedUrn => Some(bird_faced_urn),
+            ArtOfWar => Some(art_of_war_card_played),
             _ => None,
         }
     }
@@ -306,6 +307,7 @@ impl RelicClass {
             HornCleat => Some(horn_cleat),
             CaptainsWheel => Some(captains_wheel),
             HappyFlower => Some(happy_flower),
+            ArtOfWar => Some(art_of_war),
             _ => None,
         }
     }
@@ -499,6 +501,19 @@ fn happy_flower(v: &mut i32, queue: &mut ActionQueue) {
     if inc_wrap(v, 3) {
         queue.push_bot(GainEnergyAction(1));
     }
+}
+
+fn art_of_war_card_played(v: &mut i32, _: &mut ActionQueue, play: &PlayCardAction) {
+    if play.card.borrow().class.ty() == CardType::Attack {
+        *v = 0;
+    }
+}
+
+fn art_of_war(v: &mut i32, queue: &mut ActionQueue) {
+    if *v == 1 {
+        queue.push_bot(GainEnergyAction(1));
+    }
+    *v = 1;
 }
 
 fn blue_candle(_: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
@@ -1363,5 +1378,27 @@ mod tests {
         assert_eq!(g.player.get_status(Status::Vigor), Some(8));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.get_status(Status::Vigor), Some(8));
+    }
+
+    #[test]
+    fn test_art_of_war() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::ArtOfWar)
+            .build_combat();
+        assert_eq!(g.energy, 3);
+        assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 4);
+        assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(1));
+        g.play_card(CardClass::Inflame, None);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 4);
+        assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(1));
+        g.play_card(CardClass::Thunderclap, None);
+        assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(0));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 3);
     }
 }
