@@ -293,6 +293,7 @@ impl RelicClass {
             InkBottle => Some(ink_bottle),
             LetterOpener => Some(letter_opener),
             OrnamentalFan => Some(ornamental_fan),
+            Nunchaku => Some(nunchaku),
             _ => None,
         }
     }
@@ -354,6 +355,12 @@ fn ink_bottle(v: &mut i32, queue: &mut ActionQueue, _: &PlayCardAction) {
 fn ornamental_fan(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
     if play.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 3) {
         queue.push_bot(BlockAction::player_flat_amount(4));
+    }
+}
+
+fn nunchaku(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+    if play.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 10) {
+        queue.push_bot(GainEnergyAction(1));
     }
 }
 
@@ -1270,5 +1277,23 @@ mod tests {
         let hp = g.monsters[0].creature.cur_hp;
         g.play_card_upgraded(CardClass::Bash, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 17);
+    }
+
+    #[test]
+    fn test_nunchaku() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Nunchaku)
+            .build_combat();
+        for i in 1..15 {
+            g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+            assert_eq!(g.get_relic_value(RelicClass::Nunchaku), Some(i % 10));
+            if i < 10 {
+                assert_eq!(g.energy, 3);
+            } else {
+                assert_eq!(g.energy, 4);
+            }
+        }
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::Nunchaku), Some(4));
     }
 }
