@@ -130,7 +130,7 @@ r!(
     GamblingChip => Rare, // TODO
     Ginger => Rare, // TODO
     Girya => Rare, // TODO
-    IceCream => Rare, // TODO
+    IceCream => Rare,
     IncenseBurner => Rare, // TODO
     LizardTail => Rare, // TODO
     Mango => Rare,
@@ -1329,5 +1329,20 @@ mod tests {
         assert_eq!(g.player.block, 5);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.block, 0);
+    }
+
+    #[test]
+    fn test_ice_cream() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::IceCream)
+            .build_combat();
+        assert_eq!(g.energy, 3);
+        g.play_card(CardClass::Defend, None);
+        assert_eq!(g.energy, 2);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 5);
+        g.add_relic(RelicClass::Ectoplasm);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 9);
     }
 }

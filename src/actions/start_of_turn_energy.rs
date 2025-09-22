@@ -1,4 +1,9 @@
-use crate::{action::Action, actions::set_energy::SetEnergyAction, game::Game, relic::RelicClass};
+use crate::{
+    action::Action,
+    actions::{gain_energy::GainEnergyAction, set_energy::SetEnergyAction},
+    game::Game,
+    relic::RelicClass,
+};
 
 pub struct StartOfTurnEnergyAction();
 
@@ -19,7 +24,11 @@ impl Action for StartOfTurnEnergyAction {
         .into_iter()
         .filter(|r| g.has_relic(*r))
         .count() as i32;
-        g.action_queue.push_top(SetEnergyAction(amount));
+        if g.has_relic(RelicClass::IceCream) {
+            g.action_queue.push_top(GainEnergyAction(amount));
+        } else {
+            g.action_queue.push_top(SetEnergyAction(amount));
+        }
     }
 }
 
