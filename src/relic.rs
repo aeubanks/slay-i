@@ -118,7 +118,7 @@ r!(
     TheCourier => Uncommon, // TODO
     ToxicEgg => Uncommon, // TODO
     WhiteBeastStatue => Uncommon, // TODO
-    PaperPhrog => Uncommon, // TODO
+    PaperPhrog => Uncommon,
     SelfFormingClay => Uncommon, // TODO
 
     BirdFacedUrn => Rare, // TODO
@@ -204,7 +204,7 @@ r!(
     Necronomicon => Event, // TODO
     NeowsLament => Event, // TODO
     NilryCodex => Event, // TODO
-    OddMushroom => Event, // TODO
+    OddMushroom => Event,
     RedMask => Event,
     SpiritPoop => Event, // TODO
     SsserpentHead => Event, // TODO
@@ -613,7 +613,7 @@ mod tests {
         actions::block::BlockAction,
         cards::CardClass,
         game::{GameBuilder, Move},
-        monsters::test::NoopMonster,
+        monsters::test::{AttackMonster, NoopMonster},
         potion::Potion,
         status::Status,
     };
@@ -1247,5 +1247,28 @@ mod tests {
             .add_relic(RelicClass::OddlySmoothStone)
             .build_combat();
         assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
+    }
+
+    #[test]
+    fn test_odd_mushroom() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::OddMushroom)
+            .add_player_status(Status::Vulnerable, 5)
+            .add_monster(AttackMonster::new(10))
+            .build_combat();
+        let hp = g.player.cur_hp;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 12);
+    }
+
+    #[test]
+    fn test_paper_phrog() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::PaperPhrog)
+            .add_monster_status(Status::Vulnerable, 5)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card_upgraded(CardClass::Bash, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 17);
     }
 }

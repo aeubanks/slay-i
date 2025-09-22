@@ -455,10 +455,15 @@ impl Game {
         rand_slice(&mut self.rng, &alive)
     }
 
-    fn calculate_damage(&self, amount: i32, source: CreatureRef, target: CreatureRef) -> i32 {
+    fn calculate_damage(
+        &self,
+        amount: i32,
+        source_ref: CreatureRef,
+        target_ref: CreatureRef,
+    ) -> i32 {
         let mut amount_f = amount as f32;
-        let source = self.get_creature(source);
-        let target = self.get_creature(target);
+        let source = self.get_creature(source_ref);
+        let target = self.get_creature(target_ref);
         if let Some(s) = source.get_status(Status::Strength) {
             amount_f += s as f32;
         }
@@ -469,7 +474,19 @@ impl Game {
             amount_f *= 2.0;
         }
         if target.has_status(Status::Vulnerable) {
-            amount_f *= 1.5;
+            if target_ref.is_player() {
+                if self.has_relic(RelicClass::OddMushroom) {
+                    amount_f *= 1.25;
+                } else {
+                    amount_f *= 1.5;
+                }
+            } else {
+                if self.has_relic(RelicClass::PaperPhrog) {
+                    amount_f *= 1.75;
+                } else {
+                    amount_f *= 1.5;
+                }
+            }
         }
         if target.has_status(Status::Intangible) {
             amount_f = amount_f.min(1.0);
