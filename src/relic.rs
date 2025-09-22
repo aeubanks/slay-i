@@ -365,6 +365,7 @@ fn burning_blood(_: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
     queue.push_top(HealAction {
         target: CreatureRef::player(),
         amount: 2,
@@ -384,6 +385,7 @@ fn gremlin_visage(_: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn clockwork_souvenir(_: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
     queue.push_top(GainStatusAction {
         status: Status::Artifact,
         amount: 1,
@@ -392,6 +394,7 @@ fn clockwork_souvenir(_: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn mutagenic_strength(_: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
     queue.push_top(GainStatusAction {
         status: Status::LoseStrength,
         amount: 3,
