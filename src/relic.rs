@@ -109,12 +109,12 @@ r!(
     MummifiedHand => Uncommon, // TODO
     OrnamentalFan => Uncommon,
     Pantograph => Uncommon, // TODO
-    Pear => Uncommon, // TODO
+    Pear => Uncommon,
     QuestionCard => Uncommon, // TODO
     Shruiken => Uncommon,
     SingingBowl => Uncommon, // TODO
     StrikeDummy => Uncommon,
-    Sundial => Uncommon, // TODO
+    Sundial => Uncommon,
     TheCourier => Uncommon, // TODO
     ToxicEgg => Uncommon, // TODO
     WhiteBeastStatue => Uncommon, // TODO
@@ -133,8 +133,8 @@ r!(
     IceCream => Rare, // TODO
     IncenseBurner => Rare, // TODO
     LizardTail => Rare, // TODO
-    Mango => Rare, // TODO
-    OldCoin => Rare, // TODO
+    Mango => Rare,
+    OldCoin => Rare,
     PeacePipe => Rare, // TODO
     Pocketwatch => Rare, // TODO
     PrayerWheel => Rare, // TODO
@@ -156,7 +156,7 @@ r!(
     DollysMirror => Shop, // TODO
     FrozenEye => Shop, // TODO
     HandDrill => Shop, // TODO
-    LeesWaffle => Shop, // TODO
+    LeesWaffle => Shop,
     MedicalKit => Shop,
     MembershipCard => Shop, // TODO
     OrangePellets => Shop, // TODO
@@ -164,7 +164,7 @@ r!(
     // PrismaticShard => Shop, // not supported
     SlingOfCourage => Shop, // TODO
     StrangeSpoon => Shop, // TODO
-    TheAbacus => Shop, // TODO
+    TheAbacus => Shop,
     Toolbox => Shop, // TODO
     Brimstone => Shop, // TODO
 
@@ -206,7 +206,7 @@ r!(
     NilryCodex => Event, // TODO
     OddMushroom => Event,
     RedMask => Event,
-    SpiritPoop => Event, // TODO
+    SpiritPoop => Event,
     SsserpentHead => Event, // TODO
     WarpedTongs => Event, // TODO
 );
