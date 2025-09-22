@@ -74,7 +74,7 @@ r!(
     MealTicket => Common, // TODO
     Nunchaku => Common,
     OddlySmoothStone => Common,
-    Omamori => Common, // TODO
+    Omamori => Common,
     Orichalcum => Common, // TODO
     PenNib => Common, // TODO
     PotionBelt => Common, // TODO
@@ -218,6 +218,7 @@ impl RelicClass {
     pub fn on_equip(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
+            Omamori => Some(set_value_2),
             WarPaint => Some(war_paint),
             Whetstone => Some(whetstone),
             SneckoEye => Some(snecko_eye_equip),
@@ -322,6 +323,10 @@ impl RelicClass {
 
 fn set_value_zero(v: &mut i32, _: &mut ActionQueue) {
     *v = 0;
+}
+
+fn set_value_2(v: &mut i32, _: &mut ActionQueue) {
+    *v = 2;
 }
 
 fn set_value_99(v: &mut i32, _: &mut ActionQueue) {
@@ -625,6 +630,9 @@ impl Relic {
     }
     pub fn get_value(&self) -> i32 {
         self.value
+    }
+    pub fn set_value(&mut self, v: i32) {
+        self.value = v;
     }
 }
 
@@ -1468,5 +1476,29 @@ mod tests {
         assert_eq!(g.player.get_status(Status::Thorns), Some(3));
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.get_status(Status::Thorns), Some(3));
+    }
+
+    #[test]
+    fn test_omamori() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Omamori)
+            .build_combat();
+        assert_eq!(g.get_relic_value(RelicClass::Omamori), Some(2));
+
+        g.add_card_to_master_deck(CardClass::Anger);
+        assert_eq!(g.master_deck.len(), 1);
+        assert_eq!(g.get_relic_value(RelicClass::Omamori), Some(2));
+
+        g.add_card_to_master_deck(CardClass::CurseOfTheBell);
+        assert_eq!(g.master_deck.len(), 1);
+        assert_eq!(g.get_relic_value(RelicClass::Omamori), Some(1));
+
+        g.add_card_to_master_deck(CardClass::Parasite);
+        assert_eq!(g.master_deck.len(), 1);
+        assert_eq!(g.get_relic_value(RelicClass::Omamori), Some(0));
+
+        g.add_card_to_master_deck(CardClass::Parasite);
+        assert_eq!(g.master_deck.len(), 2);
+        assert_eq!(g.get_relic_value(RelicClass::Omamori), Some(0));
     }
 }

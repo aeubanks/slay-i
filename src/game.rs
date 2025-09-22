@@ -892,6 +892,13 @@ impl Game {
     }
 
     pub fn add_card_to_master_deck(&mut self, class: CardClass) {
+        if class.ty() == CardType::Curse
+            && let Some(v) = self.get_relic_value(RelicClass::Omamori)
+            && v > 0
+        {
+            self.set_relic_value(RelicClass::Omamori, v - 1);
+            return;
+        }
         let c = self.new_card(class);
         self.master_deck.push(c);
     }
@@ -1515,12 +1522,18 @@ impl Game {
     pub fn has_relic(&self, class: RelicClass) -> bool {
         self.relics.iter().any(|r| r.get_class() == class)
     }
-    #[cfg(test)]
     pub fn get_relic_value(&self, class: RelicClass) -> Option<i32> {
         self.relics
             .iter()
             .find(|r| r.get_class() == class)
             .map(|r| r.get_value())
+    }
+    pub fn set_relic_value(&mut self, class: RelicClass, v: i32) {
+        self.relics
+            .iter_mut()
+            .find(|r| r.get_class() == class)
+            .unwrap()
+            .set_value(v);
     }
     trigger!(trigger_relics_on_shuffle, on_shuffle);
     trigger!(trigger_relics_at_pre_combat, at_pre_combat);
