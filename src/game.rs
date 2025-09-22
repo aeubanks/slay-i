@@ -636,7 +636,6 @@ impl Game {
 
                 self.num_cards_played_this_turn = 0;
 
-                self.action_queue.push_top(StartOfTurnEnergyAction());
                 self.player.start_of_turn_lose_block();
 
                 if self.turn == 0 {
@@ -656,6 +655,8 @@ impl Game {
                     CreatureRef::player(),
                     &mut self.action_queue,
                 );
+
+                self.action_queue.push_top(StartOfTurnEnergyAction());
 
                 self.run_actions_until_empty();
 
