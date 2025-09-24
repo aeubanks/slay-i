@@ -439,18 +439,12 @@ impl Game {
             amount_f *= 2.0;
         }
         if target.has_status(Status::Vulnerable) {
-            if target_ref.is_player() {
-                if self.has_relic(RelicClass::OddMushroom) {
-                    amount_f *= 1.25;
-                } else {
-                    amount_f *= 1.5;
-                }
+            if target_ref.is_player() && self.has_relic(RelicClass::OddMushroom) {
+                amount_f *= 1.25;
+            } else if !target_ref.is_player() && self.has_relic(RelicClass::PaperPhrog) {
+                amount_f *= 1.75;
             } else {
-                if self.has_relic(RelicClass::PaperPhrog) {
-                    amount_f *= 1.75;
-                } else {
-                    amount_f *= 1.5;
-                }
+                amount_f *= 1.5;
             }
         }
         if target.has_status(Status::Intangible) {
