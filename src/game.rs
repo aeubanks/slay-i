@@ -22,6 +22,7 @@ use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade::UpgradeAction;
+use crate::actions::use_potion::UsePotionAction;
 use crate::blessings::Blessing;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
@@ -1096,7 +1097,10 @@ impl Game {
             } => {
                 assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
                 let p = self.take_potion(potion_index);
-                self.throw_potion(p, target.map(CreatureRef::monster));
+                self.action_queue.push_bot(UsePotionAction {
+                    potion: p,
+                    target: target.map(CreatureRef::monster),
+                });
             }
             Move::DiscardPotion { potion_index } => {
                 assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
@@ -1319,9 +1323,10 @@ impl Game {
         self.run_actions_until_empty();
     }
 
-    pub fn throw_potion(&mut self, p: Potion, target: Option<CreatureRef>) {
-        let is_sacred = self.has_relic(RelicClass::SacredBark);
-        p.behavior()(is_sacred, target, self);
+    #[cfg(test)]
+    pub fn throw_potion(&mut self, potion: Potion, target: Option<CreatureRef>) {
+        self.action_queue
+            .push_bot(UsePotionAction { potion, target });
         self.run();
     }
 
