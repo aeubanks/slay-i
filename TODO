@@ -9,3 +9,4 @@ test enemy ritual
 memories in actual game asks for N cards regardless of hand size
 implement remaining potions
 magic flower rounds to nearest, not down
+test combust kill + burn in hand
