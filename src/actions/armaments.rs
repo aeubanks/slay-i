@@ -1,7 +1,4 @@
-use crate::{
-    action::Action,
-    game::{Game, GameState},
-};
+use crate::{action::Action, game::Game, state::GameState};
 
 pub struct ArmamentsAction();
 
@@ -15,7 +12,7 @@ impl Action for ArmamentsAction {
         match upgradable.len() {
             0 => {}
             1 => upgradable[0].borrow_mut().upgrade(),
-            _ => game.state = GameState::Armaments,
+            _ => game.state.push_state(GameState::Armaments),
         }
     }
 }

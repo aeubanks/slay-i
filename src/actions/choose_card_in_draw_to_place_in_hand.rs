@@ -1,8 +1,6 @@
 use crate::{
-    action::Action,
-    actions::place_card_in_hand::PlaceCardInHandAction,
-    cards::CardType,
-    game::{Game, GameState},
+    action::Action, actions::place_card_in_hand::PlaceCardInHandAction, cards::CardType,
+    game::Game, state::GameState,
 };
 
 pub struct ChooseCardInDrawToPlaceInHandAction(pub CardType);
@@ -33,7 +31,7 @@ impl Action for ChooseCardInDrawToPlaceInHandAction {
             Count::One(i) => game
                 .action_queue
                 .push_top(PlaceCardInHandAction(game.draw_pile.remove(i))),
-            Count::Many => game.state = GameState::FetchCardFromDraw(self.0),
+            Count::Many => game.state.push_state(GameState::FetchCardFromDraw(self.0)),
         }
     }
 }

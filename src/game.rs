@@ -33,6 +33,7 @@ use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{Relic, RelicClass, new_relic};
 use crate::rng::rand_slice;
+use crate::state::{GameState, GameStateManager};
 use crate::status::Status;
 use crate::{assert_matches, assert_not_matches};
 use rand::seq::SliceRandom;
@@ -139,47 +140,6 @@ pub enum GameStatus {
     Memories { num_cards_remaining: i32 },
 }
 
-#[derive(Debug)]
-pub enum GameState {
-    Blessing,
-    BlessingTransform,
-    RollCombat,
-    CombatBegin,
-    PlayerTurnBegin,
-    PlayerTurn,
-    PlayerTurnEnd,
-    MonsterTurn,
-    EndOfRound,
-    Armaments,
-    Memories {
-        num_cards_remaining: i32,
-        cards_to_memories: Vec<CardRef>,
-    },
-    ExhaustOneCardInHand,
-    ExhaustCardsInHand {
-        num_cards_remaining: i32,
-        cards_to_exhaust: Vec<CardRef>,
-    },
-    Gamble {
-        cards_to_gamble: Vec<CardRef>,
-    },
-    PlaceCardInHandOnTopOfDraw,
-    PlaceCardInDiscardOnTopOfDraw,
-    Exhume,
-    DualWield(i32),
-    FetchCardFromDraw(CardType),
-    ForethoughtAny {
-        cards_to_forethought: Vec<CardRef>,
-    },
-    ForethoughtOne,
-    Discovery {
-        classes: Vec<CardClass>,
-        amount: i32,
-    },
-    Defeat,
-    Victory,
-}
-
 #[derive(Default)]
 #[allow(unused)]
 pub struct GameBuilder {
@@ -259,9 +219,11 @@ impl GameBuilder {
     }
     #[cfg(test)]
     pub fn build_combat(self) -> Game {
+        use crate::state::GameState;
+
         let monster_statuses = self.monster_statuses.clone();
         let mut g = self.build();
-        g.state = GameState::RollCombat;
+        g.state.set_state(GameState::RollCombat);
         g.run();
         for m in &mut g.monsters {
             for (&k, &v) in &monster_statuses {
@@ -329,7 +291,7 @@ pub struct Game {
     pub num_cards_played_this_turn: i32,
     pub combat_monsters_queue: Vec<Vec<Monster>>,
     pub rng: Rand,
-    pub state: GameState,
+    pub state: GameStateManager,
     next_id: u32,
 }
 
@@ -359,7 +321,7 @@ impl Game {
             num_cards_played_this_turn: 0,
             combat_monsters_queue: vec![monsters],
             rng,
-            state: GameState::Blessing,
+            state: GameStateManager::new(GameState::Blessing),
             next_id: 1,
         };
 
@@ -620,13 +582,13 @@ impl Game {
     }
 
     fn run_once(&mut self) {
-        match self.state {
+        match self.state.cur_state() {
             GameState::RollCombat => {
                 if let Some(m) = self.combat_monsters_queue.pop() {
                     self.monsters = m;
-                    self.state = GameState::CombatBegin;
+                    self.state.set_state(GameState::CombatBegin);
                 } else {
-                    self.state = GameState::Victory;
+                    self.state.set_state(GameState::Victory);
                 }
             }
             GameState::CombatBegin => {
@@ -649,7 +611,7 @@ impl Game {
                 }
                 self.run_actions_until_empty();
 
-                self.state = GameState::PlayerTurnBegin;
+                self.state.set_state(GameState::PlayerTurnBegin);
             }
             GameState::PlayerTurnBegin => {
                 self.monsters_roll_move();
@@ -681,14 +643,14 @@ impl Game {
 
                 self.run_actions_until_empty();
 
-                self.state = GameState::PlayerTurn;
+                self.state.set_state(GameState::PlayerTurn);
             }
             GameState::PlayerTurnEnd => {
                 self.player_end_of_turn();
                 if self.finished() {
                     return;
                 }
-                self.state = GameState::MonsterTurn;
+                self.state.set_state(GameState::MonsterTurn);
             }
             GameState::MonsterTurn => {
                 self.monsters_pre_turn();
@@ -706,7 +668,7 @@ impl Game {
                 if self.finished() {
                     return;
                 }
-                self.state = GameState::EndOfRound;
+                self.state.set_state(GameState::EndOfRound);
             }
             GameState::EndOfRound => {
                 self.player
@@ -718,7 +680,7 @@ impl Game {
                     );
                 }
                 self.run_actions_until_empty();
-                self.state = GameState::PlayerTurnBegin;
+                self.state.set_state(GameState::PlayerTurnBegin);
                 self.turn += 1;
             }
             GameState::PlayerTurn => {
@@ -727,7 +689,7 @@ impl Game {
             GameState::Victory
             | GameState::Defeat
             | GameState::Blessing
-            | GameState::BlessingTransform
+            | GameState::Transform
             | GameState::Armaments
             | GameState::PlaceCardInHandOnTopOfDraw
             | GameState::PlaceCardInDiscardOnTopOfDraw
@@ -752,7 +714,7 @@ impl Game {
             return;
         }
         while !matches!(
-            self.state,
+            self.state.cur_state(),
             GameState::PlayerTurn | GameState::Victory | GameState::Defeat
         ) && !self.in_pause_state()
         {
@@ -762,13 +724,14 @@ impl Game {
 
     fn in_pause_state(&self) -> bool {
         matches!(
-            self.state,
+            self.state.cur_state(),
             GameState::Armaments
                 | GameState::ExhaustCardsInHand { .. }
                 | GameState::Memories { .. }
                 | GameState::PlaceCardInHandOnTopOfDraw
                 | GameState::PlaceCardInDiscardOnTopOfDraw
                 | GameState::ExhaustOneCardInHand
+                | GameState::ForethoughtAny { .. }
                 | GameState::Gamble { .. }
                 | GameState::Exhume
                 | GameState::DualWield(_)
@@ -904,7 +867,7 @@ impl Game {
     }
 
     pub fn result(&self) -> GameStatus {
-        match &self.state {
+        match self.state.cur_state() {
             GameState::Victory => GameStatus::Victory,
             GameState::Defeat => GameStatus::Defeat,
             &GameState::Memories {
@@ -924,7 +887,7 @@ impl Game {
     }
 
     fn memories_cards(&mut self) {
-        match &mut self.state {
+        match self.state.cur_state_mut() {
             GameState::Memories {
                 cards_to_memories, ..
             } => {
@@ -934,12 +897,11 @@ impl Game {
             }
             _ => unreachable!(),
         }
-        self.state = GameState::PlayerTurn;
-        self.run();
+        self.state.pop_state();
     }
 
     fn exhaust_cards(&mut self) {
-        match &mut self.state {
+        match &mut self.state.cur_state_mut() {
             GameState::ExhaustCardsInHand {
                 cards_to_exhaust, ..
             } => {
@@ -949,12 +911,11 @@ impl Game {
             }
             _ => unreachable!(),
         }
-        self.state = GameState::PlayerTurn;
-        self.run();
+        self.state.pop_state();
     }
 
     fn gamble_cards(&mut self) {
-        match &mut self.state {
+        match self.state.cur_state_mut() {
             GameState::Gamble { cards_to_gamble } => {
                 let count = cards_to_gamble.len() as i32;
                 self.action_queue.push_top(DrawAction(count));
@@ -964,12 +925,11 @@ impl Game {
             }
             _ => unreachable!(),
         }
-        self.state = GameState::PlayerTurn;
-        self.run();
+        self.state.pop_state();
     }
 
     fn forethought_cards(&mut self) {
-        match &mut self.state {
+        match self.state.cur_state_mut() {
             GameState::ForethoughtAny {
                 cards_to_forethought,
             } => {
@@ -980,34 +940,28 @@ impl Game {
             }
             _ => unreachable!(),
         }
-        self.state = GameState::PlayerTurn;
-        self.run();
+        self.state.pop_state();
     }
 
     pub fn make_move(&mut self, m: Move) {
         assert!(!self.finished());
         match m {
             Move::ChooseBlessing(b) => {
-                assert_matches!(self.state, GameState::Blessing);
+                assert_matches!(self.state.cur_state(), GameState::Blessing);
+                self.state.set_state(GameState::RollCombat);
                 b.run(self);
-                if !matches!(self.state, GameState::BlessingTransform) {
-                    self.state = GameState::RollCombat;
-                    self.run();
-                }
             }
             Move::Transform { card_index } => {
-                assert_matches!(self.state, GameState::BlessingTransform);
+                assert_matches!(self.state.cur_state(), GameState::Transform);
                 self.transform_card_in_master_deck(card_index);
-                self.state = GameState::RollCombat;
-                self.run();
+                self.state.pop_state();
             }
             Move::EndTurn => {
-                assert_matches!(self.state, GameState::PlayerTurn);
-                self.state = GameState::PlayerTurnEnd;
-                self.run();
+                assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
+                self.state.set_state(GameState::PlayerTurnEnd);
             }
             Move::PlayCard { card_index, target } => {
-                assert_matches!(self.state, GameState::PlayerTurn);
+                assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
                 let action = PlayCardAction {
                     card: self.hand.remove(card_index),
                     target: target.map(CreatureRef::monster),
@@ -1018,40 +972,41 @@ impl Game {
                 };
                 assert!(self.can_play_card(&action));
                 self.card_queue.push(action);
-                self.run();
             }
             Move::Armaments { card_index } => {
-                assert_matches!(self.state, GameState::Armaments);
+                assert_matches!(self.state.cur_state(), GameState::Armaments);
                 self.action_queue
                     .push_top(UpgradeAction(self.hand[card_index].clone()));
-                self.state = GameState::PlayerTurn;
-                self.run();
+                self.state.pop_state();
             }
             Move::PlaceCardInHandOnTopOfDraw { card_index } => {
-                assert_matches!(self.state, GameState::PlaceCardInHandOnTopOfDraw);
+                assert_matches!(
+                    self.state.cur_state(),
+                    GameState::PlaceCardInHandOnTopOfDraw
+                );
                 self.action_queue
                     .push_top(PlaceCardOnTopOfDrawAction(self.hand.remove(card_index)));
-                self.state = GameState::PlayerTurn;
-                self.run();
+                self.state.pop_state();
             }
             Move::PlaceCardInDiscardOnTopOfDraw { card_index } => {
-                assert_matches!(self.state, GameState::PlaceCardInDiscardOnTopOfDraw);
+                assert_matches!(
+                    self.state.cur_state(),
+                    GameState::PlaceCardInDiscardOnTopOfDraw
+                );
                 self.action_queue.push_top(PlaceCardOnTopOfDrawAction(
                     self.discard_pile.remove(card_index),
                 ));
-                self.state = GameState::PlayerTurn;
-                self.run();
+                self.state.pop_state();
             }
             Move::ExhaustOneCardInHand { card_index } => {
-                assert_matches!(self.state, GameState::ExhaustOneCardInHand);
+                assert_matches!(self.state.cur_state(), GameState::ExhaustOneCardInHand);
                 self.action_queue
                     .push_top(ExhaustCardAction(self.hand.remove(card_index)));
-                self.state = GameState::PlayerTurn;
-                self.run();
+                self.state.pop_state();
             }
             Move::DualWield { card_index } => {
-                let amount = match self.state {
-                    GameState::DualWield(amount) => amount,
+                let amount = match self.state.cur_state() {
+                    GameState::DualWield(amount) => *amount,
                     _ => panic!(),
                 };
                 self.action_queue.push_top(DualWieldAction {
@@ -1059,24 +1014,24 @@ impl Game {
                     amount,
                     destroy_original: true,
                 });
-                self.state = GameState::PlayerTurn;
-                self.run();
+                self.state.pop_state();
             }
             Move::Exhume { card_index } => {
-                assert_matches!(self.state, GameState::Exhume);
+                assert_matches!(self.state.cur_state(), GameState::Exhume);
                 self.action_queue
                     .push_top(PlaceCardInHandAction(self.exhaust_pile.remove(card_index)));
-                self.state = GameState::PlayerTurn;
-                self.run();
+                self.state.pop_state();
             }
             Move::FetchCardFromDraw { card_index } => {
-                assert!(matches!(self.state, GameState::FetchCardFromDraw(_)));
+                assert!(matches!(
+                    self.state.cur_state(),
+                    GameState::FetchCardFromDraw(_)
+                ));
                 self.action_queue
                     .push_top(PlaceCardInHandAction(self.draw_pile.remove(card_index)));
-                self.state = GameState::PlayerTurn;
-                self.run();
+                self.state.pop_state();
             }
-            Move::Memories { card_index } => match &mut self.state {
+            Move::Memories { card_index } => match self.state.cur_state_mut() {
                 GameState::Memories {
                     num_cards_remaining,
                     cards_to_memories,
@@ -1089,7 +1044,7 @@ impl Game {
                 }
                 _ => unreachable!(),
             },
-            Move::ExhaustCardsInHand { card_index } => match &mut self.state {
+            Move::ExhaustCardsInHand { card_index } => match self.state.cur_state_mut() {
                 GameState::ExhaustCardsInHand {
                     num_cards_remaining,
                     cards_to_exhaust,
@@ -1103,7 +1058,7 @@ impl Game {
                 _ => unreachable!(),
             },
             Move::ExhaustCardsInHandEnd => self.exhaust_cards(),
-            Move::Gamble { card_index } => match &mut self.state {
+            Move::Gamble { card_index } => match self.state.cur_state_mut() {
                 GameState::Gamble { cards_to_gamble } => {
                     cards_to_gamble.push(self.hand.remove(card_index));
                     if self.hand.is_empty() {
@@ -1114,13 +1069,12 @@ impl Game {
             },
             Move::GambleEnd => self.gamble_cards(),
             Move::ForethoughtOne { card_index } => {
-                assert_matches!(self.state, GameState::ForethoughtOne);
+                assert_matches!(self.state.cur_state(), GameState::ForethoughtOne);
                 self.action_queue
                     .push_top(ForethoughtAction(self.hand.remove(card_index)));
-                self.state = GameState::PlayerTurn;
-                self.run();
+                self.state.pop_state();
             }
-            Move::ForethoughtAny { card_index } => match &mut self.state {
+            Move::ForethoughtAny { card_index } => match self.state.cur_state_mut() {
                 GameState::ForethoughtAny {
                     cards_to_forethought,
                 } => {
@@ -1132,14 +1086,13 @@ impl Game {
                 _ => unreachable!(),
             },
             Move::ForethoughtAnyEnd => self.forethought_cards(),
-            Move::Discovery { card_class } => match self.state {
-                GameState::Discovery { amount, .. } => {
+            Move::Discovery { card_class } => match self.state.cur_state() {
+                &GameState::Discovery { amount, .. } => {
                     self.action_queue.push_top(DiscoveryAction {
                         class: card_class,
                         amount,
                     });
-                    self.state = GameState::PlayerTurn;
-                    self.run();
+                    self.state.pop_state();
                 }
                 _ => unreachable!(),
             },
@@ -1147,16 +1100,16 @@ impl Game {
                 potion_index,
                 target,
             } => {
-                assert_matches!(self.state, GameState::PlayerTurn);
+                assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
                 let p = self.take_potion(potion_index);
                 self.throw_potion(p, target.map(CreatureRef::monster));
-                self.run();
             }
             Move::DiscardPotion { potion_index } => {
-                assert_matches!(self.state, GameState::PlayerTurn);
+                assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
                 self.take_potion(potion_index);
             }
         }
+        self.run();
     }
 
     pub fn can_play_card(&self, play: &PlayCardAction) -> bool {
@@ -1203,7 +1156,7 @@ impl Game {
 
     pub fn valid_moves(&self) -> Vec<Move> {
         let mut moves = Vec::new();
-        match &self.state {
+        match self.state.cur_state() {
             GameState::Blessing => {
                 moves.push(Move::ChooseBlessing(Blessing::GainMaxHPSmall));
                 moves.push(Move::ChooseBlessing(Blessing::CommonRelic));
@@ -1212,7 +1165,7 @@ impl Game {
                 moves.push(Move::ChooseBlessing(Blessing::RandomUncommonColorless));
                 moves.push(Move::ChooseBlessing(Blessing::RandomPotion));
             }
-            GameState::BlessingTransform => {
+            GameState::Transform => {
                 for (i, c) in self.master_deck.iter().enumerate() {
                     if c.borrow().class.can_remove_from_master_deck() {
                         moves.push(Move::Transform { card_index: i });
@@ -1361,7 +1314,7 @@ impl Game {
 
     pub fn should_add_extra_decay_status(&self) -> bool {
         matches!(
-            self.state,
+            self.state.cur_state(),
             GameState::MonsterTurn | GameState::PlayerTurnEnd
         )
     }
@@ -1455,15 +1408,18 @@ impl Game {
     }
 
     fn finished(&mut self) -> bool {
-        assert_not_matches!(self.state, GameState::Defeat | GameState::Victory);
+        assert_not_matches!(
+            self.state.cur_state(),
+            GameState::Defeat | GameState::Victory
+        );
         if !self.player.is_alive() {
-            self.state = GameState::Defeat;
+            self.state.set_state(GameState::Defeat);
             return true;
         }
         if self.combat_monsters_queue.is_empty()
             && self.monsters.iter().all(|m| !m.creature.is_alive())
         {
-            self.state = GameState::Victory;
+            self.state.set_state(GameState::Victory);
             self.trigger_relics_at_combat_finish();
             self.run_actions_until_empty();
             return true;

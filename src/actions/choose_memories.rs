@@ -1,8 +1,4 @@
-use crate::{
-    action::Action,
-    actions::memories::MemoriesAction,
-    game::{Game, GameState},
-};
+use crate::{action::Action, actions::memories::MemoriesAction, game::Game, state::GameState};
 
 pub struct ChooseMemoriesAction(pub i32);
 
@@ -16,10 +12,10 @@ impl Action for ChooseMemoriesAction {
                     .push_top(MemoriesAction(game.discard_pile.remove(0)));
             }
         } else {
-            game.state = GameState::Memories {
+            game.state.push_state(GameState::Memories {
                 num_cards_remaining: self.0.min(Game::MAX_HAND_SIZE - game.hand.len() as i32),
                 cards_to_memories: Vec::new(),
-            };
+            });
         }
     }
 }

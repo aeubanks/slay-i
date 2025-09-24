@@ -1,8 +1,6 @@
 use crate::{
-    cards::random_uncommon_colorless,
-    game::{Game, GameState},
-    potion::random_common_potion,
-    relic::random_common_relic,
+    cards::random_uncommon_colorless, game::Game, potion::random_common_potion,
+    relic::random_common_relic, state::GameState,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -30,7 +28,7 @@ impl Blessing {
                 game.remove_relic(game.relics[0].get_class());
             }
             TransformOne => {
-                game.state = GameState::BlessingTransform;
+                game.state.push_state(GameState::Transform);
             }
             RandomUncommonColorless => {
                 let r = random_uncommon_colorless(&mut game.rng);

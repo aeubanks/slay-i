@@ -1,15 +1,15 @@
-use crate::{
-    action::Action,
-    game::{Game, GameState},
-};
+use crate::{action::Action, game::Game, state::GameState};
 
 pub struct ChooseGambleAction();
 
 impl Action for ChooseGambleAction {
     fn run(&self, game: &mut Game) {
-        game.state = GameState::Gamble {
+        if game.hand.is_empty() {
+            return;
+        }
+        game.state.push_state(GameState::Gamble {
             cards_to_gamble: Vec::new(),
-        };
+        });
     }
 }
 

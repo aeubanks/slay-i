@@ -1,7 +1,5 @@
 use crate::{
-    action::Action,
-    actions::forethought::ForethoughtAction,
-    game::{Game, GameState},
+    action::Action, actions::forethought::ForethoughtAction, game::Game, state::GameState,
 };
 
 pub struct ChooseForethoughtOneAction();
@@ -13,7 +11,7 @@ impl Action for ChooseForethoughtOneAction {
             1 => game
                 .action_queue
                 .push_top(ForethoughtAction(game.hand.pop().unwrap())),
-            _ => game.state = GameState::ForethoughtOne,
+            _ => game.state.push_state(GameState::ForethoughtOne),
         }
     }
 }

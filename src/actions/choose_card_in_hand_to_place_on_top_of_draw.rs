@@ -1,7 +1,6 @@
 use crate::{
-    action::Action,
-    actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction,
-    game::{Game, GameState},
+    action::Action, actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction, game::Game,
+    state::GameState,
 };
 
 pub struct ChooseCardInHandToPlaceOnTopOfDrawAction();
@@ -13,7 +12,7 @@ impl Action for ChooseCardInHandToPlaceOnTopOfDrawAction {
             1 => game
                 .action_queue
                 .push_top(PlaceCardOnTopOfDrawAction(game.hand.pop().unwrap())),
-            _ => game.state = GameState::PlaceCardInHandOnTopOfDraw,
+            _ => game.state.push_state(GameState::PlaceCardInHandOnTopOfDraw),
         }
     }
 }

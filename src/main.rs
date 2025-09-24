@@ -13,6 +13,7 @@ mod potion;
 mod queue;
 mod relic;
 mod rng;
+mod state;
 mod status;
 mod test;
 

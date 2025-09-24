@@ -1,8 +1,4 @@
-use crate::{
-    action::Action,
-    cards::CardClass,
-    game::{Game, GameState},
-};
+use crate::{action::Action, cards::CardClass, game::Game, state::GameState};
 
 pub struct ExhumeAction();
 
@@ -33,7 +29,7 @@ impl Action for ExhumeAction {
         match count {
             Count::Zero => {}
             Count::One(i) => game.hand.push(game.exhaust_pile.remove(i)),
-            Count::Many => game.state = GameState::Exhume,
+            Count::Many => game.state.push_state(GameState::Exhume),
         }
     }
 }

@@ -1,7 +1,5 @@
 use crate::{
-    action::Action,
-    actions::exhaust_card::ExhaustCardAction,
-    game::{Game, GameState},
+    action::Action, actions::exhaust_card::ExhaustCardAction, game::Game, state::GameState,
 };
 
 pub struct ChooseCardInHandToExhaustAction();
@@ -13,7 +11,7 @@ impl Action for ChooseCardInHandToExhaustAction {
             1 => game
                 .action_queue
                 .push_top(ExhaustCardAction(game.hand.pop().unwrap())),
-            _ => game.state = GameState::ExhaustOneCardInHand,
+            _ => game.state.push_state(GameState::ExhaustOneCardInHand),
         }
     }
 }

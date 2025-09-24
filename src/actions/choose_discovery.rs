@@ -4,7 +4,8 @@ use crate::{
         random_colorless_in_combat, random_red_attack_in_combat, random_red_in_combat,
         random_red_power_in_combat, random_red_skill_in_combat,
     },
-    game::{Game, GameState},
+    game::Game,
+    state::GameState,
 };
 
 pub enum ChooseDiscoveryType {
@@ -35,10 +36,10 @@ impl Action for ChooseDiscoveryAction {
                 classes.push(c);
             }
         }
-        game.state = GameState::Discovery {
+        game.state.push_state(GameState::Discovery {
             classes,
             amount: self.amount,
-        };
+        });
     }
 }
 

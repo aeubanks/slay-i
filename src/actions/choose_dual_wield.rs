@@ -1,9 +1,6 @@
 use crate::{
-    action::Action,
-    actions::dual_wield::DualWieldAction,
-    card::CardRef,
-    cards::CardType,
-    game::{Game, GameState},
+    action::Action, actions::dual_wield::DualWieldAction, card::CardRef, cards::CardType,
+    game::Game, state::GameState,
 };
 
 pub struct ChooseDualWieldAction(pub i32);
@@ -42,7 +39,7 @@ impl Action for ChooseDualWieldAction {
                     destroy_original: false,
                 });
             }
-            Count::Many => game.state = GameState::DualWield(self.0),
+            Count::Many => game.state.push_state(GameState::DualWield(self.0)),
         }
     }
 }

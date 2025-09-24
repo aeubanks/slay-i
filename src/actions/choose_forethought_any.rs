@@ -1,7 +1,4 @@
-use crate::{
-    action::Action,
-    game::{Game, GameState},
-};
+use crate::{action::Action, game::Game, state::GameState};
 
 pub struct ChooseForethoughtAnyAction();
 
@@ -10,9 +7,9 @@ impl Action for ChooseForethoughtAnyAction {
         if g.hand.is_empty() {
             return;
         }
-        g.state = GameState::ForethoughtAny {
+        g.state.push_state(GameState::ForethoughtAny {
             cards_to_forethought: Vec::new(),
-        };
+        });
     }
 }
 
