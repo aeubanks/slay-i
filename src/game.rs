@@ -711,13 +711,13 @@ impl Game {
         while !matches!(
             self.state.cur_state(),
             GameState::PlayerTurn | GameState::Victory | GameState::Defeat
-        ) && !self.in_pause_state()
+        ) && !self.in_waiting_for_move_state()
         {
             self.run_once();
         }
     }
 
-    fn in_pause_state(&self) -> bool {
+    fn in_waiting_for_move_state(&self) -> bool {
         matches!(
             self.state.cur_state(),
             GameState::Armaments
@@ -738,7 +738,7 @@ impl Game {
         loop {
             if let Some(a) = self.action_queue.pop() {
                 a.run(self);
-                if self.in_pause_state() {
+                if self.in_waiting_for_move_state() {
                     break;
                 }
             } else if !self.card_queue.is_empty() {
