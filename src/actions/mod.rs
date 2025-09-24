@@ -1,3 +1,4 @@
+pub mod add_card_to_master_deck;
 pub mod armaments;
 pub mod block;
 pub mod block_per_non_attack_in_hand;
@@ -58,6 +59,7 @@ pub mod play_card;
 pub mod play_top_card;
 pub mod randomize_hand_cost;
 pub mod reduce_status;
+pub mod remove_card_from_master_deck;
 pub mod remove_status;
 pub mod set_energy;
 pub mod shuffle_card_into_draw;

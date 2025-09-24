@@ -6,7 +6,8 @@ use crate::{
 #[derive(Debug)]
 pub enum GameState {
     Blessing,
-    Transform,
+    RemoveCard,
+    TransformCard,
     RollCombat,
     CombatBegin,
     PlayerTurnBegin,

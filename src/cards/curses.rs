@@ -40,6 +40,7 @@ mod tests {
         cards::CardClass,
         game::{GameBuilder, Move},
         relic::RelicClass,
+        state::GameState,
         status::Status,
     };
 
@@ -203,7 +204,8 @@ mod tests {
             .build_combat();
         let max_hp = g.player.max_hp;
         g.player.cur_hp = max_hp - 1;
-        g.remove_card_from_master_deck(0);
+        g.state.push_state(GameState::RemoveCard);
+        g.make_move(Move::Remove { card_index: 0 });
         assert_eq!(g.player.max_hp, max_hp - 3);
         assert_eq!(g.player.cur_hp, max_hp - 3);
     }

@@ -106,6 +106,9 @@ fn print_state(g: &Game) {
             Move::Transform { card_index } => {
                 print!("transform {:?}", g.master_deck[*card_index].borrow());
             }
+            Move::Remove { card_index } => {
+                print!("remove {:?}", g.master_deck[*card_index].borrow());
+            }
             Move::EndTurn => print!("end turn"),
             Move::PlayCard {
                 card_index: i,

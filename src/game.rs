@@ -4,9 +4,9 @@ use std::rc::Rc;
 
 #[cfg(test)]
 use crate::action::Action;
+use crate::actions::add_card_to_master_deck::AddCardToMasterDeckAction;
 use crate::actions::choose_dual_wield::can_dual_wield;
 use crate::actions::damage::{DamageAction, DamageType};
-use crate::actions::decrease_max_hp::DecreaseMaxHPAction;
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::discovery::DiscoveryAction;
 use crate::actions::draw::DrawAction;
@@ -20,6 +20,7 @@ use crate::actions::place_card_in_hand::PlaceCardInHandAction;
 use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
+use crate::actions::remove_card_from_master_deck::RemoveCardFromMasterDeckAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade::UpgradeAction;
 use crate::actions::use_potion::UsePotionAction;
@@ -74,6 +75,9 @@ impl std::fmt::Debug for CreatureRef {
 pub enum Move {
     ChooseBlessing(Blessing),
     Transform {
+        card_index: usize,
+    },
+    Remove {
         card_index: usize,
     },
     EndTurn,
@@ -684,7 +688,8 @@ impl Game {
             GameState::Victory
             | GameState::Defeat
             | GameState::Blessing
-            | GameState::Transform
+            | GameState::TransformCard
+            | GameState::RemoveCard
             | GameState::Armaments
             | GameState::PlaceCardInHandOnTopOfDraw
             | GameState::PlaceCardInDiscardOnTopOfDraw
@@ -698,6 +703,7 @@ impl Game {
             | GameState::ForethoughtAny { .. }
             | GameState::ForethoughtOne
             | GameState::Discovery { .. } => {
+                println!("{:?}", self.state);
                 unreachable!()
             }
         }
@@ -832,33 +838,12 @@ impl Game {
         self.run_actions_until_empty();
     }
 
-    pub fn remove_card_from_master_deck(&mut self, master_deck_index: usize) -> CardClass {
-        let c = self.master_deck.remove(master_deck_index);
-        let class = c.borrow().class;
-        assert!(class.can_remove_from_master_deck());
-        if class == CardClass::Parasite {
-            self.action_queue.push_bot(DecreaseMaxHPAction(3));
-            self.run_actions_until_empty();
-        }
-        class
-    }
-
-    fn transform_card_in_master_deck(&mut self, master_deck_index: usize) {
-        let class = self.remove_card_from_master_deck(master_deck_index);
-        let transformed = transformed(class, &mut self.rng);
-        self.add_card_to_master_deck(transformed);
-    }
-
+    #[cfg(test)]
     pub fn add_card_to_master_deck(&mut self, class: CardClass) {
-        if class.ty() == CardType::Curse
-            && let Some(v) = self.get_relic_value(RelicClass::Omamori)
-            && v > 0
-        {
-            self.set_relic_value(RelicClass::Omamori, v - 1);
-            return;
-        }
-        let c = self.new_card(class);
-        self.master_deck.push(c);
+        use crate::actions::add_card_to_master_deck::AddCardToMasterDeckAction;
+
+        self.action_queue.push_bot(AddCardToMasterDeckAction(class));
+        self.run_actions_until_empty();
     }
 
     pub fn result(&self) -> GameStatus {
@@ -947,8 +932,20 @@ impl Game {
                 b.run(self);
             }
             Move::Transform { card_index } => {
-                assert_matches!(self.state.cur_state(), GameState::Transform);
-                self.transform_card_in_master_deck(card_index);
+                assert_matches!(self.state.cur_state(), GameState::TransformCard);
+                let class = self.master_deck.remove(card_index).borrow().class;
+                let transformed = transformed(class, &mut self.rng);
+                self.action_queue
+                    .push_bot(RemoveCardFromMasterDeckAction(class));
+                self.action_queue
+                    .push_bot(AddCardToMasterDeckAction(transformed));
+                self.state.pop_state();
+            }
+            Move::Remove { card_index } => {
+                assert_matches!(self.state.cur_state(), GameState::RemoveCard);
+                let c = self.master_deck.remove(card_index);
+                self.action_queue
+                    .push_bot(RemoveCardFromMasterDeckAction(c.borrow().class));
                 self.state.pop_state();
             }
             Move::EndTurn => {
@@ -1160,13 +1157,21 @@ impl Game {
                 moves.push(Move::ChooseBlessing(Blessing::CommonRelic));
                 moves.push(Move::ChooseBlessing(Blessing::RemoveRelic));
                 moves.push(Move::ChooseBlessing(Blessing::TransformOne));
+                moves.push(Move::ChooseBlessing(Blessing::RemoveOne));
                 moves.push(Move::ChooseBlessing(Blessing::RandomUncommonColorless));
                 moves.push(Move::ChooseBlessing(Blessing::RandomPotion));
             }
-            GameState::Transform => {
+            GameState::TransformCard => {
                 for (i, c) in self.master_deck.iter().enumerate() {
                     if c.borrow().class.can_remove_from_master_deck() {
                         moves.push(Move::Transform { card_index: i });
+                    }
+                }
+            }
+            GameState::RemoveCard => {
+                for (i, c) in self.master_deck.iter().enumerate() {
+                    if c.borrow().class.can_remove_from_master_deck() {
+                        moves.push(Move::Remove { card_index: i });
                     }
                 }
             }
