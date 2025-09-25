@@ -94,7 +94,7 @@ r!(
     BottledFlame => Uncommon, // TODO
     BottledLightning => Uncommon, // TODO
     BottledTornado => Uncommon, // TODO
-    DarkstonePeriapt => Uncommon, // TODO
+    DarkstonePeriapt => Uncommon,
     EternalFeather => Uncommon, // TODO
     FrozenEgg => Uncommon, // TODO
     GremlinHorn => Uncommon, // TODO
@@ -1500,5 +1500,27 @@ mod tests {
         g.add_card_to_master_deck(CardClass::Parasite);
         assert_eq!(g.master_deck.len(), 2);
         assert_eq!(g.get_relic_value(RelicClass::Omamori), Some(0));
+    }
+
+    #[test]
+    fn test_darkstone_periapt() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::DarkstonePeriapt)
+            .build_combat();
+
+        let max_hp = g.player.max_hp;
+
+        g.add_card_to_master_deck(CardClass::Anger);
+        assert_eq!(g.player.max_hp, max_hp);
+
+        g.add_card_to_master_deck(CardClass::CurseOfTheBell);
+        assert_eq!(g.player.max_hp, max_hp + 6);
+
+        g.add_card_to_master_deck(CardClass::AscendersBane);
+        assert_eq!(g.player.max_hp, max_hp + 12);
+
+        g.add_relic(RelicClass::Omamori);
+        g.add_card_to_master_deck(CardClass::AscendersBane);
+        assert_eq!(g.player.max_hp, max_hp + 12);
     }
 }

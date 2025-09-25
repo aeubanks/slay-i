@@ -1,5 +1,6 @@
 use crate::{
     action::Action,
+    actions::increase_max_hp::IncreaseMaxHPAction,
     cards::{CardClass, CardType},
     game::Game,
     relic::RelicClass,
@@ -15,6 +16,10 @@ impl Action for AddCardToMasterDeckAction {
         {
             game.set_relic_value(RelicClass::Omamori, v - 1);
             return;
+        }
+
+        if self.0.ty() == CardType::Curse && game.has_relic(RelicClass::DarkstonePeriapt) {
+            game.action_queue.push_bot(IncreaseMaxHPAction(6));
         }
 
         let c = game.new_card(self.0);
