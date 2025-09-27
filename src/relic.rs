@@ -127,7 +127,7 @@ r!(
     DeadBranch => Rare, // TODO
     DuVuDoll => Rare,
     FossilizedHelix => Rare, // TODO
-    GamblingChip => Rare, // TODO
+    GamblingChip => Rare, // TODO, requires pausing
     Ginger => Rare, // TODO
     Girya => Rare, // TODO
     IceCream => Rare,
@@ -165,7 +165,7 @@ r!(
     SlingOfCourage => Shop, // TODO
     StrangeSpoon => Shop, // TODO
     TheAbacus => Shop,
-    Toolbox => Shop, // TODO
+    Toolbox => Shop, // TODO, requires pausing
     Brimstone => Shop, // TODO
 
     Astrolabe => Boss, // TODO
@@ -203,7 +203,7 @@ r!(
     NlothsHungryFace => Event, // TODO
     Necronomicon => Event, // TODO
     NeowsLament => Event, // TODO
-    NilryCodex => Event, // TODO
+    NilryCodex => Event, // TODO, requires pausing
     OddMushroom => Event,
     RedMask => Event,
     SpiritPoop => Event,
