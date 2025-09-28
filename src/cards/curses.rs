@@ -215,7 +215,6 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::BlueCandle)
             .build_combat();
-        g.set_debug();
         g.player.cur_hp = 50;
         g.add_card_to_hand(CardClass::Pain);
         g.play_card(CardClass::Defend, None);

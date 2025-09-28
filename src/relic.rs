@@ -1089,7 +1089,6 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Lantern)
             .build_combat();
-        g.set_debug();
         assert_eq!(g.energy, 4);
         g.make_move(Move::EndTurn);
         assert_eq!(g.energy, 3);
