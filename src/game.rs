@@ -346,6 +346,7 @@ impl Game {
     #[allow(dead_code)]
     pub fn set_debug(&mut self) {
         self.action_queue.set_debug();
+        self.state.set_debug();
     }
 
     fn new_card_id(&mut self, c: CardClass) -> u32 {

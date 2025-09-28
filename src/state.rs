@@ -45,14 +45,26 @@ pub enum GameState {
     Victory,
 }
 
-#[derive(Debug)]
 pub struct GameStateManager {
     stack: Vec<GameState>,
+    debug: bool,
+}
+
+impl std::fmt::Debug for GameStateManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "state stack: {:?}", self.stack)
+    }
 }
 
 impl GameStateManager {
     pub fn new(state: GameState) -> Self {
-        Self { stack: vec![state] }
+        Self {
+            stack: vec![state],
+            debug: false,
+        }
+    }
+    pub fn set_debug(&mut self) {
+        self.debug = true;
     }
     pub fn cur_state(&self) -> &GameState {
         self.stack.last().unwrap()
@@ -61,10 +73,17 @@ impl GameStateManager {
         self.stack.last_mut().unwrap()
     }
     pub fn push_state(&mut self, state: GameState) {
+        if self.debug {
+            println!("push_state {:?}", state);
+        }
         self.stack.push(state);
     }
     pub fn pop_state(&mut self) {
-        self.stack.pop().unwrap();
+        let state = self.stack.pop().unwrap();
+        if self.debug {
+            println!("pop_state {:?}", state);
+            panic!();
+        }
         assert!(!self.stack.is_empty());
     }
     pub fn set_state(&mut self, state: GameState) {
