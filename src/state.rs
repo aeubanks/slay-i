@@ -82,7 +82,6 @@ impl GameStateManager {
         let state = self.stack.pop().unwrap();
         if self.debug {
             println!("pop_state {:?}", state);
-            panic!();
         }
         if check_not_empty {
             assert!(!self.stack.is_empty());
