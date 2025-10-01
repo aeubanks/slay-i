@@ -683,11 +683,9 @@ impl Game {
                 self.state.set_state(GameState::PlayerTurnBegin);
                 self.turn += 1;
             }
-            GameState::PlayerTurn => {
-                self.run_actions_until_empty();
-            }
             GameState::Victory
             | GameState::Defeat
+            | GameState::PlayerTurn
             | GameState::Blessing
             | GameState::TransformCard
             | GameState::RemoveCard
