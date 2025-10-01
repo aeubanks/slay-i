@@ -78,16 +78,21 @@ impl GameStateManager {
         }
         self.stack.push(state);
     }
-    pub fn pop_state(&mut self) {
+    fn pop_state_impl(&mut self, check_not_empty: bool) {
         let state = self.stack.pop().unwrap();
         if self.debug {
             println!("pop_state {:?}", state);
             panic!();
         }
-        assert!(!self.stack.is_empty());
+        if check_not_empty {
+            assert!(!self.stack.is_empty());
+        }
+    }
+    pub fn pop_state(&mut self) {
+        self.pop_state_impl(true);
     }
     pub fn set_state(&mut self, state: GameState) {
-        self.stack.pop().unwrap();
+        self.pop_state_impl(false);
         self.push_state(state);
     }
 }
