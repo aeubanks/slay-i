@@ -1457,7 +1457,7 @@ impl Game {
         self.hand.len() as i32 == Game::MAX_HAND_SIZE
     }
 
-    fn all_monsters_dead(&self) -> bool {
+    pub fn all_monsters_dead(&self) -> bool {
         self.monsters.iter().all(|m| !m.creature.is_alive())
     }
 

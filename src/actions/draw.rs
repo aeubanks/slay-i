@@ -15,7 +15,7 @@ pub struct DrawAction(pub i32);
 
 impl Action for DrawAction {
     fn run(&self, game: &mut Game) {
-        if game.player.has_status(Status::NoDraw) {
+        if game.player.has_status(Status::NoDraw) || game.all_monsters_dead() {
             return;
         }
         let discard_size = game.discard_pile.len() as i32;
@@ -80,7 +80,12 @@ impl std::fmt::Debug for DrawAction {
 
 #[cfg(test)]
 mod tests {
-    use crate::{actions::draw::DrawAction, cards::CardClass, game::GameBuilder};
+    use crate::{
+        actions::draw::DrawAction,
+        cards::CardClass,
+        game::{CreatureRef, GameBuilder},
+        relic::RelicClass,
+    };
 
     #[test]
     fn test_shuffle() {
@@ -154,5 +159,17 @@ mod tests {
         assert_eq!(g.hand.len(), 8);
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.draw_pile.len(), 1);
+    }
+
+    #[test]
+    fn test_draw_monsters_dead() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::GremlinHorn)
+            .add_relic(RelicClass::Sundial)
+            .build_combat();
+        g.add_card_to_discard_pile(CardClass::Strike);
+        assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(0));
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(0));
     }
 }
