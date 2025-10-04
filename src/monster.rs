@@ -62,3 +62,15 @@ pub struct Monster {
     pub creature: Creature,
     pub behavior: Box<dyn MonsterBehavior>,
 }
+
+impl Monster {
+    pub fn new<M: MonsterBehavior + 'static>(m: M, rng: &mut Rand) -> Self {
+        let hp = m.roll_hp(rng);
+        let name = m.name();
+
+        Monster {
+            creature: Creature::new(name, hp),
+            behavior: Box::new(m),
+        }
+    }
+}

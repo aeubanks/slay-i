@@ -76,8 +76,8 @@ r!(
     OddlySmoothStone => Common,
     Omamori => Common,
     Orichalcum => Common, // TODO
-    PenNib => Common, // TODO
-    PotionBelt => Common, // TODO
+    PenNib => Common,
+    PotionBelt => Common,
     PreservedInsect => Common, // TODO
     RegalPillow => Common, // TODO
     SmilingMask => Common, // TODO
@@ -277,6 +277,7 @@ impl RelicClass {
             OddlySmoothStone => Some(oddly_smooth_stone),
             DuVuDoll => Some(du_vu_doll),
             Akabeko => Some(akabeko),
+            PenNib => Some(pen_nib_start),
             _ => None,
         }
     }
@@ -301,6 +302,7 @@ impl RelicClass {
             BirdFacedUrn => Some(bird_faced_urn),
             ArtOfWar => Some(art_of_war_card_played),
             Pocketwatch => Some(pocketwatch_card_played),
+            PenNib => Some(pen_nib),
             _ => None,
         }
     }
@@ -352,6 +354,29 @@ fn pocketwatch(v: &mut i32, queue: &mut ActionQueue) {
         queue.push_bot(DrawAction(3));
     }
     *v = 0;
+}
+
+fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
+    if *v == 9 {
+        queue.push_bot(GainStatusAction {
+            status: Status::PenNib,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+    }
+}
+
+fn pen_nib(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+    if play.card.borrow().class.ty() == CardType::Attack {
+        inc_wrap(v, 10);
+        if *v == 9 {
+            queue.push_bot(GainStatusAction {
+                status: Status::PenNib,
+                amount: 1,
+                target: CreatureRef::player(),
+            });
+        }
+    }
 }
 
 fn kunai(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
@@ -690,6 +715,7 @@ mod tests {
         actions::block::BlockAction,
         cards::CardClass,
         game::{GameBuilder, Move},
+        monster::Monster,
         monsters::test::{AttackMonster, NoopMonster},
         potion::Potion,
         status::Status,
@@ -1544,5 +1570,48 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.energy, 3);
         assert_eq!(g.hand.len(), 6);
+    }
+
+    #[test]
+    fn test_pen_nib() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::PenNib)
+                .build_combat();
+
+            for i in 1..15 {
+                g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+                g.play_card(CardClass::GoodInstincts, None);
+                assert_eq!(g.get_relic_value(RelicClass::PenNib), Some(i % 10));
+                if i == 9 {
+                    assert_eq!(g.player.get_status(Status::PenNib), Some(1));
+                } else {
+                    assert_eq!(g.player.get_status(Status::PenNib), None);
+                }
+            }
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::PenNib)
+                .build_combat();
+            for _ in 0..3 {
+                g.combat_monsters_queue
+                    .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
+            }
+            for _ in 0..8 {
+                g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
+            }
+            assert_eq!(g.player.get_status(Status::PenNib), None);
+            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+
+            assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
+            assert_eq!(g.player.get_status(Status::PenNib), Some(1));
+            assert_eq!(g.get_relic_value(RelicClass::PenNib), Some(9));
+            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+
+            assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
+            assert_eq!(g.get_relic_value(RelicClass::PenNib), Some(0));
+            assert_eq!(g.player.get_status(Status::PenNib), None);
+        }
     }
 }

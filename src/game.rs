@@ -193,13 +193,7 @@ impl GameBuilder {
         self
     }
     pub fn add_monster<M: MonsterBehavior + 'static>(mut self, m: M) -> Self {
-        let hp = m.roll_hp(&mut self.rng);
-        let name = m.name();
-
-        self.monsters.push(Monster {
-            creature: Creature::new(name, hp),
-            behavior: Box::new(m),
-        });
+        self.monsters.push(Monster::new(m, &mut self.rng));
         self
     }
 
