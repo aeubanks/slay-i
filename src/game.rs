@@ -779,6 +779,9 @@ impl Game {
                 a.run(self);
             } else if !self.card_queue.is_empty() {
                 let play = self.card_queue.remove(0);
+                if self.all_monsters_dead() {
+                    continue;
+                }
                 if self.can_play_card(&play) {
                     self.action_queue.push_bot(play);
                 } else {
@@ -1441,8 +1444,12 @@ impl Game {
         self.hand.len() as i32 == Game::MAX_HAND_SIZE
     }
 
+    fn all_monsters_dead(&self) -> bool {
+        self.monsters.iter().all(|m| !m.creature.is_alive())
+    }
+
     fn combat_finished(&mut self) -> bool {
-        if self.monsters.iter().all(|m| !m.creature.is_alive()) {
+        if self.all_monsters_dead() {
             self.state.set_state(GameState::CombatEnd);
             return true;
         }
@@ -1757,5 +1764,16 @@ mod tests {
         g.player.cur_hp = 50;
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.cur_hp, 40);
+    }
+
+    #[test]
+    fn test_card_queue_after_monsters_dead() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_draw_pile(CardClass::BandageUp);
+        g.add_card_to_draw_pile(CardClass::DebugKill);
+        g.add_card_to_draw_pile(CardClass::BandageUp);
+        let hp = g.player.cur_hp;
+        g.throw_potion(Potion::Chaos, None);
+        assert_eq!(g.player.cur_hp, hp + 4);
     }
 }
