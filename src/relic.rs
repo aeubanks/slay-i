@@ -97,7 +97,7 @@ r!(
     DarkstonePeriapt => Uncommon,
     EternalFeather => Uncommon, // TODO
     FrozenEgg => Uncommon, // TODO
-    GremlinHorn => Uncommon, // TODO
+    GremlinHorn => Uncommon,
     HornCleat => Uncommon,
     InkBottle => Uncommon,
     Kunai => Uncommon,
@@ -1521,5 +1521,28 @@ mod tests {
         g.add_relic(RelicClass::Omamori);
         g.add_card_to_master_deck(CardClass::AscendersBane);
         assert_eq!(g.player.max_hp, max_hp + 12);
+    }
+
+    #[test]
+    fn test_gremlin_horn() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::GremlinHorn)
+            .add_monster(NoopMonster::new())
+            .add_monster(AttackMonster::new(1))
+            .add_monster(NoopMonster::new())
+            .add_player_status(Status::Thorns, 999)
+            .build_combat();
+        g.add_cards_to_draw_pile(CardClass::Strike, 10);
+
+        assert_eq!(g.energy, 3);
+        assert_eq!(g.hand.len(), 0);
+
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        assert_eq!(g.energy, 4);
+        assert_eq!(g.hand.len(), 1);
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.energy, 3);
+        assert_eq!(g.hand.len(), 6);
     }
 }

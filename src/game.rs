@@ -14,6 +14,7 @@ use crate::actions::dual_wield::DualWieldAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
 use crate::actions::exhaust_card::ExhaustCardAction;
 use crate::actions::forethought::ForethoughtAction;
+use crate::actions::gain_energy::GainEnergyAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::memories::MemoriesAction;
 use crate::actions::place_card_in_hand::PlaceCardInHandAction;
@@ -552,19 +553,24 @@ impl Game {
             update_blood_for_blood_cost(&self.draw_pile);
         }
 
-        if !self.get_creature(target).is_alive()
-            && target.is_player()
-            && let Some(i) = self.potions.iter().position(|p| *p == Some(Potion::Fairy))
-        {
-            self.take_potion(i);
-            let percent = if self.has_relic(RelicClass::SacredBark) {
-                0.6
-            } else {
-                0.3
-            };
-            let amount = ((self.player.max_hp as f32 * percent) as i32).max(1);
-            self.player.heal(amount);
+        if !self.get_creature(target).is_alive() {
+            if !target.is_player() {
+                if self.has_relic(RelicClass::GremlinHorn) {
+                    self.action_queue.push_bot(GainEnergyAction(1));
+                    self.action_queue.push_bot(DrawAction(1));
+                }
+            } else if let Some(i) = self.potions.iter().position(|p| *p == Some(Potion::Fairy)) {
+                self.take_potion(i);
+                let percent = if self.has_relic(RelicClass::SacredBark) {
+                    0.6
+                } else {
+                    0.3
+                };
+                let amount = ((self.player.max_hp as f32 * percent) as i32).max(1);
+                self.player.heal(amount);
+            }
         }
+
         if !self.get_creature(target).is_alive() && target.is_player() {
             self.state.push_state(GameState::Defeat);
         }
@@ -1411,6 +1417,13 @@ impl Game {
     pub fn add_card_to_draw_pile(&mut self, class: CardClass) {
         let card = self.new_card(class);
         self.draw_pile.push(card);
+    }
+
+    #[cfg(test)]
+    pub fn add_cards_to_draw_pile(&mut self, class: CardClass, amount: i32) {
+        for _ in 0..amount {
+            self.add_card_to_draw_pile(class);
+        }
     }
 
     #[cfg(test)]
