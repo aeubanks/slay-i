@@ -5,6 +5,7 @@ use crate::{
 
 #[derive(Debug)]
 pub enum GameState {
+    RunActions,
     Blessing,
     RemoveCard,
     TransformCard,
@@ -15,6 +16,7 @@ pub enum GameState {
     PlayerTurnEnd,
     MonsterTurn,
     EndOfRound,
+    CombatEnd,
     Armaments,
     Memories {
         num_cards_remaining: i32,

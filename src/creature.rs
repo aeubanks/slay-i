@@ -72,6 +72,10 @@ impl Creature {
         self.statuses.remove(&status);
     }
 
+    pub fn clear_all_status(&mut self) {
+        self.statuses.clear();
+    }
+
     pub fn set_status(&mut self, status: Status, amount: i32) {
         self.statuses.insert(status, amount);
     }

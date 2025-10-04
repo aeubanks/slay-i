@@ -31,4 +31,7 @@ impl ActionQueue {
         }
         a
     }
+    pub fn is_empty(&self) -> bool {
+        self.queue.is_empty()
+    }
 }

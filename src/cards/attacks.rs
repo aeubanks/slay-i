@@ -351,7 +351,7 @@ mod tests {
         actions::block::BlockAction,
         assert_matches,
         cards::{CardClass, CardCost},
-        game::{CreatureRef, Game, GameBuilder, Move},
+        game::{CreatureRef, Game, GameBuilder, GameStatus, Move},
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
     };
@@ -834,7 +834,7 @@ mod tests {
 
             g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
-            while g.monsters[0].creature.is_alive() {
+            while !matches!(g.result(), GameStatus::Victory) {
                 g.make_move(Move::PlayCard {
                     card_index: 0,
                     target: Some(0),
@@ -849,7 +849,7 @@ mod tests {
 
             g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
-            while g.monsters[0].creature.is_alive() {
+            while !matches!(g.result(), GameStatus::Victory) {
                 let double_tap_card_index = g
                     .hand
                     .iter()
@@ -983,7 +983,7 @@ mod tests {
 
         g.monsters[0].creature.cur_hp = 8;
         g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
-        assert_eq!(g.monsters[0].creature.cur_hp, 0);
+        assert_matches!(g.result(), GameStatus::Victory);
         assert_eq!(g.player.max_hp, player_max_hp + 3);
         assert_eq!(g.player.cur_hp, player_cur_hp + 3);
     }
@@ -1002,7 +1002,8 @@ mod tests {
 
         g.monsters[0].creature.cur_hp = 11;
         g.play_card_upgraded(CardClass::Feed, Some(CreatureRef::monster(0)));
-        assert_eq!(g.monsters[0].creature.cur_hp, 0);
+        assert_matches!(g.result(), GameStatus::Victory);
+        // assert_eq!(g.monsters[0].creature.cur_hp, 0);
         assert_eq!(g.player.max_hp, player_max_hp + 4);
         assert_eq!(g.player.cur_hp, player_cur_hp + 4);
     }
@@ -1139,7 +1140,7 @@ mod tests {
     fn test_debug_kill() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
-        assert!(!g.monsters[0].creature.is_alive());
+        assert_matches!(g.result(), GameStatus::Victory);
     }
 
     #[test]

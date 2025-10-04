@@ -38,7 +38,7 @@ impl Action for GainStatusAction {
             }
         }
         let extra = self.target.is_player()
-            && game.should_add_extra_decay_status()
+            && game.should_add_extra_decay_status
             && self.status.decays()
             && !game.player.has_status(self.status);
         let creature = game.get_creature_mut(self.target);

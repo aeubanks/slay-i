@@ -24,6 +24,7 @@ use crate::actions::remove_card_from_master_deck::RemoveCardFromMasterDeckAction
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade::UpgradeAction;
 use crate::actions::use_potion::UsePotionAction;
+use crate::assert_matches;
 use crate::blessings::Blessing;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
@@ -37,7 +38,6 @@ use crate::relic::{Relic, RelicClass, new_relic};
 use crate::rng::rand_slice;
 use crate::state::{GameState, GameStateManager};
 use crate::status::Status;
-use crate::{assert_matches, assert_not_matches};
 use rand::seq::SliceRandom;
 
 pub type Rand = rand::rngs::ThreadRng;
@@ -228,7 +228,8 @@ impl GameBuilder {
 
         let monster_statuses = self.monster_statuses.clone();
         let mut g = self.build();
-        g.state.set_state(GameState::RollCombat);
+        g.state.set_state(GameState::Victory);
+        g.state.push_state(GameState::RollCombat);
         g.run();
         for m in &mut g.monsters {
             for (&k, &v) in &monster_statuses {
@@ -293,6 +294,8 @@ pub struct Game {
     pub cur_card: Option<CardRef>,
     pub action_queue: ActionQueue,
     pub card_queue: Vec<PlayCardAction>,
+    pub monster_queue: Vec<CreatureRef>,
+    pub should_add_extra_decay_status: bool,
     pub num_cards_played_this_turn: i32,
     pub combat_monsters_queue: Vec<Vec<Monster>>,
     pub rng: Rand,
@@ -323,6 +326,8 @@ impl Game {
             cur_card: None,
             action_queue: Default::default(),
             card_queue: Default::default(),
+            monster_queue: Default::default(),
+            should_add_extra_decay_status: false,
             num_cards_played_this_turn: 0,
             combat_monsters_queue: vec![monsters],
             rng,
@@ -560,6 +565,9 @@ impl Game {
             let amount = ((self.player.max_hp as f32 * percent) as i32).max(1);
             self.player.heal(amount);
         }
+        if !self.get_creature(target).is_alive() && target.is_player() {
+            self.state.push_state(GameState::Defeat);
+        }
     }
 
     fn setup_combat_draw_pile(&mut self) {
@@ -583,6 +591,9 @@ impl Game {
 
     fn run_once(&mut self) {
         match self.state.cur_state() {
+            GameState::RunActions => {
+                self.run_actions_until_empty();
+            }
             GameState::RollCombat => {
                 if let Some(m) = self.combat_monsters_queue.pop() {
                     self.monsters = m;
@@ -593,12 +604,12 @@ impl Game {
             }
             GameState::CombatBegin => {
                 self.turn = 0;
+                self.should_add_extra_decay_status = false;
 
                 self.setup_combat_draw_pile();
 
                 // player pre-combat relic setup
                 self.trigger_relics_at_pre_combat();
-                self.run_actions_until_empty();
 
                 // monster pre-combat setup
                 for i in 0..self.monsters.len() {
@@ -609,11 +620,15 @@ impl Game {
                         .behavior
                         .pre_combat(&mut self.action_queue, CreatureRef::monster(i));
                 }
-                self.run_actions_until_empty();
 
                 self.state.set_state(GameState::PlayerTurnBegin);
+                self.state.push_state(GameState::RunActions);
             }
             GameState::PlayerTurnBegin => {
+                if self.combat_finished() {
+                    return;
+                }
+
                 self.monsters_roll_move();
 
                 self.num_cards_played_this_turn = 0;
@@ -641,36 +656,42 @@ impl Game {
 
                 self.action_queue.push_top(StartOfTurnEnergyAction());
 
-                self.run_actions_until_empty();
-
                 self.state.set_state(GameState::PlayerTurn);
+                self.state.push_state(GameState::RunActions);
             }
             GameState::PlayerTurnEnd => {
-                self.player_end_of_turn();
-                if self.finished() {
+                if self.combat_finished() {
                     return;
                 }
+                self.should_add_extra_decay_status = true;
+                self.trigger_relics_at_turn_end();
+                self.player
+                    .trigger_statuses_turn_end(CreatureRef::player(), &mut self.action_queue);
+
+                self.trigger_end_of_turn_cards_in_hand();
+
+                self.action_queue.push_bot(EndOfTurnDiscardAction());
                 self.state.set_state(GameState::MonsterTurn);
+                self.state.push_state(GameState::RunActions);
             }
             GameState::MonsterTurn => {
+                if self.combat_finished() {
+                    return;
+                }
                 self.monsters_pre_turn();
-                self.run_actions_until_empty();
-                if self.finished() {
-                    return;
+                for m in self.get_alive_monsters() {
+                    self.monster_queue.push(m);
                 }
 
-                self.monsters_take_turn();
-                if self.finished() {
-                    return;
-                }
-
-                self.monsters_end_turn();
-                if self.finished() {
-                    return;
-                }
                 self.state.set_state(GameState::EndOfRound);
+                self.state.push_state(GameState::RunActions);
             }
             GameState::EndOfRound => {
+                if self.combat_finished() {
+                    return;
+                }
+                self.should_add_extra_decay_status = false;
+                self.monsters_end_turn();
                 self.player
                     .trigger_statuses_round_end(CreatureRef::player(), &mut self.action_queue);
                 for (i, m) in self.monsters.iter_mut().enumerate() {
@@ -679,9 +700,16 @@ impl Game {
                         &mut self.action_queue,
                     );
                 }
-                self.run_actions_until_empty();
                 self.state.set_state(GameState::PlayerTurnBegin);
+                self.state.push_state(GameState::RunActions);
                 self.turn += 1;
+            }
+            GameState::CombatEnd => {
+                self.trigger_relics_at_combat_finish();
+                self.monsters.clear();
+                self.player.clear_all_status();
+                self.state.set_state(GameState::RollCombat);
+                self.state.push_state(GameState::RunActions);
             }
             GameState::Victory
             | GameState::Defeat
@@ -709,29 +737,32 @@ impl Game {
     }
 
     fn run(&mut self) {
-        self.run_actions_until_empty();
-        if self.finished() {
-            return;
-        }
         while !matches!(
             self.state.cur_state(),
-            GameState::PlayerTurn | GameState::Victory | GameState::Defeat
+            GameState::Defeat | GameState::Victory
         ) && !self.in_waiting_for_move_state()
         {
             self.run_once();
+            if matches!(self.state.cur_state(), GameState::PlayerTurn) {
+                self.combat_finished();
+            }
         }
     }
 
     fn in_waiting_for_move_state(&self) -> bool {
         matches!(
             self.state.cur_state(),
-            GameState::Armaments
+            GameState::Blessing
+                | GameState::PlayerTurn
+                | GameState::Armaments
                 | GameState::ExhaustCardsInHand { .. }
+                | GameState::FetchCardFromDraw(..)
                 | GameState::Memories { .. }
                 | GameState::PlaceCardInHandOnTopOfDraw
                 | GameState::PlaceCardInDiscardOnTopOfDraw
                 | GameState::ExhaustOneCardInHand
                 | GameState::ForethoughtAny { .. }
+                | GameState::ForethoughtOne
                 | GameState::Gamble { .. }
                 | GameState::Exhume
                 | GameState::DualWield(_)
@@ -741,11 +772,11 @@ impl Game {
 
     fn run_actions_until_empty(&mut self) {
         loop {
+            if self.in_waiting_for_move_state() {
+                return;
+            }
             if let Some(a) = self.action_queue.pop() {
                 a.run(self);
-                if self.in_waiting_for_move_state() {
-                    break;
-                }
             } else if !self.card_queue.is_empty() {
                 let play = self.card_queue.remove(0);
                 if self.can_play_card(&play) {
@@ -753,10 +784,19 @@ impl Game {
                 } else {
                     self.action_queue.push_bot(DiscardCardAction(play.card));
                 }
+            } else if !self.monster_queue.is_empty() {
+                let monster = self.monster_queue.remove(0);
+                if !self.get_creature(monster).is_alive() {
+                    continue;
+                }
+                self.monsters[monster.monster_index()]
+                    .behavior
+                    .take_turn(monster, &mut self.action_queue);
             } else {
                 break;
             }
         }
+        self.state.pop_state();
     }
 
     fn trigger_end_of_turn_cards_in_hand(&mut self) {
@@ -775,18 +815,6 @@ impl Game {
             self.action_queue
                 .push_top(DiscardCardAction(self.hand.remove(i)));
         }
-    }
-
-    fn player_end_of_turn(&mut self) {
-        self.trigger_relics_at_turn_end();
-        self.player
-            .trigger_statuses_turn_end(CreatureRef::player(), &mut self.action_queue);
-        self.run_actions_until_empty();
-
-        self.trigger_end_of_turn_cards_in_hand();
-        self.run_actions_until_empty();
-
-        self.action_queue.push_bot(EndOfTurnDiscardAction());
     }
 
     fn monsters_roll_move(&mut self) {
@@ -813,18 +841,6 @@ impl Game {
         }
     }
 
-    fn monsters_take_turn(&mut self) {
-        for i in 0..self.monsters.len() {
-            let m = &mut self.monsters[i];
-            if !m.creature.is_alive() {
-                continue;
-            }
-            m.behavior
-                .take_turn(CreatureRef::monster(i), &mut self.action_queue);
-            self.run_actions_until_empty();
-        }
-    }
-
     fn monsters_end_turn(&mut self) {
         for i in 0..self.monsters.len() {
             if !self.monsters[i].creature.is_alive() {
@@ -834,15 +850,13 @@ impl Game {
                 .creature
                 .trigger_statuses_turn_end(CreatureRef::monster(i), &mut self.action_queue);
         }
-        self.run_actions_until_empty();
     }
 
     #[cfg(test)]
     pub fn add_card_to_master_deck(&mut self, class: CardClass) {
         use crate::actions::add_card_to_master_deck::AddCardToMasterDeckAction;
 
-        self.action_queue.push_bot(AddCardToMasterDeckAction(class));
-        self.run_actions_until_empty();
+        self.run_action(AddCardToMasterDeckAction(class));
     }
 
     pub fn result(&self) -> GameStatus {
@@ -923,7 +937,7 @@ impl Game {
     }
 
     pub fn make_move(&mut self, m: Move) {
-        assert!(!self.finished());
+        assert!(!self.combat_finished());
         match m {
             Move::ChooseBlessing(b) => {
                 assert_matches!(self.state.cur_state(), GameState::Blessing);
@@ -938,14 +952,14 @@ impl Game {
                     .push_bot(RemoveCardFromMasterDeckAction(class));
                 self.action_queue
                     .push_bot(AddCardToMasterDeckAction(transformed));
-                self.state.pop_state();
+                self.state.set_state(GameState::RunActions);
             }
             Move::Remove { card_index } => {
                 assert_matches!(self.state.cur_state(), GameState::RemoveCard);
                 let c = self.master_deck.remove(card_index);
                 self.action_queue
                     .push_bot(RemoveCardFromMasterDeckAction(c.borrow().class));
-                self.state.pop_state();
+                self.state.set_state(GameState::RunActions);
             }
             Move::EndTurn => {
                 assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
@@ -963,6 +977,7 @@ impl Game {
                 };
                 assert!(self.can_play_card(&action));
                 self.card_queue.push(action);
+                self.state.push_state(GameState::RunActions);
             }
             Move::Armaments { card_index } => {
                 assert_matches!(self.state.cur_state(), GameState::Armaments);
@@ -1031,6 +1046,8 @@ impl Game {
                     cards_to_memories.push(self.discard_pile.remove(card_index));
                     if *num_cards_remaining == 0 {
                         self.memories_cards();
+                    } else {
+                        return;
                     }
                 }
                 _ => unreachable!(),
@@ -1044,6 +1061,8 @@ impl Game {
                     cards_to_exhaust.push(self.hand.remove(card_index));
                     if *num_cards_remaining == 0 || self.hand.is_empty() {
                         self.exhaust_cards();
+                    } else {
+                        return;
                     }
                 }
                 _ => unreachable!(),
@@ -1054,6 +1073,8 @@ impl Game {
                     cards_to_gamble.push(self.hand.remove(card_index));
                     if self.hand.is_empty() {
                         self.gamble_cards();
+                    } else {
+                        return;
                     }
                 }
                 _ => unreachable!(),
@@ -1072,6 +1093,8 @@ impl Game {
                     cards_to_forethought.push(self.hand.remove(card_index));
                     if self.hand.is_empty() {
                         self.forethought_cards();
+                    } else {
+                        return;
                     }
                 }
                 _ => unreachable!(),
@@ -1097,10 +1120,12 @@ impl Game {
                     potion: p,
                     target: target.map(CreatureRef::monster),
                 });
+                self.state.push_state(GameState::RunActions);
             }
             Move::DiscardPotion { potion_index } => {
                 assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
                 self.take_potion(potion_index);
+                return;
             }
         }
         self.run();
@@ -1307,31 +1332,36 @@ impl Game {
                 }
             }
             _ => {
-                unreachable!();
+                println!("{:?}", self.state);
+                panic!();
             }
         }
         assert!(!moves.is_empty());
         moves
     }
 
-    pub fn should_add_extra_decay_status(&self) -> bool {
-        matches!(
-            self.state.cur_state(),
-            GameState::MonsterTurn | GameState::PlayerTurnEnd
-        )
+    pub fn assert_no_actions(&self) {
+        assert!(self.action_queue.is_empty());
+        assert!(self.card_queue.is_empty());
+        assert!(self.monster_queue.is_empty());
+    }
+
+    #[cfg(test)]
+    pub fn run_all_actions(&mut self) {
+        self.state.push_state(GameState::RunActions);
+        self.run();
     }
 
     #[cfg(test)]
     pub fn run_action<A: Action + 'static>(&mut self, a: A) {
+        self.assert_no_actions();
         self.action_queue.push_bot(a);
-        self.run_actions_until_empty();
+        self.run_all_actions();
     }
 
     #[cfg(test)]
     pub fn throw_potion(&mut self, potion: Potion, target: Option<CreatureRef>) {
-        self.action_queue
-            .push_bot(UsePotionAction { potion, target });
-        self.run();
+        self.run_action(UsePotionAction { potion, target });
     }
 
     #[cfg(test)]
@@ -1346,7 +1376,8 @@ impl Game {
         };
         assert!(self.can_play_card(&action));
         self.card_queue.push(action);
-        self.run_actions_until_empty();
+        assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
+        self.run_all_actions();
     }
 
     #[cfg(test)]
@@ -1410,21 +1441,9 @@ impl Game {
         self.hand.len() as i32 == Game::MAX_HAND_SIZE
     }
 
-    fn finished(&mut self) -> bool {
-        assert_not_matches!(
-            self.state.cur_state(),
-            GameState::Defeat | GameState::Victory
-        );
-        if !self.player.is_alive() {
-            self.state.set_state(GameState::Defeat);
-            return true;
-        }
-        if self.combat_monsters_queue.is_empty()
-            && self.monsters.iter().all(|m| !m.creature.is_alive())
-        {
-            self.state.set_state(GameState::Victory);
-            self.trigger_relics_at_combat_finish();
-            self.run_actions_until_empty();
+    fn combat_finished(&mut self) -> bool {
+        if self.monsters.iter().all(|m| !m.creature.is_alive()) {
+            self.state.set_state(GameState::CombatEnd);
             return true;
         }
         false
@@ -1467,16 +1486,20 @@ impl Game {
         p
     }
     pub fn add_relic(&mut self, class: RelicClass) {
+        self.assert_no_actions();
+
         let mut r = new_relic(class);
         r.on_equip(&mut self.action_queue);
         self.relics.push(r);
-        self.run_actions_until_empty();
+        self.state.push_state(GameState::RunActions);
+        self.run();
     }
     pub fn remove_relic(&mut self, class: RelicClass) {
         let idx = self.relics.iter().position(|r| r.get_class() == class);
         let mut r = self.relics.remove(idx.unwrap());
         r.on_unequip(&mut self.action_queue);
-        self.run_actions_until_empty();
+        self.state.push_state(GameState::RunActions);
+        self.run();
     }
     pub fn has_relic(&self, class: RelicClass) -> bool {
         self.relics.iter().any(|r| r.get_class() == class)
@@ -1642,7 +1665,7 @@ mod tests {
             free: false,
             force_exhaust: false,
         });
-        g.run_actions_until_empty();
+        g.run_all_actions();
         assert_eq!(g.discard_pile.len(), 1);
     }
 
