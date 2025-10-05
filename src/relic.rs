@@ -140,7 +140,7 @@ r!(
     PrayerWheel => Rare, // TODO
     Shovel => Rare, // TODO
     StoneCalendar => Rare, // TODO
-    ThreadAndNeedle => Rare, // TODO
+    ThreadAndNeedle => Rare,
     Torii => Rare, // TODO
     TungstenRod => Rare,
     Turnip => Rare, // TODO
@@ -279,6 +279,7 @@ impl RelicClass {
             Akabeko => Some(akabeko),
             PenNib => Some(pen_nib_start),
             FossilizedHelix => Some(fossilized_helix),
+            ThreadAndNeedle => Some(thread_and_needle),
             _ => None,
         }
     }
@@ -491,6 +492,14 @@ fn fossilized_helix(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainStatusAction {
         status: Status::Buffer,
         amount: 1,
+        target: CreatureRef::player(),
+    });
+}
+
+fn thread_and_needle(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAction {
+        status: Status::PlatedArmor,
+        amount: 4,
         target: CreatureRef::player(),
     });
 }
@@ -1693,5 +1702,13 @@ mod tests {
             .add_relic(RelicClass::FossilizedHelix)
             .build_combat();
         assert_eq!(g.player.get_status(Status::Buffer), Some(1));
+    }
+
+    #[test]
+    fn test_thread_and_needle() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::ThreadAndNeedle)
+            .build_combat();
+        assert_eq!(g.player.get_status(Status::PlatedArmor), Some(4));
     }
 }
