@@ -500,9 +500,16 @@ impl Game {
             }
         }
         amount = amount.min(c.cur_hp);
+        if amount != 0 && c.has_status(Status::Buffer) {
+            amount = 0;
+            self.action_queue.push_bot(ReduceStatusAction {
+                status: Status::Buffer,
+                amount: 1,
+                target,
+            });
+        }
         if target.is_player() && self.has_relic(RelicClass::TungstenRod) {
-            amount -= 1;
-            amount = amount.max(0);
+            amount = (amount - 1).max(0);
         }
         if !target.is_player() && amount > 0 && amount < 5 && self.has_relic(RelicClass::Boot) {
             amount = 5;

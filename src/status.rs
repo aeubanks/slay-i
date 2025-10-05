@@ -42,6 +42,7 @@ s!(
     Vigor => Buff,
     RegenPlayer => Buff,
     RegenMonster => Buff,
+    Buffer => Buff,
     Intangible => Buff,
     Brutality => Buff,
     Juggernaut => Buff,
@@ -1288,5 +1289,24 @@ mod tests {
             g.play_card(CardClass::Pummel, Some(CreatureRef::monster(0)));
             assert_eq!(g.monsters[0].creature.cur_hp, hp - (10 + 2) * 4);
         }
+    }
+
+    #[test]
+    fn test_buffer() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Buffer, 2)
+            .add_monster(AttackMonster::new(6))
+            .build_combat();
+
+        let hp = g.player.cur_hp;
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.cur_hp, hp);
+        assert_eq!(g.player.get_status(Buffer), Some(1));
+        g.play_card(CardClass::Defend, None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_status(Buffer), None);
+        assert_eq!(g.player.cur_hp, hp);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 6);
     }
 }

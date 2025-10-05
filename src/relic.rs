@@ -126,7 +126,7 @@ r!(
     CaptainsWheel => Rare,
     DeadBranch => Rare, // TODO
     DuVuDoll => Rare,
-    FossilizedHelix => Rare, // TODO
+    FossilizedHelix => Rare,
     GamblingChip => Rare, // TODO, requires pausing
     Ginger => Rare, // TODO
     Girya => Rare, // TODO
@@ -278,6 +278,7 @@ impl RelicClass {
             DuVuDoll => Some(du_vu_doll),
             Akabeko => Some(akabeko),
             PenNib => Some(pen_nib_start),
+            FossilizedHelix => Some(fossilized_helix),
             _ => None,
         }
     }
@@ -484,6 +485,14 @@ fn bronze_scales(_: &mut i32, queue: &mut ActionQueue) {
 
 fn du_vu_doll(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(DuvuAction());
+}
+
+fn fossilized_helix(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAction {
+        status: Status::Buffer,
+        amount: 1,
+        target: CreatureRef::player(),
+    });
 }
 
 fn vajra(_: &mut i32, queue: &mut ActionQueue) {
@@ -1646,6 +1655,19 @@ mod tests {
     }
 
     #[test]
+    fn test_tungsten_rod_buffer() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::TungstenRod)
+            .add_player_status(Status::Buffer, 1)
+            .add_monster(AttackMonster::new(1))
+            .build_combat();
+        let hp = g.player.cur_hp;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp);
+        assert_eq!(g.player.get_status(Status::Buffer), None);
+    }
+
+    #[test]
     fn test_boot() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Boot)
@@ -1663,5 +1685,13 @@ mod tests {
         });
         g.play_card_upgraded(CardClass::Strike, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 5 - 5);
+    }
+
+    #[test]
+    fn test_fossilized_helix() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::FossilizedHelix)
+            .build_combat();
+        assert_eq!(g.player.get_status(Status::Buffer), Some(1));
     }
 }
