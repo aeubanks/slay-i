@@ -504,6 +504,9 @@ impl Game {
             amount -= 1;
             amount = amount.max(0);
         }
+        if !target.is_player() && amount > 0 && amount < 5 && self.has_relic(RelicClass::Boot) {
+            amount = 5;
+        }
         let c = self.get_creature_mut(target);
         c.last_damage_taken = amount;
         if amount != 0 {

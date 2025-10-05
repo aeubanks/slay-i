@@ -82,7 +82,7 @@ r!(
     RegalPillow => Common, // TODO
     SmilingMask => Common, // TODO
     Strawberry => Common,
-    Boot => Common, // TODO
+    Boot => Common,
     TinyChest => Common, // TODO
     ToyOrnithopter => Common, // TODO
     Vajra => Common,
@@ -1643,5 +1643,25 @@ mod tests {
         assert_eq!(g.player.cur_hp, hp - 2 - 6 - 2);
         assert_eq!(g.player.get_status(Status::PlatedArmor), Some(1));
         assert_eq!(g.hand[0].borrow().get_base_cost(), 4);
+    }
+
+    #[test]
+    fn test_boot() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Boot)
+            .add_player_status(Status::Strength, -6)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp);
+        g.play_card_upgraded(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 5);
+        g.run_action(GainStatusAction {
+            status: Status::Intangible,
+            amount: 4,
+            target: CreatureRef::monster(0),
+        });
+        g.play_card_upgraded(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 5 - 5);
     }
 }
