@@ -187,7 +187,7 @@ r!(
     Sozu => Boss, // TODO
     TinyHouse => Boss, // TODO
     VelvetChoker => Boss, // TODO
-    BlackBlood => Boss, // TODO
+    BlackBlood => Boss,
     MarkOfPain => Boss, // TODO
     RunicCube => Boss, // TODO
 
@@ -259,6 +259,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             BurningBlood => Some(burning_blood),
+            BlackBlood => Some(black_blood),
             _ => None,
         }
     }
@@ -438,6 +439,12 @@ fn burning_blood(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(HealAction {
         target: CreatureRef::player(),
         amount: 6,
+    });
+}
+fn black_blood(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(HealAction {
+        target: CreatureRef::player(),
+        amount: 12,
     });
 }
 
@@ -751,6 +758,20 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.player.cur_hp, hp + 6);
+    }
+
+    #[test]
+    fn test_black_blood() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::DebugKill)
+            .add_relic(RelicClass::BlackBlood)
+            .build_combat();
+        g.player.cur_hp = 10;
+        g.make_move(Move::PlayCard {
+            card_index: 0,
+            target: Some(0),
+        });
+        assert_eq!(g.player.cur_hp, 10 + 12);
     }
 
     #[test]
