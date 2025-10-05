@@ -142,7 +142,7 @@ r!(
     StoneCalendar => Rare, // TODO
     ThreadAndNeedle => Rare, // TODO
     Torii => Rare, // TODO
-    TungstenRod => Rare, // TODO
+    TungstenRod => Rare,
     Turnip => Rare, // TODO
     UnceasingTop => Rare, // TODO
     WingBoots => Rare, // TODO
@@ -1613,5 +1613,35 @@ mod tests {
             assert_eq!(g.get_relic_value(RelicClass::PenNib), Some(0));
             assert_eq!(g.player.get_status(Status::PenNib), None);
         }
+    }
+
+    #[test]
+    fn test_tungsten_rod() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::TungstenRod)
+            .add_monster(AttackMonster::with_attack_count(4, 2))
+            .build_combat();
+        let hp = g.player.cur_hp;
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.cur_hp, hp - 2);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 2 - 6);
+        g.play_card(CardClass::Defend, None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 2 - 6 - 2);
+
+        g.play_card(CardClass::Apparition, None);
+        g.play_card(CardClass::Apparition, None);
+        g.clear_all_piles();
+        g.run_action(GainStatusAction {
+            status: Status::PlatedArmor,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
+        g.add_card_to_discard_pile(CardClass::BloodForBlood);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 2 - 6 - 2);
+        assert_eq!(g.player.get_status(Status::PlatedArmor), Some(1));
+        assert_eq!(g.hand[0].borrow().get_base_cost(), 4);
     }
 }

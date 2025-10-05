@@ -500,6 +500,11 @@ impl Game {
             }
         }
         amount = amount.min(c.cur_hp);
+        if target.is_player() && self.has_relic(RelicClass::TungstenRod) {
+            amount -= 1;
+            amount = amount.max(0);
+        }
+        let c = self.get_creature_mut(target);
         c.last_damage_taken = amount;
         if amount != 0 {
             c.cur_hp -= amount;
