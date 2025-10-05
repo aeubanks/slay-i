@@ -1,4 +1,3 @@
-use crate::actions::damage::calculate_damage;
 use crate::creature::Creature;
 use crate::game::{CreatureRef, Game, Rand};
 use crate::queue::ActionQueue;
@@ -40,7 +39,7 @@ impl Intent {
                 return;
             }
         };
-        *d = calculate_damage(*d, this, CreatureRef::player(), game);
+        *d = game.calculate_damage(*d, this, CreatureRef::player());
     }
 }
 

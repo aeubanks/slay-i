@@ -6,7 +6,6 @@ use crate::{
     },
     game::{CreatureRef, Game},
     queue::ActionQueue,
-    status::Status,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -58,31 +57,8 @@ pub struct DamageAction {
     ty: DamageType,
 }
 
-pub fn calculate_damage(amount: i32, source: CreatureRef, target: CreatureRef, game: &Game) -> i32 {
-    let mut amount_f = amount as f32;
-    let source = game.get_creature(source);
-    let target = game.get_creature(target);
-    if let Some(s) = source.get_status(Status::Strength) {
-        amount_f += s as f32;
-    }
-    if source.has_status(Status::Weak) {
-        amount_f *= 0.75;
-    }
-    if source.has_status(Status::PenNib) {
-        amount_f *= 2.0;
-    }
-    if target.has_status(Status::Vulnerable) {
-        amount_f *= 1.5;
-    }
-    if target.has_status(Status::Intangible) {
-        amount_f = amount_f.min(1.0);
-    }
-    0.max(amount_f as i32)
-}
-
 impl DamageAction {
     pub fn from_player(base_amount: i32, target: CreatureRef) -> Self {
-        // let amount = calculate_damage(base_amount, CreatureRef::player(), target, game);
         Self {
             target,
             amount: base_amount,
@@ -97,7 +73,6 @@ impl DamageAction {
         target: CreatureRef,
         on_fatal: OnFatal,
     ) -> Self {
-        // let amount = calculate_damage(base_amount, CreatureRef::player(), target, game);
         Self {
             target,
             amount: base_amount,
@@ -108,7 +83,6 @@ impl DamageAction {
         }
     }
     pub fn from_monster(base_amount: i32, source: CreatureRef) -> Self {
-        // let amount = calculate_damage(base_amount, source, CreatureRef::player(), game);
         Self {
             target: CreatureRef::player(),
             amount: base_amount,

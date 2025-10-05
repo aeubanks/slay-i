@@ -423,7 +423,7 @@ impl Game {
         rand_slice(&mut self.rng, &alive)
     }
 
-    fn calculate_damage(
+    pub fn calculate_damage(
         &self,
         amount: i32,
         source_ref: CreatureRef,
