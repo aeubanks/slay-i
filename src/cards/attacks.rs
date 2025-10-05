@@ -185,7 +185,11 @@ pub fn searing_blow_behavior(game: &mut Game, info: &CardPlayInfo) {
 }
 
 pub fn whirlwind_behavior(game: &mut Game, info: &CardPlayInfo) {
-    for _ in 0..info.energy {
+    let mut count = info.energy;
+    if game.has_relic(RelicClass::ChemicalX) {
+        count += 2;
+    }
+    for _ in 0..count {
         push_aoe_damage(game, info, 5, 8);
     }
 }

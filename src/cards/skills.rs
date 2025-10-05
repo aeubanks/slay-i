@@ -42,6 +42,7 @@ use crate::{
         random_red_skill_in_combat,
     },
     game::{CreatureRef, Game},
+    relic::RelicClass,
     status::Status,
 };
 
@@ -471,7 +472,11 @@ pub fn chrysalis_behavior(game: &mut Game, info: &CardPlayInfo) {
 }
 
 pub fn transmutation_behavior(game: &mut Game, info: &CardPlayInfo) {
-    for _ in 0..info.energy {
+    let mut count = info.energy;
+    if game.has_relic(RelicClass::ChemicalX) {
+        count += 2;
+    }
+    for _ in 0..count {
         let class = random_colorless(&mut game.rng);
         let c = if info.upgraded {
             game.new_card_upgraded(class)

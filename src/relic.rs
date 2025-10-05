@@ -151,7 +151,7 @@ r!(
     MagicFlower => Rare, // TODO
 
     Cauldron => Shop, // TODO
-    ChemicalX => Shop, // TODO
+    ChemicalX => Shop,
     ClockworkSouvenir => Shop,
     DollysMirror => Shop, // TODO
     FrozenEye => Shop, // TODO
@@ -1710,5 +1710,17 @@ mod tests {
             .add_relic(RelicClass::ThreadAndNeedle)
             .build_combat();
         assert_eq!(g.player.get_status(Status::PlatedArmor), Some(4));
+    }
+
+    #[test]
+    fn test_chemical_x() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::ChemicalX)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Whirlwind, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 5 * 5);
+        g.play_card(CardClass::Transmutation, None);
+        assert_eq!(g.hand.len(), 2);
     }
 }
