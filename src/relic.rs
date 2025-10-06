@@ -128,7 +128,7 @@ r!(
     DuVuDoll => Rare,
     FossilizedHelix => Rare,
     GamblingChip => Rare, // TODO, requires pausing
-    Ginger => Rare, // TODO
+    Ginger => Rare,
     Girya => Rare, // TODO
     IceCream => Rare,
     IncenseBurner => Rare, // TODO
@@ -143,7 +143,7 @@ r!(
     ThreadAndNeedle => Rare,
     Torii => Rare, // TODO
     TungstenRod => Rare,
-    Turnip => Rare, // TODO
+    Turnip => Rare,
     UnceasingTop => Rare, // TODO
     WingBoots => Rare, // TODO
     ChampionBelt => Rare, // TODO
@@ -741,7 +741,7 @@ mod tests {
         cards::CardClass,
         game::{GameBuilder, Move},
         monster::Monster,
-        monsters::test::{AttackMonster, NoopMonster},
+        monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
         status::Status,
     };
@@ -1743,5 +1743,51 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 5 * 5);
         g.play_card(CardClass::Transmutation, None);
         assert_eq!(g.hand.len(), 2);
+    }
+
+    #[test]
+    fn test_turnip() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Turnip)
+            .add_monster(ApplyStatusMonster {
+                status: Status::Weak,
+                amount: 2,
+            })
+            .add_monster(ApplyStatusMonster {
+                status: Status::Frail,
+                amount: 2,
+            })
+            .build_combat();
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_status(Status::Weak), Some(2));
+        assert_eq!(g.player.get_status(Status::Frail), None);
+        g.player.set_status(Status::Artifact, 2);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_status(Status::Weak), Some(1));
+        assert_eq!(g.player.get_status(Status::Frail), None);
+        assert_eq!(g.player.get_status(Status::Artifact), Some(1));
+    }
+
+    #[test]
+    fn test_ginger() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Ginger)
+            .add_monster(ApplyStatusMonster {
+                status: Status::Weak,
+                amount: 2,
+            })
+            .add_monster(ApplyStatusMonster {
+                status: Status::Frail,
+                amount: 2,
+            })
+            .build_combat();
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_status(Status::Frail), Some(2));
+        assert_eq!(g.player.get_status(Status::Weak), None);
+        g.player.set_status(Status::Artifact, 2);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_status(Status::Frail), Some(1));
+        assert_eq!(g.player.get_status(Status::Weak), None);
+        assert_eq!(g.player.get_status(Status::Artifact), Some(1));
     }
 }

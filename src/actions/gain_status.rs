@@ -2,6 +2,7 @@ use crate::{
     action::Action,
     actions::{damage::DamageAction, reduce_status::ReduceStatusAction},
     game::{CreatureRef, Game},
+    relic::RelicClass,
     status::{Status, StatusType},
 };
 
@@ -21,6 +22,18 @@ impl Action for GainStatusAction {
         }
         let c = game.get_creature(self.target);
         if self.status == Status::NoDraw && c.has_status(Status::NoDraw) {
+            return;
+        }
+        if self.target.is_player()
+            && self.status == Status::Weak
+            && game.has_relic(RelicClass::Ginger)
+        {
+            return;
+        }
+        if self.target.is_player()
+            && self.status == Status::Frail
+            && game.has_relic(RelicClass::Turnip)
+        {
             return;
         }
         if self.status.is_debuff(self.amount) && c.has_status(Status::Artifact) {
