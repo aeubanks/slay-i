@@ -652,18 +652,19 @@ impl Game {
                     .start_of_turn_lose_block(self.has_relic(RelicClass::Calipers));
 
                 if self.turn == 0 {
-                    self.trigger_relics_at_combat_start_pre_draw();
+                    self.trigger_relics_at_combat_begin_pre_draw();
                 }
+                self.trigger_relics_at_turn_begin_pre_draw();
                 self.player
                     .trigger_statuses_turn_begin(CreatureRef::player(), &mut self.action_queue);
 
                 self.action_queue.push_bot(DrawAction(self.draw_per_turn));
 
                 if self.turn == 0 {
-                    self.trigger_relics_at_combat_start_post_draw();
+                    self.trigger_relics_at_combat_begin_post_draw();
                 }
 
-                self.trigger_relics_at_turn_start();
+                self.trigger_relics_at_turn_begin_post_draw();
                 self.player.trigger_statuses_turn_begin_post_draw(
                     CreatureRef::player(),
                     &mut self.action_queue,
@@ -1549,14 +1550,21 @@ impl Game {
     trigger!(trigger_relics_on_shuffle, on_shuffle);
     trigger!(trigger_relics_at_pre_combat, at_pre_combat);
     trigger!(
-        trigger_relics_at_combat_start_pre_draw,
-        at_combat_start_pre_draw
+        trigger_relics_at_combat_begin_pre_draw,
+        at_combat_begin_pre_draw
     );
     trigger!(
-        trigger_relics_at_combat_start_post_draw,
-        at_combat_start_post_draw
+        trigger_relics_at_combat_begin_post_draw,
+        at_combat_begin_post_draw
     );
-    trigger!(trigger_relics_at_turn_start, at_turn_start);
+    trigger!(
+        trigger_relics_at_turn_begin_pre_draw,
+        at_turn_begin_pre_draw
+    );
+    trigger!(
+        trigger_relics_at_turn_begin_post_draw,
+        at_turn_begin_post_draw
+    );
     trigger!(trigger_relics_at_turn_end, at_turn_end);
     trigger!(trigger_relics_at_combat_finish, at_combat_finish);
     trigger_card!(trigger_relics_on_card_played, on_card_played);

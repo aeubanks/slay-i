@@ -263,7 +263,7 @@ impl RelicClass {
             _ => None,
         }
     }
-    pub fn at_combat_start_pre_draw(&self) -> Option<RelicCallback> {
+    pub fn at_combat_begin_pre_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             BloodVial => Some(blood_vial),
@@ -284,7 +284,7 @@ impl RelicClass {
             _ => None,
         }
     }
-    pub fn at_combat_start_post_draw(&self) -> Option<RelicCallback> {
+    pub fn at_combat_begin_post_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             BagOfPrep => Some(bag_of_prep),
@@ -309,7 +309,7 @@ impl RelicClass {
             _ => None,
         }
     }
-    pub fn at_turn_start(&self) -> Option<RelicCallback> {
+    pub fn at_turn_begin_pre_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
             Kunai | Shruiken | LetterOpener | OrnamentalFan => Some(set_value_zero),
@@ -317,6 +317,12 @@ impl RelicClass {
             CaptainsWheel => Some(captains_wheel),
             HappyFlower => Some(happy_flower),
             ArtOfWar => Some(art_of_war),
+            _ => None,
+        }
+    }
+    pub fn at_turn_begin_post_draw(&self) -> Option<RelicCallback> {
+        use RelicClass::*;
+        match self {
             Pocketwatch => Some(pocketwatch),
             _ => None,
         }
@@ -710,9 +716,10 @@ impl Relic {
     trigger!(on_unequip);
     trigger!(on_shuffle);
     trigger!(at_pre_combat);
-    trigger!(at_combat_start_pre_draw);
-    trigger!(at_combat_start_post_draw);
-    trigger!(at_turn_start);
+    trigger!(at_combat_begin_pre_draw);
+    trigger!(at_combat_begin_post_draw);
+    trigger!(at_turn_begin_pre_draw);
+    trigger!(at_turn_begin_post_draw);
     trigger!(at_turn_end);
     trigger!(at_combat_finish);
     trigger_card!(on_card_played);
@@ -1099,7 +1106,7 @@ mod tests {
     }
 
     #[test]
-    fn test_combat_start() {
+    fn test_combat_begin() {
         {
             let g = GameBuilder::default()
                 .add_relic(RelicClass::MutagenicStrength)
