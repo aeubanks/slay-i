@@ -8,6 +8,7 @@ use crate::{
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
         increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
+        upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
     },
     cards::CardType,
@@ -208,7 +209,7 @@ r!(
     RedMask => Event,
     SpiritPoop => Event,
     SsserpentHead => Event, // TODO
-    WarpedTongs => Event, // TODO
+    WarpedTongs => Event,
 );
 
 type RelicCallback = fn(&mut i32, &mut ActionQueue);
@@ -324,6 +325,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             Pocketwatch => Some(pocketwatch),
+            WarpedTongs => Some(warped_tongs),
             _ => None,
         }
     }
@@ -363,6 +365,10 @@ fn pocketwatch(v: &mut i32, queue: &mut ActionQueue) {
         queue.push_bot(DrawAction(3));
     }
     *v = 0;
+}
+
+fn warped_tongs(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(UpgradeRandomInHandAction());
 }
 
 fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
@@ -1796,5 +1802,61 @@ mod tests {
         assert_eq!(g.player.get_status(Status::Frail), Some(1));
         assert_eq!(g.player.get_status(Status::Weak), None);
         assert_eq!(g.player.get_status(Status::Artifact), Some(1));
+    }
+    #[test]
+    fn test_warped_tongs() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::WarpedTongs)
+            .build_combat();
+        g.add_card_to_draw_pile(CardClass::Strike);
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand[0].borrow().upgrade_count, 1);
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand[0].borrow().upgrade_count, 1);
+
+        g.add_card_to_draw_pile(CardClass::SearingBlow);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_hand_card(CardClass::Strike).borrow().upgrade_count, 1);
+        assert_eq!(
+            g.get_hand_card(CardClass::SearingBlow)
+                .borrow()
+                .upgrade_count,
+            1
+        );
+
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_hand_card(CardClass::Strike).borrow().upgrade_count, 1);
+        assert_eq!(
+            g.get_hand_card(CardClass::SearingBlow)
+                .borrow()
+                .upgrade_count,
+            2
+        );
+
+        let mut found_upgraded_strike = false;
+        let mut found_upgraded_defend = false;
+        for _ in 0..100 {
+            g.clear_all_piles();
+            g.add_card_to_draw_pile_upgraded(CardClass::WildStrike);
+            g.add_card_to_draw_pile(CardClass::Defend);
+            g.add_card_to_draw_pile(CardClass::Strike);
+            g.make_move(Move::EndTurn);
+            assert_eq!(
+                g.hand.iter().map(|c| c.borrow().upgrade_count).sum::<i32>(),
+                2
+            );
+            if g.get_hand_card(CardClass::Strike).borrow().upgrade_count == 1 {
+                found_upgraded_strike = true;
+            }
+            if g.get_hand_card(CardClass::Defend).borrow().upgrade_count == 1 {
+                found_upgraded_defend = true;
+            }
+            if found_upgraded_defend && found_upgraded_strike {
+                break;
+            }
+        }
+        assert!(found_upgraded_defend && found_upgraded_strike);
     }
 }

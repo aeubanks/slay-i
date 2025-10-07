@@ -1430,6 +1430,12 @@ impl Game {
     }
 
     #[cfg(test)]
+    pub fn add_card_to_draw_pile_upgraded(&mut self, class: CardClass) {
+        let card = self.new_card_upgraded(class);
+        self.draw_pile.push(card);
+    }
+
+    #[cfg(test)]
     pub fn add_cards_to_draw_pile(&mut self, class: CardClass, amount: i32) {
         for _ in 0..amount {
             self.add_card_to_draw_pile(class);
@@ -1453,6 +1459,17 @@ impl Game {
     pub fn add_card_to_exhaust_pile(&mut self, class: CardClass) {
         let card = self.new_card(class);
         self.exhaust_pile.push(card);
+    }
+
+    #[cfg(test)]
+    pub fn get_hand_card(&self, class: CardClass) -> &CardRef {
+        let cards = self
+            .hand
+            .iter()
+            .filter(|c| c.borrow().class == class)
+            .collect::<Vec<_>>();
+        assert_eq!(cards.len(), 1);
+        cards[0]
     }
 
     #[cfg(test)]
