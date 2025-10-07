@@ -195,7 +195,7 @@ r!(
     BloodyIdol => Event, // TODO
     CultistHeadpiece => Event,
     Enchiridion => Event, // TODO
-    FaceOfCleric => Event, // TODO
+    FaceOfCleric => Event,
     GoldenIdol => Event, // TODO
     GremlinVisage => Event,
     MarkOfTheBloom => Event, // TODO
@@ -261,6 +261,7 @@ impl RelicClass {
         match self {
             BurningBlood => Some(burning_blood),
             BlackBlood => Some(black_blood),
+            FaceOfCleric => Some(face_of_cleric),
             _ => None,
         }
     }
@@ -463,6 +464,10 @@ fn black_blood(_: &mut i32, queue: &mut ActionQueue) {
         target: CreatureRef::player(),
         amount: 12,
     });
+}
+
+fn face_of_cleric(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(IncreaseMaxHPAction(1));
 }
 
 fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
@@ -790,6 +795,16 @@ mod tests {
             target: Some(0),
         });
         assert_eq!(g.player.cur_hp, 10 + 12);
+    }
+
+    #[test]
+    fn test_face_of_cleric() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::FaceOfCleric)
+            .build_combat();
+        let hp = g.player.max_hp;
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.max_hp, hp + 1);
     }
 
     #[test]
