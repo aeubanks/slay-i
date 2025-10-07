@@ -66,7 +66,7 @@ r!(
     BloodVial => Common,
     BronzeScales => Common,
     CentennialPuzzle => Common, // TODO
-    CeramicFish => Common, // TODO
+    CeramicFish => Common,
     DreamCatcher => Common, // TODO
     HappyFlower => Common,
     JuzuBracelet => Common, // TODO
@@ -771,7 +771,7 @@ pub fn random_common_relic(rng: &mut Rand) -> RelicClass {
 mod tests {
     use super::*;
     use crate::{
-        actions::block::BlockAction,
+        actions::{add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction},
         cards::CardClass,
         game::{GameBuilder, Move},
         monster::Monster,
@@ -1956,5 +1956,19 @@ mod tests {
                 .build_combat();
             assert!(g.hand.iter().any(|c| c.borrow().upgrade_count != 0));
         }
+    }
+
+    #[test]
+    fn test_ceramic_fish() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::CeramicFish)
+            .build();
+        g.run_action(AddCardToMasterDeckAction(CardClass::Parasite));
+        assert_eq!(g.gold, 9);
+        g.run_action(AddCardToMasterDeckAction(CardClass::Strike));
+        assert_eq!(g.gold, 18);
+        g.add_relic(RelicClass::Omamori);
+        g.run_action(AddCardToMasterDeckAction(CardClass::Parasite));
+        assert_eq!(g.gold, 18);
     }
 }

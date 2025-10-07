@@ -1,6 +1,6 @@
 use crate::{
     action::Action,
-    actions::increase_max_hp::IncreaseMaxHPAction,
+    actions::{gain_gold::GainGoldAction, increase_max_hp::IncreaseMaxHPAction},
     cards::{CardClass, CardType},
     game::Game,
     relic::RelicClass,
@@ -20,6 +20,9 @@ impl Action for AddCardToMasterDeckAction {
 
         if self.0.ty() == CardType::Curse && game.has_relic(RelicClass::DarkstonePeriapt) {
             game.action_queue.push_bot(IncreaseMaxHPAction(6));
+        }
+        if game.has_relic(RelicClass::CeramicFish) {
+            game.action_queue.push_bot(GainGoldAction(9));
         }
 
         let c = game.new_card(self.0);
