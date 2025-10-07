@@ -132,7 +132,7 @@ r!(
     Ginger => Rare,
     Girya => Rare, // TODO
     IceCream => Rare,
-    IncenseBurner => Rare, // TODO
+    IncenseBurner => Rare,
     LizardTail => Rare, // TODO
     Mango => Rare,
     OldCoin => Rare,
@@ -319,6 +319,7 @@ impl RelicClass {
             CaptainsWheel => Some(captains_wheel),
             HappyFlower => Some(happy_flower),
             ArtOfWar => Some(art_of_war),
+            IncenseBurner => Some(incense_burner),
             _ => None,
         }
     }
@@ -605,6 +606,16 @@ fn captains_wheel(v: &mut i32, queue: &mut ActionQueue) {
 fn happy_flower(v: &mut i32, queue: &mut ActionQueue) {
     if inc_wrap(v, 3) {
         queue.push_bot(GainEnergyAction(1));
+    }
+}
+
+fn incense_burner(v: &mut i32, queue: &mut ActionQueue) {
+    if inc_wrap(v, 6) {
+        queue.push_bot(GainStatusAction {
+            status: Status::Intangible,
+            amount: 1,
+            target: CreatureRef::player(),
+        });
     }
 }
 
@@ -1208,6 +1219,39 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(1));
         assert_eq!(g.energy, 3);
+    }
+
+    #[test]
+    fn test_incense_burner() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::IncenseBurner)
+            .build_combat();
+
+        g.combat_monsters_queue
+            .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
+
+        assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(1));
+        assert_eq!(g.player.get_status(Status::Intangible), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(2));
+        assert_eq!(g.player.get_status(Status::Intangible), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(3));
+        assert_eq!(g.player.get_status(Status::Intangible), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(4));
+        assert_eq!(g.player.get_status(Status::Intangible), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(5));
+        assert_eq!(g.player.get_status(Status::Intangible), None);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(0));
+        assert_eq!(g.player.get_status(Status::Intangible), Some(1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(1));
+        assert_eq!(g.player.get_status(Status::Intangible), None);
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(2));
     }
 
     #[test]
