@@ -85,7 +85,7 @@ r!(
     Strawberry => Common,
     Boot => Common,
     TinyChest => Common, // TODO
-    ToyOrnithopter => Common, // TODO
+    ToyOrnithopter => Common,
     Vajra => Common,
     WarPaint => Common,
     Whetstone => Common,
@@ -1970,5 +1970,17 @@ mod tests {
         g.add_relic(RelicClass::Omamori);
         g.run_action(AddCardToMasterDeckAction(CardClass::Parasite));
         assert_eq!(g.gold, 18);
+    }
+
+    #[test]
+    fn test_toy_ornithopter() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::ToyOrnithopter)
+            .build_combat();
+        g.player.cur_hp = 10;
+        g.throw_potion(Potion::Ancient, None);
+        assert_eq!(g.player.cur_hp, 15);
+        g.throw_potion(Potion::Fire, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.cur_hp, 20);
     }
 }

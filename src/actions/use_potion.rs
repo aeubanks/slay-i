@@ -1,5 +1,6 @@
 use crate::{
     action::Action,
+    actions::heal::HealAction,
     game::{CreatureRef, Game},
     potion::Potion,
     relic::RelicClass,
@@ -14,6 +15,12 @@ impl Action for UsePotionAction {
     fn run(&self, game: &mut Game) {
         let is_sacred = game.has_relic(RelicClass::SacredBark);
         self.potion.behavior()(is_sacred, self.target, game);
+        if game.has_relic(RelicClass::ToyOrnithopter) {
+            game.action_queue.push_bot(HealAction {
+                target: CreatureRef::player(),
+                amount: 5,
+            });
+        }
     }
 }
 
