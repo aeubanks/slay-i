@@ -2,9 +2,9 @@ use lazy_static::lazy_static;
 
 use crate::{
     actions::{
-        block::BlockAction, damage::DamageAction, damage_all_monsters::DamageAllMonstersAction,
-        draw::DrawAction, duvu::DuvuAction, gain_energy::GainEnergyAction,
-        gain_gold::GainGoldAction, gain_status::GainStatusAction,
+        block::BlockAction, choose_gamble::ChooseGambleAction, damage::DamageAction,
+        damage_all_monsters::DamageAllMonstersAction, draw::DrawAction, duvu::DuvuAction,
+        gain_energy::GainEnergyAction, gain_gold::GainGoldAction, gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
         increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
@@ -128,7 +128,7 @@ r!(
     DeadBranch => Rare, // TODO
     DuVuDoll => Rare,
     FossilizedHelix => Rare,
-    GamblingChip => Rare, // TODO, requires pausing
+    GamblingChip => Rare,
     Ginger => Rare,
     Girya => Rare, // TODO
     IceCream => Rare,
@@ -326,6 +326,7 @@ impl RelicClass {
         match self {
             Pocketwatch => Some(pocketwatch),
             WarpedTongs => Some(warped_tongs),
+            GamblingChip => Some(gambling_chip),
             _ => None,
         }
     }
@@ -369,6 +370,10 @@ fn pocketwatch(v: &mut i32, queue: &mut ActionQueue) {
 
 fn warped_tongs(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(UpgradeRandomInHandAction());
+}
+
+fn gambling_chip(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(ChooseGambleAction());
 }
 
 fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
@@ -1803,6 +1808,7 @@ mod tests {
         assert_eq!(g.player.get_status(Status::Weak), None);
         assert_eq!(g.player.get_status(Status::Artifact), Some(1));
     }
+
     #[test]
     fn test_warped_tongs() {
         let mut g = GameBuilder::default()
@@ -1858,5 +1864,38 @@ mod tests {
             }
         }
         assert!(found_upgraded_defend && found_upgraded_strike);
+    }
+
+    #[test]
+    fn test_gambling_chip() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::GamblingChip)
+            .add_cards(CardClass::Strike, 10)
+            .build_combat();
+        assert!(
+            g.valid_moves()
+                .iter()
+                .all(|m| matches!(m, Move::Gamble { .. } | Move::GambleEnd))
+        );
+    }
+
+    #[test]
+    fn test_gambling_chip_warped_tongs() {
+        {
+            let g = GameBuilder::default()
+                .add_relic(RelicClass::GamblingChip)
+                .add_relic(RelicClass::WarpedTongs)
+                .add_cards(CardClass::Strike, 10)
+                .build_combat();
+            assert!(g.hand.iter().all(|c| c.borrow().upgrade_count == 0));
+        }
+        {
+            let g = GameBuilder::default()
+                .add_relic(RelicClass::WarpedTongs)
+                .add_relic(RelicClass::GamblingChip)
+                .add_cards(CardClass::Strike, 10)
+                .build_combat();
+            assert!(g.hand.iter().any(|c| c.borrow().upgrade_count != 0));
+        }
     }
 }
