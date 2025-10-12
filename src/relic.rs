@@ -2,16 +2,18 @@ use lazy_static::lazy_static;
 
 use crate::{
     actions::{
-        block::BlockAction, choose_gamble::ChooseGambleAction, damage::DamageAction,
+        add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction,
+        choose_gamble::ChooseGambleAction, damage::DamageAction,
         damage_all_monsters::DamageAllMonstersAction, draw::DrawAction, duvu::DuvuAction,
         gain_energy::GainEnergyAction, gain_gold::GainGoldAction, gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
         increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
+        try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
     },
-    cards::CardType,
+    cards::{CardClass, CardType},
     game::{CreatureRef, Rand},
     queue::ActionQueue,
     rng::rand_slice,
@@ -202,7 +204,7 @@ r!(
     MutagenicStrength => Event,
     NlothsGift => Event, // TODO
     NlothsHungryFace => Event, // TODO
-    Necronomicon => Event, // TODO
+    Necronomicon => Event,
     NeowsLament => Event, // TODO
     NilryCodex => Event, // TODO, requires pausing
     OddMushroom => Event,
@@ -213,7 +215,7 @@ r!(
 );
 
 type RelicCallback = fn(&mut i32, &mut ActionQueue);
-type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &PlayCardAction);
+type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &mut Vec<PlayCardAction>, &PlayCardAction);
 
 impl RelicClass {
     pub fn on_equip(&self) -> Option<RelicCallback> {
@@ -229,6 +231,7 @@ impl RelicClass {
             Mango => Some(mango),
             Pear => Some(pear),
             Strawberry => Some(strawberry),
+            Necronomicon => Some(necronomicon_equip),
             _ => None,
         }
     }
@@ -236,6 +239,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             SneckoEye => Some(snecko_eye_unequip),
+            Necronomicon => Some(necronomicon_unequip),
             _ => None,
         }
     }
@@ -308,6 +312,7 @@ impl RelicClass {
             ArtOfWar => Some(art_of_war_card_played),
             Pocketwatch => Some(pocketwatch_card_played),
             PenNib => Some(pen_nib),
+            Necronomicon => Some(necronomicon),
             _ => None,
         }
     }
@@ -315,6 +320,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             Kunai | Shruiken | LetterOpener | OrnamentalFan => Some(set_value_zero),
+            Necronomicon => Some(set_value_one),
             HornCleat => Some(horn_cleat),
             CaptainsWheel => Some(captains_wheel),
             HappyFlower => Some(happy_flower),
@@ -341,6 +347,10 @@ fn set_value_zero(v: &mut i32, _: &mut ActionQueue) {
     *v = 0;
 }
 
+fn set_value_one(v: &mut i32, _: &mut ActionQueue) {
+    *v = 1;
+}
+
 fn set_value_2(v: &mut i32, _: &mut ActionQueue) {
     *v = 2;
 }
@@ -359,7 +369,12 @@ fn inc_wrap(v: &mut i32, max: i32) -> bool {
     }
 }
 
-fn pocketwatch_card_played(v: &mut i32, _: &mut ActionQueue, _: &PlayCardAction) {
+fn pocketwatch_card_played(
+    v: &mut i32,
+    _: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    _: &PlayCardAction,
+) {
     *v += 1;
 }
 
@@ -388,7 +403,32 @@ fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
     }
 }
 
-fn pen_nib(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+fn necronomicon_equip(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(AddCardToMasterDeckAction(CardClass::Necronomicurse));
+}
+
+fn necronomicon_unequip(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(TryRemoveCardFromMasterDeckAction(CardClass::Necronomicurse));
+}
+
+fn necronomicon(
+    v: &mut i32,
+    _: &mut ActionQueue,
+    card_queue: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
+    if *v == 1 && play.card.borrow().class.ty() == CardType::Attack && play.cost >= 2 {
+        *v = 0;
+        card_queue.push(PlayCardAction::duplicated(play));
+    }
+}
+
+fn pen_nib(
+    v: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
     if play.card.borrow().class.ty() == CardType::Attack {
         inc_wrap(v, 10);
         if *v == 9 {
@@ -401,7 +441,12 @@ fn pen_nib(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
     }
 }
 
-fn kunai(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
+fn kunai(
+    v: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play_card: &PlayCardAction,
+) {
     if play_card.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 3) {
         queue.push_bot(GainStatusAction {
             status: Status::Dexterity,
@@ -411,7 +456,12 @@ fn kunai(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
     }
 }
 
-fn shruiken(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
+fn shruiken(
+    v: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play_card: &PlayCardAction,
+) {
     if play_card.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 3) {
         queue.push_bot(GainStatusAction {
             status: Status::Strength,
@@ -421,25 +471,45 @@ fn shruiken(v: &mut i32, queue: &mut ActionQueue, play_card: &PlayCardAction) {
     }
 }
 
-fn ink_bottle(v: &mut i32, queue: &mut ActionQueue, _: &PlayCardAction) {
+fn ink_bottle(
+    v: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    _: &PlayCardAction,
+) {
     if inc_wrap(v, 10) {
         queue.push_bot(DrawAction(1));
     }
 }
 
-fn ornamental_fan(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+fn ornamental_fan(
+    v: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
     if play.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 3) {
         queue.push_bot(BlockAction::player_flat_amount(4));
     }
 }
 
-fn nunchaku(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+fn nunchaku(
+    v: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
     if play.card.borrow().class.ty() == CardType::Attack && inc_wrap(v, 10) {
         queue.push_bot(GainEnergyAction(1));
     }
 }
 
-fn bird_faced_urn(_: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+fn bird_faced_urn(
+    _: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
     if play.card.borrow().class.ty() == CardType::Power {
         queue.push_bot(HealAction {
             target: CreatureRef::player(),
@@ -448,7 +518,12 @@ fn bird_faced_urn(_: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
     }
 }
 
-fn letter_opener(v: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+fn letter_opener(
+    v: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
     if play.card.borrow().class.ty() == CardType::Skill && inc_wrap(v, 3) {
         queue.push_bot(DamageAllMonstersAction::thorns(5));
     }
@@ -619,7 +694,12 @@ fn incense_burner(v: &mut i32, queue: &mut ActionQueue) {
     }
 }
 
-fn art_of_war_card_played(v: &mut i32, _: &mut ActionQueue, play: &PlayCardAction) {
+fn art_of_war_card_played(
+    v: &mut i32,
+    _: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
     if play.card.borrow().class.ty() == CardType::Attack {
         *v = 0;
     }
@@ -632,7 +712,12 @@ fn art_of_war(v: &mut i32, queue: &mut ActionQueue) {
     *v = 1;
 }
 
-fn blue_candle(_: &mut i32, queue: &mut ActionQueue, play: &PlayCardAction) {
+fn blue_candle(
+    _: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
     if play.card.borrow().class.ty() == CardType::Curse {
         queue.push_bot(DamageAction::lose_hp(1, CreatureRef::player()));
     }
@@ -730,9 +815,14 @@ macro_rules! trigger {
 }
 macro_rules! trigger_card {
     ($name:ident) => {
-        pub fn $name(&mut self, queue: &mut ActionQueue, play: &PlayCardAction) {
+        pub fn $name(
+            &mut self,
+            queue: &mut ActionQueue,
+            card_queue: &mut Vec<PlayCardAction>,
+            play: &PlayCardAction,
+        ) {
             if let Some(f) = self.class.$name() {
-                f(&mut self.value, queue, play)
+                f(&mut self.value, queue, card_queue, play)
             }
         }
     };
@@ -1982,5 +2072,62 @@ mod tests {
         assert_eq!(g.player.cur_hp, 15);
         g.throw_potion(Potion::Fire, Some(CreatureRef::monster(0)));
         assert_eq!(g.player.cur_hp, 20);
+    }
+
+    #[test]
+    fn test_necronomicon() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Necronomicon)
+            .build_combat();
+        let hp = g.monsters[0].creature.cur_hp;
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6);
+        g.play_card(CardClass::Whirlwind, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 5 * 2 * 2);
+        assert_eq!(g.energy, 0);
+
+        g.make_move(Move::EndTurn);
+        g.energy = 4;
+        g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 5 * 2 * 2 - 20 * 2);
+        g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
+        assert_eq!(
+            g.monsters[0].creature.cur_hp,
+            hp - 6 - 5 * 2 * 2 - 20 * 2 - 20
+        );
+        assert_eq!(g.energy, 0);
+
+        g.make_move(Move::EndTurn);
+        g.add_card_to_draw_pile(CardClass::HandOfGreed);
+        g.play_card_upgraded(CardClass::Havoc, None);
+        assert_eq!(g.energy, 3);
+        assert_eq!(
+            g.monsters[0].creature.cur_hp,
+            hp - 6 - 5 * 2 * 2 - 20 * 2 - 20 - 20 * 2
+        );
+    }
+
+    #[test]
+    fn test_necronomicon_equip_unequip() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Necronomicon)
+            .build_combat();
+        assert_eq!(g.master_deck.len(), 1);
+        assert_eq!(g.master_deck[0].borrow().class, CardClass::Necronomicurse);
+        g.remove_relic(RelicClass::Necronomicon);
+        assert_eq!(g.master_deck.len(), 0);
+
+        g.run_action(AddCardToMasterDeckAction(CardClass::Necronomicurse));
+        g.add_relic(RelicClass::Necronomicon);
+        assert_eq!(g.master_deck.len(), 2);
+        g.remove_relic(RelicClass::Necronomicon);
+        assert_eq!(g.master_deck.len(), 1);
+
+        g.master_deck.clear();
+        g.add_relic(RelicClass::Omamori);
+        g.add_relic(RelicClass::Necronomicon);
+        assert_eq!(g.master_deck.len(), 0);
+        g.remove_relic(RelicClass::Necronomicon);
+        assert_eq!(g.master_deck.len(), 0);
     }
 }

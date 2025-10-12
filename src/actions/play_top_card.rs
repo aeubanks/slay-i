@@ -26,14 +26,8 @@ impl Action for PlayTopCardAction {
         } else {
             None
         };
-        g.card_queue.push(PlayCardAction {
-            card: c,
-            target,
-            is_duplicated: false,
-            energy: g.energy,
-            free: true,
-            force_exhaust: self.force_exhaust,
-        });
+        g.card_queue
+            .push(PlayCardAction::new_free(c, target, g, self.force_exhaust));
     }
 }
 

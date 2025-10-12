@@ -21,7 +21,7 @@ use crate::actions::place_card_in_hand::PlaceCardInHandAction;
 use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
-use crate::actions::remove_card_from_master_deck::RemoveCardFromMasterDeckAction;
+use crate::actions::removed_card_from_master_deck::RemovedCardFromMasterDeckAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade::UpgradeAction;
 use crate::actions::use_potion::UsePotionAction;
@@ -265,7 +265,7 @@ macro_rules! trigger_card {
     ($func_name:ident, $name:ident) => {
         pub fn $func_name(&mut self, play: &PlayCardAction) {
             for r in &mut self.relics {
-                r.$name(&mut self.action_queue, play);
+                r.$name(&mut self.action_queue, &mut self.card_queue, play);
             }
         }
     };
@@ -968,7 +968,7 @@ impl Game {
                 let class = self.master_deck.remove(card_index).borrow().class;
                 let transformed = transformed(class, &mut self.rng);
                 self.action_queue
-                    .push_bot(RemoveCardFromMasterDeckAction(class));
+                    .push_bot(RemovedCardFromMasterDeckAction(class));
                 self.action_queue
                     .push_bot(AddCardToMasterDeckAction(transformed));
                 self.state.set_state(GameState::RunActions);
@@ -977,7 +977,7 @@ impl Game {
                 assert_matches!(self.state.cur_state(), GameState::RemoveCard);
                 let c = self.master_deck.remove(card_index);
                 self.action_queue
-                    .push_bot(RemoveCardFromMasterDeckAction(c.borrow().class));
+                    .push_bot(RemovedCardFromMasterDeckAction(c.borrow().class));
                 self.state.set_state(GameState::RunActions);
             }
             Move::EndTurn => {
@@ -986,14 +986,8 @@ impl Game {
             }
             Move::PlayCard { card_index, target } => {
                 assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
-                let action = PlayCardAction {
-                    card: self.hand.remove(card_index),
-                    target: target.map(CreatureRef::monster),
-                    is_duplicated: false,
-                    energy: self.energy,
-                    force_exhaust: false,
-                    free: false,
-                };
+                let c = self.hand.remove(card_index);
+                let action = PlayCardAction::new(c, target.map(CreatureRef::monster), self);
                 assert!(self.can_play_card(&action));
                 self.card_queue.push(action);
                 self.state.push_state(GameState::RunActions);
@@ -1189,7 +1183,7 @@ impl Game {
         {
             return false;
         }
-        self.energy >= play.cost(self)
+        play.free || self.energy >= play.cost
     }
 
     pub fn valid_moves(&self) -> Vec<Move> {
@@ -1221,14 +1215,7 @@ impl Game {
             GameState::PlayerTurn => {
                 moves.push(Move::EndTurn);
                 for (ci, c) in self.hand.iter().enumerate() {
-                    if !self.can_play_card(&PlayCardAction {
-                        card: c.clone(),
-                        target: None,
-                        is_duplicated: false,
-                        energy: self.energy,
-                        free: false,
-                        force_exhaust: false,
-                    }) {
+                    if !self.can_play_card(&PlayCardAction::new(c.clone(), None, self)) {
                         continue;
                     }
                     let c = c.borrow();
@@ -1385,14 +1372,7 @@ impl Game {
 
     #[cfg(test)]
     fn play_card_impl(&mut self, card: CardRef, target: Option<CreatureRef>) {
-        let action = PlayCardAction {
-            card,
-            target,
-            is_duplicated: false,
-            energy: self.energy,
-            force_exhaust: false,
-            free: false,
-        };
+        let action = PlayCardAction::new(card, target, self);
         assert!(self.can_play_card(&action));
         self.card_queue.push(action);
         assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
@@ -1711,16 +1691,10 @@ mod tests {
             .add_player_status(Status::Entangled, 1)
             .build_combat();
         let c = g.new_card(CardClass::Thunderclap);
-        g.card_queue.push(PlayCardAction {
-            card: c,
-            target: None,
-            is_duplicated: false,
-            energy: g.energy,
-            free: false,
-            force_exhaust: false,
-        });
+        g.card_queue.push(PlayCardAction::new(c, None, &g));
         g.run_all_actions();
         assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.energy, 3);
     }
 
     #[test]

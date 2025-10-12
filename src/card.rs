@@ -12,7 +12,7 @@ pub struct CardPlayInfo<'a> {
     pub upgraded: bool,
     pub upgrade_count: i32,
     pub base_increase: i32,
-    pub energy: i32,
+    pub cost: i32,
 }
 
 #[derive(Clone)]

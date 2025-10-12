@@ -3,7 +3,7 @@ use crate::{
     actions::{
         clear_cur_card::ClearCurCardAction, damage::DamageAction, exhaust_card::ExhaustCardAction,
     },
-    card::{CardPlayInfo, CardRef},
+    card::{Card, CardPlayInfo, CardRef},
     cards::{CardClass, CardCost, CardType},
     game::{CreatureRef, Game},
     status::Status,
@@ -15,18 +15,41 @@ pub struct PlayCardAction {
     pub card: CardRef,
     pub target: Option<CreatureRef>,
     pub is_duplicated: bool,
-    pub energy: i32,
+    pub cost: i32,
     pub free: bool,
     pub force_exhaust: bool,
+    _priv: (),
 }
 
 impl PlayCardAction {
-    pub fn cost(&self, game: &Game) -> i32 {
-        if self.free {
-            return 0;
+    pub fn duplicated(play: &PlayCardAction) -> Self {
+        Self {
+            is_duplicated: true,
+            free: true,
+            force_exhaust: false,
+            card: play.card.clone(),
+            target: play.target,
+            cost: play.cost,
+            _priv: (),
         }
-
-        match self.card.borrow().cost {
+    }
+    fn is_corruption(game: &Game, card: &Card) -> bool {
+        game.player.has_status(Status::Corruption) && card.class.ty() == CardType::Skill
+    }
+    pub fn new_free(
+        card: CardRef,
+        target: Option<CreatureRef>,
+        game: &Game,
+        force_exhaust: bool,
+    ) -> Self {
+        Self {
+            free: true,
+            force_exhaust,
+            ..Self::new(card, target, game)
+        }
+    }
+    pub fn new(card: CardRef, target: Option<CreatureRef>, game: &Game) -> Self {
+        let cost = match card.borrow().cost {
             CardCost::Zero => 0,
             CardCost::X => game.energy,
             CardCost::Cost {
@@ -34,18 +57,22 @@ impl PlayCardAction {
                 temporary_cost,
                 free_to_play_once,
             } => {
-                if free_to_play_once || self.is_corruption(game) {
+                if free_to_play_once || PlayCardAction::is_corruption(game, &card.borrow()) {
                     0
                 } else {
                     temporary_cost.unwrap_or(base_cost)
                 }
             }
+        };
+        Self {
+            card: card.clone(),
+            target,
+            is_duplicated: false,
+            cost,
+            free: false,
+            force_exhaust: false,
+            _priv: (),
         }
-    }
-
-    pub fn is_corruption(&self, game: &Game) -> bool {
-        game.player.has_status(Status::Corruption)
-            && self.card.borrow().class.ty() == CardType::Skill
     }
 }
 
@@ -64,15 +91,14 @@ impl Action for PlayCardAction {
             }
         }
 
-        let energy_cost = self.cost(game);
-        assert!(energy_cost <= game.energy);
+        assert!(self.free || self.cost <= game.energy);
         let info = CardPlayInfo {
             card: &c,
             target: self.target,
             upgraded: c.upgrade_count != 0,
             upgrade_count: c.upgrade_count,
             base_increase: c.base_increase,
-            energy: self.energy,
+            cost: self.cost,
         };
         (c.class.behavior())(game, &info);
 
@@ -83,7 +109,7 @@ impl Action for PlayCardAction {
         }
         let dest = if self.is_duplicated || c.class.ty() == CardType::Power {
             CardDestination::None
-        } else if c.exhaust || self.force_exhaust || self.is_corruption(game) {
+        } else if c.exhaust || self.force_exhaust || PlayCardAction::is_corruption(game, &c) {
             CardDestination::Exhaust
         } else {
             CardDestination::Discard
@@ -103,7 +129,9 @@ impl Action for PlayCardAction {
             self,
         );
         game.trigger_relics_on_card_played(self);
-        game.energy -= energy_cost;
+        if !self.free {
+            game.energy -= self.cost;
+        }
         game.action_queue.push_bot(ClearCurCardAction());
         match dest {
             CardDestination::None => {}
