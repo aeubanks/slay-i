@@ -12,7 +12,7 @@ pub struct NoopMonster {
 
 impl NoopMonster {
     pub fn new() -> Self {
-        Self { max_hp: 100 }
+        Self { max_hp: 500 }
     }
     #[allow(dead_code)]
     pub fn with_hp(hp: i32) -> Self {
