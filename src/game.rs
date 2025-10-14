@@ -518,6 +518,9 @@ impl Game {
         c.last_damage_taken = amount;
         if amount != 0 {
             c.cur_hp -= amount;
+            if target.is_player() {
+                self.trigger_relics_on_lose_hp();
+            }
             // attack damage never procs rupture
             // hp loss always procs rupture
             // thorns proc rupture if source is player
@@ -1563,6 +1566,7 @@ impl Game {
         at_turn_begin_post_draw
     );
     trigger!(trigger_relics_at_turn_end, at_turn_end);
+    trigger!(trigger_relics_on_lose_hp, on_lose_hp);
     trigger!(trigger_relics_at_combat_finish, at_combat_finish);
     trigger_card!(trigger_relics_on_card_played, on_card_played);
 }

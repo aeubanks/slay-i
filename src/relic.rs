@@ -69,7 +69,7 @@ r!(
     BagOfPrep => Common,
     BloodVial => Common,
     BronzeScales => Common,
-    CentennialPuzzle => Common, // TODO
+    CentennialPuzzle => Common,
     CeramicFish => Common,
     DreamCatcher => Common, // TODO
     HappyFlower => Common,
@@ -257,6 +257,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             HornCleat | CaptainsWheel | ArtOfWar | StoneCalendar => Some(set_value_zero),
+            CentennialPuzzle => Some(set_value_one),
             Pocketwatch => Some(set_value_99),
             SneckoEye => Some(snecko_eye_confused),
             Enchiridion => Some(enchiridion),
@@ -344,6 +345,13 @@ impl RelicClass {
             _ => None,
         }
     }
+    pub fn on_lose_hp(&self) -> Option<RelicCallback> {
+        use RelicClass::*;
+        match self {
+            CentennialPuzzle => Some(centennial_puzzle),
+            _ => None,
+        }
+    }
     pub fn at_turn_end(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
@@ -401,6 +409,14 @@ fn warped_tongs(_: &mut i32, queue: &mut ActionQueue) {
 
 fn gambling_chip(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(ChooseGambleAction());
+}
+
+fn centennial_puzzle(v: &mut i32, queue: &mut ActionQueue) {
+    if *v == 1 {
+        *v = 0;
+        // push_top is intentional
+        queue.push_top(DrawAction(3));
+    }
 }
 
 fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
@@ -887,6 +903,7 @@ impl Relic {
     trigger!(at_turn_begin_pre_draw);
     trigger!(at_turn_begin_post_draw);
     trigger!(at_turn_end);
+    trigger!(on_lose_hp);
     trigger!(at_combat_finish);
     trigger_card!(on_card_played);
 }
@@ -2346,5 +2363,31 @@ mod tests {
             }
         }
         assert!(discount_0 && discount_1);
+    }
+
+    #[test]
+    fn test_centennial_puzzle() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::CentennialPuzzle)
+                .build_combat();
+            g.add_cards_to_draw_pile(CardClass::Strike, 10);
+            g.play_card(CardClass::Bloodletting, None);
+            assert_eq!(g.hand.len(), 3);
+            g.play_card(CardClass::Bloodletting, None);
+            assert_eq!(g.hand.len(), 3);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_cards(CardClass::Strike, 10)
+                .add_relic(RelicClass::CentennialPuzzle)
+                .add_monster(AttackMonster::new(1))
+                .build_combat();
+            g.play_card(CardClass::Thunderclap, None);
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.hand.len(), 8);
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.hand.len(), 5);
+        }
     }
 }
