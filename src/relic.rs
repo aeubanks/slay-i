@@ -195,7 +195,7 @@ r!(
     MarkOfPain => Boss, // TODO
     RunicCube => Boss, // TODO
 
-    BloodyIdol => Event, // TODO
+    BloodyIdol => Event,
     CultistHeadpiece => Event,
     Enchiridion => Event,
     FaceOfCleric => Event,
@@ -2146,5 +2146,15 @@ mod tests {
         assert_eq!(g.hand[0].borrow().class.ty(), CardType::Power);
         assert_eq!(g.hand[0].borrow().class.color(), CardColor::Red);
         assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
+    }
+
+    #[test]
+    fn test_bloody_idol() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::BloodyIdol)
+            .build_combat();
+        g.player.cur_hp = 10;
+        g.run_action(GainGoldAction(5));
+        assert_eq!(g.player.cur_hp, 15);
     }
 }
