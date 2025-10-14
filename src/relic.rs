@@ -167,7 +167,7 @@ r!(
     Orrery => Shop, // TODO
     // PrismaticShard => Shop, // not supported
     SlingOfCourage => Shop, // TODO
-    StrangeSpoon => Shop, // TODO
+    StrangeSpoon => Shop,
     TheAbacus => Shop,
     Toolbox => Shop, // TODO, requires pausing
     Brimstone => Shop, // TODO
@@ -2222,5 +2222,32 @@ mod tests {
             g.monsters[0].creature.cur_hp,
             g.monsters[0].creature.max_hp - 52
         );
+    }
+
+    #[test]
+    fn test_strange_spoon() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::StrangeSpoon)
+            .build_combat();
+        let mut exhausted = false;
+        let mut discarded = false;
+        g.play_card(CardClass::FeelNoPain, None);
+        for _ in 0..100 {
+            g.clear_all_piles();
+            g.player.block = 0;
+            g.play_card(CardClass::BandageUp, None);
+            assert_eq!(g.discard_pile.len() + g.exhaust_pile.len(), 1);
+            if !g.discard_pile.is_empty() {
+                discarded = true;
+                assert_eq!(g.player.block, 0);
+            } else {
+                exhausted = true;
+                assert_ne!(g.player.block, 0);
+            }
+            if exhausted && discarded {
+                break;
+            }
+        }
+        assert!(exhausted && discarded);
     }
 }

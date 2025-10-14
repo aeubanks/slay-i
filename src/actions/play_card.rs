@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::{
     action::Action,
     actions::{
@@ -6,6 +8,7 @@ use crate::{
     card::{Card, CardPlayInfo, CardRef},
     cards::{CardClass, CardCost, CardType},
     game::{CreatureRef, Game},
+    relic::RelicClass,
     status::Status,
 };
 
@@ -107,7 +110,7 @@ impl Action for PlayCardAction {
             Exhaust,
             None,
         }
-        let dest = if self.is_duplicated || c.class.ty() == CardType::Power {
+        let mut dest = if self.is_duplicated || c.class.ty() == CardType::Power {
             CardDestination::None
         } else if c.exhaust || self.force_exhaust || PlayCardAction::is_corruption(game, &c) {
             CardDestination::Exhaust
@@ -115,6 +118,13 @@ impl Action for PlayCardAction {
             CardDestination::Discard
         };
         drop(c);
+
+        if matches!(dest, CardDestination::Exhaust)
+            && game.has_relic(RelicClass::StrangeSpoon)
+            && game.rng.random_range(0..=1) == 0
+        {
+            dest = CardDestination::Discard;
+        }
 
         if let CardCost::Cost {
             free_to_play_once, ..
