@@ -108,7 +108,7 @@ r!(
     LetterOpener => Uncommon,
     Matryoshka => Uncommon, // TODO
     MeatOnTheBone => Uncommon, // TODO
-    MercuryHourglass => Uncommon, // TODO
+    MercuryHourglass => Uncommon,
     MoltenEgg => Uncommon, // TODO
     MummifiedHand => Uncommon, // TODO
     OrnamentalFan => Uncommon,
@@ -328,6 +328,7 @@ impl RelicClass {
             HappyFlower => Some(happy_flower),
             ArtOfWar => Some(art_of_war),
             IncenseBurner => Some(incense_burner),
+            MercuryHourglass => Some(mercury_hourglass),
             _ => None,
         }
     }
@@ -694,6 +695,10 @@ fn incense_burner(v: &mut i32, queue: &mut ActionQueue) {
             target: CreatureRef::player(),
         });
     }
+}
+
+fn mercury_hourglass(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(DamageAllMonstersAction::thorns(3));
 }
 
 fn art_of_war_card_played(
@@ -2156,5 +2161,31 @@ mod tests {
         g.player.cur_hp = 10;
         g.run_action(GainGoldAction(5));
         assert_eq!(g.player.cur_hp, 15);
+    }
+
+    #[test]
+    fn test_mercury_hourglass() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::MercuryHourglass)
+            .add_monster(NoopMonster::new())
+            .add_monster(NoopMonster::new())
+            .build_combat();
+        assert_eq!(
+            g.monsters[0].creature.cur_hp,
+            g.monsters[0].creature.max_hp - 3
+        );
+        assert_eq!(
+            g.monsters[1].creature.cur_hp,
+            g.monsters[1].creature.max_hp - 3
+        );
+        g.make_move(Move::EndTurn);
+        assert_eq!(
+            g.monsters[0].creature.cur_hp,
+            g.monsters[0].creature.max_hp - 6
+        );
+        assert_eq!(
+            g.monsters[1].creature.cur_hp,
+            g.monsters[1].creature.max_hp - 6
+        );
     }
 }
