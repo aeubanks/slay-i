@@ -170,7 +170,7 @@ r!(
     StrangeSpoon => Shop,
     TheAbacus => Shop,
     Toolbox => Shop, // TODO, requires pausing
-    Brimstone => Shop, // TODO
+    Brimstone => Shop,
 
     Astrolabe => Boss, // TODO
     BlackStar => Boss, // TODO
@@ -329,6 +329,7 @@ impl RelicClass {
             ArtOfWar => Some(art_of_war),
             IncenseBurner => Some(incense_burner),
             MercuryHourglass => Some(mercury_hourglass),
+            Brimstone => Some(brimstone),
             _ => None,
         }
     }
@@ -710,6 +711,19 @@ fn incense_burner(v: &mut i32, queue: &mut ActionQueue) {
 
 fn mercury_hourglass(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(DamageAllMonstersAction::thorns(3));
+}
+
+fn brimstone(_: &mut i32, queue: &mut ActionQueue) {
+    // intentional push_top
+    queue.push_top(GainStatusAction {
+        status: Status::Strength,
+        amount: 2,
+        target: CreatureRef::player(),
+    });
+    queue.push_top(GainStatusAllMonstersAction {
+        status: Status::Strength,
+        amount: 1,
+    });
 }
 
 fn art_of_war_card_played(
@@ -2249,5 +2263,17 @@ mod tests {
             }
         }
         assert!(exhausted && discarded);
+    }
+
+    #[test]
+    fn test_brimstone() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Brimstone)
+            .build_combat();
+        assert_eq!(g.player.get_status(Status::Strength), Some(2));
+        assert_eq!(g.monsters[0].creature.get_status(Status::Strength), Some(1));
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.get_status(Status::Strength), Some(4));
+        assert_eq!(g.monsters[0].creature.get_status(Status::Strength), Some(2));
     }
 }
