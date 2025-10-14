@@ -11,3 +11,5 @@ implement remaining potions
 magic flower rounds to nearest, not down
 test combust kill + burn in hand
 test exhaust necronomicon + dark embrace
+test generated blood for blood cost
+test overflowed temporary cost 0 card
