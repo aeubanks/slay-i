@@ -143,7 +143,7 @@ r!(
     Pocketwatch => Rare,
     PrayerWheel => Rare, // TODO
     Shovel => Rare, // TODO
-    StoneCalendar => Rare, // TODO
+    StoneCalendar => Rare,
     ThreadAndNeedle => Rare,
     Torii => Rare, // TODO
     TungstenRod => Rare,
@@ -255,7 +255,7 @@ impl RelicClass {
     pub fn at_pre_combat(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
-            HornCleat | CaptainsWheel | ArtOfWar => Some(set_value_zero),
+            HornCleat | CaptainsWheel | ArtOfWar | StoneCalendar => Some(set_value_zero),
             Pocketwatch => Some(set_value_99),
             SneckoEye => Some(snecko_eye_confused),
             Enchiridion => Some(enchiridion),
@@ -342,7 +342,11 @@ impl RelicClass {
         }
     }
     pub fn at_turn_end(&self) -> Option<RelicCallback> {
-        None
+        use RelicClass::*;
+        match self {
+            StoneCalendar => Some(stone_calendar),
+            _ => None,
+        }
     }
 }
 
@@ -678,6 +682,13 @@ fn captains_wheel(v: &mut i32, queue: &mut ActionQueue) {
     *v += 1;
     if *v == 3 {
         queue.push_bot(BlockAction::player_flat_amount(18));
+    }
+}
+
+fn stone_calendar(v: &mut i32, queue: &mut ActionQueue) {
+    *v += 1;
+    if *v == 7 {
+        queue.push_bot(DamageAllMonstersAction::thorns(52));
     }
 }
 
@@ -2186,6 +2197,30 @@ mod tests {
         assert_eq!(
             g.monsters[1].creature.cur_hp,
             g.monsters[1].creature.max_hp - 6
+        );
+    }
+
+    #[test]
+    fn test_stone_calendar() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::StoneCalendar)
+            .add_monster(NoopMonster::new())
+            .add_monster(AttackMonster::new(1))
+            .build_combat();
+        for _ in 0..6 {
+            assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
+            assert_eq!(g.monsters[1].creature.cur_hp, g.monsters[1].creature.max_hp);
+            g.make_move(Move::EndTurn);
+        }
+        assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
+        assert_eq!(g.monsters[1].creature.cur_hp, g.monsters[1].creature.max_hp);
+        g.monsters[1].creature.cur_hp = 51;
+        let hp = g.player.cur_hp;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp);
+        assert_eq!(
+            g.monsters[0].creature.cur_hp,
+            g.monsters[0].creature.max_hp - 52
         );
     }
 }
