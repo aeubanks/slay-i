@@ -63,6 +63,14 @@ impl Card {
             panic!();
         }
     }
+    pub fn set_temporary_cost(&mut self, new_cost: i32) {
+        assert!(new_cost >= 0);
+        if let CardCost::Cost { temporary_cost, .. } = &mut self.cost {
+            *temporary_cost = Some(new_cost);
+        } else {
+            panic!();
+        }
+    }
     pub fn is_innate(&self) -> bool {
         use CardClass::*;
         match self.class {

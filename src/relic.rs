@@ -4,12 +4,13 @@ use crate::{
     actions::{
         add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction,
         choose_gamble::ChooseGambleAction, damage::DamageAction,
-        damage_all_monsters::DamageAllMonstersAction, draw::DrawAction, duvu::DuvuAction,
-        enchiridion::EnchiridionAction, gain_energy::GainEnergyAction, gain_gold::GainGoldAction,
-        gain_status::GainStatusAction, gain_status_all_monsters::GainStatusAllMonstersAction,
-        heal::HealAction, increase_draw_per_turn::IncreaseDrawPerTurnAction,
-        increase_max_hp::IncreaseMaxHPAction, increase_potion_slots::IncreasePotionSlotsAction,
-        play_card::PlayCardAction,
+        damage_all_monsters::DamageAllMonstersAction,
+        discount_random_card_in_hand::DiscountRandomCardInHandAction, draw::DrawAction,
+        duvu::DuvuAction, enchiridion::EnchiridionAction, gain_energy::GainEnergyAction,
+        gain_gold::GainGoldAction, gain_status::GainStatusAction,
+        gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
+        increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
+        increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -110,7 +111,7 @@ r!(
     MeatOnTheBone => Uncommon, // TODO
     MercuryHourglass => Uncommon,
     MoltenEgg => Uncommon, // TODO
-    MummifiedHand => Uncommon, // TODO
+    MummifiedHand => Uncommon,
     OrnamentalFan => Uncommon,
     Pantograph => Uncommon, // TODO
     Pear => Uncommon,
@@ -315,6 +316,7 @@ impl RelicClass {
             Pocketwatch => Some(pocketwatch_card_played),
             PenNib => Some(pen_nib),
             Necronomicon => Some(necronomicon),
+            MummifiedHand => Some(mummified_hand),
             _ => None,
         }
     }
@@ -487,6 +489,17 @@ fn ink_bottle(
 ) {
     if inc_wrap(v, 10) {
         queue.push_bot(DrawAction(1));
+    }
+}
+
+fn mummified_hand(
+    _: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
+    if play.card.borrow().class.ty() == CardType::Power {
+        queue.push_bot(DiscountRandomCardInHandAction());
     }
 }
 
@@ -2275,5 +2288,63 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.get_status(Status::Strength), Some(4));
         assert_eq!(g.monsters[0].creature.get_status(Status::Strength), Some(2));
+    }
+
+    #[test]
+    fn test_mummified_hand() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::MummifiedHand)
+            .build_combat();
+        g.play_card(CardClass::Berserk, None);
+
+        g.add_card_to_hand(CardClass::Strike);
+        g.play_card(CardClass::Berserk, None);
+        assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
+
+        for _ in 0..10 {
+            g.clear_all_piles();
+            g.add_card_to_hand(CardClass::Strike);
+            g.hand[0].borrow_mut().set_free_to_play_once();
+            g.add_card_to_hand(CardClass::Defend);
+            g.play_card(CardClass::Berserk, None);
+            assert_eq!(g.hand[1].borrow().get_temporary_cost(), Some(0));
+
+            g.clear_all_piles();
+            g.add_card_to_hand(CardClass::Strike);
+            g.hand[0].borrow_mut().set_temporary_cost(0);
+            g.add_card_to_hand(CardClass::Defend);
+            g.play_card(CardClass::Berserk, None);
+            assert_eq!(g.hand[1].borrow().get_temporary_cost(), Some(0));
+
+            g.clear_all_piles();
+            g.add_card_to_hand(CardClass::Strike);
+            g.hand[0].borrow_mut().set_cost(0, None);
+            g.add_card_to_hand(CardClass::Defend);
+            g.play_card(CardClass::Berserk, None);
+            assert_eq!(g.hand[1].borrow().get_temporary_cost(), Some(0));
+        }
+
+        let mut discount_0 = false;
+        let mut discount_1 = false;
+        for _ in 0..100 {
+            g.clear_all_piles();
+            g.add_card_to_hand(CardClass::Strike);
+            g.add_card_to_hand(CardClass::Defend);
+            g.play_card(CardClass::Berserk, None);
+            assert_ne!(
+                g.hand[0].borrow().get_temporary_cost(),
+                g.hand[1].borrow().get_temporary_cost()
+            );
+            if g.hand[0].borrow().get_temporary_cost() == Some(0) {
+                discount_0 = true;
+            }
+            if g.hand[1].borrow().get_temporary_cost() == Some(0) {
+                discount_1 = true;
+            }
+            if discount_0 && discount_1 {
+                break;
+            }
+        }
+        assert!(discount_0 && discount_1);
     }
 }

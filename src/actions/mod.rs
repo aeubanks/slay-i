@@ -20,6 +20,7 @@ pub mod damage_random_monster;
 pub mod decrease_max_hp;
 pub mod discard_card;
 pub mod discard_hand;
+pub mod discount_random_card_in_hand;
 pub mod discovery;
 pub mod double_block;
 pub mod double_strength;
