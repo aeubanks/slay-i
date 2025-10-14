@@ -5,10 +5,11 @@ use crate::{
         add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction,
         choose_gamble::ChooseGambleAction, damage::DamageAction,
         damage_all_monsters::DamageAllMonstersAction, draw::DrawAction, duvu::DuvuAction,
-        gain_energy::GainEnergyAction, gain_gold::GainGoldAction, gain_status::GainStatusAction,
-        gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
-        increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
-        increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
+        enchiridion::EnchiridionAction, gain_energy::GainEnergyAction, gain_gold::GainGoldAction,
+        gain_status::GainStatusAction, gain_status_all_monsters::GainStatusAllMonstersAction,
+        heal::HealAction, increase_draw_per_turn::IncreaseDrawPerTurnAction,
+        increase_max_hp::IncreaseMaxHPAction, increase_potion_slots::IncreasePotionSlotsAction,
+        play_card::PlayCardAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -196,7 +197,7 @@ r!(
 
     BloodyIdol => Event, // TODO
     CultistHeadpiece => Event,
-    Enchiridion => Event, // TODO
+    Enchiridion => Event,
     FaceOfCleric => Event,
     GoldenIdol => Event, // TODO
     GremlinVisage => Event,
@@ -257,6 +258,7 @@ impl RelicClass {
             HornCleat | CaptainsWheel | ArtOfWar => Some(set_value_zero),
             Pocketwatch => Some(set_value_99),
             SneckoEye => Some(snecko_eye_confused),
+            Enchiridion => Some(enchiridion),
             _ => None,
         }
     }
@@ -763,6 +765,10 @@ fn strawberry(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(IncreaseMaxHPAction(7));
 }
 
+fn enchiridion(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(EnchiridionAction());
+}
+
 fn snecko_eye_confused(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainStatusAction {
         status: Status::Confusion,
@@ -862,7 +868,7 @@ mod tests {
     use super::*;
     use crate::{
         actions::{add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction},
-        cards::CardClass,
+        cards::{CardClass, CardColor},
         game::{GameBuilder, Move},
         monster::Monster,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
@@ -2129,5 +2135,16 @@ mod tests {
         assert_eq!(g.master_deck.len(), 0);
         g.remove_relic(RelicClass::Necronomicon);
         assert_eq!(g.master_deck.len(), 0);
+    }
+
+    #[test]
+    fn test_enchiridion() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::Enchiridion)
+            .add_card(CardClass::Strike)
+            .build_combat();
+        assert_eq!(g.hand[0].borrow().class.ty(), CardType::Power);
+        assert_eq!(g.hand[0].borrow().class.color(), CardColor::Red);
+        assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
     }
 }
