@@ -195,7 +195,7 @@ r!(
     VelvetChoker => Boss, // TODO
     BlackBlood => Boss,
     MarkOfPain => Boss, // TODO
-    RunicCube => Boss, // TODO
+    RunicCube => Boss,
 
     BloodyIdol => Event,
     CultistHeadpiece => Event,
@@ -354,6 +354,7 @@ impl RelicClass {
         match self {
             CentennialPuzzle => Some(centennial_puzzle),
             SelfFormingClay => Some(self_forming_clay),
+            RunicCube => Some(runic_cube),
             _ => None,
         }
     }
@@ -432,6 +433,11 @@ fn self_forming_clay(_: &mut i32, queue: &mut ActionQueue) {
         amount: 3,
         target: CreatureRef::player(),
     });
+}
+
+fn runic_cube(_: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
+    queue.push_top(DrawAction(1));
 }
 
 fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
@@ -2677,5 +2683,19 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.monsters[0].creature.cur_hp, 44);
         assert_eq!(g.monsters[1].creature.cur_hp, 45);
+    }
+
+    #[test]
+    fn test_runic_cube() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::RunicCube)
+            .add_cards(CardClass::Strike, 10)
+            .add_monster(AttackMonster::with_attack_count(1, 4))
+            .build_combat();
+        assert_eq!(g.hand.len(), 5);
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.hand.len(), 6);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 9);
     }
 }
