@@ -1,12 +1,13 @@
 use crate::{
     action::Action,
     actions::{
-        block::BlockAction, draw::DrawAction, gain_energy::GainEnergyAction,
-        place_card_in_hand::PlaceCardInHandAction,
+        block::BlockAction, damage_all_monsters::DamageAllMonstersAction, draw::DrawAction,
+        gain_energy::GainEnergyAction, place_card_in_hand::PlaceCardInHandAction,
     },
     card::CardRef,
     cards::CardClass,
     game::Game,
+    relic::RelicClass,
     status::Status,
 };
 
@@ -14,6 +15,10 @@ pub struct ExhaustCardAction(pub CardRef);
 
 impl Action for ExhaustCardAction {
     fn run(&self, game: &mut Game) {
+        if game.has_relic(RelicClass::CharonsAshes) {
+            game.action_queue
+                .push_top(DamageAllMonstersAction::thorns(3));
+        }
         if let Some(a) = game.player.get_status(Status::FeelNoPain) {
             game.action_queue
                 .push_bot(BlockAction::player_flat_amount(a));

@@ -153,7 +153,7 @@ r!(
     UnceasingTop => Rare, // TODO
     WingBoots => Rare, // TODO
     ChampionBelt => Rare,
-    CharonsAshes => Rare, // TODO
+    CharonsAshes => Rare,
     MagicFlower => Rare, // TODO
 
     Cauldron => Shop, // TODO
@@ -2663,5 +2663,19 @@ mod tests {
             g.monsters[0].creature.get_status(Status::Vulnerable),
             Some(3)
         );
+    }
+
+    #[test]
+    fn test_charons_ashes() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::CharonsAshes)
+            .add_monster(NoopMonster::with_hp(50))
+            .add_monster(NoopMonster::with_hp(50))
+            .build_combat();
+        g.add_cards_to_hand(CardClass::Dazed, 2);
+        g.monsters[1].creature.block = 1;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.monsters[0].creature.cur_hp, 44);
+        assert_eq!(g.monsters[1].creature.cur_hp, 45);
     }
 }
