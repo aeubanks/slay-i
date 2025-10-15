@@ -450,6 +450,15 @@ mod tests {
     }
 
     #[test]
+    fn test_attack_overflow() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_cards_to_hand(CardClass::Strike, 10);
+        g.throw_potion(Potion::Attack, None);
+        g.make_move(g.valid_moves()[0]);
+        assert_eq!(g.discard_pile[0].borrow().get_temporary_cost(), None);
+    }
+
+    #[test]
     fn test_skill() {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Skill, None);

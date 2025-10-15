@@ -1,11 +1,12 @@
-use crate::{action::Action, card::CardRef, game::Game};
+use crate::{action::Action, actions::discard_card::DiscardCardAction, card::CardRef, game::Game};
 
 pub struct PlaceCardInHandAction(pub CardRef);
 
 impl Action for PlaceCardInHandAction {
     fn run(&self, game: &mut Game) {
         if game.hand_is_full() {
-            game.discard_pile.push(self.0.clone());
+            game.action_queue
+                .push_top(DiscardCardAction(self.0.clone()));
         } else {
             game.hand.push(self.0.clone());
         }

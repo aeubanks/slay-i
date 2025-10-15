@@ -1409,6 +1409,13 @@ impl Game {
     }
 
     #[cfg(test)]
+    pub fn add_cards_to_hand(&mut self, class: CardClass, amount: i32) {
+        for _ in 0..amount {
+            self.add_card_to_hand(class);
+        }
+    }
+
+    #[cfg(test)]
     pub fn add_card_to_hand_upgraded(&mut self, class: CardClass) {
         let card = self.new_card_upgraded(class);
         self.hand.push(card);
