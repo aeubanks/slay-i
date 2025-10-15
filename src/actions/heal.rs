@@ -1,6 +1,7 @@
 use crate::{
     action::Action,
     game::{CreatureRef, Game},
+    relic::RelicClass,
 };
 
 pub struct HealAction {
@@ -10,9 +11,13 @@ pub struct HealAction {
 
 impl Action for HealAction {
     fn run(&self, game: &mut Game) {
-        if game.get_creature(self.target).is_alive() {
-            game.heal(self.target, self.amount);
+        if !game.get_creature(self.target).is_alive() {
+            return;
         }
+        if self.target.is_player() && game.has_relic(RelicClass::MarkOfTheBloom) {
+            return;
+        }
+        game.heal(self.target, self.amount);
     }
 }
 

@@ -571,7 +571,9 @@ impl Game {
                     self.action_queue.push_bot(GainEnergyAction(1));
                     self.action_queue.push_bot(DrawAction(1));
                 }
-            } else if let Some(i) = self.potions.iter().position(|p| *p == Some(Potion::Fairy)) {
+            } else if !self.has_relic(RelicClass::MarkOfTheBloom)
+                && let Some(i) = self.potions.iter().position(|p| *p == Some(Potion::Fairy))
+            {
                 self.take_potion(i);
                 let percent = if self.has_relic(RelicClass::SacredBark) {
                     0.6

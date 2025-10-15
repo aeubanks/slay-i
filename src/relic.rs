@@ -202,7 +202,7 @@ r!(
     FaceOfCleric => Event,
     GoldenIdol => Event, // TODO
     GremlinVisage => Event,
-    MarkOfTheBloom => Event, // TODO
+    MarkOfTheBloom => Event,
     MutagenicStrength => Event,
     NlothsGift => Event, // TODO
     NlothsHungryFace => Event, // TODO
@@ -938,8 +938,9 @@ mod tests {
     use super::*;
     use crate::{
         actions::{add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction},
+        assert_matches,
         cards::{CardClass, CardColor},
-        game::{GameBuilder, Move},
+        game::{GameBuilder, GameStatus, Move},
         monster::Monster,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
@@ -2418,5 +2419,21 @@ mod tests {
         g.make_move(Move::EndTurn);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.block, 6);
+    }
+
+    #[test]
+    fn test_mark_of_the_bloom() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::MarkOfTheBloom)
+            .add_relic(RelicClass::LizardTail)
+            .add_monster(AttackMonster::new(999))
+            .build_combat();
+        g.add_potion(Potion::Fairy);
+        g.player.cur_hp = 10;
+        g.play_card(CardClass::Reaper, None);
+        g.play_card(CardClass::BandageUp, None);
+        assert_eq!(g.player.cur_hp, 10);
+        g.make_move(Move::EndTurn);
+        assert_matches!(g.result(), GameStatus::Defeat);
     }
 }
