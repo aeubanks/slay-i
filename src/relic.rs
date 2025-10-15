@@ -11,7 +11,7 @@ use crate::{
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
         increase_potion_slots::IncreasePotionSlotsAction, meat_on_the_bone::MeatOnTheBoneAction,
-        orichalcum::OrichalcumAction, play_card::PlayCardAction,
+        orichalcum::OrichalcumAction, play_card::PlayCardAction, red_skull::RedSkullAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -94,7 +94,7 @@ r!(
     Vajra => Common,
     WarPaint => Common,
     Whetstone => Common,
-    RedSkull => Common, // TODO
+    RedSkull => Common,
 
     BlueCandle => Uncommon,
     BottledFlame => Uncommon, // TODO
@@ -294,6 +294,7 @@ impl RelicClass {
             PenNib => Some(pen_nib_start),
             FossilizedHelix => Some(fossilized_helix),
             ThreadAndNeedle => Some(thread_and_needle),
+            RedSkull => Some(red_skull),
             _ => None,
         }
     }
@@ -664,6 +665,10 @@ fn thread_and_needle(_: &mut i32, queue: &mut ActionQueue) {
         amount: 4,
         target: CreatureRef::player(),
     });
+}
+
+fn red_skull(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(RedSkullAction());
 }
 
 fn vajra(_: &mut i32, queue: &mut ActionQueue) {
@@ -2606,5 +2611,34 @@ mod tests {
         g.player.max_hp = 100;
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
         assert_eq!(g.player.cur_hp, 49 + 12 + 6);
+    }
+
+    #[test]
+    fn test_red_skull() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::RedSkull)
+            .build_combat();
+        g.combat_monsters_queue
+            .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
+        g.player.cur_hp = g.player.max_hp / 2 + 1;
+        assert_eq!(g.player.get_status(Status::Strength), None);
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.get_status(Status::Strength), Some(3));
+        g.play_card(CardClass::BandageUp, None);
+        assert_eq!(g.player.get_status(Status::Strength), None);
+        g.play_card(CardClass::Offering, None);
+        assert_eq!(g.player.get_status(Status::Strength), Some(3));
+
+        // start new combat bloodied
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        assert!(g.player.is_bloodied());
+        assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
+        assert_eq!(g.player.get_status(Status::Strength), Some(3));
+        // test that artifact blocks strength down
+        g.play_card(CardClass::Panacea, None);
+        g.play_card_upgraded(CardClass::BandageUp, None);
+        assert!(!g.player.is_bloodied());
+        assert_eq!(g.player.get_status(Status::Strength), Some(3));
+        assert_eq!(g.player.get_status(Status::Artifact), None)
     }
 }

@@ -40,6 +40,10 @@ impl Creature {
         self.cur_hp > 0
     }
 
+    pub fn is_bloodied(&self) -> bool {
+        self.cur_hp <= (self.max_hp + 1) / 2
+    }
+
     pub fn heal(&mut self, amount: i32) {
         self.cur_hp += amount;
         if self.cur_hp > self.max_hp {

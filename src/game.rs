@@ -490,6 +490,7 @@ impl Game {
         if !c.is_alive() {
             return;
         }
+        let was_bloodied = c.is_bloodied();
         if ty != DamageType::HPLoss {
             if c.block >= amount {
                 c.block -= amount;
@@ -595,6 +596,18 @@ impl Game {
                     self.player.heal(amount);
                 }
             }
+        }
+
+        if !was_bloodied
+            && self.get_creature(target).is_bloodied()
+            && target.is_player()
+            && self.has_relic(RelicClass::RedSkull)
+        {
+            self.action_queue.push_bot(GainStatusAction {
+                status: Status::Strength,
+                amount: 3,
+                target: CreatureRef::player(),
+            });
         }
 
         if !self.get_creature(target).is_alive() && target.is_player() {
@@ -1508,13 +1521,24 @@ impl Game {
         }
     }
 
-    pub fn heal(&mut self, c: CreatureRef, amount: i32) {
+    pub fn heal(&mut self, cref: CreatureRef, amount: i32) {
+        let c = self.get_creature_mut(cref);
+        let was_bloodied = c.cur_hp <= c.max_hp / 2;
         if amount == 0 {
             return;
         }
         // check player healing relics
-        self.get_creature_mut(c).heal(amount);
+        c.heal(amount);
         // trigger player on heal relics
+        let is_bloodied = c.cur_hp <= c.max_hp / 2;
+        if was_bloodied && !is_bloodied && cref.is_player() && self.has_relic(RelicClass::RedSkull)
+        {
+            self.action_queue.push_bot(GainStatusAction {
+                status: Status::Strength,
+                amount: -3,
+                target: CreatureRef::player(),
+            });
+        }
     }
 
     pub fn increase_max_hp(&mut self, amount: i32) {
