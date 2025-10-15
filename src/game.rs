@@ -786,6 +786,8 @@ impl Game {
                 | GameState::Exhume
                 | GameState::DualWield(_)
                 | GameState::Discovery { .. }
+                | GameState::Victory
+                | GameState::Defeat
         )
     }
 
@@ -1800,6 +1802,15 @@ mod tests {
         let hp = g.player.cur_hp;
         g.throw_potion(Potion::Chaos, None);
         assert_eq!(g.player.cur_hp, hp + 4);
+    }
+
+    #[test]
+    fn test_defeat() {
+        let mut g = GameBuilder::default()
+            .add_monster(AttackMonster::new(999))
+            .build_combat();
+        g.make_move(Move::EndTurn);
+        assert_matches!(g.result(), GameStatus::Defeat);
     }
 
     #[test]
