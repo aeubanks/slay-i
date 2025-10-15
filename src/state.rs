@@ -42,6 +42,7 @@ pub enum GameState {
     Discovery {
         classes: Vec<CardClass>,
         amount: i32,
+        is_free: bool,
     },
     Defeat,
     Victory,

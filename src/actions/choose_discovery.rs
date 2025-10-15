@@ -19,6 +19,7 @@ pub enum ChooseDiscoveryType {
 pub struct ChooseDiscoveryAction {
     pub ty: ChooseDiscoveryType,
     pub amount: i32,
+    pub is_free: bool,
 }
 
 impl Action for ChooseDiscoveryAction {
@@ -39,6 +40,7 @@ impl Action for ChooseDiscoveryAction {
         game.state.push_state(GameState::Discovery {
             classes,
             amount: self.amount,
+            is_free: self.is_free,
         });
     }
 }

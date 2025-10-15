@@ -8,8 +8,11 @@ pub struct EnchiridionAction();
 impl Action for EnchiridionAction {
     fn run(&self, game: &mut Game) {
         let class = random_red_power_in_combat(&mut game.rng);
-        game.action_queue
-            .push_top(DiscoveryAction { class, amount: 1 });
+        game.action_queue.push_top(DiscoveryAction {
+            class,
+            amount: 1,
+            is_free: true,
+        });
     }
 }
 

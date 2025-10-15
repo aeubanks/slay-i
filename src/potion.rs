@@ -180,6 +180,7 @@ fn attack(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     game.action_queue.push_bot(ChooseDiscoveryAction {
         ty: ChooseDiscoveryType::RedAttack,
         amount,
+        is_free: true,
     });
 }
 fn skill(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
@@ -187,6 +188,7 @@ fn skill(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     game.action_queue.push_bot(ChooseDiscoveryAction {
         ty: ChooseDiscoveryType::RedSkill,
         amount,
+        is_free: true,
     });
 }
 fn power(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
@@ -194,6 +196,7 @@ fn power(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     game.action_queue.push_bot(ChooseDiscoveryAction {
         ty: ChooseDiscoveryType::RedPower,
         amount,
+        is_free: true,
     });
 }
 fn colorless(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
@@ -201,6 +204,7 @@ fn colorless(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     game.action_queue.push_bot(ChooseDiscoveryAction {
         ty: ChooseDiscoveryType::Colorless,
         amount,
+        is_free: true,
     });
 }
 fn flex(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {

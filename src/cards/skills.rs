@@ -339,6 +339,7 @@ pub fn discovery_behavior(game: &mut Game, _: &CardPlayInfo) {
     game.action_queue.push_bot(ChooseDiscoveryAction {
         ty: ChooseDiscoveryType::Red,
         amount: 1,
+        is_free: true,
     });
 }
 

@@ -1158,10 +1158,13 @@ impl Game {
             },
             Move::ForethoughtAnyEnd => self.forethought_cards(),
             Move::Discovery { card_class } => match self.state.cur_state() {
-                &GameState::Discovery { amount, .. } => {
+                &GameState::Discovery {
+                    amount, is_free, ..
+                } => {
                     self.action_queue.push_top(DiscoveryAction {
                         class: card_class,
                         amount,
+                        is_free,
                     });
                     self.state.pop_state();
                 }

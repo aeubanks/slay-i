@@ -2,16 +2,28 @@ use lazy_static::lazy_static;
 
 use crate::{
     actions::{
-        add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction,
-        choose_gamble::ChooseGambleAction, damage::DamageAction,
+        add_card_to_master_deck::AddCardToMasterDeckAction,
+        block::BlockAction,
+        choose_discovery::{ChooseDiscoveryAction, ChooseDiscoveryType},
+        choose_gamble::ChooseGambleAction,
+        damage::DamageAction,
         damage_all_monsters::DamageAllMonstersAction,
-        discount_random_card_in_hand::DiscountRandomCardInHandAction, draw::DrawAction,
-        duvu::DuvuAction, enchiridion::EnchiridionAction, gain_energy::GainEnergyAction,
-        gain_gold::GainGoldAction, gain_status::GainStatusAction,
-        gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
-        increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
-        increase_potion_slots::IncreasePotionSlotsAction, meat_on_the_bone::MeatOnTheBoneAction,
-        orichalcum::OrichalcumAction, play_card::PlayCardAction, red_skull::RedSkullAction,
+        discount_random_card_in_hand::DiscountRandomCardInHandAction,
+        draw::DrawAction,
+        duvu::DuvuAction,
+        enchiridion::EnchiridionAction,
+        gain_energy::GainEnergyAction,
+        gain_gold::GainGoldAction,
+        gain_status::GainStatusAction,
+        gain_status_all_monsters::GainStatusAllMonstersAction,
+        heal::HealAction,
+        increase_draw_per_turn::IncreaseDrawPerTurnAction,
+        increase_max_hp::IncreaseMaxHPAction,
+        increase_potion_slots::IncreasePotionSlotsAction,
+        meat_on_the_bone::MeatOnTheBoneAction,
+        orichalcum::OrichalcumAction,
+        play_card::PlayCardAction,
+        red_skull::RedSkullAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -171,7 +183,7 @@ r!(
     SlingOfCourage => Shop, // TODO
     StrangeSpoon => Shop,
     TheAbacus => Shop,
-    Toolbox => Shop, // TODO, requires pausing
+    Toolbox => Shop,
     Brimstone => Shop,
 
     Astrolabe => Boss, // TODO
@@ -295,6 +307,7 @@ impl RelicClass {
             FossilizedHelix => Some(fossilized_helix),
             ThreadAndNeedle => Some(thread_and_needle),
             RedSkull => Some(red_skull),
+            Toolbox => Some(toolbox),
             _ => None,
         }
     }
@@ -675,6 +688,14 @@ fn thread_and_needle(_: &mut i32, queue: &mut ActionQueue) {
 
 fn red_skull(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(RedSkullAction());
+}
+
+fn toolbox(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(ChooseDiscoveryAction {
+        ty: ChooseDiscoveryType::Colorless,
+        amount: 1,
+        is_free: false,
+    });
 }
 
 fn vajra(_: &mut i32, queue: &mut ActionQueue) {
@@ -2697,5 +2718,24 @@ mod tests {
         assert_eq!(g.hand.len(), 6);
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 9);
+    }
+
+    #[test]
+    fn test_toolbox() {
+        for _ in 0..20 {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::Toolbox)
+                .add_card(CardClass::Strike)
+                .build_combat();
+            assert_eq!(g.valid_moves().len(), 3);
+            g.valid_moves()
+                .iter()
+                .for_each(|m| assert_matches!(*m, Move::Discovery { .. }));
+            g.make_move(g.valid_moves()[0]);
+            if g.hand[0].borrow().class != CardClass::Transmutation {
+                assert_eq!(g.hand[0].borrow().get_temporary_cost(), None);
+            }
+            assert_eq!(g.hand[0].borrow().class.color(), CardColor::Colorless);
+        }
     }
 }
