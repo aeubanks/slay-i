@@ -508,6 +508,14 @@ impl Game {
                 target,
             });
         }
+        if target.is_player()
+            && amount <= 5
+            && amount >= 1
+            && matches!(ty, DamageType::Attack { .. })
+            && self.has_relic(RelicClass::Torii)
+        {
+            amount = 1;
+        }
         if target.is_player() && self.has_relic(RelicClass::TungstenRod) {
             amount = (amount - 1).max(0);
         }

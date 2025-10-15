@@ -147,7 +147,7 @@ r!(
     Shovel => Rare, // TODO
     StoneCalendar => Rare,
     ThreadAndNeedle => Rare,
-    Torii => Rare, // TODO
+    Torii => Rare,
     TungstenRod => Rare,
     Turnip => Rare,
     UnceasingTop => Rare, // TODO
@@ -2535,5 +2535,44 @@ mod tests {
         g.player.set_status(Status::Metallicize, 2);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.cur_hp, hp - 4 - 9 - 3 - 1);
+    }
+
+    #[test]
+    fn test_torii() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::Torii)
+                .add_monster(AttackMonster::new(5))
+                .build_combat();
+
+            let hp = g.player.cur_hp;
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.cur_hp, hp - 1);
+
+            g.monsters[0].creature.set_status(Status::Strength, 1);
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.cur_hp, hp - 1 - 6);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::Torii)
+                .build_combat();
+            g.add_card_to_hand(CardClass::Burn);
+            let hp = g.player.cur_hp;
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.cur_hp, hp - 2);
+        }
+    }
+
+    #[test]
+    fn test_torii_tungsten_rod() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Torii)
+            .add_relic(RelicClass::TungstenRod)
+            .add_monster(AttackMonster::new(5))
+            .build_combat();
+        let hp = g.player.cur_hp;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp);
     }
 }
