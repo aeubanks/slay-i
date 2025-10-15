@@ -803,7 +803,7 @@ impl Game {
                 }
                 if self.can_play_card(&play) {
                     self.action_queue.push_bot(play);
-                } else {
+                } else if !play.is_duplicated {
                     self.action_queue.push_bot(DiscardCardAction(play.card));
                 }
             } else if !self.monster_queue.is_empty() {
@@ -1800,5 +1800,16 @@ mod tests {
         let hp = g.player.cur_hp;
         g.throw_potion(Potion::Chaos, None);
         assert_eq!(g.player.cur_hp, hp + 4);
+    }
+
+    #[test]
+    fn test_card_queue_duplicated_not_played() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_hand(CardClass::Normality);
+        g.throw_potion(Potion::Duplication, None);
+        g.throw_potion(Potion::Duplication, None);
+        g.play_card(CardClass::Thunderclap, None);
+        g.play_card(CardClass::Thunderclap, None);
+        assert_eq!(g.discard_pile.len(), 2);
     }
 }
