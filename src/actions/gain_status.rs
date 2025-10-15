@@ -76,6 +76,16 @@ impl Action for GainStatusAction {
             game.action_queue
                 .push_bot(DamageAction::thorns_no_rupture(v, self.target));
         }
+        if self.status == Status::Vulnerable
+            && !self.target.is_player()
+            && game.has_relic(RelicClass::ChampionBelt)
+        {
+            game.action_queue.push_bot(GainStatusAction {
+                status: Status::Weak,
+                amount: 1,
+                target: self.target,
+            });
+        }
     }
 }
 

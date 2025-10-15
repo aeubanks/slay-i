@@ -151,7 +151,7 @@ r!(
     Turnip => Rare,
     UnceasingTop => Rare, // TODO
     WingBoots => Rare, // TODO
-    ChampionBelt => Rare, // TODO
+    ChampionBelt => Rare,
     CharonsAshes => Rare, // TODO
     MagicFlower => Rare, // TODO
 
@@ -2480,6 +2480,28 @@ mod tests {
             g.make_move(Move::EndTurn);
             assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(1));
             assert!(g.potions.iter().all(|p| p.is_none()));
+        }
+    }
+
+    #[test]
+    fn test_champion_belt() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::ChampionBelt)
+                .build_combat();
+            g.play_card(CardClass::Bash, Some(CreatureRef::monster(0)));
+            assert_eq!(g.monsters[0].creature.get_status(Status::Weak), Some(1));
+            g.play_card(CardClass::Thunderclap, None);
+            assert_eq!(g.monsters[0].creature.get_status(Status::Weak), Some(2));
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::ChampionBelt)
+                .build_combat();
+            g.monsters[0].creature.set_status(Status::Artifact, 1);
+            g.play_card(CardClass::Bash, Some(CreatureRef::monster(0)));
+            assert_eq!(g.monsters[0].creature.get_status(Status::Weak), None);
+            assert_eq!(g.monsters[0].creature.get_status(Status::Artifact), None);
         }
     }
 }
