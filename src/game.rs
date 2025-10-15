@@ -491,6 +491,7 @@ impl Game {
             return;
         }
         let was_bloodied = c.is_bloodied();
+        let had_block = c.block != 0;
         if ty != DamageType::HPLoss {
             if c.block >= amount {
                 c.block -= amount;
@@ -607,6 +608,17 @@ impl Game {
                 status: Status::Strength,
                 amount: 3,
                 target: CreatureRef::player(),
+            });
+        }
+        if self.get_creature(target).block == 0
+            && had_block
+            && !target.is_player()
+            && self.has_relic(RelicClass::HandDrill)
+        {
+            self.action_queue.push_bot(GainStatusAction {
+                status: Status::Vulnerable,
+                amount: 2,
+                target,
             });
         }
 

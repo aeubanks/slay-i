@@ -161,7 +161,7 @@ r!(
     ClockworkSouvenir => Shop,
     DollysMirror => Shop, // TODO
     FrozenEye => Shop, // TODO
-    HandDrill => Shop, // TODO
+    HandDrill => Shop,
     LeesWaffle => Shop,
     MedicalKit => Shop,
     MembershipCard => Shop, // TODO
@@ -2640,5 +2640,28 @@ mod tests {
         assert!(!g.player.is_bloodied());
         assert_eq!(g.player.get_status(Status::Strength), Some(3));
         assert_eq!(g.player.get_status(Status::Artifact), None)
+    }
+
+    #[test]
+    fn test_hand_drill() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::HandDrill)
+            .build_combat();
+        g.monsters[0].creature.block = 10;
+        g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.get_status(Status::Vulnerable), None);
+        g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(
+            g.monsters[0].creature.get_status(Status::Vulnerable),
+            Some(2)
+        );
+
+        g.monsters[0].creature.block = 10;
+        g.player.set_status(Status::CombustDamage, 12);
+        g.make_move(Move::EndTurn);
+        assert_eq!(
+            g.monsters[0].creature.get_status(Status::Vulnerable),
+            Some(3)
+        );
     }
 }
