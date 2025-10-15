@@ -571,17 +571,21 @@ impl Game {
                     self.action_queue.push_bot(GainEnergyAction(1));
                     self.action_queue.push_bot(DrawAction(1));
                 }
-            } else if !self.has_relic(RelicClass::MarkOfTheBloom)
-                && let Some(i) = self.potions.iter().position(|p| *p == Some(Potion::Fairy))
-            {
-                self.take_potion(i);
-                let percent = if self.has_relic(RelicClass::SacredBark) {
-                    0.6
-                } else {
-                    0.3
-                };
-                let amount = ((self.player.max_hp as f32 * percent) as i32).max(1);
-                self.player.heal(amount);
+            } else if !self.has_relic(RelicClass::MarkOfTheBloom) {
+                if let Some(i) = self.potions.iter().position(|p| *p == Some(Potion::Fairy)) {
+                    self.take_potion(i);
+                    let percent = if self.has_relic(RelicClass::SacredBark) {
+                        0.6
+                    } else {
+                        0.3
+                    };
+                    let amount = ((self.player.max_hp as f32 * percent) as i32).max(1);
+                    self.player.heal(amount);
+                } else if self.get_relic_value(RelicClass::LizardTail) == Some(1) {
+                    self.set_relic_value(RelicClass::LizardTail, 0);
+                    let amount = ((self.player.max_hp as f32 * 0.5) as i32).max(1);
+                    self.player.heal(amount);
+                }
             }
         }
 

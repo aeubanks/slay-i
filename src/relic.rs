@@ -137,7 +137,7 @@ r!(
     Girya => Rare, // TODO
     IceCream => Rare,
     IncenseBurner => Rare,
-    LizardTail => Rare, // TODO
+    LizardTail => Rare,
     Mango => Rare,
     OldCoin => Rare,
     PeacePipe => Rare, // TODO
@@ -223,6 +223,7 @@ impl RelicClass {
     pub fn on_equip(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
+            LizardTail => Some(set_value_one),
             Omamori => Some(set_value_2),
             WarPaint => Some(war_paint),
             Whetstone => Some(whetstone),
@@ -2435,5 +2436,50 @@ mod tests {
         assert_eq!(g.player.cur_hp, 10);
         g.make_move(Move::EndTurn);
         assert_matches!(g.result(), GameStatus::Defeat);
+    }
+
+    #[test]
+    fn test_lizard_tail() {
+        {
+            let mut g = GameBuilder::default()
+                .add_monster(AttackMonster::new(1000))
+                .add_relic(RelicClass::LizardTail)
+                .build_combat();
+            assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(1));
+
+            g.make_move(Move::EndTurn);
+            assert!(g.player.is_alive());
+            assert_eq!(g.player.cur_hp, (g.player.max_hp as f32 * 0.5) as i32);
+            assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(0));
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_monster(AttackMonster::new(1000))
+                .add_relic(RelicClass::LizardTail)
+                .build_combat();
+
+            g.player.decrease_max_hp(g.player.max_hp - 1);
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.cur_hp, 1);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_monster(AttackMonster::with_attack_count(1000, 2))
+                .add_relic(RelicClass::LizardTail)
+                .build_combat();
+            g.make_move(Move::EndTurn);
+            assert!(!g.player.is_alive());
+        }
+        {
+            // test that fairy is used before lizard tail
+            let mut g = GameBuilder::default()
+                .add_monster(AttackMonster::new(1000))
+                .add_relic(RelicClass::LizardTail)
+                .build_combat();
+            g.add_potion(Potion::Fairy);
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(1));
+            assert!(g.potions.iter().all(|p| p.is_none()));
+        }
     }
 }
