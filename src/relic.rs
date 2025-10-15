@@ -124,7 +124,7 @@ r!(
     ToxicEgg => Uncommon, // TODO
     WhiteBeastStatue => Uncommon, // TODO
     PaperPhrog => Uncommon,
-    SelfFormingClay => Uncommon, // TODO
+    SelfFormingClay => Uncommon,
 
     BirdFacedUrn => Rare,
     Calipers => Rare,
@@ -349,6 +349,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             CentennialPuzzle => Some(centennial_puzzle),
+            SelfFormingClay => Some(self_forming_clay),
             _ => None,
         }
     }
@@ -417,6 +418,15 @@ fn centennial_puzzle(v: &mut i32, queue: &mut ActionQueue) {
         // push_top is intentional
         queue.push_top(DrawAction(3));
     }
+}
+
+fn self_forming_clay(_: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
+    queue.push_top(GainStatusAction {
+        status: Status::NextTurnBlock,
+        amount: 3,
+        target: CreatureRef::player(),
+    });
 }
 
 fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
@@ -2389,5 +2399,24 @@ mod tests {
             g.make_move(Move::EndTurn);
             assert_eq!(g.hand.len(), 5);
         }
+    }
+
+    #[test]
+    fn test_self_forming_clay() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::SelfFormingClay)
+            .add_monster(AttackMonster::with_attack_count(1, 2))
+            .build_combat();
+        g.play_card(CardClass::Thunderclap, None);
+        assert_eq!(
+            g.monsters[0].creature.get_status(Status::NextTurnBlock),
+            None
+        );
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.get_status(Status::NextTurnBlock), Some(3));
+        g.make_move(Move::EndTurn);
+        g.make_move(Move::EndTurn);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.block, 6);
     }
 }
