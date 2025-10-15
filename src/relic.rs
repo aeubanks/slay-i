@@ -10,7 +10,8 @@ use crate::{
         gain_gold::GainGoldAction, gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
-        increase_potion_slots::IncreasePotionSlotsAction, play_card::PlayCardAction,
+        increase_potion_slots::IncreasePotionSlotsAction, orichalcum::OrichalcumAction,
+        play_card::PlayCardAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -80,7 +81,7 @@ r!(
     Nunchaku => Common,
     OddlySmoothStone => Common,
     Omamori => Common,
-    Orichalcum => Common, // TODO
+    Orichalcum => Common,
     PenNib => Common,
     PotionBelt => Common,
     PreservedInsect => Common, // TODO
@@ -358,6 +359,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             StoneCalendar => Some(stone_calendar),
+            Orichalcum => Some(orichalcum),
             _ => None,
         }
     }
@@ -731,6 +733,11 @@ fn stone_calendar(v: &mut i32, queue: &mut ActionQueue) {
     if *v == 7 {
         queue.push_bot(DamageAllMonstersAction::thorns(52));
     }
+}
+
+fn orichalcum(_: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
+    queue.push_top(OrichalcumAction(6));
 }
 
 fn happy_flower(v: &mut i32, queue: &mut ActionQueue) {
@@ -2503,5 +2510,30 @@ mod tests {
             assert_eq!(g.monsters[0].creature.get_status(Status::Weak), None);
             assert_eq!(g.monsters[0].creature.get_status(Status::Artifact), None);
         }
+    }
+
+    #[test]
+    fn test_orichalcum() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Orichalcum)
+            .add_monster(AttackMonster::new(10))
+            .build_combat();
+        let hp = g.player.cur_hp;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 4);
+
+        g.player.block = 1;
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 4 - 9);
+
+        g.player.set_status(Status::FeelNoPain, 1);
+        g.add_card_to_hand(CardClass::Dazed);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 4 - 9 - 3);
+
+        g.player.set_status(Status::PlatedArmor, 1);
+        g.player.set_status(Status::Metallicize, 2);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, hp - 4 - 9 - 3 - 1);
     }
 }

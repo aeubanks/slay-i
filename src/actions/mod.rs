@@ -55,6 +55,7 @@ pub mod magnetism;
 pub mod mayhem;
 pub mod memories;
 pub mod noop;
+pub mod orichalcum;
 pub mod place_card_in_hand;
 pub mod place_card_on_top_of_draw;
 pub mod play_card;
