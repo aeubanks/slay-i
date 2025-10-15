@@ -67,6 +67,7 @@ pub mod reduce_status;
 pub mod remove_status;
 pub mod removed_card_from_master_deck;
 pub mod set_energy;
+pub mod set_hp_all_monsters;
 pub mod shuffle_card_into_draw;
 pub mod shuffle_discard_on_top_of_draw;
 pub mod shuffle_draw;

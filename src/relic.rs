@@ -24,6 +24,7 @@ use crate::{
         orichalcum::OrichalcumAction,
         play_card::PlayCardAction,
         red_skull::RedSkullAction,
+        set_hp_all_monsters::SetHPAllMonstersAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -220,7 +221,7 @@ r!(
     NlothsGift => Event, // TODO
     NlothsHungryFace => Event, // TODO
     Necronomicon => Event,
-    NeowsLament => Event, // TODO
+    NeowsLament => Event,
     NilryCodex => Event, // TODO, requires pausing
     OddMushroom => Event,
     RedMask => Event,
@@ -238,6 +239,7 @@ impl RelicClass {
         match self {
             LizardTail => Some(set_value_one),
             Omamori => Some(set_value_2),
+            NeowsLament => Some(set_value_3),
             WarPaint => Some(war_paint),
             Whetstone => Some(whetstone),
             SneckoEye => Some(snecko_eye_equip),
@@ -291,6 +293,7 @@ impl RelicClass {
     pub fn at_combat_begin_pre_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
+            NeowsLament => Some(neows_lament),
             BloodVial => Some(blood_vial),
             Lantern => Some(lantern),
             GremlinVisage => Some(gremlin_visage),
@@ -391,6 +394,10 @@ fn set_value_one(v: &mut i32, _: &mut ActionQueue) {
 
 fn set_value_2(v: &mut i32, _: &mut ActionQueue) {
     *v = 2;
+}
+
+fn set_value_3(v: &mut i32, _: &mut ActionQueue) {
+    *v = 3;
 }
 
 fn set_value_99(v: &mut i32, _: &mut ActionQueue) {
@@ -621,6 +628,14 @@ fn black_blood(_: &mut i32, queue: &mut ActionQueue) {
 
 fn face_of_cleric(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(IncreaseMaxHPAction(1));
+}
+
+fn neows_lament(v: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
+    if *v != 0 {
+        *v -= 1;
+        queue.push_top(SetHPAllMonstersAction(1));
+    }
 }
 
 fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
@@ -2737,5 +2752,40 @@ mod tests {
             }
             assert_eq!(g.hand[0].borrow().class.color(), CardColor::Colorless);
         }
+    }
+
+    #[test]
+    fn test_neows_lament() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::NeowsLament)
+            .build_combat();
+        for _ in 0..3 {
+            g.combat_monsters_queue
+                .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
+        }
+
+        assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(2));
+        assert_eq!(g.monsters[0].creature.cur_hp, 1);
+        g.play_card(CardClass::Thunderclap, None);
+
+        assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(1));
+        assert_eq!(g.monsters[0].creature.cur_hp, 1);
+        g.play_card(CardClass::Thunderclap, None);
+
+        assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(0));
+        assert_eq!(g.monsters[0].creature.cur_hp, 1);
+        g.play_card(CardClass::Thunderclap, None);
+
+        assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(0));
+        assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
+    }
+
+    #[test]
+    fn test_neows_lament_mercury_hourglass() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::NeowsLament)
+            .add_relic(RelicClass::MercuryHourglass)
+            .build_combat();
+        assert_matches!(g.result(), GameStatus::Victory);
     }
 }
