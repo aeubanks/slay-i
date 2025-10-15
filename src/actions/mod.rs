@@ -53,6 +53,7 @@ pub mod infernal_blade;
 pub mod madness;
 pub mod magnetism;
 pub mod mayhem;
+pub mod meat_on_the_bone;
 pub mod memories;
 pub mod noop;
 pub mod orichalcum;

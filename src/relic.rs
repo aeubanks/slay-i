@@ -10,8 +10,8 @@ use crate::{
         gain_gold::GainGoldAction, gain_status::GainStatusAction,
         gain_status_all_monsters::GainStatusAllMonstersAction, heal::HealAction,
         increase_draw_per_turn::IncreaseDrawPerTurnAction, increase_max_hp::IncreaseMaxHPAction,
-        increase_potion_slots::IncreasePotionSlotsAction, orichalcum::OrichalcumAction,
-        play_card::PlayCardAction,
+        increase_potion_slots::IncreasePotionSlotsAction, meat_on_the_bone::MeatOnTheBoneAction,
+        orichalcum::OrichalcumAction, play_card::PlayCardAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -109,7 +109,7 @@ r!(
     Kunai => Uncommon,
     LetterOpener => Uncommon,
     Matryoshka => Uncommon, // TODO
-    MeatOnTheBone => Uncommon, // TODO
+    MeatOnTheBone => Uncommon,
     MercuryHourglass => Uncommon,
     MoltenEgg => Uncommon, // TODO
     MummifiedHand => Uncommon,
@@ -269,6 +269,7 @@ impl RelicClass {
     pub fn at_combat_finish(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
+            MeatOnTheBone => Some(meat_on_the_bone),
             BurningBlood => Some(burning_blood),
             BlackBlood => Some(black_blood),
             FaceOfCleric => Some(face_of_cleric),
@@ -579,12 +580,18 @@ fn letter_opener(
     }
 }
 
+fn meat_on_the_bone(_: &mut i32, queue: &mut ActionQueue) {
+    // push_top is intentional
+    queue.push_top(MeatOnTheBoneAction(12));
+}
+
 fn burning_blood(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(HealAction {
         target: CreatureRef::player(),
         amount: 6,
     });
 }
+
 fn black_blood(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(HealAction {
         target: CreatureRef::player(),
@@ -2574,5 +2581,30 @@ mod tests {
         let hp = g.player.cur_hp;
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.cur_hp, hp);
+    }
+
+    #[test]
+    fn test_meat_on_the_bone() {
+        for (cur, max, expected) in [(5, 10, 10), (5, 50, 17), (6, 10, 6)] {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::MeatOnTheBone)
+                .build_combat();
+            g.player.cur_hp = cur;
+            g.player.max_hp = max;
+            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            assert_eq!(g.player.cur_hp, expected);
+        }
+    }
+
+    #[test]
+    fn test_meat_on_the_bone_burning_blood() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::BurningBlood)
+            .add_relic(RelicClass::MeatOnTheBone)
+            .build_combat();
+        g.player.cur_hp = 49;
+        g.player.max_hp = 100;
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.cur_hp, 49 + 12 + 6);
     }
 }
