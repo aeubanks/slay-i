@@ -2616,6 +2616,16 @@ mod tests {
             g.make_move(Move::EndTurn);
             assert_eq!(g.player.cur_hp, hp - 2);
         }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::Torii)
+                .add_monster(AttackMonster::with_attack_count(4, 2))
+                .build_combat();
+            let hp = g.player.cur_hp;
+            g.player.block = 3;
+            g.make_move(Move::EndTurn);
+            assert_eq!(g.player.cur_hp, hp - 2);
+        }
     }
 
     #[test]
