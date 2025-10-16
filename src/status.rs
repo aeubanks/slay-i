@@ -871,6 +871,19 @@ mod tests {
     }
 
     #[test]
+    fn test_intangible_block() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Intangible, 2)
+            .add_monster(AttackMonster::new(10))
+            .build_combat();
+        g.player.cur_hp = 50;
+        g.player.block = 2;
+        g.add_card_to_hand(CardClass::Burn);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.player.cur_hp, 50);
+    }
+
+    #[test]
     fn test_brutality() {
         let mut g = GameBuilder::default()
             .add_player_status(Status::Brutality, 2)

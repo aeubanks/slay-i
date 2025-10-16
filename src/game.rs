@@ -453,9 +453,6 @@ impl Game {
                 amount_f *= 1.5;
             }
         }
-        if target.has_status(Status::Intangible) {
-            amount_f = amount_f.min(1.0);
-        }
         0.max(amount_f as i32)
     }
 
@@ -492,6 +489,9 @@ impl Game {
         }
         let was_bloodied = c.is_bloodied();
         let had_block = c.block != 0;
+        if c.has_status(Status::Intangible) {
+            amount = amount.min(1);
+        }
         if ty != DamageType::HPLoss {
             if c.block >= amount {
                 c.block -= amount;
