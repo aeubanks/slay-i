@@ -772,6 +772,10 @@ impl Game {
             }
             GameState::CombatEnd => {
                 self.trigger_relics_at_combat_finish();
+                self.state.set_state(GameState::ResetCombat);
+                self.state.push_state(GameState::RunActions);
+            }
+            GameState::ResetCombat => {
                 self.monsters.clear();
                 self.player.clear_all_status();
                 self.num_cards_played_this_turn = 0;
@@ -780,7 +784,6 @@ impl Game {
                 self.turn = 0;
                 self.clear_all_piles();
                 self.state.set_state(GameState::RollCombat);
-                self.state.push_state(GameState::RunActions);
             }
             GameState::Victory
             | GameState::Defeat

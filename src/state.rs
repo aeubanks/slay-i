@@ -17,6 +17,7 @@ pub enum GameState {
     MonsterTurn,
     EndOfRound,
     CombatEnd,
+    ResetCombat,
     Armaments,
     Memories {
         num_cards_remaining: i32,
