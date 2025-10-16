@@ -1983,10 +1983,19 @@ mod tests {
             amount: 1,
             target: CreatureRef::player(),
         });
-        g.add_card_to_discard_pile(CardClass::BloodForBlood);
         g.make_move(Move::EndTurn);
         assert_eq!(g.player.cur_hp, hp - 2 - 6 - 2);
         assert_eq!(g.player.get_status(Status::PlatedArmor), Some(1));
+    }
+
+    #[test]
+    fn test_blood_for_blood_tungsten_rod() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::TungstenRod)
+            .build_combat();
+        g.play_card(CardClass::Apparition, None);
+        g.play_card(CardClass::Bloodletting, None);
+        g.add_card_to_hand(CardClass::BloodForBlood);
         assert_eq!(g.hand[0].borrow().get_base_cost(), 4);
     }
 

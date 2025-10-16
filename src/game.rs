@@ -292,6 +292,7 @@ pub struct Game {
     pub monster_queue: Vec<CreatureRef>,
     pub should_add_extra_decay_status: bool,
     pub num_cards_played_this_turn: i32,
+    pub num_times_took_damage: i32,
     pub combat_monsters_queue: Vec<Vec<Monster>>,
     pub rng: Rand,
     pub state: GameStateManager,
@@ -324,6 +325,7 @@ impl Game {
             monster_queue: Default::default(),
             should_add_extra_decay_status: false,
             num_cards_played_this_turn: 0,
+            num_times_took_damage: 0,
             combat_monsters_queue: vec![monsters],
             rng,
             state: GameStateManager::new(GameState::Blessing),
@@ -361,14 +363,19 @@ impl Game {
 
     pub fn new_card(&mut self, class: CardClass) -> CardRef {
         let id = self.new_card_id(class);
-        Rc::new(RefCell::new(Card {
+        let mut c = Card {
             class,
             upgrade_count: 0,
             cost: class.base_cost(),
             exhaust: class.base_exhausts(),
             base_increase: 0,
             id,
-        }))
+        };
+        if class == CardClass::BloodForBlood {
+            let cost = c.get_base_cost();
+            c.update_cost((cost - self.num_times_took_damage).max(0));
+        }
+        Rc::new(RefCell::new(c))
     }
 
     pub fn new_card_upgraded(&mut self, class: CardClass) -> CardRef {
@@ -530,6 +537,7 @@ impl Game {
             c.cur_hp -= amount;
             if target.is_player() {
                 self.trigger_relics_on_lose_hp();
+                self.num_times_took_damage += 1;
             }
             // attack damage never procs rupture
             // hp loss always procs rupture
@@ -766,6 +774,11 @@ impl Game {
                 self.trigger_relics_at_combat_finish();
                 self.monsters.clear();
                 self.player.clear_all_status();
+                self.num_cards_played_this_turn = 0;
+                self.num_times_took_damage = 0;
+                self.energy = 0;
+                self.turn = 0;
+                self.clear_all_piles();
                 self.state.set_state(GameState::RollCombat);
                 self.state.push_state(GameState::RunActions);
             }
@@ -1506,7 +1519,6 @@ impl Game {
         cards[0]
     }
 
-    #[cfg(test)]
     pub fn clear_all_piles(&mut self) {
         self.hand.clear();
         self.discard_pile.clear();

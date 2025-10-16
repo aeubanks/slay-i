@@ -356,6 +356,7 @@ mod tests {
         assert_matches,
         cards::{CardClass, CardCost},
         game::{CreatureRef, Game, GameBuilder, GameStatus, Move},
+        monster::Monster,
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
     };
@@ -886,7 +887,7 @@ mod tests {
         assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);
         g.play_card(CardClass::Bloodletting, None);
         g.add_card_to_draw_pile(CardClass::BloodForBlood);
-        assert_eq!(g.draw_pile[0].borrow().get_base_cost(), 4);
+        assert_eq!(g.draw_pile[0].borrow().get_base_cost(), 3);
         assert_eq!(g.discard_pile[0].borrow().get_base_cost(), 3);
         assert_eq!(g.hand[0].borrow().get_base_cost(), 3);
         assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);
@@ -896,18 +897,32 @@ mod tests {
 
         g.player.block = 2;
         g.make_move(Move::EndTurn);
-        assert_eq!(cost_sum(&g), 4 + 3 + 3);
+        assert_eq!(cost_sum(&g), 3 + 3 + 3);
 
         g.make_move(Move::EndTurn);
-        assert_eq!(cost_sum(&g), 3 + 2 + 2);
+        assert_eq!(cost_sum(&g), 2 + 2 + 2);
         g.play_card_upgraded(CardClass::Armaments, None);
-        assert_eq!(cost_sum(&g), 2 + 1 + 1);
+        assert_eq!(cost_sum(&g), 1 + 1 + 1);
         g.play_card(CardClass::Bloodletting, None);
-        assert_eq!(cost_sum(&g), 1);
+        assert_eq!(cost_sum(&g), 0);
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(cost_sum(&g), 0);
 
         assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);
+    }
+
+    #[test]
+    fn test_blood_for_blood_multiple_combats() {
+        let mut g = GameBuilder::default().build_combat();
+        g.combat_monsters_queue
+            .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
+        g.play_card(CardClass::Bloodletting, None);
+        g.play_card(CardClass::Bloodletting, None);
+        g.add_card_to_hand(CardClass::BloodForBlood);
+        assert_eq!(g.hand[0].borrow().get_base_cost(), 2);
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.add_card_to_hand(CardClass::BloodForBlood);
+        assert_eq!(g.hand[0].borrow().get_base_cost(), 4);
     }
 
     #[test]

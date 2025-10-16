@@ -108,6 +108,12 @@ impl Card {
             CardCost::X | CardCost::Zero => {}
         }
     }
+    pub fn get_base_cost(&self) -> i32 {
+        match self.cost {
+            CardCost::Cost { base_cost, .. } => base_cost,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -132,12 +138,6 @@ impl Card {
             } => {
                 *free_to_play_once = true;
             }
-            _ => unreachable!(),
-        }
-    }
-    pub fn get_base_cost(&self) -> i32 {
-        match self.cost {
-            CardCost::Cost { base_cost, .. } => base_cost,
             _ => unreachable!(),
         }
     }
