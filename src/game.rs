@@ -1182,8 +1182,10 @@ impl Game {
             Move::ForethoughtAnyEnd => self.forethought_cards(),
             Move::Nilrys { card_class } => match self.state.cur_state() {
                 &GameState::Nilrys { .. } => {
-                    let c = self.new_card(card_class);
-                    self.action_queue.push_top(ShuffleCardIntoDrawAction(c));
+                    self.action_queue.push_top(ShuffleCardIntoDrawAction {
+                        class: card_class,
+                        is_free: false,
+                    });
                     self.state.pop_state();
                 }
                 _ => unreachable!(),

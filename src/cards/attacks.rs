@@ -121,8 +121,10 @@ pub fn iron_wave_behavior(game: &mut Game, info: &CardPlayInfo) {
 
 pub fn wild_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 12, 17);
-    let card = game.new_card(CardClass::Wound);
-    game.action_queue.push_bot(ShuffleCardIntoDrawAction(card));
+    game.action_queue.push_bot(ShuffleCardIntoDrawAction {
+        class: CardClass::Wound,
+        is_free: false,
+    });
 }
 
 pub fn headbutt_behavior(game: &mut Game, info: &CardPlayInfo) {
@@ -172,8 +174,10 @@ pub fn clash_behavior(game: &mut Game, info: &CardPlayInfo) {
 
 pub fn reckless_charge_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 7, 10);
-    let card = game.new_card(CardClass::Dazed);
-    game.action_queue.push_bot(ShuffleCardIntoDrawAction(card));
+    game.action_queue.push_bot(ShuffleCardIntoDrawAction {
+        class: CardClass::Dazed,
+        is_free: false,
+    });
 }
 
 pub fn searing_blow_behavior(game: &mut Game, info: &CardPlayInfo) {

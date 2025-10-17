@@ -452,11 +452,10 @@ pub fn metamorphosis_behavior(game: &mut Game, info: &CardPlayInfo) {
     let count = if info.upgraded { 5 } else { 3 };
     for _ in 0..count {
         let class = random_red_attack_in_combat(&mut game.rng);
-        let c = game.new_card(class);
-        if let CardCost::Cost { base_cost, .. } = &mut c.borrow_mut().cost {
-            *base_cost = 0
-        }
-        game.action_queue.push_bot(ShuffleCardIntoDrawAction(c));
+        game.action_queue.push_bot(ShuffleCardIntoDrawAction {
+            class,
+            is_free: true,
+        });
     }
 }
 
@@ -464,11 +463,10 @@ pub fn chrysalis_behavior(game: &mut Game, info: &CardPlayInfo) {
     let count = if info.upgraded { 5 } else { 3 };
     for _ in 0..count {
         let class = random_red_skill_in_combat(&mut game.rng);
-        let c = game.new_card(class);
-        if let CardCost::Cost { base_cost, .. } = &mut c.borrow_mut().cost {
-            *base_cost = 0
-        }
-        game.action_queue.push_bot(ShuffleCardIntoDrawAction(c));
+        game.action_queue.push_bot(ShuffleCardIntoDrawAction {
+            class,
+            is_free: true,
+        });
     }
 }
 

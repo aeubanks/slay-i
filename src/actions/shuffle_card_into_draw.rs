@@ -1,24 +1,37 @@
 use rand::Rng;
 
-use crate::{action::Action, card::CardRef, game::Game};
+use crate::{
+    action::Action,
+    cards::{CardClass, CardCost},
+    game::Game,
+};
 
-pub struct ShuffleCardIntoDrawAction(pub CardRef);
+pub struct ShuffleCardIntoDrawAction {
+    pub class: CardClass,
+    pub is_free: bool,
+}
 
 impl Action for ShuffleCardIntoDrawAction {
     fn run(&self, game: &mut Game) {
+        let card = game.new_card(self.class);
+        if self.is_free
+            && let CardCost::Cost { base_cost, .. } = &mut card.borrow_mut().cost
+        {
+            *base_cost = 0
+        }
         // cannot shuffle card on top of draw pile unless empty
         if game.draw_pile.is_empty() {
-            game.draw_pile.push(self.0.clone());
+            game.draw_pile.push(card);
         } else {
             let i = game.rng.random_range(0..game.draw_pile.len());
-            game.draw_pile.insert(i, self.0.clone());
+            game.draw_pile.insert(i, card);
         }
     }
 }
 
 impl std::fmt::Debug for ShuffleCardIntoDrawAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "shuffle card into draw: {:?}", self.0.borrow())
+        write!(f, "shuffle card into draw: {:?}", self.class)
     }
 }
 
@@ -33,8 +46,10 @@ mod tests {
     fn test_shuffle_into_draw_non_empty() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_draw_pile(CardClass::Strike);
-        let card = g.new_card(CardClass::Defend);
-        g.run_action(ShuffleCardIntoDrawAction(card));
+        g.run_action(ShuffleCardIntoDrawAction {
+            class: CardClass::Defend,
+            is_free: false,
+        });
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Defend);
         assert_eq!(g.draw_pile[1].borrow().class, CardClass::Strike);
     }
@@ -47,8 +62,10 @@ mod tests {
             let mut g = GameBuilder::default().build_combat();
             g.add_card_to_draw_pile(CardClass::Strike);
             g.add_card_to_draw_pile(CardClass::Strike);
-            let card = g.new_card(CardClass::Defend);
-            g.run_action(ShuffleCardIntoDrawAction(card));
+            g.run_action(ShuffleCardIntoDrawAction {
+                class: CardClass::Defend,
+                is_free: false,
+            });
             found_at_0 |= g.draw_pile[0].borrow().class == CardClass::Defend;
             found_at_1 |= g.draw_pile[1].borrow().class == CardClass::Defend;
             assert_eq!(g.draw_pile[2].borrow().class, CardClass::Strike);
@@ -62,8 +79,10 @@ mod tests {
     #[test]
     fn test_shuffle_into_draw_empty() {
         let mut g = GameBuilder::default().build_combat();
-        let card = g.new_card(CardClass::Defend);
-        g.run_action(ShuffleCardIntoDrawAction(card));
+        g.run_action(ShuffleCardIntoDrawAction {
+            class: CardClass::Defend,
+            is_free: false,
+        });
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.draw_pile[0].borrow().class, CardClass::Defend);
     }
