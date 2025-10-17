@@ -5,7 +5,7 @@ use crate::{
         gain_energy::GainEnergyAction, place_card_in_hand::PlaceCardInHandAction,
     },
     card::CardRef,
-    cards::CardClass,
+    cards::{CardClass, random_red_in_combat},
     game::Game,
     relic::RelicClass,
     status::Status,
@@ -18,6 +18,11 @@ impl Action for ExhaustCardAction {
         if game.has_relic(RelicClass::CharonsAshes) {
             game.action_queue
                 .push_top(DamageAllMonstersAction::thorns(3));
+        }
+        if game.has_relic(RelicClass::DeadBranch) {
+            let class = random_red_in_combat(&mut game.rng);
+            let c = game.new_card(class);
+            game.action_queue.push_bot(PlaceCardInHandAction(c));
         }
         if let Some(a) = game.player.get_status(Status::FeelNoPain) {
             game.action_queue

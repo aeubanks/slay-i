@@ -144,7 +144,7 @@ r!(
     BirdFacedUrn => Rare,
     Calipers => Rare,
     CaptainsWheel => Rare,
-    DeadBranch => Rare, // TODO
+    DeadBranch => Rare,
     DuVuDoll => Rare,
     FossilizedHelix => Rare,
     GamblingChip => Rare,
@@ -2864,5 +2864,21 @@ mod tests {
                 assert_eq!(c.borrow().upgrade_count, 0);
             }
         }
+    }
+
+    #[test]
+    fn test_dead_branch() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::DeadBranch)
+            .build_combat();
+        g.play_card(CardClass::Offering, None);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class.color(), CardColor::Red);
+
+        g.clear_all_piles();
+        g.add_card_to_hand(CardClass::Apparition);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 1);
+        assert_eq!(g.hand[0].borrow().class.color(), CardColor::Red);
     }
 }
