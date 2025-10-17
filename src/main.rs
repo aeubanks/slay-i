@@ -216,6 +216,12 @@ fn print_state(g: &Game) {
             Move::ForethoughtAnyEnd => {
                 print!("forethought any end");
             }
+            Move::Nilrys { card_class } => {
+                print!("nilrys {:?}", card_class);
+            }
+            Move::NilrysSkip => {
+                print!("nilrys skip");
+            }
             Move::Discovery { card_class } => {
                 print!("discovery {:?}", card_class);
             }

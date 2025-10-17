@@ -45,6 +45,9 @@ pub enum GameState {
         amount: i32,
         is_free: bool,
     },
+    Nilrys {
+        classes: Vec<CardClass>,
+    },
     Defeat,
     Victory,
 }

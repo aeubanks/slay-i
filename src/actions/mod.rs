@@ -6,6 +6,7 @@ pub mod choose_card_in_discard_to_place_on_top_of_draw;
 pub mod choose_card_in_draw_to_place_in_hand;
 pub mod choose_card_in_hand_to_exhaust;
 pub mod choose_card_in_hand_to_place_on_top_of_draw;
+pub mod choose_card_to_shuffle_into_draw;
 pub mod choose_cards_in_hand_to_exhaust;
 pub mod choose_discovery;
 pub mod choose_dual_wield;

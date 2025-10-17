@@ -22,6 +22,7 @@ use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
 use crate::actions::removed_card_from_master_deck::RemovedCardFromMasterDeckAction;
+use crate::actions::shuffle_card_into_draw::ShuffleCardIntoDrawAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
 use crate::actions::upgrade::UpgradeAction;
 use crate::actions::use_potion::UsePotionAction;
@@ -128,6 +129,10 @@ pub enum Move {
     Discovery {
         card_class: CardClass,
     },
+    Nilrys {
+        card_class: CardClass,
+    },
+    NilrysSkip,
     DiscardPotion {
         potion_index: usize,
     },
@@ -803,6 +808,7 @@ impl Game {
             | GameState::FetchCardFromDraw(_)
             | GameState::ForethoughtAny { .. }
             | GameState::ForethoughtOne
+            | GameState::Nilrys { .. }
             | GameState::Discovery { .. } => {
                 println!("{:?}", self.state);
                 unreachable!()
@@ -840,6 +846,7 @@ impl Game {
                 | GameState::Gamble { .. }
                 | GameState::Exhume
                 | GameState::DualWield(_)
+                | GameState::Nilrys { .. }
                 | GameState::Discovery { .. }
                 | GameState::Victory
                 | GameState::Defeat
@@ -1173,6 +1180,20 @@ impl Game {
                 _ => unreachable!(),
             },
             Move::ForethoughtAnyEnd => self.forethought_cards(),
+            Move::Nilrys { card_class } => match self.state.cur_state() {
+                &GameState::Nilrys { .. } => {
+                    let c = self.new_card(card_class);
+                    self.action_queue.push_top(ShuffleCardIntoDrawAction(c));
+                    self.state.pop_state();
+                }
+                _ => unreachable!(),
+            },
+            Move::NilrysSkip => match self.state.cur_state() {
+                &GameState::Nilrys { .. } => {
+                    self.state.pop_state();
+                }
+                _ => unreachable!(),
+            },
             Move::Discovery { card_class } => match self.state.cur_state() {
                 &GameState::Discovery {
                     amount, is_free, ..
@@ -1393,6 +1414,12 @@ impl Game {
                 moves.push(Move::GambleEnd);
                 for c in 0..self.hand.len() {
                     moves.push(Move::Gamble { card_index: c });
+                }
+            }
+            GameState::Nilrys { classes, .. } => {
+                moves.push(Move::NilrysSkip);
+                for &card_class in classes {
+                    moves.push(Move::Nilrys { card_class })
                 }
             }
             GameState::Discovery { classes, .. } => {

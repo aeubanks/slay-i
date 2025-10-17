@@ -4,6 +4,7 @@ use crate::{
     actions::{
         add_card_to_master_deck::AddCardToMasterDeckAction,
         block::BlockAction,
+        choose_card_to_shuffle_into_draw::ChooseCardToShuffleIntoDrawAction,
         choose_discovery::{ChooseDiscoveryAction, ChooseDiscoveryType},
         choose_gamble::ChooseGambleAction,
         damage::DamageAction,
@@ -222,7 +223,7 @@ r!(
     NlothsHungryFace => Event, // TODO
     Necronomicon => Event,
     NeowsLament => Event,
-    NilryCodex => Event, // TODO, requires pausing
+    NilrysCodex => Event,
     OddMushroom => Event,
     RedMask => Event,
     SpiritPoop => Event,
@@ -379,6 +380,7 @@ impl RelicClass {
         match self {
             StoneCalendar => Some(stone_calendar),
             Orichalcum => Some(orichalcum),
+            NilrysCodex => Some(nilrys_codex),
             _ => None,
         }
     }
@@ -792,6 +794,10 @@ fn stone_calendar(v: &mut i32, queue: &mut ActionQueue) {
 fn orichalcum(_: &mut i32, queue: &mut ActionQueue) {
     // push_top is intentional
     queue.push_top(OrichalcumAction(6));
+}
+
+fn nilrys_codex(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(ChooseCardToShuffleIntoDrawAction());
 }
 
 fn happy_flower(v: &mut i32, queue: &mut ActionQueue) {
@@ -2821,5 +2827,42 @@ mod tests {
             .add_relic(RelicClass::MercuryHourglass)
             .build_combat();
         assert_matches!(g.result(), GameStatus::Victory);
+    }
+
+    #[test]
+    fn test_nilrys_codex() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::NilrysCodex)
+            .add_relic(RelicClass::RunicPyramid)
+            .add_cards(CardClass::Strike, 20)
+            .build_combat();
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.valid_moves().len(), 4);
+        for m in g.valid_moves() {
+            assert_matches!(m, Move::Nilrys { .. } | Move::NilrysSkip);
+        }
+        g.make_move(Move::NilrysSkip);
+
+        for i in 1..10 {
+            assert_eq!(g.hand.len(), 10);
+            g.make_move(Move::EndTurn);
+            g.make_move(Move::Nilrys {
+                card_class: CardClass::BloodForBlood,
+            });
+            assert_eq!(
+                g.draw_pile
+                    .iter()
+                    .filter(|c| c.borrow().class == CardClass::BloodForBlood)
+                    .count(),
+                i
+            );
+            assert_eq!(
+                g.draw_pile.last().unwrap().borrow().class,
+                CardClass::Strike
+            );
+            for c in &g.draw_pile {
+                assert_eq!(c.borrow().upgrade_count, 0);
+            }
+        }
     }
 }
