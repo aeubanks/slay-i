@@ -26,6 +26,7 @@ use crate::{
         play_card::PlayCardAction,
         red_skull::RedSkullAction,
         set_hp_all_monsters::SetHPAllMonstersAction,
+        shuffle_card_into_draw::ShuffleCardIntoDrawAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -208,7 +209,7 @@ r!(
     TinyHouse => Boss, // TODO
     VelvetChoker => Boss, // TODO
     BlackBlood => Boss,
-    MarkOfPain => Boss, // TODO
+    MarkOfPain => Boss,
     RunicCube => Boss,
 
     BloodyIdol => Event,
@@ -318,6 +319,7 @@ impl RelicClass {
     pub fn at_combat_begin_post_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
+            MarkOfPain => Some(mark_of_pain),
             BagOfPrep => Some(bag_of_prep),
             Anchor => Some(anchor),
             _ => None,
@@ -760,6 +762,15 @@ fn mutagenic_strength(_: &mut i32, queue: &mut ActionQueue) {
         amount: 3,
         target: CreatureRef::player(),
     });
+}
+
+fn mark_of_pain(_: &mut i32, queue: &mut ActionQueue) {
+    for _ in 0..2 {
+        queue.push_bot(ShuffleCardIntoDrawAction {
+            class: CardClass::Wound,
+            is_free: false,
+        });
+    }
 }
 
 fn bag_of_prep(_: &mut i32, queue: &mut ActionQueue) {
@@ -2880,5 +2891,18 @@ mod tests {
         g.make_move(Move::EndTurn);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class.color(), CardColor::Red);
+    }
+
+    #[test]
+    fn test_mark_of_pain() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::MarkOfPain)
+            .build_combat();
+        assert_eq!(g.hand.len(), 0);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 2);
+        for c in &g.hand {
+            assert_eq!(c.borrow().class, CardClass::Wound);
+        }
     }
 }
