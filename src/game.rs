@@ -1261,6 +1261,9 @@ impl Game {
         if !can_play_class {
             return false;
         }
+        if self.num_cards_played_this_turn >= 6 && self.has_relic(RelicClass::VelvetChoker) {
+            return false;
+        }
         if self.num_cards_played_this_turn >= 3
             && self
                 .hand

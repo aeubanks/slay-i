@@ -207,7 +207,7 @@ r!(
     SneckoEye => Boss,
     Sozu => Boss, // TODO
     TinyHouse => Boss, // TODO
-    VelvetChoker => Boss, // TODO
+    VelvetChoker => Boss,
     BlackBlood => Boss,
     MarkOfPain => Boss,
     RunicCube => Boss,
@@ -2904,5 +2904,35 @@ mod tests {
         for c in &g.hand {
             assert_eq!(c.borrow().class, CardClass::Wound);
         }
+    }
+
+    #[test]
+    fn test_velvet_choker() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::VelvetChoker)
+            .add_card(CardClass::SwiftStrike)
+            .build_combat();
+        g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+        assert!(
+            g.valid_moves()
+                .iter()
+                .any(|m| matches!(m, Move::PlayCard { .. }))
+        );
+        g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+        assert!(
+            g.valid_moves()
+                .iter()
+                .all(|m| !matches!(m, Move::PlayCard { .. }))
+        );
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.num_cards_played_this_turn, 0);
+        g.throw_potion(Potion::Chaos, None);
+        g.throw_potion(Potion::Chaos, None);
+        g.throw_potion(Potion::Chaos, None);
+        assert_eq!(g.num_cards_played_this_turn, 6);
     }
 }
