@@ -199,7 +199,7 @@ r!(
     PandorasBox => Boss, // TODO
     PhilosophersStone => Boss, // TODO
     // RunicDome => Boss, // not supported
-    RunicPyramid => Boss, // TODO
+    RunicPyramid => Boss,
     SacredBark => Boss,
     SlaversCollar => Boss, // TODO
     SneckoEye => Boss,
@@ -2771,6 +2771,21 @@ mod tests {
             }
             assert_eq!(g.hand[0].borrow().class.color(), CardColor::Colorless);
         }
+    }
+
+    #[test]
+    fn test_runic_pyramid() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::RunicPyramid)
+            .add_cards(CardClass::Strike, 20)
+            .build_combat();
+        assert_eq!(g.hand.len(), 5);
+        g.add_card_to_hand(CardClass::Apparition);
+        g.make_move(Move::EndTurn);
+        assert_eq!(g.hand.len(), 10);
+        g.hand
+            .iter()
+            .for_each(|c| assert_eq!(c.borrow().class, CardClass::Strike));
     }
 
     #[test]

@@ -2,13 +2,16 @@ use crate::{
     action::Action,
     actions::{discard_hand::DiscardHandAction, exhaust_card::ExhaustCardAction},
     game::Game,
+    relic::RelicClass,
 };
 
 pub struct EndOfTurnDiscardAction();
 
 impl Action for EndOfTurnDiscardAction {
     fn run(&self, game: &mut Game) {
-        game.action_queue.push_top(DiscardHandAction());
+        if !game.has_relic(RelicClass::RunicPyramid) {
+            game.action_queue.push_top(DiscardHandAction());
+        }
         let mut indexes_to_exhaust = Vec::new();
         for (i, c) in game.hand.iter().enumerate() {
             if c.borrow().is_ethereal() {
