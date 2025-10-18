@@ -205,7 +205,7 @@ r!(
     SacredBark => Boss,
     SlaversCollar => Boss, // TODO
     SneckoEye => Boss,
-    Sozu => Boss, // TODO
+    Sozu => Boss,
     TinyHouse => Boss, // TODO
     VelvetChoker => Boss,
     BlackBlood => Boss,
@@ -2912,6 +2912,7 @@ mod tests {
             .add_relic(RelicClass::VelvetChoker)
             .add_card(CardClass::SwiftStrike)
             .build_combat();
+        assert_eq!(g.energy, 4);
         g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
@@ -2934,5 +2935,15 @@ mod tests {
         g.throw_potion(Potion::Chaos, None);
         g.throw_potion(Potion::Chaos, None);
         assert_eq!(g.num_cards_played_this_turn, 6);
+    }
+
+    #[test]
+    fn test_sozu() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Sozu)
+            .build_combat();
+        assert_eq!(g.energy, 4);
+        g.add_potion(Potion::Ancient);
+        assert_eq!(g.potions, vec![None, None]);
     }
 }

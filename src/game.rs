@@ -1609,6 +1609,9 @@ impl Game {
     }
 
     pub fn add_potion(&mut self, potion: Potion) {
+        if self.has_relic(RelicClass::Sozu) {
+            return;
+        }
         let mut added = false;
         for p in &mut self.potions {
             if p.is_none() {
