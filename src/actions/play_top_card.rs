@@ -1,8 +1,6 @@
 use crate::{
     action::Action,
-    actions::{
-        play_card::PlayCardAction, shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
-    },
+    actions::{play_card::PlayCardAction, shuffle_discard_into_draw::ShuffleDiscardIntoDrawAction},
     game::Game,
 };
 
@@ -17,10 +15,10 @@ impl Action for PlayTopCardAction {
         }
         if g.draw_pile.is_empty() {
             g.action_queue.push_top(PlayTopCardAction { ..*self });
-            g.action_queue.push_top(ShuffleDiscardOnTopOfDrawAction());
+            g.action_queue.push_top(ShuffleDiscardIntoDrawAction());
             return;
         }
-        let c = g.draw_pile.pop().unwrap();
+        let c = g.draw_pile.pop(&mut g.rng);
         let target = if c.borrow().has_target() {
             Some(g.get_random_alive_monster())
         } else {

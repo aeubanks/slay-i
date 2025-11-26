@@ -143,16 +143,14 @@ pub fn sword_boomerang_behavior(game: &mut Game, info: &CardPlayInfo) {
     }
 }
 
+fn count_strikes<'a, T: Iterator<Item = &'a CardRef>>(cards: T) -> i32 {
+    cards.filter(|c| c.borrow().class.is_strike()).count() as i32
+}
+
 pub fn perfected_strike_behavior(game: &mut Game, info: &CardPlayInfo) {
-    let count_strikes = |cards: &[CardRef]| {
-        cards
-            .iter()
-            .filter(|c| c.borrow().class.is_strike())
-            .count() as i32
-    };
-    let num_strikes = count_strikes(&game.hand)
-        + count_strikes(&game.discard_pile)
-        + count_strikes(&game.draw_pile);
+    let num_strikes = count_strikes(game.hand.iter())
+        + count_strikes(game.discard_pile.iter())
+        + count_strikes(game.draw_pile.get_all().into_iter());
     let base = 6 + num_strikes * if info.upgraded { 3 } else { 2 };
     push_damage(game, info, base, base);
 }
@@ -487,7 +485,7 @@ mod tests {
         g.play_card(CardClass::WildStrike, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 12);
         assert_eq!(g.draw_pile.len(), 1);
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Wound);
+        assert_eq!(g.draw_pile.pop(&mut g.rng).borrow().class, CardClass::Wound);
     }
 
     #[test]
@@ -513,8 +511,14 @@ mod tests {
         );
         g.make_move(Move::PlaceCardInDiscardOnTopOfDraw { card_index: 1 });
         assert_eq!(g.draw_pile.len(), 2);
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Headbutt);
-        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Strike);
+        assert_eq!(
+            g.draw_pile.pop(&mut g.rng).borrow().class,
+            CardClass::Strike
+        );
+        assert_eq!(
+            g.draw_pile.pop(&mut g.rng).borrow().class,
+            CardClass::Headbutt
+        );
     }
 
     #[test]
@@ -891,7 +895,7 @@ mod tests {
         assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);
         g.play_card(CardClass::Bloodletting, None);
         g.add_card_to_draw_pile(CardClass::BloodForBlood);
-        assert_eq!(g.draw_pile[0].borrow().get_base_cost(), 3);
+        assert_eq!(g.draw_pile.get(0).borrow().get_base_cost(), 3);
         assert_eq!(g.discard_pile[0].borrow().get_base_cost(), 3);
         assert_eq!(g.hand[0].borrow().get_base_cost(), 3);
         assert_eq!(g.exhaust_pile[0].borrow().get_base_cost(), 4);

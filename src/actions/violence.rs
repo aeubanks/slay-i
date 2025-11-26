@@ -11,7 +11,8 @@ impl Action for ViolenceAction {
         for _ in 0..self.0 {
             let attack_indexes = game
                 .draw_pile
-                .iter()
+                .get_all()
+                .into_iter()
                 .enumerate()
                 .filter(|(_, c)| c.borrow().class.ty() == CardType::Attack)
                 .map(|(i, _)| i)
@@ -19,10 +20,8 @@ impl Action for ViolenceAction {
             if attack_indexes.is_empty() {
                 break;
             }
-            cards.push(
-                game.draw_pile
-                    .remove(rand_slice(&mut game.rng, &attack_indexes)),
-            );
+            let i = rand_slice(&mut game.rng, &attack_indexes);
+            cards.push(game.draw_pile.take(i));
         }
         while let Some(c) = cards.pop() {
             game.action_queue.push_top(PlaceCardInHandAction(c));

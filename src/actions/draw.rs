@@ -4,7 +4,7 @@ use crate::{
     action::Action,
     actions::{
         damage_all_monsters::DamageAllMonstersAction, gain_energy::GainEnergyAction,
-        shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
+        shuffle_discard_into_draw::ShuffleDiscardIntoDrawAction,
     },
     cards::{CardClass, CardCost, CardType},
     game::Game,
@@ -33,13 +33,12 @@ impl Action for DrawAction {
 
         if amount > draw_size {
             game.action_queue.push_top(DrawAction(amount - draw_size));
-            game.action_queue
-                .push_top(ShuffleDiscardOnTopOfDrawAction());
+            game.action_queue.push_top(ShuffleDiscardIntoDrawAction());
             amount = draw_size;
         }
 
         for _ in 0..amount {
-            let c = game.draw_pile.pop().unwrap();
+            let c = game.draw_pile.pop(&mut game.rng);
             {
                 let mut c = c.borrow_mut();
                 if game.player.has_status(Status::Confusion)
@@ -147,8 +146,8 @@ mod tests {
 
         g.discard_pile.push(g.hand.pop().unwrap());
         g.discard_pile.push(g.hand.pop().unwrap());
-        g.draw_pile.push(g.hand.pop().unwrap());
-        g.draw_pile.push(g.hand.pop().unwrap());
+        g.draw_pile.push_top(g.hand.pop().unwrap());
+        g.draw_pile.push_top(g.hand.pop().unwrap());
 
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.discard_pile.len(), 2);

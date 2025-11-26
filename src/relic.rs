@@ -2862,16 +2862,17 @@ mod tests {
             });
             assert_eq!(
                 g.draw_pile
-                    .iter()
+                    .get_all()
+                    .into_iter()
                     .filter(|c| c.borrow().class == CardClass::BloodForBlood)
                     .count(),
                 i
             );
             assert_eq!(
-                g.draw_pile.last().unwrap().borrow().class,
+                g.draw_pile.top(&mut g.rng).borrow().class,
                 CardClass::Strike
             );
-            for c in &g.draw_pile {
+            for c in g.draw_pile.get_all() {
                 assert_eq!(c.borrow().upgrade_count, 0);
             }
         }

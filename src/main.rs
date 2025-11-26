@@ -4,6 +4,7 @@ mod blessings;
 mod card;
 mod cards;
 mod creature;
+mod draw_pile;
 mod game;
 mod map;
 mod monster;
@@ -73,7 +74,7 @@ fn print_state(g: &Game) {
         println!(" {:?}", c.borrow());
     }
     println!("draw pile:");
-    for c in &g.draw_pile {
+    for c in g.draw_pile.get_all() {
         println!(" {:?}", c.borrow());
     }
     println!("discard pile:");
@@ -182,7 +183,7 @@ fn print_state(g: &Game) {
                 print!(
                     "dual wield {} ({:?})",
                     card_index,
-                    g.draw_pile[*card_index].borrow()
+                    g.hand[*card_index].borrow()
                 );
             }
             Move::Exhume { card_index } => {
@@ -196,7 +197,7 @@ fn print_state(g: &Game) {
                 print!(
                     "fetch card {} ({:?})",
                     card_index,
-                    g.draw_pile[*card_index].borrow()
+                    g.draw_pile.get(*card_index).borrow()
                 );
             }
             Move::ForethoughtOne { card_index } => {

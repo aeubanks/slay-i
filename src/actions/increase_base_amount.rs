@@ -32,7 +32,7 @@ impl Action for IncreaseBaseAmountAction {
         for c in &g.exhaust_pile {
             maybe_increase_base_amount(c, self.card_id, self.amount, &mut done);
         }
-        for c in &g.draw_pile {
+        for c in g.draw_pile.get_all() {
             maybe_increase_base_amount(c, self.card_id, self.amount, &mut done);
         }
         for c in &g.hand {

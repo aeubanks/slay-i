@@ -448,7 +448,7 @@ mod tests {
             .add_player_status(Confusion, 1)
             .add_cards(CardClass::Strike, 10)
             .build_combat();
-        for c in &g.draw_pile {
+        for c in g.draw_pile.get_all() {
             let mut c = c.borrow_mut();
             match &mut c.cost {
                 CardCost::Cost {

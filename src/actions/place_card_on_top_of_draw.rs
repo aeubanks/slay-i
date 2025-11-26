@@ -4,7 +4,7 @@ pub struct PlaceCardOnTopOfDrawAction(pub CardRef);
 
 impl Action for PlaceCardOnTopOfDrawAction {
     fn run(&self, game: &mut Game) {
-        game.draw_pile.push(self.0.clone());
+        game.draw_pile.push_top(self.0.clone());
     }
 }
 

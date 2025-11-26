@@ -14,7 +14,7 @@ enum Count {
 impl Action for ChooseCardInDrawToPlaceInHandAction {
     fn run(&self, game: &mut Game) {
         let mut count = Count::Zero;
-        for (i, c) in game.draw_pile.iter().enumerate() {
+        for (i, c) in game.draw_pile.get_all().into_iter().enumerate() {
             if c.borrow().class.ty() == self.0 {
                 match count {
                     Count::Zero => count = Count::One(i),
@@ -28,9 +28,10 @@ impl Action for ChooseCardInDrawToPlaceInHandAction {
         }
         match count {
             Count::Zero => unreachable!(),
-            Count::One(i) => game
-                .action_queue
-                .push_top(PlaceCardInHandAction(game.draw_pile.remove(i))),
+            Count::One(i) => {
+                let c = game.draw_pile.take(i);
+                game.action_queue.push_top(PlaceCardInHandAction(c));
+            }
             Count::Many => game.state.push_state(GameState::FetchCardFromDraw(self.0)),
         }
     }

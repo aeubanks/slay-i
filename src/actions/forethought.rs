@@ -10,7 +10,7 @@ impl Action for ForethoughtAction {
         {
             *free_to_play_once = true;
         }
-        game.draw_pile.insert(0, self.0.clone());
+        game.draw_pile.push_bottom(self.0.clone());
     }
 }
 

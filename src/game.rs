@@ -31,6 +31,7 @@ use crate::blessings::Blessing;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
 use crate::creature::Creature;
+use crate::draw_pile::DrawPile;
 use crate::map::Map;
 use crate::monster::{Monster, MonsterBehavior, MonsterInfo};
 use crate::monsters::test::NoopMonster;
@@ -40,7 +41,6 @@ use crate::relic::{Relic, RelicClass, new_relic};
 use crate::rng::rand_slice;
 use crate::state::{GameState, GameStateManager};
 use crate::status::Status;
-use rand::seq::SliceRandom;
 
 pub type Rand = rand::rngs::ThreadRng;
 
@@ -287,7 +287,7 @@ pub struct Game {
     pub turn: i32,
     pub energy: i32,
     pub draw_per_turn: i32,
-    pub draw_pile: CardPile,
+    pub draw_pile: DrawPile<CardRef>,
     pub hand: CardPile,
     pub discard_pile: CardPile,
     pub exhaust_pile: CardPile,
@@ -571,21 +571,25 @@ impl Game {
                 });
             }
 
-            let update_blood_for_blood_cost = |cards: &[CardRef]| {
-                for c in cards {
-                    let mut c = c.borrow_mut();
-                    if c.class == CardClass::BloodForBlood {
-                        if let CardCost::Cost { base_cost, .. } = c.cost {
-                            c.update_cost(0.max(base_cost - 1));
-                        } else {
-                            panic!();
-                        }
+            let update_blood_for_blood_cost = |card: &CardRef| {
+                let mut c = card.borrow_mut();
+                if c.class == CardClass::BloodForBlood {
+                    if let CardCost::Cost { base_cost, .. } = c.cost {
+                        c.update_cost(0.max(base_cost - 1));
+                    } else {
+                        panic!();
                     }
                 }
             };
-            update_blood_for_blood_cost(&self.hand);
-            update_blood_for_blood_cost(&self.discard_pile);
-            update_blood_for_blood_cost(&self.draw_pile);
+            for c in &self.hand {
+                update_blood_for_blood_cost(c);
+            }
+            for c in &self.discard_pile {
+                update_blood_for_blood_cost(c);
+            }
+            for c in self.draw_pile.get_all() {
+                update_blood_for_blood_cost(c);
+            }
         }
 
         if !self.get_creature(target).is_alive() {
@@ -641,18 +645,18 @@ impl Game {
     }
 
     fn setup_combat_draw_pile(&mut self) {
-        self.draw_pile = self
-            .master_deck
-            .iter()
-            .map(|c| self.clone_card_ref_same_id(c))
-            .collect();
-        self.draw_pile.shuffle(&mut self.rng);
-        self.draw_pile.sort_by_key(|c| c.borrow().is_innate());
-        let num_innate = self
-            .master_deck
-            .iter()
-            .filter(|c| c.borrow().is_innate())
-            .count() as i32;
+        let mut non_innate = Vec::new();
+        let mut innate = Vec::new();
+        for c in &self.master_deck {
+            let c = self.clone_card_ref_same_id(c);
+            if c.borrow().is_innate() {
+                innate.push(c);
+            } else {
+                non_innate.push(c);
+            }
+        }
+        let num_innate = innate.len() as i32;
+        self.draw_pile = DrawPile::new(innate, non_innate);
         let extra_draw = num_innate - self.draw_per_turn;
         if extra_draw > 0 {
             self.action_queue.push_bot(DrawAction(extra_draw));
@@ -1113,8 +1117,8 @@ impl Game {
                     self.state.cur_state(),
                     GameState::FetchCardFromDraw(_)
                 ));
-                self.action_queue
-                    .push_top(PlaceCardInHandAction(self.draw_pile.remove(card_index)));
+                let c = self.draw_pile.take(card_index);
+                self.action_queue.push_top(PlaceCardInHandAction(c));
                 self.state.pop_state();
             }
             Move::Memories { card_index } => match self.state.cur_state_mut() {
@@ -1250,10 +1254,12 @@ impl Game {
                 .all(|c| c.borrow().class.ty() == CardType::Attack),
             CardClass::SecretTechnique => self
                 .draw_pile
+                .get_all()
                 .iter()
                 .any(|c| c.borrow().class.ty() == CardType::Skill),
             CardClass::SecretWeapon => self
                 .draw_pile
+                .get_all()
                 .iter()
                 .any(|c| c.borrow().class.ty() == CardType::Attack),
             _ => true,
@@ -1398,7 +1404,7 @@ impl Game {
                 }
             }
             GameState::FetchCardFromDraw(ty) => {
-                for (i, c) in self.draw_pile.iter().enumerate() {
+                for (i, c) in self.draw_pile.get_all().iter().enumerate() {
                     if c.borrow().class.ty() == *ty {
                         moves.push(Move::FetchCardFromDraw { card_index: i });
                     }
@@ -1508,13 +1514,13 @@ impl Game {
     #[cfg(test)]
     pub fn add_card_to_draw_pile(&mut self, class: CardClass) {
         let card = self.new_card(class);
-        self.draw_pile.push(card);
+        self.draw_pile.push_top(card);
     }
 
     #[cfg(test)]
     pub fn add_card_to_draw_pile_upgraded(&mut self, class: CardClass) {
         let card = self.new_card_upgraded(class);
-        self.draw_pile.push(card);
+        self.draw_pile.push_top(card);
     }
 
     #[cfg(test)]

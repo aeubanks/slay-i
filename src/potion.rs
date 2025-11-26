@@ -579,7 +579,7 @@ mod tests {
         let c = g.new_card(CardClass::Strike);
         c.borrow_mut().set_cost(1, Some(2));
         c.borrow_mut().set_free_to_play_once();
-        g.draw_pile.push(c);
+        g.draw_pile.push_top(c);
         g.throw_potion(Potion::Snecko, None);
         assert_eq!(g.hand.len(), 1);
         if let CardCost::Cost {

@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 "rand" = "0.9"
 "lazy_static" = "1.5"
+"petgraph" = { version = "0.8", default-features = false }

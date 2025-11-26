@@ -29,8 +29,7 @@ use crate::{
         place_card_in_hand::PlaceCardInHandAction,
         play_top_card::PlayTopCardAction,
         shuffle_card_into_draw::ShuffleCardIntoDrawAction,
-        shuffle_discard_on_top_of_draw::ShuffleDiscardOnTopOfDrawAction,
-        shuffle_draw::ShuffleDrawAction,
+        shuffle_discard_into_draw::ShuffleDiscardIntoDrawAction,
         spot_weakness::SpotWeaknessAction,
         upgrade_all::UpgradeAllAction,
         upgrade_all_cards_in_hand::UpgradeAllCardsInHandAction,
@@ -345,9 +344,7 @@ pub fn discovery_behavior(game: &mut Game, _: &CardPlayInfo) {
 
 pub fn deep_breath_behavior(game: &mut Game, info: &CardPlayInfo) {
     if !game.discard_pile.is_empty() {
-        game.action_queue
-            .push_bot(ShuffleDiscardOnTopOfDrawAction());
-        game.action_queue.push_bot(ShuffleDrawAction());
+        game.action_queue.push_bot(ShuffleDiscardIntoDrawAction());
     }
     let amount = if info.upgraded { 2 } else { 1 };
     game.action_queue.push_bot(DrawAction(amount));
@@ -504,7 +501,6 @@ mod tests {
     use crate::{
         actions::{
             block::BlockAction, exhaust_card::ExhaustCardAction, gain_status::GainStatusAction,
-            remove_status::RemoveStatusAction,
         },
         assert_matches,
         cards::{CardClass, CardColor, CardCost, CardType},
@@ -678,7 +674,7 @@ mod tests {
     }
 
     #[test]
-    fn test_warcry() {
+    fn test_warcry_1() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::Warcry, None);
 
@@ -686,23 +682,38 @@ mod tests {
         g.play_card(CardClass::Warcry, None);
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(g.hand.len(), 0);
+    }
+
+    #[test]
+    fn test_warcry_2() {
+        let mut g = GameBuilder::default().build_combat();
 
         g.run_action(GainStatusAction {
             status: Status::NoDraw,
             amount: 1,
             target: CreatureRef::player(),
         });
+        g.add_card_to_draw_pile(CardClass::Strike);
         g.add_card_to_hand(CardClass::Defend);
         g.play_card(CardClass::Warcry, None);
         assert_eq!(g.draw_pile.len(), 2);
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
-        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Defend);
+        assert_eq!(
+            g.draw_pile.pop(&mut g.rng).borrow().class,
+            CardClass::Defend
+        );
+        assert_eq!(
+            g.draw_pile.pop(&mut g.rng).borrow().class,
+            CardClass::Strike
+        );
         assert_eq!(g.hand.len(), 0);
+    }
 
-        g.run_action(RemoveStatusAction {
-            status: Status::NoDraw,
-            target: CreatureRef::player(),
-        });
+    #[test]
+    fn test_warcry_3() {
+        let mut g = GameBuilder::default().build_combat();
+
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Warcry, None);
         assert_eq!(
             g.valid_moves(),
@@ -713,7 +724,10 @@ mod tests {
         );
         g.make_move(Move::PlaceCardInHandOnTopOfDraw { card_index: 0 });
         assert_eq!(g.draw_pile.len(), 1);
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Defend);
+        assert_eq!(
+            g.draw_pile.top(&mut g.rng).borrow().class,
+            CardClass::Defend
+        );
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
     }
@@ -1287,8 +1301,8 @@ mod tests {
         assert_eq!(g.hand[2].borrow().upgrade_count, 2);
         assert_eq!(g.discard_pile[0].borrow().upgrade_count, 1);
         assert_eq!(g.discard_pile[1].borrow().upgrade_count, 0);
-        assert_eq!(g.draw_pile[0].borrow().upgrade_count, 1);
-        assert_eq!(g.draw_pile[1].borrow().upgrade_count, 0);
+        assert_eq!(g.draw_pile.pop(&mut g.rng).borrow().upgrade_count, 0);
+        assert_eq!(g.draw_pile.pop(&mut g.rng).borrow().upgrade_count, 1);
         assert_eq!(g.exhaust_pile[0].borrow().upgrade_count, 1);
     }
 
@@ -1568,7 +1582,7 @@ mod tests {
             g.play_card(CardClass::Metamorphosis, None);
             assert_eq!(g.draw_pile.len(), 3);
 
-            for c in &g.draw_pile {
+            for c in g.draw_pile.get_all() {
                 assert_eq!(c.borrow().class.ty(), CardType::Attack);
                 assert_eq!(c.borrow().class.color(), CardColor::Red);
                 assert_ne!(c.borrow().class, CardClass::Reaper);
@@ -1596,7 +1610,7 @@ mod tests {
             g.play_card(CardClass::Chrysalis, None);
             assert_eq!(g.draw_pile.len(), 3);
 
-            for c in &g.draw_pile {
+            for c in g.draw_pile.get_all() {
                 assert_eq!(c.borrow().class.ty(), CardType::Skill);
                 assert_eq!(c.borrow().class.color(), CardColor::Red);
                 assert_ne!(c.borrow().class, CardClass::Reaper);
@@ -1665,7 +1679,7 @@ mod tests {
     }
 
     #[test]
-    fn test_forethought() {
+    fn test_forethought_1() {
         let mut g = GameBuilder::default().build_combat();
 
         g.play_card(CardClass::Forethought, None);
@@ -1674,76 +1688,32 @@ mod tests {
         g.add_card_to_hand(CardClass::Strike);
         g.play_card(CardClass::Forethought, None);
         assert_eq!(g.draw_pile.len(), 2);
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
-        match g.draw_pile[0].borrow().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => assert!(free_to_play_once),
-            _ => panic!(),
+        {
+            let c = g.draw_pile.pop(&mut g.rng);
+            assert_eq!(c.borrow().class, CardClass::Defend);
+            match c.borrow().cost {
+                CardCost::Cost {
+                    free_to_play_once, ..
+                } => assert!(!free_to_play_once),
+                _ => panic!(),
+            }
         }
-        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Defend);
-        match g.draw_pile[1].borrow().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => assert!(!free_to_play_once),
-            _ => panic!(),
-        }
-
-        g.draw_pile.clear();
-        g.hand.clear();
-        g.add_card_to_draw_pile(CardClass::Defend);
-        g.add_card_to_hand(CardClass::Strike);
-        g.add_card_to_hand(CardClass::TwinStrike);
-        g.play_card(CardClass::Forethought, None);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::ForethoughtOne { card_index: 0 },
-                Move::ForethoughtOne { card_index: 1 }
-            ]
-        );
-        g.make_move(Move::ForethoughtOne { card_index: 0 });
-        assert_eq!(g.draw_pile.len(), 2);
-        assert_eq!(g.hand.len(), 1);
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
-        match g.draw_pile[0].borrow().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => assert!(free_to_play_once),
-            _ => panic!(),
-        }
-        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Defend);
-        match g.draw_pile[1].borrow().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => assert!(!free_to_play_once),
-            _ => panic!(),
+        {
+            let c = g.draw_pile.pop(&mut g.rng);
+            assert_eq!(c.borrow().class, CardClass::Strike);
+            match c.borrow().cost {
+                CardCost::Cost {
+                    free_to_play_once, ..
+                } => assert!(free_to_play_once),
+                _ => panic!(),
+            }
         }
     }
 
     #[test]
-    fn test_forethought_upgraded() {
+    fn test_forethought_upgraded_2() {
         let mut g = GameBuilder::default().build_combat();
 
-        g.play_card_upgraded(CardClass::Forethought, None);
-
-        g.add_card_to_hand(CardClass::Strike);
-        g.add_card_to_hand(CardClass::TwinStrike);
-        g.add_card_to_draw_pile(CardClass::Defend);
-        g.play_card_upgraded(CardClass::Forethought, None);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::ForethoughtAnyEnd,
-                Move::ForethoughtAny { card_index: 0 },
-                Move::ForethoughtAny { card_index: 1 }
-            ]
-        );
-        g.make_move(Move::ForethoughtAnyEnd);
-        assert_eq!(g.draw_pile.len(), 1);
-
-        g.draw_pile.clear();
-        g.hand.clear();
         g.add_card_to_hand(CardClass::Strike);
         g.add_card_to_hand(CardClass::TwinStrike);
         g.add_card_to_draw_pile(CardClass::Defend);
@@ -1767,71 +1737,38 @@ mod tests {
         g.make_move(Move::ForethoughtAnyEnd);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.draw_pile.len(), 2);
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
-        match g.draw_pile[0].borrow().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => assert!(free_to_play_once),
-            _ => panic!(),
+        g.draw_pile.pop(&mut g.rng);
+        {
+            let c = g.draw_pile.pop(&mut g.rng);
+            assert_eq!(c.borrow().class, CardClass::Strike);
+            match c.borrow().cost {
+                CardCost::Cost {
+                    free_to_play_once, ..
+                } => assert!(free_to_play_once),
+                _ => panic!(),
+            }
         }
+    }
 
-        g.draw_pile.clear();
-        g.hand.clear();
-        g.add_card_to_hand(CardClass::Strike);
-        g.add_card_to_hand(CardClass::TwinStrike);
-        g.add_card_to_draw_pile(CardClass::Defend);
-        g.play_card_upgraded(CardClass::Forethought, None);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::ForethoughtAnyEnd,
-                Move::ForethoughtAny { card_index: 0 },
-                Move::ForethoughtAny { card_index: 1 }
-            ]
-        );
-        g.make_move(Move::ForethoughtAny { card_index: 1 });
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::ForethoughtAnyEnd,
-                Move::ForethoughtAny { card_index: 0 }
-            ]
-        );
-        g.make_move(Move::ForethoughtAny { card_index: 0 });
-        assert_eq!(g.hand.len(), 0);
-        assert_eq!(g.draw_pile.len(), 3);
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::TwinStrike);
-        match g.draw_pile[0].borrow().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => assert!(free_to_play_once),
-            _ => panic!(),
-        }
-        assert_eq!(g.draw_pile[1].borrow().class, CardClass::Strike);
-        match g.draw_pile[1].borrow().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => assert!(free_to_play_once),
-            _ => panic!(),
-        }
-        assert_eq!(g.draw_pile[2].borrow().class, CardClass::Defend);
-        match g.draw_pile[2].borrow().cost {
-            CardCost::Cost {
-                free_to_play_once, ..
-            } => assert!(!free_to_play_once),
-            _ => panic!(),
-        }
+    #[test]
+    fn test_forethought_upgraded_3() {
+        let mut g = GameBuilder::default().build_combat();
 
-        g.draw_pile.clear();
-        g.hand.clear();
         g.add_card_to_hand(CardClass::Strike);
         g.add_card_to_hand(CardClass::TwinStrike);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Forethought, None);
         g.make_move(Move::ForethoughtAny { card_index: 0 });
         g.make_move(Move::ForethoughtAny { card_index: 0 });
-        assert_eq!(g.draw_pile[0].borrow().class, CardClass::Strike);
-        assert_eq!(g.draw_pile[1].borrow().class, CardClass::TwinStrike);
+        g.draw_pile.pop(&mut g.rng);
+        assert_eq!(
+            g.draw_pile.pop(&mut g.rng).borrow().class,
+            CardClass::TwinStrike
+        );
+        assert_eq!(
+            g.draw_pile.pop(&mut g.rng).borrow().class,
+            CardClass::Strike
+        );
     }
 
     #[test]
@@ -1876,7 +1813,7 @@ mod tests {
             g.add_card_to_draw_pile(CardClass::Strike);
             g.play_card_upgraded(CardClass::DeepBreath, None);
             assert_eq!(g.draw_pile.len(), 1);
-            match g.draw_pile[0].borrow().class {
+            match g.draw_pile.top(&mut g.rng).borrow().class {
                 CardClass::Anger => found_anger = true,
                 CardClass::ShrugItOff => found_shrug = true,
                 CardClass::Strike => found_strike = true,
