@@ -169,7 +169,7 @@ impl std::fmt::Debug for PlayCardAction {
 mod tests {
     use crate::{
         cards::CardClass,
-        game::{GameBuilder, Move},
+        game::{GameBuilder, PlayCardStep},
     };
 
     #[test]
@@ -183,8 +183,8 @@ mod tests {
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.draw_pile.len(), 0);
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
 
@@ -192,8 +192,8 @@ mod tests {
         assert_eq!(g.discard_pile.len(), 1);
         assert_eq!(g.draw_pile.len(), 0);
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
 
@@ -212,8 +212,8 @@ mod tests {
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.draw_pile.len(), 0);
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
 

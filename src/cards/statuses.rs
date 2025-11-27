@@ -18,7 +18,8 @@ mod tests {
     use crate::{
         actions::block::BlockAction,
         cards::CardClass,
-        game::{GameBuilder, Move},
+        game::{EndTurnStep, GameBuilder, PlayCardStep},
+        step::step_eq,
     };
 
     #[test]
@@ -27,18 +28,29 @@ mod tests {
         g.add_card_to_hand(CardClass::Wound);
         g.add_card_to_hand(CardClass::Slimed);
         g.add_card_to_hand(CardClass::Dazed);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::EndTurn,
-                Move::PlayCard {
-                    card_index: 1,
-                    target: None
-                }
-            ]
-        );
-        g.make_move(Move::PlayCard {
-            card_index: 1,
+        assert!(g.valid_steps().iter().any(|s| step_eq(
+            s,
+            &PlayCardStep {
+                hand_index: 1,
+                target: None
+            }
+        )));
+        assert!(!g.valid_steps().iter().any(|s| step_eq(
+            s,
+            &PlayCardStep {
+                hand_index: 0,
+                target: None
+            }
+        )));
+        assert!(!g.valid_steps().iter().any(|s| step_eq(
+            s,
+            &PlayCardStep {
+                hand_index: 2,
+                target: None
+            }
+        )));
+        g.step_test(PlayCardStep {
+            hand_index: 1,
             target: None,
         });
         assert_eq!(g.energy, 2);
@@ -51,7 +63,7 @@ mod tests {
             .add_card(CardClass::Burn)
             .set_player_hp(50)
             .build_combat();
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, 48);
     }
 
@@ -62,7 +74,7 @@ mod tests {
             .set_player_hp(50)
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(1));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, 47);
     }
 
@@ -73,7 +85,7 @@ mod tests {
                 .add_cards(CardClass::Void, 2)
                 .build_combat();
             assert_eq!(g.energy, 1);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.exhaust_pile.len(), 2);
         }
         {
@@ -89,8 +101,8 @@ mod tests {
     fn test_crash_on_play_unplayable_status() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::Wound);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
     }

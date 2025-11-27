@@ -16,43 +16,20 @@ mod relic;
 mod rng;
 mod state;
 mod status;
+mod step;
 mod test;
 
 use game::Game;
 
 use crate::{
     cards::CardClass,
-    creature::Creature,
-    game::{CreatureRef, GameBuilder, GameStatus, Move},
+    game::{GameBuilder, GameStatus},
     monsters::jawworm::JawWorm,
     relic::RelicClass,
 };
 
-fn creature_str(c: &Creature) -> String {
-    let mut s = format!("{}: {}/{}, {} block", c.name, c.cur_hp, c.max_hp, c.block);
-    if c.has_any_status() {
-        let mut first = true;
-        for (status, amount) in c.all_statuses() {
-            if first {
-                first = false;
-                s += ", statuses: ";
-            } else {
-                s += ", ";
-            }
-            s.push_str(&format!("{status:?} ({amount})"));
-        }
-    }
-    s
-}
-
-fn monster_str(c: CreatureRef, game: &Game) -> String {
-    let mut i = game.monsters[c.monster_index()].behavior.get_intent();
-    i.modify_damage(c, game);
-    format!("{}, intent: {:?}", creature_str(game.get_creature(c)), i)
-}
-
 fn print_state(g: &Game) {
-    println!("{}", creature_str(&g.player));
+    println!("{}", g.player.str());
     println!("relics:");
     for r in &g.relics {
         println!(" {:?}: {}", r.get_class(), r.get_value());
@@ -67,7 +44,7 @@ fn print_state(g: &Game) {
     println!("energy: {}", g.energy);
     println!("monsters:");
     for m in g.get_alive_monsters() {
-        println!(" {}", monster_str(m, g));
+        println!(" {}", g.monster_str(m));
     }
     println!("hand:");
     for c in &g.hand {
@@ -98,158 +75,8 @@ fn print_state(g: &Game) {
         _ => {}
     }
     println!("moves:");
-    for (mi, m) in g.valid_moves().iter().enumerate() {
-        print!(" {mi}: ");
-        match m {
-            Move::ChooseBlessing(b) => {
-                print!("choose blessing {b:?}");
-            }
-            Move::Transform { card_index } => {
-                print!("transform {:?}", g.master_deck[*card_index].borrow());
-            }
-            Move::Remove { card_index } => {
-                print!("remove {:?}", g.master_deck[*card_index].borrow());
-            }
-            Move::EndTurn => print!("end turn"),
-            Move::PlayCard {
-                card_index: i,
-                target: t,
-            } => {
-                print!("play card {} ({:?})", i, g.hand[*i].borrow());
-                if let Some(t) = t {
-                    print!(
-                        " on monster {} ({})",
-                        t,
-                        monster_str(CreatureRef::monster(*t), g)
-                    );
-                }
-            }
-            Move::Armaments { card_index } => {
-                print!(
-                    "upgrade card {} ({:?})",
-                    card_index,
-                    g.hand[*card_index].borrow()
-                );
-            }
-            Move::PlaceCardInHandOnTopOfDraw { card_index } => {
-                print!(
-                    "place card on top of draw {} ({:?})",
-                    card_index,
-                    g.hand[*card_index].borrow()
-                );
-            }
-            Move::PlaceCardInDiscardOnTopOfDraw { card_index } => {
-                print!(
-                    "place card on top of draw {} ({:?})",
-                    card_index,
-                    g.discard_pile[*card_index].borrow()
-                );
-            }
-            Move::ExhaustOneCardInHand { card_index } => {
-                print!(
-                    "exhaust card {} ({:?})",
-                    card_index,
-                    g.hand[*card_index].borrow()
-                );
-            }
-            Move::ExhaustCardsInHand { card_index } => {
-                print!(
-                    "exhaust card {} ({:?})",
-                    card_index,
-                    g.hand[*card_index].borrow()
-                );
-            }
-            Move::ExhaustCardsInHandEnd => {
-                print!("exhaust cards end");
-            }
-            Move::Memories { card_index } => {
-                print!(
-                    "memories card {} ({:?})",
-                    card_index,
-                    g.discard_pile[*card_index].borrow()
-                );
-            }
-            Move::Gamble { card_index } => {
-                print!(
-                    "gamble card {} ({:?})",
-                    card_index,
-                    g.hand[*card_index].borrow()
-                );
-            }
-            Move::GambleEnd => {
-                print!("gamble end");
-            }
-            Move::DualWield { card_index } => {
-                print!(
-                    "dual wield {} ({:?})",
-                    card_index,
-                    g.hand[*card_index].borrow()
-                );
-            }
-            Move::Exhume { card_index } => {
-                print!(
-                    "exhume card {} ({:?})",
-                    card_index,
-                    g.exhaust_pile[*card_index].borrow()
-                );
-            }
-            Move::FetchCardFromDraw { card_index } => {
-                print!(
-                    "fetch card {} ({:?})",
-                    card_index,
-                    g.draw_pile.get(*card_index).borrow()
-                );
-            }
-            Move::ForethoughtOne { card_index } => {
-                print!(
-                    "forethought one {} ({:?})",
-                    card_index,
-                    g.hand[*card_index].borrow()
-                );
-            }
-            Move::ForethoughtAny { card_index } => {
-                print!(
-                    "forethought any {} ({:?})",
-                    card_index,
-                    g.hand[*card_index].borrow()
-                );
-            }
-            Move::ForethoughtAnyEnd => {
-                print!("forethought any end");
-            }
-            Move::Nilrys { card_class } => {
-                print!("nilrys {:?}", card_class);
-            }
-            Move::NilrysSkip => {
-                print!("nilrys skip");
-            }
-            Move::Discovery { card_class } => {
-                print!("discovery {:?}", card_class);
-            }
-            Move::DiscardPotion { potion_index } => {
-                print!(
-                    "discard potion {potion_index} ({:?})",
-                    g.potions[*potion_index].unwrap()
-                );
-            }
-            Move::UsePotion {
-                potion_index,
-                target,
-            } => {
-                print!(
-                    "use potion {potion_index} ({:?})",
-                    g.potions[*potion_index].unwrap()
-                );
-                if let Some(t) = target {
-                    print!(
-                        " on monster {} ({})",
-                        t,
-                        monster_str(CreatureRef::monster(*t), g)
-                    );
-                }
-            }
-        }
-        println!();
+    for (si, s) in g.valid_steps().iter().enumerate() {
+        println!(" {si}: {}", s.description(g));
     }
 }
 
@@ -293,9 +120,9 @@ fn main() {
             | GameStatus::ExhaustCardsInHand { .. }
             | GameStatus::Memories { .. } => {
                 print_state(&game);
-                let valid_moves = game.valid_moves();
-                let i = read_int_from_stdin(valid_moves.len());
-                game.make_move(valid_moves[i]);
+                let valid_steps = game.valid_steps();
+                let i = read_int_from_stdin(valid_steps.len());
+                game.step(valid_steps.into_iter().nth(i).unwrap());
                 println!("-----------------------------");
             }
         }

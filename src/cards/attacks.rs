@@ -357,10 +357,14 @@ mod tests {
         actions::block::BlockAction,
         assert_matches,
         cards::{CardClass, CardCost},
-        game::{CreatureRef, Game, GameBuilder, GameStatus, Move},
+        game::{
+            CreatureRef, EndTurnStep, Game, GameBuilder, GameStatus,
+            PlaceCardInDiscardOnTopOfDrawStep, PlayCardStep,
+        },
         monster::Monster,
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
+        step::Step,
     };
 
     #[test]
@@ -369,8 +373,8 @@ mod tests {
             .add_card(CardClass::Strike)
             .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.discard_pile.len(), 1);
@@ -409,8 +413,8 @@ mod tests {
         assert_eq!(g.draw_pile.len(), 5);
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.hand.len(), 5);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.draw_pile.len(), 4);
@@ -428,8 +432,8 @@ mod tests {
         assert_eq!(g.draw_pile.len(), 5);
         assert_eq!(g.discard_pile.len(), 0);
         assert_eq!(g.hand.len(), 5);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.draw_pile.len(), 3);
@@ -503,13 +507,13 @@ mod tests {
         g.add_card_to_discard_pile(CardClass::Strike);
         g.play_card(CardClass::Headbutt, Some(CreatureRef::monster(0)));
         assert_eq!(
-            g.valid_moves(),
+            g.valid_steps(),
             vec![
-                Move::PlaceCardInDiscardOnTopOfDraw { card_index: 0 },
-                Move::PlaceCardInDiscardOnTopOfDraw { card_index: 1 },
+                Box::new(PlaceCardInDiscardOnTopOfDrawStep { discard_index: 0 }) as Box<dyn Step>,
+                Box::new(PlaceCardInDiscardOnTopOfDrawStep { discard_index: 1 }),
             ]
         );
-        g.make_move(Move::PlaceCardInDiscardOnTopOfDraw { card_index: 1 });
+        g.step_test(PlaceCardInDiscardOnTopOfDrawStep { discard_index: 1 });
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(
             g.draw_pile.pop(&mut g.rng).borrow().class,
@@ -627,8 +631,8 @@ mod tests {
             free_to_play_once: false,
         };
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.discard_pile.len(), 4);
@@ -656,11 +660,11 @@ mod tests {
     fn test_clash() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::Clash);
-        assert_eq!(g.valid_moves().len(), 2);
+        assert_eq!(g.valid_steps().len(), 2);
         g.add_card_to_hand(CardClass::Anger);
-        assert_eq!(g.valid_moves().len(), 3);
+        assert_eq!(g.valid_steps().len(), 3);
         g.add_card_to_hand(CardClass::Defend);
-        assert_eq!(g.valid_moves().len(), 3);
+        assert_eq!(g.valid_steps().len(), 3);
     }
 
     #[test]
@@ -673,8 +677,8 @@ mod tests {
                 g.hand[0].borrow_mut().upgrade();
             }
             let hp = g.monsters[0].creature.cur_hp;
-            g.make_move(Move::PlayCard {
-                card_index: 0,
+            g.step_test(PlayCardStep {
+                hand_index: 0,
                 target: Some(0),
             });
             assert_eq!(g.monsters[0].creature.cur_hp, hp - damage);
@@ -690,16 +694,16 @@ mod tests {
             .build_combat();
 
         let hp0 = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
         assert_eq!(g.monsters[1].creature.cur_hp, hp0 - 15);
         assert_eq!(g.energy, 0);
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
@@ -714,24 +718,24 @@ mod tests {
 
         let hp0 = g.monsters[0].creature.cur_hp;
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8);
 
         let c = g.discard_pile.pop().unwrap();
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13);
 
         let c = g.discard_pile.pop().unwrap();
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13 - 18);
@@ -744,24 +748,24 @@ mod tests {
             .build_combat();
         let hp0 = g.monsters[0].creature.cur_hp;
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8);
 
         let c = g.discard_pile.pop().unwrap();
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 16);
 
         let c = g.discard_pile.pop().unwrap();
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 16 - 24);
@@ -777,8 +781,8 @@ mod tests {
 
         let hp0 = g.monsters[0].creature.cur_hp;
 
-        g.make_move(Move::PlayCard {
-            card_index: 1,
+        g.step_test(PlayCardStep {
+            hand_index: 1,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8);
@@ -786,22 +790,22 @@ mod tests {
         let c = g.discard_pile.pop().unwrap();
         c.borrow_mut().upgrade();
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 1,
+        g.step_test(PlayCardStep {
+            hand_index: 1,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13);
 
         let c = g.discard_pile.pop().unwrap();
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 1,
+        g.step_test(PlayCardStep {
+            hand_index: 1,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13 - 21);
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 8 - 13 - 21 - 8);
@@ -848,8 +852,8 @@ mod tests {
             g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
             while !matches!(g.result(), GameStatus::Victory) {
-                g.make_move(Move::PlayCard {
-                    card_index: 0,
+                g.step_test(PlayCardStep {
+                    hand_index: 0,
                     target: Some(0),
                 });
             }
@@ -868,13 +872,13 @@ mod tests {
                     .iter()
                     .position(|c| c.borrow().class == CardClass::DoubleTap);
                 if let Some(i) = double_tap_card_index {
-                    g.make_move(Move::PlayCard {
-                        card_index: i,
+                    g.step_test(PlayCardStep {
+                        hand_index: i,
                         target: None,
                     });
                 } else {
-                    g.make_move(Move::PlayCard {
-                        card_index: 0,
+                    g.step_test(PlayCardStep {
+                        hand_index: 0,
                         target: Some(0),
                     });
                 }
@@ -904,10 +908,10 @@ mod tests {
             |g: &Game| -> i32 { g.hand.iter().map(|c| c.borrow().get_base_cost()).sum() };
 
         g.player.block = 2;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(cost_sum(&g), 3 + 3 + 3);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(cost_sum(&g), 2 + 2 + 2);
         g.play_card_upgraded(CardClass::Armaments, None);
         assert_eq!(cost_sum(&g), 1 + 1 + 1);
@@ -1067,8 +1071,8 @@ mod tests {
             .build_combat();
         let hp = g.monsters[0].creature.cur_hp;
         g.add_card_to_hand(CardClass::MindBlast);
-        g.make_move(Move::PlayCard {
-            card_index: 5,
+        g.step_test(PlayCardStep {
+            hand_index: 5,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 20);
@@ -1085,8 +1089,8 @@ mod tests {
         g.energy = 10;
 
         let hp0 = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 15);
@@ -1094,8 +1098,8 @@ mod tests {
         assert_eq!(g.master_deck[1].borrow().base_increase, 0);
 
         g.monsters[0].creature.cur_hp = 10;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.exhaust_pile[0].borrow().base_increase, 0);
@@ -1112,8 +1116,8 @@ mod tests {
         let hp1 = g.monsters[1].creature.cur_hp;
         let c = g.exhaust_pile.pop().unwrap();
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(1),
         });
         assert_eq!(g.monsters[1].creature.cur_hp, hp1 - 18);
@@ -1122,8 +1126,8 @@ mod tests {
         let c = g.exhaust_pile.pop().unwrap();
         c.borrow_mut().upgrade();
         g.hand.push(c);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(1),
         });
 
@@ -1179,8 +1183,8 @@ mod tests {
             .build_combat();
 
         for _ in 0..50 {
-            g.make_move(Move::PlayCard {
-                card_index: 0,
+            g.step_test(PlayCardStep {
+                hand_index: 0,
                 target: Some(0),
             });
         }

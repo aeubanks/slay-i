@@ -1019,11 +1019,15 @@ mod tests {
         actions::{add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction},
         assert_matches,
         cards::{CardClass, CardColor},
-        game::{GameBuilder, GameStatus, Move},
+        game::{
+            EndTurnStep, GambleEndStep, GambleStep, GameBuilder, GameStatus, NilrysSkipStep,
+            NilrysStep, PlayCardStep,
+        },
         monster::Monster,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
         status::Status,
+        step::{Step, step_eq},
     };
 
     #[test]
@@ -1033,8 +1037,8 @@ mod tests {
             .add_relic(RelicClass::BurningBlood)
             .build_combat();
         let hp = g.player.cur_hp;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.player.cur_hp, hp + 6);
@@ -1047,8 +1051,8 @@ mod tests {
             .add_relic(RelicClass::BlackBlood)
             .build_combat();
         g.player.cur_hp = 10;
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.player.cur_hp, 10 + 12);
@@ -1090,12 +1094,12 @@ mod tests {
             .add_relic(RelicClass::MedicalKit)
             .set_player_hp(50)
             .build_combat();
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         assert_eq!(g.energy, 3);
@@ -1113,12 +1117,12 @@ mod tests {
             .set_player_hp(50)
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(5));
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         assert_eq!(g.energy, 3);
@@ -1133,7 +1137,7 @@ mod tests {
             .add_relic(RelicClass::Anchor)
             .build_combat();
         assert_eq!(g.player.block, 10);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 0);
     }
 
@@ -1144,7 +1148,7 @@ mod tests {
             .add_player_status(Status::Dexterity, 55)
             .build_combat();
         assert_eq!(g.player.block, 10);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 0);
     }
 
@@ -1154,9 +1158,9 @@ mod tests {
             .add_relic(RelicClass::HornCleat)
             .build_combat();
         assert_eq!(g.player.block, 0);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 14);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 0);
     }
 
@@ -1166,11 +1170,11 @@ mod tests {
             .add_relic(RelicClass::CaptainsWheel)
             .build_combat();
         assert_eq!(g.player.block, 0);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 0);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 18);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 0);
     }
 
@@ -1185,7 +1189,7 @@ mod tests {
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
@@ -1209,7 +1213,7 @@ mod tests {
         g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::GoodInstincts, Some(CreatureRef::monster(0)));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Strength), Some(1));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Berserk, Some(CreatureRef::monster(0)));
@@ -1235,7 +1239,7 @@ mod tests {
         assert_eq!(g.hand.len(), 1);
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.get_relic_value(RelicClass::InkBottle), Some(1));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::InkBottle), Some(1));
     }
 
@@ -1277,7 +1281,7 @@ mod tests {
         assert_eq!(g.monsters[1].creature.cur_hp, 50 - 5);
         g.play_card(CardClass::Defend, None);
         assert_eq!(g.get_relic_value(RelicClass::LetterOpener), Some(1));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::LetterOpener), Some(0));
     }
 
@@ -1299,7 +1303,7 @@ mod tests {
         g.play_card(CardClass::Intimidate, None);
         assert_eq!(g.get_relic_value(RelicClass::OrnamentalFan), Some(0));
         g.play_card(CardClass::Whirlwind, None);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::OrnamentalFan), Some(0));
     }
 
@@ -1351,7 +1355,7 @@ mod tests {
         assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(1));
         assert_eq!(g.energy, 5);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(1));
     }
 
@@ -1364,8 +1368,8 @@ mod tests {
                 .add_cards_upgraded(CardClass::PommelStrike, 2)
                 .build_combat();
             for _ in 0..100 {
-                g.make_move(Move::PlayCard {
-                    card_index: 0,
+                g.step_test(PlayCardStep {
+                    hand_index: 0,
                     target: Some(0),
                 });
             }
@@ -1379,8 +1383,8 @@ mod tests {
                 .add_card_upgraded(CardClass::PommelStrike)
                 .build_combat();
             for _ in 0..100 {
-                g.make_move(Move::PlayCard {
-                    card_index: 0,
+                g.step_test(PlayCardStep {
+                    hand_index: 0,
                     target: Some(0),
                 });
             }
@@ -1435,7 +1439,7 @@ mod tests {
         assert_eq!(g.player.get_status(Status::Confusion), Some(1));
         assert_eq!(g.hand.len(), 7);
         g.remove_relic(RelicClass::SneckoEye);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 5);
     }
 
@@ -1445,7 +1449,7 @@ mod tests {
             .add_relic(RelicClass::Lantern)
             .build_combat();
         assert_eq!(g.energy, 4);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
     }
 
@@ -1456,13 +1460,13 @@ mod tests {
             .build_combat();
         assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(1));
         assert_eq!(g.energy, 3);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(2));
         assert_eq!(g.energy, 3);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(0));
         assert_eq!(g.energy, 4);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::HappyFlower), Some(1));
         assert_eq!(g.energy, 3);
     }
@@ -1478,22 +1482,22 @@ mod tests {
 
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(1));
         assert_eq!(g.player.get_status(Status::Intangible), None);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(2));
         assert_eq!(g.player.get_status(Status::Intangible), None);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(3));
         assert_eq!(g.player.get_status(Status::Intangible), None);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(4));
         assert_eq!(g.player.get_status(Status::Intangible), None);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(5));
         assert_eq!(g.player.get_status(Status::Intangible), None);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(0));
         assert_eq!(g.player.get_status(Status::Intangible), Some(1));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(1));
         assert_eq!(g.player.get_status(Status::Intangible), None);
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
@@ -1721,7 +1725,7 @@ mod tests {
             .add_monster(AttackMonster::new(10))
             .build_combat();
         let hp = g.player.cur_hp;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 12);
     }
 
@@ -1750,7 +1754,7 @@ mod tests {
                 assert_eq!(g.energy, 4);
             }
         }
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::Nunchaku), Some(4));
     }
 
@@ -1772,9 +1776,9 @@ mod tests {
             .add_relic(RelicClass::Calipers)
             .build_combat();
         g.player.block = 20;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 5);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 0);
     }
 
@@ -1786,10 +1790,10 @@ mod tests {
         assert_eq!(g.energy, 3);
         g.play_card(CardClass::Defend, None);
         assert_eq!(g.energy, 2);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.energy, 5);
         g.add_relic(RelicClass::Ectoplasm);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.energy, 9);
     }
 
@@ -1799,7 +1803,7 @@ mod tests {
             .add_relic(RelicClass::Akabeko)
             .build_combat();
         assert_eq!(g.player.get_status(Status::Vigor), Some(8));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Vigor), Some(8));
     }
 
@@ -1810,18 +1814,18 @@ mod tests {
             .build_combat();
         assert_eq!(g.energy, 3);
         assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(1));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.energy, 4);
         assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(1));
         g.play_card(CardClass::Inflame, None);
         g.play_card(CardClass::Defend, None);
         assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(1));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.energy, 4);
         assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(1));
         g.play_card(CardClass::Thunderclap, None);
         assert_eq!(g.get_relic_value(RelicClass::ArtOfWar), Some(0));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
     }
 
@@ -1835,14 +1839,14 @@ mod tests {
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(0));
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 8);
 
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(3));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 8);
 
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
@@ -1850,7 +1854,7 @@ mod tests {
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
         assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(4));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.get_relic_value(RelicClass::Pocketwatch), Some(0));
     }
@@ -1861,7 +1865,7 @@ mod tests {
             .add_relic(RelicClass::BronzeScales)
             .build_combat();
         assert_eq!(g.player.get_status(Status::Thorns), Some(3));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Thorns), Some(3));
     }
 
@@ -1929,7 +1933,7 @@ mod tests {
         assert_eq!(g.energy, 4);
         assert_eq!(g.hand.len(), 1);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
         assert_eq!(g.hand.len(), 6);
     }
@@ -1986,10 +1990,10 @@ mod tests {
         let hp = g.player.cur_hp;
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.player.cur_hp, hp - 2);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 2 - 6);
         g.play_card(CardClass::Defend, None);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 2 - 6 - 2);
 
         g.play_card(CardClass::Apparition, None);
@@ -2000,7 +2004,7 @@ mod tests {
             amount: 1,
             target: CreatureRef::player(),
         });
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 2 - 6 - 2);
         assert_eq!(g.player.get_status(Status::PlatedArmor), Some(1));
     }
@@ -2024,7 +2028,7 @@ mod tests {
             .add_monster(AttackMonster::new(1))
             .build_combat();
         let hp = g.player.cur_hp;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp);
         assert_eq!(g.player.get_status(Status::Buffer), None);
     }
@@ -2090,11 +2094,11 @@ mod tests {
                 amount: 2,
             })
             .build_combat();
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Weak), Some(2));
         assert_eq!(g.player.get_status(Status::Frail), None);
         g.player.set_status(Status::Artifact, 2);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Weak), Some(1));
         assert_eq!(g.player.get_status(Status::Frail), None);
         assert_eq!(g.player.get_status(Status::Artifact), Some(1));
@@ -2113,11 +2117,11 @@ mod tests {
                 amount: 2,
             })
             .build_combat();
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Frail), Some(2));
         assert_eq!(g.player.get_status(Status::Weak), None);
         g.player.set_status(Status::Artifact, 2);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Frail), Some(1));
         assert_eq!(g.player.get_status(Status::Weak), None);
         assert_eq!(g.player.get_status(Status::Artifact), Some(1));
@@ -2130,14 +2134,14 @@ mod tests {
             .build_combat();
         g.add_card_to_draw_pile(CardClass::Strike);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand[0].borrow().upgrade_count, 1);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand[0].borrow().upgrade_count, 1);
 
         g.add_card_to_draw_pile(CardClass::SearingBlow);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_hand_card(CardClass::Strike).borrow().upgrade_count, 1);
         assert_eq!(
             g.get_hand_card(CardClass::SearingBlow)
@@ -2146,7 +2150,7 @@ mod tests {
             1
         );
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.get_hand_card(CardClass::Strike).borrow().upgrade_count, 1);
         assert_eq!(
             g.get_hand_card(CardClass::SearingBlow)
@@ -2162,7 +2166,7 @@ mod tests {
             g.add_card_to_draw_pile_upgraded(CardClass::WildStrike);
             g.add_card_to_draw_pile(CardClass::Defend);
             g.add_card_to_draw_pile(CardClass::Strike);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(
                 g.hand.iter().map(|c| c.borrow().upgrade_count).sum::<i32>(),
                 2
@@ -2186,11 +2190,19 @@ mod tests {
             .add_relic(RelicClass::GamblingChip)
             .add_cards(CardClass::Strike, 10)
             .build_combat();
-        assert!(
-            g.valid_moves()
-                .iter()
-                .all(|m| matches!(m, Move::Gamble { .. } | Move::GambleEnd))
-        );
+        let valid = g.valid_steps();
+        for s in [
+            &GambleEndStep,
+            &GambleStep { hand_index: 0 },
+            &GambleStep { hand_index: 1 },
+            &GambleStep { hand_index: 2 },
+            &GambleStep { hand_index: 3 },
+            &GambleStep { hand_index: 4 },
+        ] as [&dyn Step; _]
+        {
+            assert!(valid.iter().any(|v| step_eq(v, s)));
+        }
+        assert_eq!(valid.len(), 6);
     }
 
     #[test]
@@ -2251,7 +2263,7 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 5 * 2 * 2);
         assert_eq!(g.energy, 0);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         g.energy = 4;
         g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 6 - 5 * 2 * 2 - 20 * 2);
@@ -2262,7 +2274,7 @@ mod tests {
         );
         assert_eq!(g.energy, 0);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         g.add_card_to_draw_pile(CardClass::HandOfGreed);
         g.play_card_upgraded(CardClass::Havoc, None);
         assert_eq!(g.energy, 3);
@@ -2332,7 +2344,7 @@ mod tests {
             g.monsters[1].creature.cur_hp,
             g.monsters[1].creature.max_hp - 3
         );
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(
             g.monsters[0].creature.cur_hp,
             g.monsters[0].creature.max_hp - 6
@@ -2353,13 +2365,13 @@ mod tests {
         for _ in 0..6 {
             assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
             assert_eq!(g.monsters[1].creature.cur_hp, g.monsters[1].creature.max_hp);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
         }
         assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
         assert_eq!(g.monsters[1].creature.cur_hp, g.monsters[1].creature.max_hp);
         g.monsters[1].creature.cur_hp = 51;
         let hp = g.player.cur_hp;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp);
         assert_eq!(
             g.monsters[0].creature.cur_hp,
@@ -2401,7 +2413,7 @@ mod tests {
             .build_combat();
         assert_eq!(g.player.get_status(Status::Strength), Some(2));
         assert_eq!(g.monsters[0].creature.get_status(Status::Strength), Some(1));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Strength), Some(4));
         assert_eq!(g.monsters[0].creature.get_status(Status::Strength), Some(2));
     }
@@ -2483,9 +2495,9 @@ mod tests {
                 .add_monster(AttackMonster::new(1))
                 .build_combat();
             g.play_card(CardClass::Thunderclap, None);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.hand.len(), 8);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.hand.len(), 5);
         }
     }
@@ -2503,9 +2515,9 @@ mod tests {
         );
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.player.get_status(Status::NextTurnBlock), Some(3));
-        g.make_move(Move::EndTurn);
-        g.make_move(Move::EndTurn);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
+        g.step_test(EndTurnStep);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 6);
     }
 
@@ -2521,7 +2533,7 @@ mod tests {
         g.play_card(CardClass::Reaper, None);
         g.play_card(CardClass::BandageUp, None);
         assert_eq!(g.player.cur_hp, 10);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_matches!(g.result(), GameStatus::Defeat);
     }
 
@@ -2534,7 +2546,7 @@ mod tests {
                 .build_combat();
             assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(1));
 
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert!(g.player.is_alive());
             assert_eq!(g.player.cur_hp, (g.player.max_hp as f32 * 0.5) as i32);
             assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(0));
@@ -2546,7 +2558,7 @@ mod tests {
                 .build_combat();
 
             g.player.decrease_max_hp(g.player.max_hp - 1);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, 1);
         }
         {
@@ -2554,7 +2566,7 @@ mod tests {
                 .add_monster(AttackMonster::with_attack_count(1000, 2))
                 .add_relic(RelicClass::LizardTail)
                 .build_combat();
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert!(!g.player.is_alive());
         }
         {
@@ -2564,7 +2576,7 @@ mod tests {
                 .add_relic(RelicClass::LizardTail)
                 .build_combat();
             g.add_potion(Potion::Fairy);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(1));
             assert!(g.potions.iter().all(|p| p.is_none()));
         }
@@ -2599,21 +2611,21 @@ mod tests {
             .add_monster(AttackMonster::new(10))
             .build_combat();
         let hp = g.player.cur_hp;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 4);
 
         g.player.block = 1;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 4 - 9);
 
         g.player.set_status(Status::FeelNoPain, 1);
         g.add_card_to_hand(CardClass::Dazed);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 4 - 9 - 3);
 
         g.player.set_status(Status::PlatedArmor, 1);
         g.player.set_status(Status::Metallicize, 2);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 4 - 9 - 3 - 1);
     }
 
@@ -2626,11 +2638,11 @@ mod tests {
                 .build_combat();
 
             let hp = g.player.cur_hp;
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, hp - 1);
 
             g.monsters[0].creature.set_status(Status::Strength, 1);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, hp - 1 - 6);
         }
         {
@@ -2639,7 +2651,7 @@ mod tests {
                 .build_combat();
             g.add_card_to_hand(CardClass::Burn);
             let hp = g.player.cur_hp;
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, hp - 2);
         }
         {
@@ -2649,7 +2661,7 @@ mod tests {
                 .build_combat();
             let hp = g.player.cur_hp;
             g.player.block = 3;
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, hp - 2);
         }
     }
@@ -2662,7 +2674,7 @@ mod tests {
             .add_monster(AttackMonster::new(5))
             .build_combat();
         let hp = g.player.cur_hp;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp);
     }
 
@@ -2736,7 +2748,7 @@ mod tests {
 
         g.monsters[0].creature.block = 10;
         g.player.set_status(Status::CombustDamage, 12);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(
             g.monsters[0].creature.get_status(Status::Vulnerable),
             Some(3)
@@ -2752,7 +2764,7 @@ mod tests {
             .build_combat();
         g.add_cards_to_hand(CardClass::Dazed, 2);
         g.monsters[1].creature.block = 1;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.monsters[0].creature.cur_hp, 44);
         assert_eq!(g.monsters[1].creature.cur_hp, 45);
     }
@@ -2767,7 +2779,7 @@ mod tests {
         assert_eq!(g.hand.len(), 5);
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.hand.len(), 6);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 9);
     }
 
@@ -2778,11 +2790,8 @@ mod tests {
                 .add_relic(RelicClass::Toolbox)
                 .add_card(CardClass::Strike)
                 .build_combat();
-            assert_eq!(g.valid_moves().len(), 3);
-            g.valid_moves()
-                .iter()
-                .for_each(|m| assert_matches!(*m, Move::Discovery { .. }));
-            g.make_move(g.valid_moves()[0]);
+            assert_eq!(g.valid_steps().len(), 3);
+            g.step(g.valid_steps().remove(0));
             if g.hand[0].borrow().class != CardClass::Transmutation {
                 assert_eq!(g.hand[0].borrow().get_temporary_cost(), None);
             }
@@ -2798,7 +2807,7 @@ mod tests {
             .build_combat();
         assert_eq!(g.hand.len(), 5);
         g.add_card_to_hand(CardClass::Apparition);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 10);
         g.hand
             .iter()
@@ -2847,18 +2856,16 @@ mod tests {
             .add_relic(RelicClass::RunicPyramid)
             .add_cards(CardClass::Strike, 20)
             .build_combat();
-        g.make_move(Move::EndTurn);
-        assert_eq!(g.valid_moves().len(), 4);
-        for m in g.valid_moves() {
-            assert_matches!(m, Move::Nilrys { .. } | Move::NilrysSkip);
-        }
-        g.make_move(Move::NilrysSkip);
+        g.step_test(EndTurnStep);
+        assert_eq!(g.valid_steps().len(), 4);
+        assert!(g.valid_steps().iter().any(|s| step_eq(s, &NilrysSkipStep)));
+        g.step_test(NilrysSkipStep);
 
         for i in 1..10 {
             assert_eq!(g.hand.len(), 10);
-            g.make_move(Move::EndTurn);
-            g.make_move(Move::Nilrys {
-                card_class: CardClass::BloodForBlood,
+            g.step_test(EndTurnStep);
+            g.step_test(NilrysStep {
+                class: CardClass::BloodForBlood,
             });
             assert_eq!(
                 g.draw_pile
@@ -2889,7 +2896,7 @@ mod tests {
 
         g.clear_all_piles();
         g.add_card_to_hand(CardClass::Apparition);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class.color(), CardColor::Red);
     }
@@ -2900,7 +2907,7 @@ mod tests {
             .add_relic(RelicClass::MarkOfPain)
             .build_combat();
         assert_eq!(g.hand.len(), 0);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 2);
         for c in &g.hand {
             assert_eq!(c.borrow().class, CardClass::Wound);
@@ -2919,18 +2926,10 @@ mod tests {
         g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
-        assert!(
-            g.valid_moves()
-                .iter()
-                .any(|m| matches!(m, Move::PlayCard { .. }))
-        );
+        let num_steps = g.valid_steps().len();
         g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
-        assert!(
-            g.valid_moves()
-                .iter()
-                .all(|m| !matches!(m, Move::PlayCard { .. }))
-        );
-        g.make_move(Move::EndTurn);
+        assert_eq!(num_steps - 1, g.valid_steps().len());
+        g.step_test(EndTurnStep);
         assert_eq!(g.num_cards_played_this_turn, 0);
         g.throw_potion(Potion::Chaos, None);
         g.throw_potion(Potion::Chaos, None);

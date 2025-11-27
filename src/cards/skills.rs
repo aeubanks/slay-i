@@ -504,10 +504,16 @@ mod tests {
         },
         assert_matches,
         cards::{CardClass, CardColor, CardCost, CardType},
-        game::{CreatureRef, GameBuilder, GameStatus, Move},
+        game::{
+            ArmamentsStep, CreatureRef, DualWieldStep, EndTurnStep, ExhaustCardsInHandEndStep,
+            ExhaustCardsInHandStep, ExhaustOneCardInHandStep, ExhumeStep, FetchFromDrawStep,
+            ForethoughtAnyEndStep, ForethoughtAnyStep, GameBuilder, GameStatus,
+            PlaceCardInHandOnTopOfDrawStep, PlayCardStep,
+        },
         monster::Intent,
         monsters::test::{AttackMonster, IntentMonster, NoopMonster},
         status::Status,
+        step::Step,
     };
 
     #[test]
@@ -542,15 +548,11 @@ mod tests {
             g.add_card_to_hand_upgraded(CardClass::Defend);
             g.add_card_to_hand(CardClass::TwinStrike);
             g.play_card(CardClass::Armaments, None);
-            assert_eq!(
-                g.valid_moves(),
-                vec![
-                    Move::Armaments { card_index: 0 },
-                    Move::Armaments { card_index: 2 }
-                ]
-            );
+            g.assert_valid_steps_contains(&ArmamentsStep { hand_index: 0 });
+            g.assert_valid_steps_contains(&ArmamentsStep { hand_index: 2 });
+            g.assert_valid_steps_does_not_contain(&ArmamentsStep { hand_index: 1 });
 
-            g.make_move(Move::Armaments { card_index: 0 });
+            g.step_test(ArmamentsStep { hand_index: 0 });
             assert_eq!(g.hand[0].borrow().upgrade_count, 1);
             assert_eq!(g.hand[1].borrow().upgrade_count, 1);
             assert_eq!(g.hand[2].borrow().upgrade_count, 0);
@@ -559,11 +561,11 @@ mod tests {
         {
             let mut g = GameBuilder::default().build_combat();
             g.add_card_to_hand(CardClass::Armaments);
-            g.make_move(Move::PlayCard {
-                card_index: 0,
+            g.step_test(PlayCardStep {
+                hand_index: 0,
                 target: None,
             });
-            assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
+            assert_eq!(g.valid_steps().len(), 1);
         }
 
         {
@@ -571,8 +573,8 @@ mod tests {
             g.add_card_to_hand(CardClass::Armaments);
             g.add_card_to_hand_upgraded(CardClass::Strike);
             g.add_card_to_hand_upgraded(CardClass::Strike);
-            g.make_move(Move::PlayCard {
-                card_index: 0,
+            g.step_test(PlayCardStep {
+                hand_index: 0,
                 target: None,
             });
             for c in g.hand {
@@ -586,8 +588,8 @@ mod tests {
             g.add_card_to_hand(CardClass::Strike);
             g.add_card_to_hand_upgraded(CardClass::Strike);
             g.add_card_to_hand_upgraded(CardClass::Strike);
-            g.make_move(Move::PlayCard {
-                card_index: 0,
+            g.step_test(PlayCardStep {
+                hand_index: 0,
                 target: None,
             });
             for c in g.hand {
@@ -716,13 +718,13 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Warcry, None);
         assert_eq!(
-            g.valid_moves(),
+            g.valid_steps(),
             vec![
-                Move::PlaceCardInHandOnTopOfDraw { card_index: 0 },
-                Move::PlaceCardInHandOnTopOfDraw { card_index: 1 },
+                Box::new(PlaceCardInHandOnTopOfDrawStep { hand_index: 0 }) as Box<dyn Step>,
+                Box::new(PlaceCardInHandOnTopOfDrawStep { hand_index: 1 }),
             ]
         );
-        g.make_move(Move::PlaceCardInHandOnTopOfDraw { card_index: 0 });
+        g.step_test(PlaceCardInHandOnTopOfDrawStep { hand_index: 0 });
         assert_eq!(g.draw_pile.len(), 1);
         assert_eq!(
             g.draw_pile.top(&mut g.rng).borrow().class,
@@ -765,8 +767,8 @@ mod tests {
         let c = g.hand.pop().unwrap();
         g.run_action(ExhaustCardAction(c));
         assert_eq!(g.energy, 5);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         assert_eq!(g.player.block, 5);
@@ -781,8 +783,8 @@ mod tests {
         let c = g.hand.pop().unwrap();
         g.run_action(ExhaustCardAction(c));
         assert_eq!(g.energy, 6);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         assert_eq!(g.player.block, 8);
@@ -831,14 +833,10 @@ mod tests {
         g.add_card_to_hand(CardClass::Inflame);
         g.add_card_to_hand(CardClass::Defend);
         g.play_card(CardClass::DualWield, None);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::DualWield { card_index: 0 },
-                Move::DualWield { card_index: 1 },
-            ]
-        );
-        g.make_move(Move::DualWield { card_index: 0 });
+        g.assert_valid_steps_contains(&DualWieldStep { hand_index: 0 });
+        g.assert_valid_steps_contains(&DualWieldStep { hand_index: 1 });
+        g.assert_valid_steps_does_not_contain(&DualWieldStep { hand_index: 2 });
+        g.step_test(DualWieldStep { hand_index: 0 });
         assert_eq!(g.hand.len(), 4);
         assert_eq!(g.hand[0].borrow().class, CardClass::Inflame);
         assert_eq!(g.hand[1].borrow().class, CardClass::Defend);
@@ -859,7 +857,7 @@ mod tests {
         g.add_card_to_hand(CardClass::RitualDagger);
         let id = g.hand[1].borrow().id;
         g.play_card(CardClass::DualWield, None);
-        g.make_move(Move::DualWield { card_index: 1 });
+        g.step_test(DualWieldStep { hand_index: 1 });
         assert_eq!(g.hand[1].borrow().class, CardClass::RitualDagger);
         assert_ne!(g.hand[1].borrow().id, id);
         assert_eq!(g.hand[2].borrow().class, CardClass::RitualDagger);
@@ -890,7 +888,7 @@ mod tests {
         g.play_card(CardClass::BattleTrance, None);
         assert_eq!(g.hand.len(), 8);
         assert_eq!(g.player.get_status(Status::NoDraw), Some(1));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.player.get_status(Status::NoDraw), None);
     }
@@ -969,14 +967,10 @@ mod tests {
             g.cur_card.clone().unwrap().borrow().class,
             CardClass::BurningPact
         );
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::ExhaustOneCardInHand { card_index: 0 },
-                Move::ExhaustOneCardInHand { card_index: 1 },
-            ]
-        );
-        g.make_move(Move::ExhaustOneCardInHand { card_index: 1 });
+        g.assert_valid_steps_contains(&ExhaustOneCardInHandStep { hand_index: 0 });
+        g.assert_valid_steps_contains(&ExhaustOneCardInHandStep { hand_index: 1 });
+        assert_eq!(g.valid_steps().len(), 2);
+        g.step_test(ExhaustOneCardInHandStep { hand_index: 1 });
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand.len(), 2);
@@ -1046,14 +1040,10 @@ mod tests {
         g.add_card_to_exhaust_pile(CardClass::Exhume);
         g.add_card_to_exhaust_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Exhume, None);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::Exhume { card_index: 0 },
-                Move::Exhume { card_index: 2 },
-            ]
-        );
-        g.make_move(Move::Exhume { card_index: 2 });
+        g.assert_valid_steps_contains(&ExhumeStep { exhaust_index: 0 });
+        g.assert_valid_steps_contains(&ExhumeStep { exhaust_index: 2 });
+        assert_eq!(g.valid_steps().len(), 2);
+        g.step_test(ExhumeStep { exhaust_index: 2 });
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
         assert_eq!(g.exhaust_pile.len(), 3);
@@ -1079,8 +1069,8 @@ mod tests {
                 .add_player_status(Status::Strength, -3)
                 .add_card(CardClass::LimitBreak)
                 .build_combat();
-            g.make_move(Move::PlayCard {
-                card_index: 0,
+            g.step_test(PlayCardStep {
+                hand_index: 0,
                 target: None,
             });
             assert_eq!(g.player.get_status(Status::Strength), Some(-6));
@@ -1094,24 +1084,24 @@ mod tests {
         g.add_card_to_hand(CardClass::SwiftStrike);
         g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         assert_eq!(g.energy, 3);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 3);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 2);
         g.hand.push(g.discard_pile.pop().unwrap());
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 0);
@@ -1123,15 +1113,15 @@ mod tests {
         g.add_card_to_hand(CardClass::Enlightenment);
         g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         let b = g.hand.pop().unwrap();
         g.run_action(ExhaustCardAction(b));
         g.hand.push(g.exhaust_pile.pop().unwrap());
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 1);
@@ -1143,14 +1133,14 @@ mod tests {
         g.add_card_to_hand(CardClass::Enlightenment);
         g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         g.discard_pile.pop();
-        g.make_move(Move::EndTurn);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(EndTurnStep);
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 1);
@@ -1163,19 +1153,19 @@ mod tests {
         g.add_card_to_hand(CardClass::Bash);
         assert_eq!(g.energy, 3);
         g.play_card_upgraded(CardClass::Enlightenment, None);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 3);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 2);
         g.hand.push(g.discard_pile.pop().unwrap());
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 1);
@@ -1188,9 +1178,9 @@ mod tests {
         assert_eq!(g.energy, 3);
         g.play_card_upgraded(CardClass::Enlightenment, None);
         g.discard_pile.pop();
-        g.make_move(Move::EndTurn);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(EndTurnStep);
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: Some(0),
         });
         assert_eq!(g.energy, 2);
@@ -1256,7 +1246,7 @@ mod tests {
         assert_eq!(g.player.get_status(Status::Bomb1), None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Bomb3), None);
         assert_eq!(g.player.get_status(Status::Bomb2), Some(90));
         assert_eq!(g.player.get_status(Status::Bomb1), None);
@@ -1269,14 +1259,14 @@ mod tests {
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
 
         let player_hp = g.player.cur_hp;
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Bomb3), None);
         assert_eq!(g.player.get_status(Status::Bomb2), Some(40));
         assert_eq!(g.player.get_status(Status::Bomb1), Some(90));
         assert_eq!(g.monsters[0].creature.cur_hp, hp);
         assert_eq!(g.player.cur_hp, player_hp - 2);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Bomb3), None);
         assert_eq!(g.player.get_status(Status::Bomb2), None);
         assert_eq!(g.player.get_status(Status::Bomb1), Some(40));
@@ -1389,20 +1379,20 @@ mod tests {
             }
         );
         assert_eq!(
-            g.valid_moves(),
+            g.valid_steps(),
             vec![
-                Move::ExhaustCardsInHandEnd,
-                Move::ExhaustCardsInHand { card_index: 0 },
-                Move::ExhaustCardsInHand { card_index: 1 },
-                Move::ExhaustCardsInHand { card_index: 2 },
-                Move::ExhaustCardsInHand { card_index: 3 },
-                Move::ExhaustCardsInHand { card_index: 4 },
-                Move::ExhaustCardsInHand { card_index: 5 },
-                Move::ExhaustCardsInHand { card_index: 6 },
-                Move::ExhaustCardsInHand { card_index: 7 },
+                Box::new(ExhaustCardsInHandEndStep) as Box<dyn Step>,
+                Box::new(ExhaustCardsInHandStep { hand_index: 0 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 1 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 2 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 3 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 4 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 5 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 6 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 7 }),
             ]
         );
-        g.make_move(Move::ExhaustCardsInHandEnd);
+        g.step_test(ExhaustCardsInHandEndStep);
         assert_eq!(g.hand.len(), 8);
         assert_eq!(g.exhaust_pile.len(), 1 + 1);
 
@@ -1414,20 +1404,20 @@ mod tests {
             }
         );
         assert_eq!(
-            g.valid_moves(),
+            g.valid_steps(),
             vec![
-                Move::ExhaustCardsInHandEnd,
-                Move::ExhaustCardsInHand { card_index: 0 },
-                Move::ExhaustCardsInHand { card_index: 1 },
-                Move::ExhaustCardsInHand { card_index: 2 },
-                Move::ExhaustCardsInHand { card_index: 3 },
-                Move::ExhaustCardsInHand { card_index: 4 },
-                Move::ExhaustCardsInHand { card_index: 5 },
-                Move::ExhaustCardsInHand { card_index: 6 },
-                Move::ExhaustCardsInHand { card_index: 7 },
+                Box::new(ExhaustCardsInHandEndStep) as Box<dyn Step>,
+                Box::new(ExhaustCardsInHandStep { hand_index: 0 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 1 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 2 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 3 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 4 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 5 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 6 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 7 }),
             ]
         );
-        g.make_move(Move::ExhaustCardsInHand { card_index: 3 });
+        g.step_test(ExhaustCardsInHandStep { hand_index: 3 });
         assert_matches!(
             g.result(),
             GameStatus::ExhaustCardsInHand {
@@ -1435,19 +1425,19 @@ mod tests {
             }
         );
         assert_eq!(
-            g.valid_moves(),
+            g.valid_steps(),
             vec![
-                Move::ExhaustCardsInHandEnd,
-                Move::ExhaustCardsInHand { card_index: 0 },
-                Move::ExhaustCardsInHand { card_index: 1 },
-                Move::ExhaustCardsInHand { card_index: 2 },
-                Move::ExhaustCardsInHand { card_index: 3 },
-                Move::ExhaustCardsInHand { card_index: 4 },
-                Move::ExhaustCardsInHand { card_index: 5 },
-                Move::ExhaustCardsInHand { card_index: 6 },
+                Box::new(ExhaustCardsInHandEndStep) as Box<dyn Step>,
+                Box::new(ExhaustCardsInHandStep { hand_index: 0 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 1 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 2 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 3 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 4 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 5 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 6 }),
             ]
         );
-        g.make_move(Move::ExhaustCardsInHand { card_index: 6 });
+        g.step_test(ExhaustCardsInHandStep { hand_index: 6 });
         assert_matches!(
             g.result(),
             GameStatus::ExhaustCardsInHand {
@@ -1455,18 +1445,18 @@ mod tests {
             }
         );
         assert_eq!(
-            g.valid_moves(),
+            g.valid_steps(),
             vec![
-                Move::ExhaustCardsInHandEnd,
-                Move::ExhaustCardsInHand { card_index: 0 },
-                Move::ExhaustCardsInHand { card_index: 1 },
-                Move::ExhaustCardsInHand { card_index: 2 },
-                Move::ExhaustCardsInHand { card_index: 3 },
-                Move::ExhaustCardsInHand { card_index: 4 },
-                Move::ExhaustCardsInHand { card_index: 5 },
+                Box::new(ExhaustCardsInHandEndStep) as Box<dyn Step>,
+                Box::new(ExhaustCardsInHandStep { hand_index: 0 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 1 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 2 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 3 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 4 }),
+                Box::new(ExhaustCardsInHandStep { hand_index: 5 }),
             ]
         );
-        g.make_move(Move::ExhaustCardsInHand { card_index: 5 });
+        g.step_test(ExhaustCardsInHandStep { hand_index: 5 });
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.exhaust_pile.len(), 1 + 1 + 1 + 3);
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
@@ -1477,10 +1467,10 @@ mod tests {
 
         g.hand.pop();
         g.play_card_upgraded(CardClass::Purity, None);
-        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
-        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
-        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
-        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
+        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
+        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
+        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
+        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.discard_pile.len(), 0);
     }
@@ -1489,7 +1479,8 @@ mod tests {
     fn test_secret_weapon() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::SecretWeapon);
-        assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
+        g.assert_valid_steps_contains(&EndTurnStep);
+        assert_eq!(g.valid_steps().len(), 1);
 
         g.hand.clear();
         g.add_card_to_draw_pile(CardClass::Strike);
@@ -1505,14 +1496,10 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Defend);
         g.add_card_to_draw_pile(CardClass::TwinStrike);
         g.play_card(CardClass::SecretWeapon, None);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::FetchCardFromDraw { card_index: 0 },
-                Move::FetchCardFromDraw { card_index: 2 },
-            ]
-        );
-        g.make_move(Move::FetchCardFromDraw { card_index: 2 });
+        g.assert_valid_steps_contains(&FetchFromDrawStep { draw_index: 0 });
+        g.assert_valid_steps_contains(&FetchFromDrawStep { draw_index: 2 });
+        assert_eq!(g.valid_steps().len(), 2);
+        g.step_test(FetchFromDrawStep { draw_index: 2 });
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::TwinStrike);
@@ -1533,7 +1520,8 @@ mod tests {
     fn test_secret_technique() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::SecretTechnique);
-        assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
+        g.assert_valid_steps_contains(&EndTurnStep);
+        assert_eq!(g.valid_steps().len(), 1);
 
         g.hand.clear();
         g.add_card_to_draw_pile(CardClass::Defend);
@@ -1549,14 +1537,10 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Strike);
         g.add_card_to_draw_pile(CardClass::FlameBarrier);
         g.play_card(CardClass::SecretTechnique, None);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::FetchCardFromDraw { card_index: 0 },
-                Move::FetchCardFromDraw { card_index: 2 },
-            ]
-        );
-        g.make_move(Move::FetchCardFromDraw { card_index: 2 });
+        g.assert_valid_steps_contains(&FetchFromDrawStep { draw_index: 0 });
+        g.assert_valid_steps_contains(&FetchFromDrawStep { draw_index: 2 });
+        assert_eq!(g.valid_steps().len(), 2);
+        g.step_test(FetchFromDrawStep { draw_index: 2 });
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::FlameBarrier);
@@ -1718,23 +1702,15 @@ mod tests {
         g.add_card_to_hand(CardClass::TwinStrike);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Forethought, None);
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::ForethoughtAnyEnd,
-                Move::ForethoughtAny { card_index: 0 },
-                Move::ForethoughtAny { card_index: 1 }
-            ]
-        );
-        g.make_move(Move::ForethoughtAny { card_index: 0 });
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::ForethoughtAnyEnd,
-                Move::ForethoughtAny { card_index: 0 }
-            ]
-        );
-        g.make_move(Move::ForethoughtAnyEnd);
+        g.assert_valid_steps_contains(&ForethoughtAnyEndStep);
+        g.assert_valid_steps_contains(&ForethoughtAnyStep { hand_index: 0 });
+        g.assert_valid_steps_contains(&ForethoughtAnyStep { hand_index: 1 });
+        assert_eq!(g.valid_steps().len(), 3);
+        g.step_test(ForethoughtAnyStep { hand_index: 0 });
+        g.assert_valid_steps_contains(&ForethoughtAnyEndStep);
+        g.assert_valid_steps_contains(&ForethoughtAnyStep { hand_index: 0 });
+        assert_eq!(g.valid_steps().len(), 2);
+        g.step_test(ForethoughtAnyEndStep);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.draw_pile.len(), 2);
         g.draw_pile.pop(&mut g.rng);
@@ -1758,8 +1734,8 @@ mod tests {
         g.add_card_to_hand(CardClass::TwinStrike);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Forethought, None);
-        g.make_move(Move::ForethoughtAny { card_index: 0 });
-        g.make_move(Move::ForethoughtAny { card_index: 0 });
+        g.step_test(ForethoughtAnyStep { hand_index: 0 });
+        g.step_test(ForethoughtAnyStep { hand_index: 0 });
         g.draw_pile.pop(&mut g.rng);
         assert_eq!(
             g.draw_pile.pop(&mut g.rng).borrow().class,
@@ -1777,17 +1753,11 @@ mod tests {
             let mut g = GameBuilder::default().build_combat();
             g.energy = 1;
             g.play_card(CardClass::Discovery, None);
-            for m in g.valid_moves() {
-                if let Move::Discovery { card_class } = m {
-                    assert_ne!(card_class, CardClass::Reaper);
-                } else {
-                    panic!();
-                }
-            }
-            assert_eq!(g.valid_moves().len(), 3);
-            g.make_move(g.valid_moves()[0]);
-            g.make_move(Move::PlayCard {
-                card_index: 0,
+            assert_eq!(g.valid_steps().len(), 3);
+            g.step(g.valid_steps().remove(0));
+            assert_ne!(g.hand[0].borrow().class, CardClass::Reaper);
+            g.step_test(PlayCardStep {
+                hand_index: 0,
                 target: Some(0),
             });
         }
@@ -1838,7 +1808,7 @@ mod tests {
             g.monsters[0].creature.get_status(Status::GainStrength),
             Some(9)
         );
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.monsters[0].creature.get_status(Status::Strength), None);
         assert_eq!(
             g.monsters[0].creature.get_status(Status::GainStrength),

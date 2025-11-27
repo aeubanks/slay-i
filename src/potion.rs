@@ -342,9 +342,13 @@ mod tests {
     use crate::{
         assert_matches,
         cards::{CardClass, CardColor, CardCost, CardType, random_red_in_combat},
-        game::{GameBuilder, GameStatus, Move},
+        game::{
+            DiscardPotionStep, EndTurnStep, ExhaustCardsInHandEndStep, ExhaustCardsInHandStep,
+            GambleEndStep, GambleStep, GameBuilder, GameStatus, MemoriesStep, UsePotionStep,
+        },
         monsters::test::{AttackMonster, NoopMonster},
         relic::RelicClass,
+        step::step_eq,
     };
 
     use super::*;
@@ -353,7 +357,7 @@ mod tests {
     fn test_discard_potion() {
         let mut g = GameBuilder::default().build_combat();
         g.add_potion(Potion::Fire);
-        g.make_move(Move::DiscardPotion { potion_index: 0 });
+        g.step_test(DiscardPotionStep { potion_index: 0 });
         assert_eq!(g.potions[0], None);
         assert_eq!(g.potions[1], None);
         assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
@@ -367,7 +371,7 @@ mod tests {
             .build_combat();
         g.add_potion(Potion::Fire);
         let hp = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::UsePotion {
+        g.step_test(UsePotionStep {
             potion_index: 0,
             target: Some(0),
         });
@@ -388,7 +392,7 @@ mod tests {
             .build_combat();
         g.add_potion(Potion::Explosive);
         let hp = g.monsters[0].creature.cur_hp;
-        g.make_move(Move::UsePotion {
+        g.step_test(UsePotionStep {
             potion_index: 0,
             target: None,
         });
@@ -408,13 +412,13 @@ mod tests {
         g.play_card(CardClass::Defend, None);
         assert_eq!(g.player.block, 10);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Speed, None);
         g.play_card(CardClass::Defend, None);
         assert_eq!(g.player.block, 15);
 
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         g.play_card(CardClass::Defend, None);
         assert_eq!(g.player.block, 5);
     }
@@ -435,11 +439,11 @@ mod tests {
     fn test_attack() {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Attack, None);
-        g.make_move(g.valid_moves()[0]);
+        g.step(g.valid_steps().remove(0));
         assert_eq!(g.hand.len(), 1);
         g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Attack, None);
-        g.make_move(g.valid_moves()[0]);
+        g.step(g.valid_steps().remove(0));
         assert_eq!(g.hand.len(), 3);
 
         for c in &g.hand {
@@ -459,7 +463,7 @@ mod tests {
             let mut g = GameBuilder::default().build_combat();
             g.add_cards_to_hand(CardClass::Strike, 10);
             g.throw_potion(Potion::Attack, None);
-            g.make_move(g.valid_moves()[0]);
+            g.step(g.valid_steps().remove(0));
             if g.discard_pile[0].borrow().class != CardClass::Whirlwind {
                 assert_eq!(g.discard_pile[0].borrow().get_temporary_cost(), None);
             }
@@ -470,11 +474,11 @@ mod tests {
     fn test_skill() {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Skill, None);
-        g.make_move(g.valid_moves()[0]);
+        g.step(g.valid_steps().remove(0));
         assert_eq!(g.hand.len(), 1);
         g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Skill, None);
-        g.make_move(g.valid_moves()[0]);
+        g.step(g.valid_steps().remove(0));
         assert_eq!(g.hand.len(), 3);
 
         for c in &g.hand {
@@ -491,11 +495,11 @@ mod tests {
     fn test_power() {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Power, None);
-        g.make_move(g.valid_moves()[0]);
+        g.step(g.valid_steps().remove(0));
         assert_eq!(g.hand.len(), 1);
         g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Power, None);
-        g.make_move(g.valid_moves()[0]);
+        g.step(g.valid_steps().remove(0));
         assert_eq!(g.hand.len(), 3);
 
         for c in &g.hand {
@@ -516,7 +520,7 @@ mod tests {
         }
         g.throw_potion(Potion::Elixir, None);
         for _ in 0..10 {
-            g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
+            g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
         }
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.exhaust_pile.len(), 10);
@@ -525,8 +529,8 @@ mod tests {
         g.add_card_to_hand(CardClass::Strike);
         g.add_card_to_hand(CardClass::Strike);
         g.throw_potion(Potion::Elixir, None);
-        g.make_move(Move::ExhaustCardsInHand { card_index: 0 });
-        g.make_move(Move::ExhaustCardsInHandEnd);
+        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
+        g.step_test(ExhaustCardsInHandEndStep);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.exhaust_pile.len(), 1);
     }
@@ -561,11 +565,11 @@ mod tests {
         g.add_card_to_hand(CardClass::Defend);
         g.add_card_to_draw_pile(CardClass::Inflame);
         g.throw_potion(Potion::Gamblers, None);
-        g.make_move(Move::GambleEnd);
+        g.step_test(GambleEndStep);
         assert_eq!(g.hand.len(), 2);
         g.throw_potion(Potion::Gamblers, None);
-        g.make_move(Move::Gamble { card_index: 0 });
-        g.make_move(Move::GambleEnd);
+        g.step_test(GambleStep { hand_index: 0 });
+        g.step_test(GambleEndStep);
         assert_eq!(g.hand.len(), 2);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand[1].borrow().class, CardClass::Inflame);
@@ -651,7 +655,7 @@ mod tests {
                 num_cards_remaining: 1
             }
         );
-        g.make_move(Move::Memories { card_index: 1 });
+        g.step_test(MemoriesStep { discard_index: 1 });
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
@@ -667,7 +671,7 @@ mod tests {
                 num_cards_remaining: 1
             }
         );
-        g.make_move(Move::Memories { card_index: 1 });
+        g.step_test(MemoriesStep { discard_index: 1 });
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
@@ -723,14 +727,14 @@ mod tests {
                 num_cards_remaining: 2
             }
         );
-        g.make_move(Move::Memories { card_index: 1 });
+        g.step_test(MemoriesStep { discard_index: 1 });
         assert_matches!(
             g.result(),
             GameStatus::Memories {
                 num_cards_remaining: 1
             }
         );
-        g.make_move(Move::Memories { card_index: 1 });
+        g.step_test(MemoriesStep { discard_index: 1 });
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.hand[8].borrow().class, CardClass::FlameBarrier);
         assert_eq!(g.hand[8].borrow().get_temporary_cost(), Some(0));
@@ -752,7 +756,7 @@ mod tests {
                 num_cards_remaining: 1
             }
         );
-        g.make_move(Move::Memories { card_index: 1 });
+        g.step_test(MemoriesStep { discard_index: 1 });
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.hand[9].borrow().class, CardClass::FlameBarrier);
         assert_eq!(g.hand[9].borrow().get_temporary_cost(), Some(0));
@@ -766,31 +770,34 @@ mod tests {
                 .add_monster(AttackMonster::new(1000))
                 .build_combat();
             g.add_potion(Potion::Fairy);
+            let valid = g.valid_steps();
+            assert!(!valid.iter().any(|s| step_eq(
+                s,
+                &UsePotionStep {
+                    potion_index: 0,
+                    target: None
+                }
+            )));
             assert!(
-                g.valid_moves()
-                    .into_iter()
-                    .any(|m| matches!(m, Move::DiscardPotion { .. }))
-            );
-            assert!(
-                g.valid_moves()
-                    .into_iter()
-                    .all(|m| !matches!(m, Move::UsePotion { .. }))
+                valid
+                    .iter()
+                    .any(|s| step_eq(s, &DiscardPotionStep { potion_index: 0 }))
             );
 
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert!(g.player.is_alive());
             assert_eq!(g.player.cur_hp, (g.player.max_hp as f32 * 0.3) as i32);
             assert!(g.potions.iter().all(|p| p.is_none()));
 
             g.add_potion(Potion::Fairy);
             g.add_relic(RelicClass::SacredBark);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, (g.player.max_hp as f32 * 0.6) as i32);
             assert!(g.potions.iter().all(|p| p.is_none()));
 
             g.player.decrease_max_hp(g.player.max_hp - 1);
             g.add_potion(Potion::Fairy);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, 1);
             assert!(g.potions.iter().all(|p| p.is_none()));
         }
@@ -801,12 +808,12 @@ mod tests {
 
             g.add_potion(Potion::Fairy);
             g.add_potion(Potion::Fairy);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert!(g.player.is_alive());
             assert!(g.potions.iter().all(|p| p.is_none()));
 
             g.add_potion(Potion::Fairy);
-            g.make_move(Move::EndTurn);
+            g.step_test(EndTurnStep);
             assert!(!g.player.is_alive());
             assert!(g.potions.iter().all(|p| p.is_none()));
         }

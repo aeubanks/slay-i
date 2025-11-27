@@ -330,4 +330,24 @@ impl Creature {
             }
         }
     }
+
+    pub fn str(&self) -> String {
+        let mut s = format!(
+            "{}: {}/{}, {} block",
+            self.name, self.cur_hp, self.max_hp, self.block
+        );
+        if self.has_any_status() {
+            let mut first = true;
+            for (status, amount) in self.all_statuses() {
+                if first {
+                    first = false;
+                    s += ", statuses: ";
+                } else {
+                    s += ", ";
+                }
+                s.push_str(&format!("{status:?} ({amount})"));
+            }
+        }
+        s
+    }
 }

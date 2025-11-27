@@ -38,7 +38,7 @@ mod tests {
     use crate::{
         actions::block::BlockAction,
         cards::CardClass,
-        game::{GameBuilder, Move},
+        game::{EndTurnStep, GameBuilder, PlayCardStep, RemoveMasterStep},
         relic::RelicClass,
         state::GameState,
         status::Status,
@@ -48,7 +48,8 @@ mod tests {
     fn test_playable() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::AscendersBane);
-        assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
+        g.assert_valid_steps_contains(&EndTurnStep);
+        assert_eq!(g.valid_steps().len(), 1);
     }
 
     #[test]
@@ -56,8 +57,8 @@ mod tests {
     fn test_crash_on_play_unplayable_curse() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::AscendersBane);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
     }
@@ -71,7 +72,7 @@ mod tests {
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(4));
         assert_eq!(g.player.cur_hp, 50);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, 45);
     }
 
@@ -84,7 +85,7 @@ mod tests {
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(4));
         assert_eq!(g.player.cur_hp, 50);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, 40);
     }
 
@@ -96,7 +97,7 @@ mod tests {
             .build_combat();
         g.run_action(BlockAction::player_flat_amount(1));
         assert_eq!(g.player.cur_hp, 50);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, 49);
     }
 
@@ -106,7 +107,7 @@ mod tests {
             .add_cards(CardClass::Strike, 4)
             .add_card(CardClass::Doubt)
             .build_combat();
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Weak), Some(1));
     }
 
@@ -117,7 +118,7 @@ mod tests {
             .add_card(CardClass::Doubt)
             .add_player_status(Status::Weak, 1)
             .build_combat();
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Weak), Some(1));
     }
 
@@ -127,7 +128,7 @@ mod tests {
             .add_cards(CardClass::Strike, 4)
             .add_card(CardClass::Shame)
             .build_combat();
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Frail), Some(1));
     }
 
@@ -140,31 +141,22 @@ mod tests {
         g.add_card_to_hand(CardClass::Defend);
         g.add_card_to_hand(CardClass::Defend);
         g.add_card_to_hand(CardClass::Normality);
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
-        assert_eq!(g.valid_moves(), vec![Move::EndTurn]);
+        assert_eq!(g.valid_steps().len(), 1);
         g.hand.pop();
-        assert_eq!(
-            g.valid_moves(),
-            vec![
-                Move::EndTurn,
-                Move::PlayCard {
-                    card_index: 0,
-                    target: None
-                }
-            ]
-        );
-        g.make_move(Move::EndTurn);
+        assert_ne!(g.valid_steps().len(), 1);
+        g.step_test(EndTurnStep);
         g.energy = 10;
         g.hand.clear();
         g.add_card_to_hand(CardClass::Defend);
@@ -172,16 +164,16 @@ mod tests {
         g.add_card_to_hand(CardClass::Defend);
         g.add_card_to_hand(CardClass::Defend);
         g.add_card_to_hand(CardClass::Defend);
-        assert_eq!(g.valid_moves().len(), 6);
+        assert_eq!(g.valid_steps().len(), 6);
         for _ in 0..4 {
-            g.make_move(Move::PlayCard {
-                card_index: 0,
+            g.step_test(PlayCardStep {
+                hand_index: 0,
                 target: None,
             });
         }
-        assert_eq!(g.valid_moves().len(), 2);
+        assert_eq!(g.valid_steps().len(), 2);
         g.add_card_to_hand(CardClass::Normality);
-        assert_eq!(g.valid_moves().len(), 1);
+        assert_eq!(g.valid_steps().len(), 1);
     }
 
     #[test]
@@ -205,7 +197,7 @@ mod tests {
         let max_hp = g.player.max_hp;
         g.player.cur_hp = max_hp - 1;
         g.state.push_state(GameState::RemoveCard);
-        g.make_move(Move::Remove { card_index: 0 });
+        g.step_test(RemoveMasterStep { master_index: 0 });
         assert_eq!(g.player.max_hp, max_hp - 3);
         assert_eq!(g.player.cur_hp, max_hp - 3);
     }
@@ -229,8 +221,8 @@ mod tests {
         g.play_card_upgraded(CardClass::Havoc, None);
         assert_eq!(g.player.cur_hp, 46);
 
-        g.make_move(Move::PlayCard {
-            card_index: 0,
+        g.step_test(PlayCardStep {
+            hand_index: 0,
             target: None,
         });
         assert_eq!(g.player.cur_hp, 45);

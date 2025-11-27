@@ -35,7 +35,7 @@ impl std::fmt::Debug for EndOfTurnDiscardAction {
 mod tests {
     use crate::{
         cards::CardClass,
-        game::{GameBuilder, Move},
+        game::{EndTurnStep, GameBuilder},
     };
 
     #[test]
@@ -44,7 +44,7 @@ mod tests {
             .add_cards(CardClass::GhostlyArmor, 3)
             .add_cards(CardClass::Strike, 1)
             .build_combat();
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.exhaust_pile.len(), 3);
     }
 }

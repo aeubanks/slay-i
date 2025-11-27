@@ -166,7 +166,7 @@ mod tests {
     use crate::{
         actions::{block::BlockAction, draw::DrawAction, exhaust_card::ExhaustCardAction},
         cards::CardClass,
-        game::{GameBuilder, Move},
+        game::{EndTurnStep, GameBuilder},
         status::Status,
     };
 
@@ -218,7 +218,7 @@ mod tests {
             .build_combat();
         assert_eq!(g.hand.len(), 5);
         g.play_card(CardClass::DarkEmbrace, None);
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.hand.len(), 10);
     }
 
@@ -275,7 +275,7 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::Barricade, None);
         g.run_action(BlockAction::player_flat_amount(5));
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         assert_eq!(g.player.block, 5);
     }
 
@@ -307,7 +307,7 @@ mod tests {
         g.play_card(CardClass::TestSkill, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
         // reset to 5
-        g.make_move(Move::EndTurn);
+        g.step_test(EndTurnStep);
         // 5 -> 4
         g.play_card(CardClass::TestSkill, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp - 24);
