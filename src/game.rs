@@ -416,10 +416,10 @@ impl Step for MemoriesStep {
         match game.state.cur_state_mut() {
             GameState::Memories {
                 num_cards_remaining,
-                cards_to_memories,
             } => {
                 *num_cards_remaining -= 1;
-                cards_to_memories.push(game.discard_pile.remove(self.discard_index));
+                game.chosen_cards
+                    .push(game.discard_pile.remove(self.discard_index));
                 if *num_cards_remaining == 0 {
                     game.memories_cards();
                 }
@@ -447,10 +447,9 @@ impl Step for ExhaustCardsInHandStep {
         match game.state.cur_state_mut() {
             GameState::ExhaustCardsInHand {
                 num_cards_remaining,
-                cards_to_exhaust,
             } => {
                 *num_cards_remaining -= 1;
-                cards_to_exhaust.push(game.hand.remove(self.hand_index));
+                game.chosen_cards.push(game.hand.remove(self.hand_index));
                 if *num_cards_remaining == 0 || game.hand.is_empty() {
                     game.exhaust_cards();
                 }
@@ -488,14 +487,10 @@ pub struct GambleStep {
 
 impl Step for GambleStep {
     fn run(&self, game: &mut Game) {
-        match game.state.cur_state_mut() {
-            GameState::Gamble { cards_to_gamble } => {
-                cards_to_gamble.push(game.hand.remove(self.hand_index));
-                if game.hand.is_empty() {
-                    game.gamble_cards();
-                }
-            }
-            _ => unreachable!(),
+        assert_matches!(game.state.cur_state(), GameState::Gamble);
+        game.chosen_cards.push(game.hand.remove(self.hand_index));
+        if game.hand.is_empty() {
+            game.gamble_cards();
         }
     }
 
@@ -550,16 +545,10 @@ pub struct ForethoughtAnyStep {
 
 impl Step for ForethoughtAnyStep {
     fn run(&self, game: &mut Game) {
-        match game.state.cur_state_mut() {
-            GameState::ForethoughtAny {
-                cards_to_forethought,
-            } => {
-                cards_to_forethought.push(game.hand.remove(self.hand_index));
-                if game.hand.is_empty() {
-                    game.forethought_cards();
-                }
-            }
-            _ => unreachable!(),
+        assert_matches!(game.state.cur_state(), GameState::ForethoughtAny);
+        game.chosen_cards.push(game.hand.remove(self.hand_index));
+        if game.hand.is_empty() {
+            game.forethought_cards();
         }
     }
 
@@ -812,6 +801,7 @@ pub struct Game {
     pub combat_monsters_queue: Vec<Vec<Monster>>,
     pub rng: Rand,
     pub state: GameStateManager,
+    pub chosen_cards: Vec<CardRef>,
     next_id: u32,
 }
 
@@ -845,6 +835,7 @@ impl Game {
             combat_monsters_queue: vec![monsters],
             rng,
             state: GameStateManager::new(GameState::Blessing),
+            chosen_cards: Default::default(),
             next_id: 1,
         };
 
@@ -1481,58 +1472,32 @@ impl Game {
     }
 
     fn memories_cards(&mut self) {
-        match self.state.cur_state_mut() {
-            GameState::Memories {
-                cards_to_memories, ..
-            } => {
-                while let Some(c) = cards_to_memories.pop() {
-                    self.action_queue.push_top(MemoriesAction(c));
-                }
-            }
-            _ => unreachable!(),
+        while let Some(c) = self.chosen_cards.pop() {
+            self.action_queue.push_top(MemoriesAction(c));
         }
         self.state.pop_state();
     }
 
     fn exhaust_cards(&mut self) {
-        match &mut self.state.cur_state_mut() {
-            GameState::ExhaustCardsInHand {
-                cards_to_exhaust, ..
-            } => {
-                while let Some(c) = cards_to_exhaust.pop() {
-                    self.action_queue.push_top(ExhaustCardAction(c));
-                }
-            }
-            _ => unreachable!(),
+        while let Some(c) = self.chosen_cards.pop() {
+            self.action_queue.push_top(ExhaustCardAction(c));
         }
         self.state.pop_state();
     }
 
     fn gamble_cards(&mut self) {
-        match self.state.cur_state_mut() {
-            GameState::Gamble { cards_to_gamble } => {
-                let count = cards_to_gamble.len() as i32;
-                self.action_queue.push_top(DrawAction(count));
-                while let Some(c) = cards_to_gamble.pop() {
-                    self.action_queue.push_top(DiscardCardAction(c));
-                }
-            }
-            _ => unreachable!(),
+        let count = self.chosen_cards.len() as i32;
+        self.action_queue.push_top(DrawAction(count));
+        while let Some(c) = self.chosen_cards.pop() {
+            self.action_queue.push_top(DiscardCardAction(c));
         }
         self.state.pop_state();
     }
 
     fn forethought_cards(&mut self) {
-        match self.state.cur_state_mut() {
-            GameState::ForethoughtAny {
-                cards_to_forethought,
-            } => {
-                while !cards_to_forethought.is_empty() {
-                    self.action_queue
-                        .push_top(ForethoughtAction(cards_to_forethought.remove(0)));
-                }
-            }
-            _ => unreachable!(),
+        while !self.chosen_cards.is_empty() {
+            self.action_queue
+                .push_top(ForethoughtAction(self.chosen_cards.remove(0)));
         }
         self.state.pop_state();
     }

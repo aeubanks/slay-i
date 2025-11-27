@@ -7,9 +7,7 @@ impl Action for ChooseGambleAction {
         if game.hand.is_empty() {
             return;
         }
-        game.state.push_state(GameState::Gamble {
-            cards_to_gamble: Vec::new(),
-        });
+        game.state.push_state(GameState::Gamble);
     }
 }
 

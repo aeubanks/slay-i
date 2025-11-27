@@ -1,7 +1,4 @@
-use crate::{
-    card::CardRef,
-    cards::{CardClass, CardType},
-};
+use crate::cards::{CardClass, CardType};
 
 #[derive(Debug)]
 pub enum GameState {
@@ -21,24 +18,18 @@ pub enum GameState {
     Armaments,
     Memories {
         num_cards_remaining: i32,
-        cards_to_memories: Vec<CardRef>,
     },
     ExhaustOneCardInHand,
     ExhaustCardsInHand {
         num_cards_remaining: i32,
-        cards_to_exhaust: Vec<CardRef>,
     },
-    Gamble {
-        cards_to_gamble: Vec<CardRef>,
-    },
+    Gamble,
     PlaceCardInHandOnTopOfDraw,
     PlaceCardInDiscardOnTopOfDraw,
     Exhume,
     DualWield(i32),
     FetchCardFromDraw(CardType),
-    ForethoughtAny {
-        cards_to_forethought: Vec<CardRef>,
-    },
+    ForethoughtAny,
     ForethoughtOne,
     Discovery {
         classes: Vec<CardClass>,

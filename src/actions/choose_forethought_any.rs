@@ -7,9 +7,7 @@ impl Action for ChooseForethoughtAnyAction {
         if g.hand.is_empty() {
             return;
         }
-        g.state.push_state(GameState::ForethoughtAny {
-            cards_to_forethought: Vec::new(),
-        });
+        g.state.push_state(GameState::ForethoughtAny);
     }
 }
 

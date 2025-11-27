@@ -14,7 +14,6 @@ impl Action for ChooseMemoriesAction {
         } else {
             game.state.push_state(GameState::Memories {
                 num_cards_remaining: self.0.min(Game::MAX_HAND_SIZE - game.hand.len() as i32),
-                cards_to_memories: Vec::new(),
             });
         }
     }
