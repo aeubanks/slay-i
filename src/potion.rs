@@ -340,15 +340,18 @@ pub fn random_common_potion(rng: &mut Rand) -> Potion {
 #[cfg(test)]
 mod tests {
     use crate::{
-        assert_matches,
-        cards::{CardClass, CardColor, CardCost, CardType, random_red_in_combat},
-        game::{
-            DiscardPotionStep, EndTurnStep, ExhaustCardsInHandEndStep, ExhaustCardsInHandStep,
-            GambleEndStep, GambleStep, GameBuilder, GameStatus, MemoriesStep, UsePotionStep,
+        actions::{
+            choose_cards_in_hand_to_exhaust::{
+                ChooseExhaustCardsInHandEndStep, ChooseExhaustCardsInHandStep,
+            },
+            choose_gamble::{GambleEndStep, GambleStep},
+            choose_memories::{ChooseMemoriesEndStep, ChooseMemoriesStep},
         },
+        cards::{CardClass, CardColor, CardCost, CardType, random_red_in_combat},
+        game::{DiscardPotionStep, EndTurnStep, GameBuilder, UsePotionStep},
         monsters::test::{AttackMonster, NoopMonster},
         relic::RelicClass,
-        step::step_eq,
+        step::{Step, step_eq},
     };
 
     use super::*;
@@ -439,11 +442,11 @@ mod tests {
     fn test_attack() {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Attack, None);
-        g.step(g.valid_steps().remove(0));
+        g.step(0);
         assert_eq!(g.hand.len(), 1);
         g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Attack, None);
-        g.step(g.valid_steps().remove(0));
+        g.step(0);
         assert_eq!(g.hand.len(), 3);
 
         for c in &g.hand {
@@ -463,7 +466,7 @@ mod tests {
             let mut g = GameBuilder::default().build_combat();
             g.add_cards_to_hand(CardClass::Strike, 10);
             g.throw_potion(Potion::Attack, None);
-            g.step(g.valid_steps().remove(0));
+            g.step(0);
             if g.discard_pile[0].borrow().class != CardClass::Whirlwind {
                 assert_eq!(g.discard_pile[0].borrow().get_temporary_cost(), None);
             }
@@ -474,11 +477,11 @@ mod tests {
     fn test_skill() {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Skill, None);
-        g.step(g.valid_steps().remove(0));
+        g.step(0);
         assert_eq!(g.hand.len(), 1);
         g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Skill, None);
-        g.step(g.valid_steps().remove(0));
+        g.step(0);
         assert_eq!(g.hand.len(), 3);
 
         for c in &g.hand {
@@ -495,11 +498,11 @@ mod tests {
     fn test_power() {
         let mut g = GameBuilder::default().build_combat();
         g.throw_potion(Potion::Power, None);
-        g.step(g.valid_steps().remove(0));
+        g.step(0);
         assert_eq!(g.hand.len(), 1);
         g.add_relic(RelicClass::SacredBark);
         g.throw_potion(Potion::Power, None);
-        g.step(g.valid_steps().remove(0));
+        g.step(0);
         assert_eq!(g.hand.len(), 3);
 
         for c in &g.hand {
@@ -519,9 +522,17 @@ mod tests {
             g.add_card_to_hand(CardClass::Strike);
         }
         g.throw_potion(Potion::Elixir, None);
-        for _ in 0..10 {
-            g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
+        for i in (1..=10).rev() {
+            g.step_test(ChooseExhaustCardsInHandStep {
+                hand_index: 0,
+                num_cards_remaining: i,
+            });
         }
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(ChooseExhaustCardsInHandEndStep) as Box<dyn Step>]
+        );
+        g.step_test(ChooseExhaustCardsInHandEndStep);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.exhaust_pile.len(), 10);
 
@@ -529,8 +540,11 @@ mod tests {
         g.add_card_to_hand(CardClass::Strike);
         g.add_card_to_hand(CardClass::Strike);
         g.throw_potion(Potion::Elixir, None);
-        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
-        g.step_test(ExhaustCardsInHandEndStep);
+        g.step_test(ChooseExhaustCardsInHandStep {
+            hand_index: 0,
+            num_cards_remaining: 10,
+        });
+        g.step_test(ChooseExhaustCardsInHandEndStep);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.exhaust_pile.len(), 1);
     }
@@ -649,13 +663,11 @@ mod tests {
         g.add_card_to_discard_pile(CardClass::Strike);
         g.add_card_to_discard_pile(CardClass::Defend);
         g.throw_potion(Potion::Memories, None);
-        assert_matches!(
-            g.result(),
-            GameStatus::Memories {
-                num_cards_remaining: 1
-            }
-        );
-        g.step_test(MemoriesStep { discard_index: 1 });
+        g.step_test(ChooseMemoriesStep {
+            discard_index: 1,
+            num_cards_remaining: 1,
+        });
+        g.step_test(ChooseMemoriesEndStep);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
@@ -665,13 +677,11 @@ mod tests {
         g.add_card_to_discard_pile(CardClass::Strike);
         g.add_card_to_discard_pile(CardClass::Defend);
         g.throw_potion(Potion::Memories, None);
-        assert_matches!(
-            g.result(),
-            GameStatus::Memories {
-                num_cards_remaining: 1
-            }
-        );
-        g.step_test(MemoriesStep { discard_index: 1 });
+        g.step_test(ChooseMemoriesStep {
+            discard_index: 1,
+            num_cards_remaining: 1,
+        });
+        g.step_test(ChooseMemoriesEndStep);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
         assert_eq!(g.hand[0].borrow().get_temporary_cost(), Some(0));
@@ -721,20 +731,15 @@ mod tests {
             g.add_card_to_hand(CardClass::Strike);
         }
         g.throw_potion(Potion::Memories, None);
-        assert_matches!(
-            g.result(),
-            GameStatus::Memories {
-                num_cards_remaining: 2
-            }
-        );
-        g.step_test(MemoriesStep { discard_index: 1 });
-        assert_matches!(
-            g.result(),
-            GameStatus::Memories {
-                num_cards_remaining: 1
-            }
-        );
-        g.step_test(MemoriesStep { discard_index: 1 });
+        g.step_test(ChooseMemoriesStep {
+            discard_index: 1,
+            num_cards_remaining: 2,
+        });
+        g.step_test(ChooseMemoriesStep {
+            discard_index: 1,
+            num_cards_remaining: 1,
+        });
+        g.step_test(ChooseMemoriesEndStep);
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.hand[8].borrow().class, CardClass::FlameBarrier);
         assert_eq!(g.hand[8].borrow().get_temporary_cost(), Some(0));
@@ -750,13 +755,11 @@ mod tests {
             g.add_card_to_hand(CardClass::Strike);
         }
         g.throw_potion(Potion::Memories, None);
-        assert_matches!(
-            g.result(),
-            GameStatus::Memories {
-                num_cards_remaining: 1
-            }
-        );
-        g.step_test(MemoriesStep { discard_index: 1 });
+        g.step_test(ChooseMemoriesStep {
+            discard_index: 1,
+            num_cards_remaining: 1,
+        });
+        g.step_test(ChooseMemoriesEndStep);
         assert_eq!(g.hand.len(), 10);
         assert_eq!(g.hand[9].borrow().class, CardClass::FlameBarrier);
         assert_eq!(g.hand[9].borrow().get_temporary_cost(), Some(0));

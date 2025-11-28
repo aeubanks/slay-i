@@ -1,6 +1,6 @@
 use crate::{
     action::Action, actions::place_card_in_hand::PlaceCardInHandAction, cards::CardType,
-    game::Game, state::GameState,
+    game::Game, state::GameState, step::Step,
 };
 
 pub struct ChooseCardInDrawToPlaceInHandAction(pub CardType);
@@ -32,7 +32,7 @@ impl Action for ChooseCardInDrawToPlaceInHandAction {
                 let c = game.draw_pile.take(i);
                 game.action_queue.push_top(PlaceCardInHandAction(c));
             }
-            Count::Many => game.state.push_state(GameState::FetchCardFromDraw(self.0)),
+            Count::Many => game.state.push_state(FetchCardFromDrawGameState(self.0)),
         }
     }
 }
@@ -40,5 +40,40 @@ impl Action for ChooseCardInDrawToPlaceInHandAction {
 impl std::fmt::Debug for ChooseCardInDrawToPlaceInHandAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "choose card in draw to place in hand ({:?})", self.0)
+    }
+}
+
+#[derive(Debug)]
+struct FetchCardFromDrawGameState(CardType);
+
+impl GameState for FetchCardFromDrawGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for (i, c) in game.draw_pile.get_all().iter().enumerate() {
+            if c.borrow().class.ty() == self.0 {
+                moves.push(Box::new(FetchFromDrawStep { draw_index: i }));
+            }
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct FetchFromDrawStep {
+    pub draw_index: usize,
+}
+
+impl Step for FetchFromDrawStep {
+    fn run(&self, game: &mut Game) {
+        let c = game.draw_pile.take(self.draw_index);
+        game.action_queue.push_top(PlaceCardInHandAction(c));
+    }
+
+    fn description(&self, game: &Game) -> String {
+        format!(
+            "fetch {} ({:?})",
+            self.draw_index,
+            game.draw_pile.get(self.draw_index).borrow()
+        )
     }
 }

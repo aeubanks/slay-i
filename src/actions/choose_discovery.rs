@@ -1,11 +1,13 @@
 use crate::{
     action::Action,
+    actions::discovery::DiscoveryAction,
     cards::{
-        random_colorless_in_combat, random_red_attack_in_combat, random_red_in_combat,
+        CardClass, random_colorless_in_combat, random_red_attack_in_combat, random_red_in_combat,
         random_red_power_in_combat, random_red_skill_in_combat,
     },
     game::Game,
     state::GameState,
+    step::Step,
 };
 
 pub enum ChooseDiscoveryType {
@@ -37,7 +39,7 @@ impl Action for ChooseDiscoveryAction {
                 classes.push(c);
             }
         }
-        game.state.push_state(GameState::Discovery {
+        game.state.push_state(ChooseDiscoveryGameState {
             classes,
             amount: self.amount,
             is_free: self.is_free,
@@ -48,5 +50,47 @@ impl Action for ChooseDiscoveryAction {
 impl std::fmt::Debug for ChooseDiscoveryAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "choose discovery")
+    }
+}
+
+#[derive(Debug)]
+struct ChooseDiscoveryGameState {
+    classes: Vec<CardClass>,
+    amount: i32,
+    is_free: bool,
+}
+
+impl GameState for ChooseDiscoveryGameState {
+    fn valid_steps(&self, _: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for &class in &self.classes {
+            moves.push(Box::new(DiscoveryStep {
+                class,
+                amount: self.amount,
+                is_free: self.is_free,
+            }))
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+struct DiscoveryStep {
+    class: CardClass,
+    amount: i32,
+    is_free: bool,
+}
+
+impl Step for DiscoveryStep {
+    fn run(&self, game: &mut Game) {
+        game.action_queue.push_top(DiscoveryAction {
+            class: self.class,
+            amount: self.amount,
+            is_free: self.is_free,
+        });
+    }
+
+    fn description(&self, _: &Game) -> String {
+        format!("discovery {:?}", self.class)
     }
 }

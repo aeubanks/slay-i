@@ -1,4 +1,10 @@
-use crate::{action::Action, game::Game, state::GameState};
+use crate::{
+    action::Action,
+    actions::{discard_card::DiscardCardAction, draw::DrawAction},
+    game::Game,
+    state::GameState,
+    step::Step,
+};
 
 pub struct ChooseGambleAction();
 
@@ -7,12 +13,63 @@ impl Action for ChooseGambleAction {
         if game.hand.is_empty() {
             return;
         }
-        game.state.push_state(GameState::Gamble);
+        game.state.push_state(ChooseGambleGameState);
     }
 }
 
 impl std::fmt::Debug for ChooseGambleAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "choose cards to gamble")
+    }
+}
+
+#[derive(Debug)]
+struct ChooseGambleGameState;
+
+impl GameState for ChooseGambleGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        moves.push(Box::new(GambleEndStep));
+        for c in 0..game.hand.len() {
+            moves.push(Box::new(GambleStep { hand_index: c }));
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct GambleStep {
+    pub hand_index: usize,
+}
+
+impl Step for GambleStep {
+    fn run(&self, game: &mut Game) {
+        game.chosen_cards.push(game.hand.remove(self.hand_index));
+        game.state.push_state(ChooseGambleGameState);
+    }
+
+    fn description(&self, game: &Game) -> String {
+        format!(
+            "gamble {} ({:?})",
+            self.hand_index,
+            game.hand[self.hand_index].borrow()
+        )
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct GambleEndStep;
+
+impl Step for GambleEndStep {
+    fn run(&self, game: &mut Game) {
+        let count = game.chosen_cards.len() as i32;
+        game.action_queue.push_top(DrawAction(count));
+        while let Some(c) = game.chosen_cards.pop() {
+            game.action_queue.push_top(DiscardCardAction(c));
+        }
+    }
+
+    fn description(&self, _: &Game) -> String {
+        "end gamble cards".to_owned()
     }
 }

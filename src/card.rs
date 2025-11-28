@@ -93,7 +93,7 @@ impl Card {
             Strike | Bash | PommelStrike | TwinStrike | Clothesline | BodySlam | IronWave
             | WildStrike | Headbutt | PerfectedStrike | HeavyBlade | Anger | Clash
             | SearingBlow | Rampage | Uppercut | SeverSoul | Carnage | Hemokinesis | Dropkick
-            | Pummel | BloodForBlood | RecklessCharge | SpotWeakness | Bludgeon | Feed
+            | Pummel | BloodForBlood | RecklessCharge | SpotWeakness | Disarm | Bludgeon | Feed
             | FiendFire | SwiftStrike | FlashOfSteel | MindBlast | Bite | RitualDagger
             | HandOfGreed | DebugKill => true,
             Blind | Trip => self.upgrade_count == 0,

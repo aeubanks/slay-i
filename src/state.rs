@@ -1,50 +1,28 @@
-use crate::cards::{CardClass, CardType};
+use crate::{game::Game, step::Step};
 
-#[derive(Debug)]
-pub enum GameState {
-    RunActions,
-    Blessing,
-    RemoveCard,
-    TransformCard,
-    RollCombat,
-    CombatBegin,
-    PlayerTurnBegin,
-    PlayerTurn,
-    PlayerTurnEnd,
-    MonsterTurn,
-    EndOfRound,
-    CombatEnd,
-    ResetCombat,
-    Armaments,
-    Memories {
-        num_cards_remaining: i32,
-    },
-    ExhaustOneCardInHand,
-    ExhaustCardsInHand {
-        num_cards_remaining: i32,
-    },
-    Gamble,
-    PlaceCardInHandOnTopOfDraw,
-    PlaceCardInDiscardOnTopOfDraw,
-    Exhume,
-    DualWield(i32),
-    FetchCardFromDraw(CardType),
-    ForethoughtAny,
-    ForethoughtOne,
-    Discovery {
-        classes: Vec<CardClass>,
-        amount: i32,
-        is_free: bool,
-    },
-    Nilrys {
-        classes: Vec<CardClass>,
-    },
-    Defeat,
-    Victory,
+use std::fmt::Debug;
+
+pub trait GameState: Debug {
+    fn run(&self, _: &mut Game) {}
+    fn valid_steps(&self, _: &Game) -> Option<Vec<Box<dyn Step>>> {
+        None
+    }
 }
 
+#[derive(Eq, PartialEq, Debug)]
+pub struct NoopStep;
+
+impl Step for NoopStep {
+    fn run(&self, _: &mut Game) {}
+
+    fn description(&self, _: &Game) -> String {
+        "noop".to_owned()
+    }
+}
+
+#[derive(Default)]
 pub struct GameStateManager {
-    stack: Vec<GameState>,
+    stack: Vec<Box<dyn GameState>>,
     debug: bool,
 }
 
@@ -55,41 +33,28 @@ impl std::fmt::Debug for GameStateManager {
 }
 
 impl GameStateManager {
-    pub fn new(state: GameState) -> Self {
-        Self {
-            stack: vec![state],
-            debug: false,
-        }
+    pub fn clear(&mut self) {
+        self.stack.clear();
+    }
+    pub fn is_empty(&self) -> bool {
+        self.stack.is_empty()
     }
     pub fn set_debug(&mut self) {
         self.debug = true;
     }
-    pub fn cur_state(&self) -> &GameState {
-        self.stack.last().unwrap()
-    }
-    pub fn cur_state_mut(&mut self) -> &mut GameState {
-        self.stack.last_mut().unwrap()
-    }
-    pub fn push_state(&mut self, state: GameState) {
+    pub fn push_state<T: GameState + 'static>(&mut self, state: T) {
         if self.debug {
             println!("push_state {:?}", state);
         }
-        self.stack.push(state);
+        self.stack.push(Box::new(state));
     }
-    fn pop_state_impl(&mut self, check_not_empty: bool) {
-        let state = self.stack.pop().unwrap();
-        if self.debug {
-            println!("pop_state {:?}", state);
+    pub fn pop_state(&mut self) -> Option<Box<dyn GameState>> {
+        let state = self.stack.pop();
+        if self.debug
+            && let Some(s) = &state
+        {
+            println!("pop_state {:?} ({:?})", s, self.stack);
         }
-        if check_not_empty {
-            assert!(!self.stack.is_empty());
-        }
-    }
-    pub fn pop_state(&mut self) {
-        self.pop_state_impl(true);
-    }
-    pub fn set_state(&mut self, state: GameState) {
-        self.pop_state_impl(false);
-        self.push_state(state);
+        state
     }
 }

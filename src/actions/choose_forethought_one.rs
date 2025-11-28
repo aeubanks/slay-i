@@ -1,5 +1,6 @@
 use crate::{
     action::Action, actions::forethought::ForethoughtAction, game::Game, state::GameState,
+    step::Step,
 };
 
 pub struct ChooseForethoughtOneAction();
@@ -11,7 +12,7 @@ impl Action for ChooseForethoughtOneAction {
             1 => game
                 .action_queue
                 .push_top(ForethoughtAction(game.hand.pop().unwrap())),
-            _ => game.state.push_state(GameState::ForethoughtOne),
+            _ => game.state.push_state(ForethoughtOneGameState),
         }
     }
 }
@@ -19,5 +20,38 @@ impl Action for ChooseForethoughtOneAction {
 impl std::fmt::Debug for ChooseForethoughtOneAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "choose forethought one")
+    }
+}
+
+#[derive(Debug)]
+struct ForethoughtOneGameState;
+
+impl GameState for ForethoughtOneGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for c in 0..game.hand.len() {
+            moves.push(Box::new(ForethoughtOneStep { hand_index: c }));
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct ForethoughtOneStep {
+    pub hand_index: usize,
+}
+
+impl Step for ForethoughtOneStep {
+    fn run(&self, game: &mut Game) {
+        let c = game.hand.remove(self.hand_index);
+        game.action_queue.push_top(ForethoughtAction(c));
+    }
+
+    fn description(&self, game: &Game) -> String {
+        format!(
+            "forethought {} ({:?})",
+            self.hand_index,
+            game.hand[self.hand_index].borrow()
+        )
     }
 }

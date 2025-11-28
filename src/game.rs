@@ -5,29 +5,18 @@ use std::rc::Rc;
 #[cfg(test)]
 use crate::action::Action;
 use crate::actions::add_card_to_master_deck::AddCardToMasterDeckAction;
-use crate::actions::choose_dual_wield::can_dual_wield;
 use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
-use crate::actions::discovery::DiscoveryAction;
 use crate::actions::draw::DrawAction;
-use crate::actions::dual_wield::DualWieldAction;
 use crate::actions::end_of_turn_discard::EndOfTurnDiscardAction;
-use crate::actions::exhaust_card::ExhaustCardAction;
-use crate::actions::forethought::ForethoughtAction;
 use crate::actions::gain_energy::GainEnergyAction;
 use crate::actions::gain_status::GainStatusAction;
-use crate::actions::memories::MemoriesAction;
-use crate::actions::place_card_in_hand::PlaceCardInHandAction;
-use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
 use crate::actions::removed_card_from_master_deck::RemovedCardFromMasterDeckAction;
-use crate::actions::shuffle_card_into_draw::ShuffleCardIntoDrawAction;
 use crate::actions::start_of_turn_energy::StartOfTurnEnergyAction;
-use crate::actions::upgrade::UpgradeAction;
 use crate::actions::use_potion::UsePotionAction;
-use crate::assert_matches;
-use crate::blessings::Blessing;
+use crate::blessings::ChooseBlessingGameState;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
 use crate::creature::Creature;
@@ -74,18 +63,344 @@ impl std::fmt::Debug for CreatureRef {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
-struct ChooseBlessingStep(Blessing);
+#[derive(Debug)]
+struct GameStartGameState;
 
-impl Step for ChooseBlessingStep {
+impl GameState for GameStartGameState {
     fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::Blessing);
-        game.state.set_state(GameState::RollCombat);
-        self.0.run(game);
+        game.state.push_state(RollCombatGameState);
+        game.state.push_state(ChooseBlessingGameState);
     }
+}
 
-    fn description(&self, _: &Game) -> String {
-        format!("{:?}", self.0)
+#[derive(Debug)]
+#[allow(dead_code)]
+struct TestCombatStartGameState;
+
+impl GameState for TestCombatStartGameState {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(VictoryGameState);
+        game.state.push_state(RollCombatGameState);
+    }
+}
+
+#[derive(Debug)]
+pub struct RunActionsGameState;
+
+impl GameState for RunActionsGameState {
+    fn run(&self, game: &mut Game) {
+        if !game.action_queue.is_empty()
+            || !game.card_queue.is_empty()
+            || !game.monster_queue.is_empty()
+        {
+            game.state.push_state(RunActionsGameState);
+        }
+        if let Some(a) = game.action_queue.pop() {
+            a.run(game);
+        } else if !game.card_queue.is_empty() {
+            let play = game.card_queue.remove(0);
+            if game.all_monsters_dead() {
+                return;
+            }
+            if game.can_play_card(&play) {
+                game.action_queue.push_bot(play);
+            } else if !play.is_duplicated {
+                game.action_queue.push_bot(DiscardCardAction(play.card));
+            }
+        } else if !game.monster_queue.is_empty() {
+            let monster = game.monster_queue.remove(0);
+            if !game.get_creature(monster).is_alive() {
+                return;
+            }
+            game.monsters[monster.monster_index()]
+                .behavior
+                .take_turn(monster, &mut game.action_queue);
+        }
+    }
+}
+
+#[derive(Debug)]
+struct PlayerTurnEndGameState;
+
+impl GameState for PlayerTurnEndGameState {
+    fn run(&self, game: &mut Game) {
+        if game.combat_finished() {
+            return;
+        }
+        game.should_add_extra_decay_status = true;
+        game.trigger_relics_at_turn_end();
+        game.player
+            .trigger_statuses_turn_end(CreatureRef::player(), &mut game.action_queue);
+
+        game.trigger_end_of_turn_cards_in_hand();
+
+        game.action_queue.push_bot(EndOfTurnDiscardAction());
+        game.state.push_state(MonsterTurnGameState);
+        game.state.push_state(RunActionsGameState);
+    }
+}
+
+#[derive(Debug)]
+struct MonsterTurnGameState;
+
+impl GameState for MonsterTurnGameState {
+    fn run(&self, game: &mut Game) {
+        if game.combat_finished() {
+            return;
+        }
+        game.monsters_pre_turn();
+        for m in game.get_alive_monsters() {
+            game.monster_queue.push(m);
+        }
+
+        game.state.push_state(EndOfRoundGameState);
+        game.state.push_state(RunActionsGameState);
+    }
+}
+
+#[derive(Debug)]
+struct EndOfRoundGameState;
+
+impl GameState for EndOfRoundGameState {
+    fn run(&self, game: &mut Game) {
+        if game.combat_finished() {
+            return;
+        }
+        game.should_add_extra_decay_status = false;
+        game.monsters_end_turn();
+        game.player
+            .trigger_statuses_round_end(CreatureRef::player(), &mut game.action_queue);
+        for (i, m) in game.monsters.iter_mut().enumerate() {
+            m.creature
+                .trigger_statuses_round_end(CreatureRef::monster(i), &mut game.action_queue);
+        }
+        game.state.push_state(PlayerTurnBeginGameState);
+        game.state.push_state(RunActionsGameState);
+        game.turn += 1;
+    }
+}
+
+#[derive(Debug)]
+struct CombatEndGameState;
+
+impl GameState for CombatEndGameState {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(ResetCombatGameState);
+
+        game.trigger_relics_at_combat_finish();
+        game.state.push_state(RunActionsGameState);
+    }
+}
+
+#[derive(Debug)]
+struct ResetCombatGameState;
+
+impl GameState for ResetCombatGameState {
+    fn run(&self, game: &mut Game) {
+        game.monsters.clear();
+        game.player.clear_all_status();
+        game.num_cards_played_this_turn = 0;
+        game.num_times_took_damage = 0;
+        game.energy = 0;
+        game.turn = 0;
+        game.clear_all_piles();
+        game.state.push_state(RollCombatGameState);
+    }
+}
+
+#[derive(Debug)]
+struct VictoryGameState;
+
+impl GameState for VictoryGameState {
+    fn run(&self, game: &mut Game) {
+        game.status = GameStatus::Victory;
+    }
+}
+
+#[derive(Debug)]
+struct DefeatGameState;
+
+impl GameState for DefeatGameState {
+    fn run(&self, game: &mut Game) {
+        game.status = GameStatus::Defeat;
+    }
+}
+
+#[derive(Debug)]
+struct RollCombatGameState;
+
+impl GameState for RollCombatGameState {
+    fn run(&self, game: &mut Game) {
+        if let Some(m) = game.combat_monsters_queue.pop() {
+            game.monsters = m;
+            game.state.push_state(CombatBeginGameState);
+        } else {
+            game.state.push_state(VictoryGameState);
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CombatBeginGameState;
+
+impl GameState for CombatBeginGameState {
+    fn run(&self, game: &mut Game) {
+        game.turn = 0;
+        game.should_add_extra_decay_status = false;
+
+        game.setup_combat_draw_pile();
+
+        // player pre-combat relic setup
+        game.trigger_relics_at_pre_combat();
+
+        // monster pre-combat setup
+        for i in 0..game.monsters.len() {
+            if !game.monsters[i].creature.is_alive() {
+                continue;
+            }
+            game.monsters[i]
+                .behavior
+                .pre_combat(&mut game.action_queue, CreatureRef::monster(i));
+        }
+
+        game.state.push_state(PlayerTurnBeginGameState);
+        game.state.push_state(RunActionsGameState);
+    }
+}
+
+#[derive(Debug)]
+struct PlayerTurnBeginGameState;
+
+impl GameState for PlayerTurnBeginGameState {
+    fn run(&self, game: &mut Game) {
+        if game.combat_finished() {
+            return;
+        }
+
+        game.monsters_roll_move();
+
+        game.num_cards_played_this_turn = 0;
+
+        game.player
+            .start_of_turn_lose_block(game.has_relic(RelicClass::Calipers));
+
+        if game.turn == 0 {
+            game.trigger_relics_at_combat_begin_pre_draw();
+        }
+        game.trigger_relics_at_turn_begin_pre_draw();
+        game.player
+            .trigger_statuses_turn_begin(CreatureRef::player(), &mut game.action_queue);
+
+        game.action_queue.push_bot(DrawAction(game.draw_per_turn));
+
+        if game.turn == 0 {
+            game.trigger_relics_at_combat_begin_post_draw();
+        }
+
+        game.trigger_relics_at_turn_begin_post_draw();
+        game.player
+            .trigger_statuses_turn_begin_post_draw(CreatureRef::player(), &mut game.action_queue);
+
+        game.action_queue.push_top(StartOfTurnEnergyAction());
+
+        game.state.push_state(PlayerTurnGameState);
+        game.state.push_state(RunActionsGameState);
+    }
+}
+
+#[derive(Debug)]
+struct PlayerTurnGameState;
+
+impl GameState for PlayerTurnGameState {
+    fn run(&self, game: &mut Game) {
+        if game.combat_finished() {
+            return;
+        }
+        game.state.push_state(PlayerTurnGameState);
+    }
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        if game.all_monsters_dead() {
+            return None;
+        }
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        moves.push(Box::new(EndTurnStep));
+        for (ci, c) in game.hand.iter().enumerate() {
+            if !game.can_play_card(&PlayCardAction::new(c.clone(), None, game)) {
+                continue;
+            }
+            let c = c.borrow();
+            if c.has_target() {
+                for (mi, m) in game.monsters.iter().enumerate() {
+                    if !m.creature.is_alive() {
+                        continue;
+                    }
+                    moves.push(Box::new(PlayCardStep {
+                        hand_index: ci,
+                        target: Some(mi),
+                    }));
+                }
+            } else {
+                moves.push(Box::new(PlayCardStep {
+                    hand_index: ci,
+                    target: None,
+                }));
+            }
+        }
+        for (pi, p) in game.potions.iter().enumerate() {
+            if let Some(p) = p {
+                moves.push(Box::new(DiscardPotionStep { potion_index: pi }));
+                if !p.can_use() {
+                    continue;
+                }
+                if p.has_target() {
+                    for (mi, m) in game.monsters.iter().enumerate() {
+                        if !m.creature.is_alive() {
+                            continue;
+                        }
+                        moves.push(Box::new(UsePotionStep {
+                            potion_index: pi,
+                            target: Some(mi),
+                        }));
+                    }
+                } else {
+                    moves.push(Box::new(UsePotionStep {
+                        potion_index: pi,
+                        target: None,
+                    }));
+                }
+            }
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Debug)]
+pub struct RemoveFromMasterGameState;
+
+impl GameState for RemoveFromMasterGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for (i, c) in game.master_deck.iter().enumerate() {
+            if c.borrow().class.can_remove_from_master_deck() {
+                moves.push(Box::new(RemoveFromMasterStep { master_index: i }));
+            }
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Debug)]
+pub struct TransformMasterGameState;
+
+impl GameState for TransformMasterGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for (i, c) in game.master_deck.iter().enumerate() {
+            if c.borrow().class.can_remove_from_master_deck() {
+                moves.push(Box::new(TransformMasterStep { master_index: i }));
+            }
+        }
+        Some(moves)
     }
 }
 
@@ -96,14 +411,13 @@ struct TransformMasterStep {
 
 impl Step for TransformMasterStep {
     fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::TransformCard);
         let class = game.master_deck.remove(self.master_index).borrow().class;
         let transformed = transformed(class, &mut game.rng);
         game.action_queue
             .push_bot(RemovedCardFromMasterDeckAction(class));
         game.action_queue
             .push_bot(AddCardToMasterDeckAction(transformed));
-        game.state.set_state(GameState::RunActions);
+        game.state.push_state(RunActionsGameState);
     }
 
     fn description(&self, game: &Game) -> String {
@@ -115,17 +429,16 @@ impl Step for TransformMasterStep {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub struct RemoveMasterStep {
+pub struct RemoveFromMasterStep {
     pub master_index: usize,
 }
 
-impl Step for RemoveMasterStep {
+impl Step for RemoveFromMasterStep {
     fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::RemoveCard);
         let c = game.master_deck.remove(self.master_index);
         game.action_queue
             .push_bot(RemovedCardFromMasterDeckAction(c.borrow().class));
-        game.state.set_state(GameState::RunActions);
+        game.state.push_state(RunActionsGameState);
     }
 
     fn description(&self, game: &Game) -> String {
@@ -138,8 +451,7 @@ pub struct EndTurnStep;
 
 impl Step for EndTurnStep {
     fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::PlayerTurn);
-        game.state.set_state(GameState::PlayerTurnEnd);
+        game.state.push_state(PlayerTurnEndGameState);
     }
 
     fn description(&self, _: &Game) -> String {
@@ -155,13 +467,12 @@ pub struct UsePotionStep {
 
 impl Step for UsePotionStep {
     fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::PlayerTurn);
         let p = game.take_potion(self.potion_index);
         game.action_queue.push_bot(UsePotionAction {
             potion: p,
             target: self.target.map(CreatureRef::monster),
         });
-        game.state.push_state(GameState::RunActions);
+        game.state.push_state(RunActionsGameState);
     }
 
     fn description(&self, game: &Game) -> String {
@@ -188,7 +499,6 @@ pub struct DiscardPotionStep {
 
 impl Step for DiscardPotionStep {
     fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::PlayerTurn);
         game.take_potion(self.potion_index);
     }
 
@@ -209,12 +519,11 @@ pub struct PlayCardStep {
 
 impl Step for PlayCardStep {
     fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::PlayerTurn);
         let c = game.hand.remove(self.hand_index);
         let action = PlayCardAction::new(c, self.target.map(CreatureRef::monster), game);
         assert!(game.can_play_card(&action));
         game.card_queue.push(action);
-        game.state.push_state(GameState::RunActions);
+        game.state.push_state(RunActionsGameState);
     }
 
     fn description(&self, game: &Game) -> String {
@@ -234,421 +543,11 @@ impl Step for PlayCardStep {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
-pub struct ArmamentsStep {
-    pub hand_index: usize,
-}
-
-impl Step for ArmamentsStep {
-    fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::Armaments);
-        game.action_queue
-            .push_top(UpgradeAction(game.hand[self.hand_index].clone()));
-        game.state.pop_state();
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "upgrade card {} ({:?})",
-            self.hand_index,
-            game.hand[self.hand_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct PlaceCardInHandOnTopOfDrawStep {
-    pub hand_index: usize,
-}
-
-impl Step for PlaceCardInHandOnTopOfDrawStep {
-    fn run(&self, game: &mut Game) {
-        assert_matches!(
-            game.state.cur_state(),
-            GameState::PlaceCardInHandOnTopOfDraw
-        );
-        game.action_queue.push_top(PlaceCardOnTopOfDrawAction(
-            game.hand.remove(self.hand_index),
-        ));
-        game.state.pop_state();
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "place card on top of draw {} ({:?})",
-            self.hand_index,
-            game.hand[self.hand_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct PlaceCardInDiscardOnTopOfDrawStep {
-    pub discard_index: usize,
-}
-
-impl Step for PlaceCardInDiscardOnTopOfDrawStep {
-    fn run(&self, game: &mut Game) {
-        assert_matches!(
-            game.state.cur_state(),
-            GameState::PlaceCardInDiscardOnTopOfDraw
-        );
-        game.action_queue.push_top(PlaceCardOnTopOfDrawAction(
-            game.discard_pile.remove(self.discard_index),
-        ));
-        game.state.pop_state();
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "place card on top of draw {} ({:?})",
-            self.discard_index,
-            game.discard_pile[self.discard_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct ExhaustOneCardInHandStep {
-    pub hand_index: usize,
-}
-
-impl Step for ExhaustOneCardInHandStep {
-    fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::ExhaustOneCardInHand);
-        game.action_queue
-            .push_top(ExhaustCardAction(game.hand.remove(self.hand_index)));
-        game.state.pop_state();
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "exhaust {} ({:?})",
-            self.hand_index,
-            game.hand[self.hand_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct DualWieldStep {
-    pub hand_index: usize,
-}
-
-impl Step for DualWieldStep {
-    fn run(&self, game: &mut Game) {
-        let amount = match game.state.cur_state() {
-            GameState::DualWield(amount) => *amount,
-            _ => panic!(),
-        };
-        game.action_queue.push_top(DualWieldAction {
-            card: game.hand.remove(self.hand_index),
-            amount,
-            destroy_original: true,
-        });
-        game.state.pop_state();
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "dual wield {} ({:?})",
-            self.hand_index,
-            game.hand[self.hand_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct ExhumeStep {
-    pub exhaust_index: usize,
-}
-
-impl Step for ExhumeStep {
-    fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::Exhume);
-        game.action_queue.push_top(PlaceCardInHandAction(
-            game.exhaust_pile.remove(self.exhaust_index),
-        ));
-        game.state.pop_state();
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "exhaust {} ({:?})",
-            self.exhaust_index,
-            game.exhaust_pile[self.exhaust_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct FetchFromDrawStep {
-    pub draw_index: usize,
-}
-
-impl Step for FetchFromDrawStep {
-    fn run(&self, game: &mut Game) {
-        assert!(matches!(
-            game.state.cur_state(),
-            GameState::FetchCardFromDraw(_)
-        ));
-        let c = game.draw_pile.take(self.draw_index);
-        game.action_queue.push_top(PlaceCardInHandAction(c));
-        game.state.pop_state();
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "fetch {} ({:?})",
-            self.draw_index,
-            game.draw_pile.get(self.draw_index).borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct MemoriesStep {
-    pub discard_index: usize,
-}
-
-impl Step for MemoriesStep {
-    fn run(&self, game: &mut Game) {
-        match game.state.cur_state_mut() {
-            GameState::Memories {
-                num_cards_remaining,
-            } => {
-                *num_cards_remaining -= 1;
-                game.chosen_cards
-                    .push(game.discard_pile.remove(self.discard_index));
-                if *num_cards_remaining == 0 {
-                    game.memories_cards();
-                }
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "memories {} ({:?})",
-            self.discard_index,
-            game.discard_pile[self.discard_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct ExhaustCardsInHandStep {
-    pub hand_index: usize,
-}
-
-impl Step for ExhaustCardsInHandStep {
-    fn run(&self, game: &mut Game) {
-        match game.state.cur_state_mut() {
-            GameState::ExhaustCardsInHand {
-                num_cards_remaining,
-            } => {
-                *num_cards_remaining -= 1;
-                game.chosen_cards.push(game.hand.remove(self.hand_index));
-                if *num_cards_remaining == 0 || game.hand.is_empty() {
-                    game.exhaust_cards();
-                }
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "exhaust {} ({:?})",
-            self.hand_index,
-            game.hand[self.hand_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct ExhaustCardsInHandEndStep;
-
-impl Step for ExhaustCardsInHandEndStep {
-    fn run(&self, game: &mut Game) {
-        game.exhaust_cards();
-    }
-
-    fn description(&self, _: &Game) -> String {
-        "end exhaust cards".to_owned()
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct GambleStep {
-    pub hand_index: usize,
-}
-
-impl Step for GambleStep {
-    fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::Gamble);
-        game.chosen_cards.push(game.hand.remove(self.hand_index));
-        if game.hand.is_empty() {
-            game.gamble_cards();
-        }
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "gamble {} ({:?})",
-            self.hand_index,
-            game.hand[self.hand_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct GambleEndStep;
-
-impl Step for GambleEndStep {
-    fn run(&self, game: &mut Game) {
-        game.gamble_cards();
-    }
-
-    fn description(&self, _: &Game) -> String {
-        "end gamble cards".to_owned()
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-struct ForethoughtOneStep {
-    hand_index: usize,
-}
-
-impl Step for ForethoughtOneStep {
-    fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::ForethoughtOne);
-        game.action_queue
-            .push_top(ForethoughtAction(game.hand.remove(self.hand_index)));
-        game.state.pop_state();
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "forethought {} ({:?})",
-            self.hand_index,
-            game.hand[self.hand_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct ForethoughtAnyStep {
-    pub hand_index: usize,
-}
-
-impl Step for ForethoughtAnyStep {
-    fn run(&self, game: &mut Game) {
-        assert_matches!(game.state.cur_state(), GameState::ForethoughtAny);
-        game.chosen_cards.push(game.hand.remove(self.hand_index));
-        if game.hand.is_empty() {
-            game.forethought_cards();
-        }
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "forethought {} ({:?})",
-            self.hand_index,
-            game.hand[self.hand_index].borrow()
-        )
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct ForethoughtAnyEndStep;
-
-impl Step for ForethoughtAnyEndStep {
-    fn run(&self, game: &mut Game) {
-        game.forethought_cards();
-    }
-
-    fn description(&self, _: &Game) -> String {
-        "end forethought cards".to_owned()
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct NilrysStep {
-    pub class: CardClass,
-}
-
-impl Step for NilrysStep {
-    fn run(&self, game: &mut Game) {
-        match game.state.cur_state() {
-            &GameState::Nilrys { .. } => {
-                game.action_queue.push_top(ShuffleCardIntoDrawAction {
-                    class: self.class,
-                    is_free: false,
-                });
-                game.state.pop_state();
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    fn description(&self, _: &Game) -> String {
-        format!("nilrys {:?}", self.class)
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct NilrysSkipStep;
-
-impl Step for NilrysSkipStep {
-    fn run(&self, game: &mut Game) {
-        match game.state.cur_state() {
-            &GameState::Nilrys { .. } => {
-                game.state.pop_state();
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    fn description(&self, _: &Game) -> String {
-        "nilrys skip".to_owned()
-    }
-}
-#[derive(Eq, PartialEq, Debug)]
-struct DiscoveryStep {
-    class: CardClass,
-}
-
-impl Step for DiscoveryStep {
-    fn run(&self, game: &mut Game) {
-        match game.state.cur_state() {
-            &GameState::Discovery {
-                amount, is_free, ..
-            } => {
-                game.action_queue.push_top(DiscoveryAction {
-                    class: self.class,
-                    amount,
-                    is_free,
-                });
-                game.state.pop_state();
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    fn description(&self, _: &Game) -> String {
-        format!("discovery {:?}", self.class)
-    }
-}
-
 #[derive(Debug)]
 pub enum GameStatus {
     Defeat,
     Victory,
     Combat,
-    ExhaustCardsInHand { num_cards_remaining: i32 },
-    Memories { num_cards_remaining: i32 },
 }
 
 #[derive(Default)]
@@ -724,13 +623,8 @@ impl GameBuilder {
     }
     #[cfg(test)]
     pub fn build_combat(self) -> Game {
-        use crate::state::GameState;
-
         let monster_statuses = self.monster_statuses.clone();
-        let mut g = self.build();
-        g.state.set_state(GameState::Victory);
-        g.state.push_state(GameState::RollCombat);
-        g.run();
+        let mut g = self.build_impl(TestCombatStartGameState);
         for m in &mut g.monsters {
             for (&k, &v) in &monster_statuses {
                 m.creature.set_status(k, v);
@@ -738,7 +632,10 @@ impl GameBuilder {
         }
         g
     }
-    pub fn build(mut self) -> Game {
+    pub fn build(self) -> Game {
+        self.build_impl(GameStartGameState)
+    }
+    fn build_impl<T: GameState + 'static>(mut self, start_state: T) -> Game {
         if self.monsters.is_empty() {
             self = self.add_monster(NoopMonster::new());
         }
@@ -752,6 +649,8 @@ impl GameBuilder {
         if let Some(hp) = self.player_hp {
             g.player.cur_hp = hp;
         }
+        g.state.push_state(start_state);
+        g.run();
         g
     }
 }
@@ -777,41 +676,52 @@ macro_rules! trigger_card {
 }
 
 pub struct Game {
+    pub rng: Rand,
+
+    pub action_queue: ActionQueue,
+    pub state: GameStateManager,
+    pub status: GameStatus,
+    valid_steps: Option<Box<dyn GameState>>,
+
     pub map: Map,
     pub player: Creature,
     pub relics: Vec<Relic>,
     pub potions: Vec<Option<Potion>>,
     pub gold: i32,
-    pub monsters: Vec<Monster>,
-    pub master_deck: CardPile,
-    pub turn: i32,
-    pub energy: i32,
     pub draw_per_turn: i32,
+    pub master_deck: CardPile,
+    next_id: u32,
+    pub combat_monsters_queue: Vec<Vec<Monster>>,
+
+    pub turn: i32,
+    pub monsters: Vec<Monster>,
+    pub energy: i32,
     pub draw_pile: DrawPile<CardRef>,
     pub hand: CardPile,
     pub discard_pile: CardPile,
     pub exhaust_pile: CardPile,
     pub cur_card: Option<CardRef>,
-    pub action_queue: ActionQueue,
     pub card_queue: Vec<PlayCardAction>,
     pub monster_queue: Vec<CreatureRef>,
     pub should_add_extra_decay_status: bool,
     pub num_cards_played_this_turn: i32,
     pub num_times_took_damage: i32,
-    pub combat_monsters_queue: Vec<Vec<Monster>>,
-    pub rng: Rand,
-    pub state: GameStateManager,
     pub chosen_cards: Vec<CardRef>,
-    next_id: u32,
 }
 
 impl Game {
     pub const MAX_HAND_SIZE: i32 = 10;
 
-    fn new(mut rng: Rand, master_deck: &[(CardClass, bool)], monsters: Vec<Monster>) -> Self {
+    fn new(
+        mut rng: Rand,
+        // start_state: Box<dyn GameState>,
+        master_deck: &[(CardClass, bool)],
+        monsters: Vec<Monster>,
+    ) -> Self {
         let map = Map::generate(&mut rng);
         let mut g = Self {
             map,
+            valid_steps: Default::default(),
             player: Creature::new("Ironclad", 80),
             relics: Default::default(),
             monsters: Default::default(),
@@ -834,9 +744,10 @@ impl Game {
             num_times_took_damage: 0,
             combat_monsters_queue: vec![monsters],
             rng,
-            state: GameStateManager::new(GameState::Blessing),
+            state: Default::default(),
             chosen_cards: Default::default(),
             next_id: 1,
+            status: GameStatus::Combat,
         };
 
         for (c, u) in master_deck {
@@ -1142,7 +1053,7 @@ impl Game {
         }
 
         if !self.get_creature(target).is_alive() && target.is_player() {
-            self.state.push_state(GameState::Defeat);
+            self.state.push_state(DefeatGameState);
         }
     }
 
@@ -1165,230 +1076,22 @@ impl Game {
         }
     }
 
-    fn run_once(&mut self) {
-        match self.state.cur_state() {
-            GameState::RunActions => {
-                self.run_actions_until_empty();
-            }
-            GameState::RollCombat => {
-                if let Some(m) = self.combat_monsters_queue.pop() {
-                    self.monsters = m;
-                    self.state.set_state(GameState::CombatBegin);
-                } else {
-                    self.state.set_state(GameState::Victory);
-                }
-            }
-            GameState::CombatBegin => {
-                self.turn = 0;
-                self.should_add_extra_decay_status = false;
-
-                self.setup_combat_draw_pile();
-
-                // player pre-combat relic setup
-                self.trigger_relics_at_pre_combat();
-
-                // monster pre-combat setup
-                for i in 0..self.monsters.len() {
-                    if !self.monsters[i].creature.is_alive() {
-                        continue;
-                    }
-                    self.monsters[i]
-                        .behavior
-                        .pre_combat(&mut self.action_queue, CreatureRef::monster(i));
-                }
-
-                self.state.set_state(GameState::PlayerTurnBegin);
-                self.state.push_state(GameState::RunActions);
-            }
-            GameState::PlayerTurnBegin => {
-                if self.combat_finished() {
-                    return;
-                }
-
-                self.monsters_roll_move();
-
-                self.num_cards_played_this_turn = 0;
-
-                self.player
-                    .start_of_turn_lose_block(self.has_relic(RelicClass::Calipers));
-
-                if self.turn == 0 {
-                    self.trigger_relics_at_combat_begin_pre_draw();
-                }
-                self.trigger_relics_at_turn_begin_pre_draw();
-                self.player
-                    .trigger_statuses_turn_begin(CreatureRef::player(), &mut self.action_queue);
-
-                self.action_queue.push_bot(DrawAction(self.draw_per_turn));
-
-                if self.turn == 0 {
-                    self.trigger_relics_at_combat_begin_post_draw();
-                }
-
-                self.trigger_relics_at_turn_begin_post_draw();
-                self.player.trigger_statuses_turn_begin_post_draw(
-                    CreatureRef::player(),
-                    &mut self.action_queue,
-                );
-
-                self.action_queue.push_top(StartOfTurnEnergyAction());
-
-                self.state.set_state(GameState::PlayerTurn);
-                self.state.push_state(GameState::RunActions);
-            }
-            GameState::PlayerTurnEnd => {
-                if self.combat_finished() {
-                    return;
-                }
-                self.should_add_extra_decay_status = true;
-                self.trigger_relics_at_turn_end();
-                self.player
-                    .trigger_statuses_turn_end(CreatureRef::player(), &mut self.action_queue);
-
-                self.trigger_end_of_turn_cards_in_hand();
-
-                self.action_queue.push_bot(EndOfTurnDiscardAction());
-                self.state.set_state(GameState::MonsterTurn);
-                self.state.push_state(GameState::RunActions);
-            }
-            GameState::MonsterTurn => {
-                if self.combat_finished() {
-                    return;
-                }
-                self.monsters_pre_turn();
-                for m in self.get_alive_monsters() {
-                    self.monster_queue.push(m);
-                }
-
-                self.state.set_state(GameState::EndOfRound);
-                self.state.push_state(GameState::RunActions);
-            }
-            GameState::EndOfRound => {
-                if self.combat_finished() {
-                    return;
-                }
-                self.should_add_extra_decay_status = false;
-                self.monsters_end_turn();
-                self.player
-                    .trigger_statuses_round_end(CreatureRef::player(), &mut self.action_queue);
-                for (i, m) in self.monsters.iter_mut().enumerate() {
-                    m.creature.trigger_statuses_round_end(
-                        CreatureRef::monster(i),
-                        &mut self.action_queue,
-                    );
-                }
-                self.state.set_state(GameState::PlayerTurnBegin);
-                self.state.push_state(GameState::RunActions);
-                self.turn += 1;
-            }
-            GameState::CombatEnd => {
-                self.trigger_relics_at_combat_finish();
-                self.state.set_state(GameState::ResetCombat);
-                self.state.push_state(GameState::RunActions);
-            }
-            GameState::ResetCombat => {
-                self.monsters.clear();
-                self.player.clear_all_status();
-                self.num_cards_played_this_turn = 0;
-                self.num_times_took_damage = 0;
-                self.energy = 0;
-                self.turn = 0;
-                self.clear_all_piles();
-                self.state.set_state(GameState::RollCombat);
-            }
-            GameState::Victory
-            | GameState::Defeat
-            | GameState::PlayerTurn
-            | GameState::Blessing
-            | GameState::TransformCard
-            | GameState::RemoveCard
-            | GameState::Armaments
-            | GameState::PlaceCardInHandOnTopOfDraw
-            | GameState::PlaceCardInDiscardOnTopOfDraw
-            | GameState::ExhaustOneCardInHand
-            | GameState::ExhaustCardsInHand { .. }
-            | GameState::Memories { .. }
-            | GameState::Gamble { .. }
-            | GameState::Exhume
-            | GameState::DualWield(_)
-            | GameState::FetchCardFromDraw(_)
-            | GameState::ForethoughtAny { .. }
-            | GameState::ForethoughtOne
-            | GameState::Nilrys { .. }
-            | GameState::Discovery { .. } => {
-                println!("{:?}", self.state);
-                unreachable!()
-            }
-        }
-    }
-
     fn run(&mut self) {
-        while !matches!(
-            self.state.cur_state(),
-            GameState::Defeat | GameState::Victory
-        ) && !self.in_waiting_for_move_state()
+        assert!(!matches!(
+            self.status,
+            GameStatus::Defeat | GameStatus::Victory
+        ));
+        assert!(!self.state.is_empty());
+
+        while !matches!(self.status, GameStatus::Defeat | GameStatus::Victory)
+            && let Some(state) = self.state.pop_state()
         {
-            self.run_once();
-            if matches!(self.state.cur_state(), GameState::PlayerTurn) {
-                self.combat_finished();
-            }
-        }
-    }
-
-    fn in_waiting_for_move_state(&self) -> bool {
-        matches!(
-            self.state.cur_state(),
-            GameState::Blessing
-                | GameState::PlayerTurn
-                | GameState::Armaments
-                | GameState::ExhaustCardsInHand { .. }
-                | GameState::FetchCardFromDraw(..)
-                | GameState::Memories { .. }
-                | GameState::PlaceCardInHandOnTopOfDraw
-                | GameState::PlaceCardInDiscardOnTopOfDraw
-                | GameState::ExhaustOneCardInHand
-                | GameState::ForethoughtAny { .. }
-                | GameState::ForethoughtOne
-                | GameState::Gamble { .. }
-                | GameState::Exhume
-                | GameState::DualWield(_)
-                | GameState::Nilrys { .. }
-                | GameState::Discovery { .. }
-                | GameState::Victory
-                | GameState::Defeat
-        )
-    }
-
-    fn run_actions_until_empty(&mut self) {
-        loop {
-            if self.in_waiting_for_move_state() {
-                return;
-            }
-            if let Some(a) = self.action_queue.pop() {
-                a.run(self);
-            } else if !self.card_queue.is_empty() {
-                let play = self.card_queue.remove(0);
-                if self.all_monsters_dead() {
-                    continue;
-                }
-                if self.can_play_card(&play) {
-                    self.action_queue.push_bot(play);
-                } else if !play.is_duplicated {
-                    self.action_queue.push_bot(DiscardCardAction(play.card));
-                }
-            } else if !self.monster_queue.is_empty() {
-                let monster = self.monster_queue.remove(0);
-                if !self.get_creature(monster).is_alive() {
-                    continue;
-                }
-                self.monsters[monster.monster_index()]
-                    .behavior
-                    .take_turn(monster, &mut self.action_queue);
-            } else {
+            state.run(self);
+            if state.valid_steps(self).is_some() {
+                self.valid_steps = Some(state);
                 break;
             }
         }
-        self.state.pop_state();
     }
 
     fn trigger_end_of_turn_cards_in_hand(&mut self) {
@@ -1451,63 +1154,29 @@ impl Game {
         self.run_action(AddCardToMasterDeckAction(class));
     }
 
-    pub fn result(&self) -> GameStatus {
-        match self.state.cur_state() {
-            GameState::Victory => GameStatus::Victory,
-            GameState::Defeat => GameStatus::Defeat,
-            &GameState::Memories {
-                num_cards_remaining,
-                ..
-            } => GameStatus::Memories {
-                num_cards_remaining,
-            },
-            &GameState::ExhaustCardsInHand {
-                num_cards_remaining,
-                ..
-            } => GameStatus::ExhaustCardsInHand {
-                num_cards_remaining,
-            },
-            _ => GameStatus::Combat,
-        }
-    }
-
-    fn memories_cards(&mut self) {
-        while let Some(c) = self.chosen_cards.pop() {
-            self.action_queue.push_top(MemoriesAction(c));
-        }
-        self.state.pop_state();
-    }
-
-    fn exhaust_cards(&mut self) {
-        while let Some(c) = self.chosen_cards.pop() {
-            self.action_queue.push_top(ExhaustCardAction(c));
-        }
-        self.state.pop_state();
-    }
-
-    fn gamble_cards(&mut self) {
-        let count = self.chosen_cards.len() as i32;
-        self.action_queue.push_top(DrawAction(count));
-        while let Some(c) = self.chosen_cards.pop() {
-            self.action_queue.push_top(DiscardCardAction(c));
-        }
-        self.state.pop_state();
-    }
-
-    fn forethought_cards(&mut self) {
-        while !self.chosen_cards.is_empty() {
-            self.action_queue
-                .push_top(ForethoughtAction(self.chosen_cards.remove(0)));
-        }
-        self.state.pop_state();
+    #[cfg(test)]
+    pub fn step_test_no_check_valid<T: Step>(&mut self, step: T) {
+        self.step_impl(Box::new(step))
     }
 
     #[cfg(test)]
     pub fn step_test<T: Step>(&mut self, step: T) {
-        self.step(Box::new(step))
+        let step = Box::new(step) as Box<dyn Step>;
+        let valid_steps = self.valid_steps();
+        if !valid_steps.contains(&step) {
+            dbg!(&step);
+            dbg!(&valid_steps);
+            panic!();
+        }
+        self.step_impl(step)
     }
 
-    pub fn step(&mut self, step: Box<dyn Step>) {
+    pub fn step(&mut self, step_index: usize) {
+        let step = self.valid_steps().remove(step_index);
+        self.step_impl(step);
+    }
+
+    fn step_impl(&mut self, step: Box<dyn Step>) {
         step.run(self);
         self.run();
     }
@@ -1560,173 +1229,11 @@ impl Game {
     }
 
     pub fn valid_steps(&self) -> Vec<Box<dyn Step>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
-        match self.state.cur_state() {
-            GameState::Blessing => {
-                moves.push(Box::new(ChooseBlessingStep(Blessing::GainMaxHPSmall)));
-                moves.push(Box::new(ChooseBlessingStep(Blessing::CommonRelic)));
-                moves.push(Box::new(ChooseBlessingStep(Blessing::RemoveRelic)));
-                moves.push(Box::new(ChooseBlessingStep(Blessing::TransformOne)));
-                moves.push(Box::new(ChooseBlessingStep(Blessing::RemoveOne)));
-                moves.push(Box::new(ChooseBlessingStep(
-                    Blessing::RandomUncommonColorless,
-                )));
-                moves.push(Box::new(ChooseBlessingStep(Blessing::RandomPotion)));
-            }
-            GameState::TransformCard => {
-                for (i, c) in self.master_deck.iter().enumerate() {
-                    if c.borrow().class.can_remove_from_master_deck() {
-                        moves.push(Box::new(TransformMasterStep { master_index: i }));
-                    }
-                }
-            }
-            GameState::RemoveCard => {
-                for (i, c) in self.master_deck.iter().enumerate() {
-                    if c.borrow().class.can_remove_from_master_deck() {
-                        moves.push(Box::new(RemoveMasterStep { master_index: i }));
-                    }
-                }
-            }
-            GameState::PlayerTurn => {
-                moves.push(Box::new(EndTurnStep));
-                for (ci, c) in self.hand.iter().enumerate() {
-                    if !self.can_play_card(&PlayCardAction::new(c.clone(), None, self)) {
-                        continue;
-                    }
-                    let c = c.borrow();
-                    if c.has_target() {
-                        for (mi, m) in self.monsters.iter().enumerate() {
-                            if !m.creature.is_alive() {
-                                continue;
-                            }
-                            moves.push(Box::new(PlayCardStep {
-                                hand_index: ci,
-                                target: Some(mi),
-                            }));
-                        }
-                    } else {
-                        moves.push(Box::new(PlayCardStep {
-                            hand_index: ci,
-                            target: None,
-                        }));
-                    }
-                }
-                for (pi, p) in self.potions.iter().enumerate() {
-                    if let Some(p) = p {
-                        moves.push(Box::new(DiscardPotionStep { potion_index: pi }));
-                        if !p.can_use() {
-                            continue;
-                        }
-                        if p.has_target() {
-                            for (mi, m) in self.monsters.iter().enumerate() {
-                                if !m.creature.is_alive() {
-                                    continue;
-                                }
-                                moves.push(Box::new(UsePotionStep {
-                                    potion_index: pi,
-                                    target: Some(mi),
-                                }));
-                            }
-                        } else {
-                            moves.push(Box::new(UsePotionStep {
-                                potion_index: pi,
-                                target: None,
-                            }));
-                        }
-                    }
-                }
-            }
-            GameState::Armaments => {
-                for (i, c) in self.hand.iter().enumerate() {
-                    if c.borrow().can_upgrade() {
-                        moves.push(Box::new(ArmamentsStep { hand_index: i }));
-                    }
-                }
-            }
-            GameState::ForethoughtOne => {
-                for i in 0..self.hand.len() {
-                    moves.push(Box::new(ForethoughtOneStep { hand_index: i }));
-                }
-            }
-            GameState::ForethoughtAny { .. } => {
-                moves.push(Box::new(ForethoughtAnyEndStep));
-                for c in 0..self.hand.len() {
-                    moves.push(Box::new(ForethoughtAnyStep { hand_index: c }));
-                }
-            }
-            GameState::PlaceCardInHandOnTopOfDraw => {
-                for i in 0..self.hand.len() {
-                    moves.push(Box::new(PlaceCardInHandOnTopOfDrawStep { hand_index: i }));
-                }
-            }
-            GameState::PlaceCardInDiscardOnTopOfDraw => {
-                for i in 0..self.discard_pile.len() {
-                    moves.push(Box::new(PlaceCardInDiscardOnTopOfDrawStep {
-                        discard_index: i,
-                    }));
-                }
-            }
-            GameState::ExhaustOneCardInHand => {
-                for i in 0..self.hand.len() {
-                    moves.push(Box::new(ExhaustOneCardInHandStep { hand_index: i }));
-                }
-            }
-            GameState::Exhume => {
-                for (i, c) in self.exhaust_pile.iter().enumerate() {
-                    if c.borrow().class != CardClass::Exhume {
-                        moves.push(Box::new(ExhumeStep { exhaust_index: i }));
-                    }
-                }
-            }
-            GameState::DualWield(_) => {
-                for (i, c) in self.hand.iter().enumerate() {
-                    if can_dual_wield(c) {
-                        moves.push(Box::new(DualWieldStep { hand_index: i }));
-                    }
-                }
-            }
-            GameState::FetchCardFromDraw(ty) => {
-                for (i, c) in self.draw_pile.get_all().iter().enumerate() {
-                    if c.borrow().class.ty() == *ty {
-                        moves.push(Box::new(FetchFromDrawStep { draw_index: i }));
-                    }
-                }
-            }
-            GameState::ExhaustCardsInHand { .. } => {
-                moves.push(Box::new(ExhaustCardsInHandEndStep));
-                for c in 0..self.hand.len() {
-                    moves.push(Box::new(ExhaustCardsInHandStep { hand_index: c }));
-                }
-            }
-            GameState::Memories { .. } => {
-                for c in 0..self.discard_pile.len() {
-                    moves.push(Box::new(MemoriesStep { discard_index: c }));
-                }
-            }
-            GameState::Gamble { .. } => {
-                moves.push(Box::new(GambleEndStep));
-                for c in 0..self.hand.len() {
-                    moves.push(Box::new(GambleStep { hand_index: c }));
-                }
-            }
-            GameState::Nilrys { classes, .. } => {
-                moves.push(Box::new(NilrysSkipStep));
-                for &class in classes {
-                    moves.push(Box::new(NilrysStep { class }))
-                }
-            }
-            GameState::Discovery { classes, .. } => {
-                for &class in classes {
-                    moves.push(Box::new(DiscoveryStep { class }))
-                }
-            }
-            _ => {
-                println!("{:?}", self.state);
-                panic!();
-            }
-        }
-        assert!(!moves.is_empty());
-        moves
+        self.valid_steps
+            .as_ref()
+            .unwrap()
+            .valid_steps(self)
+            .unwrap()
     }
 
     #[cfg(test)]
@@ -1749,9 +1256,8 @@ impl Game {
         assert!(self.monster_queue.is_empty());
     }
 
-    #[cfg(test)]
     pub fn run_all_actions(&mut self) {
-        self.state.push_state(GameState::RunActions);
+        self.state.push_state(RunActionsGameState);
         self.run();
     }
 
@@ -1769,10 +1275,10 @@ impl Game {
 
     #[cfg(test)]
     fn play_card_impl(&mut self, card: CardRef, target: Option<CreatureRef>) {
+        self.assert_no_actions();
         let action = PlayCardAction::new(card, target, self);
         assert!(self.can_play_card(&action));
         self.card_queue.push(action);
-        assert_matches!(self.state.cur_state(), GameState::PlayerTurn);
         self.run_all_actions();
     }
 
@@ -1790,8 +1296,10 @@ impl Game {
 
     #[cfg(test)]
     pub fn add_card_to_hand(&mut self, class: CardClass) {
+        use crate::actions::place_card_in_hand::PlaceCardInHandAction;
+
         let card = self.new_card(class);
-        self.hand.push(card);
+        self.run_action(PlaceCardInHandAction(card));
     }
 
     #[cfg(test)]
@@ -1803,20 +1311,26 @@ impl Game {
 
     #[cfg(test)]
     pub fn add_card_to_hand_upgraded(&mut self, class: CardClass) {
+        use crate::actions::place_card_in_hand::PlaceCardInHandAction;
+
         let card = self.new_card_upgraded(class);
-        self.hand.push(card);
+        self.run_action(PlaceCardInHandAction(card));
     }
 
     #[cfg(test)]
     pub fn add_card_to_draw_pile(&mut self, class: CardClass) {
+        use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
+
         let card = self.new_card(class);
-        self.draw_pile.push_top(card);
+        self.run_action(PlaceCardOnTopOfDrawAction(card));
     }
 
     #[cfg(test)]
     pub fn add_card_to_draw_pile_upgraded(&mut self, class: CardClass) {
+        use crate::actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction;
+
         let card = self.new_card_upgraded(class);
-        self.draw_pile.push_top(card);
+        self.run_action(PlaceCardOnTopOfDrawAction(card));
     }
 
     #[cfg(test)]
@@ -1829,7 +1343,7 @@ impl Game {
     #[cfg(test)]
     pub fn add_card_to_discard_pile(&mut self, class: CardClass) {
         let card = self.new_card(class);
-        self.discard_pile.push(card);
+        self.run_action(DiscardCardAction(card));
     }
 
     #[cfg(test)]
@@ -1841,8 +1355,10 @@ impl Game {
 
     #[cfg(test)]
     pub fn add_card_to_exhaust_pile(&mut self, class: CardClass) {
+        use crate::actions::exhaust_card::ExhaustCardAction;
+
         let card = self.new_card(class);
-        self.exhaust_pile.push(card);
+        self.run_action(ExhaustCardAction(card));
     }
 
     #[cfg(test)]
@@ -1857,6 +1373,7 @@ impl Game {
     }
 
     pub fn clear_all_piles(&mut self) {
+        self.assert_no_actions();
         self.hand.clear();
         self.discard_pile.clear();
         self.draw_pile.clear();
@@ -1873,7 +1390,7 @@ impl Game {
 
     fn combat_finished(&mut self) -> bool {
         if self.all_monsters_dead() {
-            self.state.set_state(GameState::CombatEnd);
+            self.state.push_state(CombatEndGameState);
             return true;
         }
         false
@@ -1916,19 +1433,11 @@ impl Game {
         self.heal(CreatureRef::player(), amount);
     }
 
+    #[cfg(test)]
     pub fn add_potion(&mut self, potion: Potion) {
-        if self.has_relic(RelicClass::Sozu) {
-            return;
-        }
-        let mut added = false;
-        for p in &mut self.potions {
-            if p.is_none() {
-                *p = Some(potion);
-                added = true;
-                break;
-            }
-        }
-        assert!(added);
+        use crate::actions::gain_potion::GainPotionAction;
+
+        self.run_action(GainPotionAction(potion));
     }
     pub fn take_potion(&mut self, i: usize) -> Potion {
         let p = self.potions[i].unwrap();
@@ -1941,15 +1450,13 @@ impl Game {
         let mut r = new_relic(class);
         r.on_equip(&mut self.action_queue);
         self.relics.push(r);
-        self.state.push_state(GameState::RunActions);
-        self.run();
+        self.run_all_actions();
     }
     pub fn remove_relic(&mut self, class: RelicClass) {
         let idx = self.relics.iter().position(|r| r.get_class() == class);
         let mut r = self.relics.remove(idx.unwrap());
         r.on_unequip(&mut self.action_queue);
-        self.state.push_state(GameState::RunActions);
-        self.run();
+        self.run_all_actions();
     }
     pub fn has_relic(&self, class: RelicClass) -> bool {
         self.relics.iter().any(|r| r.get_class() == class)
@@ -1994,7 +1501,8 @@ impl Game {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::block::BlockAction, monsters::test::AttackMonster, potion::Potion, step::step_eq,
+        actions::block::BlockAction, assert_matches, monsters::test::AttackMonster, potion::Potion,
+        step::step_eq,
     };
 
     use super::*;
@@ -2195,7 +1703,7 @@ mod tests {
             .add_monster(AttackMonster::new(999))
             .build_combat();
         g.step_test(EndTurnStep);
-        assert_matches!(g.result(), GameStatus::Defeat);
+        assert_matches!(g.status, GameStatus::Defeat);
     }
 
     #[test]

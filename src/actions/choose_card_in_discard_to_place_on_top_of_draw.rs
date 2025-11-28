@@ -1,6 +1,6 @@
 use crate::{
     action::Action, actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction, game::Game,
-    state::GameState,
+    state::GameState, step::Step,
 };
 
 pub struct ChooseCardInDiscardToPlaceOnTopOfDrawAction();
@@ -14,7 +14,7 @@ impl Action for ChooseCardInDiscardToPlaceOnTopOfDrawAction {
                 .push_top(PlaceCardOnTopOfDrawAction(game.discard_pile.pop().unwrap())),
             _ => game
                 .state
-                .push_state(GameState::PlaceCardInDiscardOnTopOfDraw),
+                .push_state(ChooseCardInDiscardToPlaceOnTopOfDrawGameState),
         }
     }
 }
@@ -22,5 +22,41 @@ impl Action for ChooseCardInDiscardToPlaceOnTopOfDrawAction {
 impl std::fmt::Debug for ChooseCardInDiscardToPlaceOnTopOfDrawAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "move one card in discard on top of draw")
+    }
+}
+
+#[derive(Debug)]
+struct ChooseCardInDiscardToPlaceOnTopOfDrawGameState;
+
+impl GameState for ChooseCardInDiscardToPlaceOnTopOfDrawGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for i in 0..game.discard_pile.len() {
+            moves.push(Box::new(PlaceCardInDiscardOnTopOfDrawStep {
+                discard_index: i,
+            }));
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct PlaceCardInDiscardOnTopOfDrawStep {
+    pub discard_index: usize,
+}
+
+impl Step for PlaceCardInDiscardOnTopOfDrawStep {
+    fn run(&self, game: &mut Game) {
+        game.action_queue.push_top(PlaceCardOnTopOfDrawAction(
+            game.discard_pile.remove(self.discard_index),
+        ));
+    }
+
+    fn description(&self, game: &Game) -> String {
+        format!(
+            "place card on top of draw {} ({:?})",
+            self.discard_index,
+            game.discard_pile[self.discard_index].borrow()
+        )
     }
 }

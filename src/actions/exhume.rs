@@ -1,4 +1,7 @@
-use crate::{action::Action, cards::CardClass, game::Game, state::GameState};
+use crate::{
+    action::Action, actions::place_card_in_hand::PlaceCardInHandAction, cards::CardClass,
+    game::Game, state::GameState, step::Step,
+};
 
 pub struct ExhumeAction();
 
@@ -29,7 +32,7 @@ impl Action for ExhumeAction {
         match count {
             Count::Zero => {}
             Count::One(i) => game.hand.push(game.exhaust_pile.remove(i)),
-            Count::Many => game.state.push_state(GameState::Exhume),
+            Count::Many => game.state.push_state(ChooseExhumeGameState),
         }
     }
 }
@@ -37,5 +40,41 @@ impl Action for ExhumeAction {
 impl std::fmt::Debug for ExhumeAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "exhume")
+    }
+}
+
+#[derive(Debug)]
+struct ChooseExhumeGameState;
+
+impl GameState for ChooseExhumeGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for (i, c) in game.exhaust_pile.iter().enumerate() {
+            if c.borrow().class != CardClass::Exhume {
+                moves.push(Box::new(ExhumeStep { exhaust_index: i }));
+            }
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct ExhumeStep {
+    pub exhaust_index: usize,
+}
+
+impl Step for ExhumeStep {
+    fn run(&self, game: &mut Game) {
+        game.action_queue.push_top(PlaceCardInHandAction(
+            game.exhaust_pile.remove(self.exhaust_index),
+        ));
+    }
+
+    fn description(&self, game: &Game) -> String {
+        format!(
+            "exhaust {} ({:?})",
+            self.exhaust_index,
+            game.exhaust_pile[self.exhaust_index].borrow()
+        )
     }
 }

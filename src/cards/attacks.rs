@@ -354,13 +354,13 @@ pub fn debug_kill_behavior(game: &mut Game, info: &CardPlayInfo) {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::block::BlockAction,
+        actions::{
+            block::BlockAction,
+            choose_card_in_discard_to_place_on_top_of_draw::PlaceCardInDiscardOnTopOfDrawStep,
+        },
         assert_matches,
         cards::{CardClass, CardCost},
-        game::{
-            CreatureRef, EndTurnStep, Game, GameBuilder, GameStatus,
-            PlaceCardInDiscardOnTopOfDrawStep, PlayCardStep,
-        },
+        game::{CreatureRef, EndTurnStep, Game, GameBuilder, GameStatus, PlayCardStep},
         monster::Monster,
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
@@ -660,7 +660,16 @@ mod tests {
     fn test_clash() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::Clash);
-        assert_eq!(g.valid_steps().len(), 2);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(EndTurnStep) as Box<dyn Step>,
+                Box::new(PlayCardStep {
+                    hand_index: 0,
+                    target: Some(0)
+                })
+            ]
+        );
         g.add_card_to_hand(CardClass::Anger);
         assert_eq!(g.valid_steps().len(), 3);
         g.add_card_to_hand(CardClass::Defend);
@@ -851,7 +860,7 @@ mod tests {
 
             g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
-            while !matches!(g.result(), GameStatus::Victory) {
+            while !matches!(g.status, GameStatus::Victory) {
                 g.step_test(PlayCardStep {
                     hand_index: 0,
                     target: Some(0),
@@ -866,7 +875,7 @@ mod tests {
 
             g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
-            while !matches!(g.result(), GameStatus::Victory) {
+            while !matches!(g.status, GameStatus::Victory) {
                 let double_tap_card_index = g
                     .hand
                     .iter()
@@ -1014,7 +1023,7 @@ mod tests {
 
         g.monsters[0].creature.cur_hp = 8;
         g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
-        assert_matches!(g.result(), GameStatus::Victory);
+        assert_matches!(g.status, GameStatus::Victory);
         assert_eq!(g.player.max_hp, player_max_hp + 3);
         assert_eq!(g.player.cur_hp, player_cur_hp + 3);
     }
@@ -1033,7 +1042,7 @@ mod tests {
 
         g.monsters[0].creature.cur_hp = 11;
         g.play_card_upgraded(CardClass::Feed, Some(CreatureRef::monster(0)));
-        assert_matches!(g.result(), GameStatus::Victory);
+        assert_matches!(g.status, GameStatus::Victory);
         // assert_eq!(g.monsters[0].creature.cur_hp, 0);
         assert_eq!(g.player.max_hp, player_max_hp + 4);
         assert_eq!(g.player.cur_hp, player_cur_hp + 4);
@@ -1171,7 +1180,7 @@ mod tests {
     fn test_debug_kill() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
-        assert_matches!(g.result(), GameStatus::Victory);
+        assert_matches!(g.status, GameStatus::Victory);
     }
 
     #[test]
@@ -1183,9 +1192,14 @@ mod tests {
             .build_combat();
 
         for _ in 0..50 {
+            let target = if g.hand[0].borrow().class == CardClass::Finesse {
+                None
+            } else {
+                Some(0)
+            };
             g.step_test(PlayCardStep {
                 hand_index: 0,
-                target: Some(0),
+                target,
             });
         }
     }

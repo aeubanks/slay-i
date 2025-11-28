@@ -1016,18 +1016,21 @@ pub fn random_common_relic(rng: &mut Rand) -> RelicClass {
 mod tests {
     use super::*;
     use crate::{
-        actions::{add_card_to_master_deck::AddCardToMasterDeckAction, block::BlockAction},
+        actions::{
+            add_card_to_master_deck::AddCardToMasterDeckAction,
+            block::BlockAction,
+            choose_card_to_shuffle_into_draw::ChooseCardToShuffleIntoDrawStep,
+            choose_gamble::{GambleEndStep, GambleStep},
+        },
         assert_matches,
         cards::{CardClass, CardColor},
-        game::{
-            EndTurnStep, GambleEndStep, GambleStep, GameBuilder, GameStatus, NilrysSkipStep,
-            NilrysStep, PlayCardStep,
-        },
+        game::{EndTurnStep, GameBuilder, GameStatus, PlayCardStep},
         monster::Monster,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
+        state::NoopStep,
         status::Status,
-        step::{Step, step_eq},
+        step::Step,
     };
 
     #[test]
@@ -2190,19 +2193,17 @@ mod tests {
             .add_relic(RelicClass::GamblingChip)
             .add_cards(CardClass::Strike, 10)
             .build_combat();
-        let valid = g.valid_steps();
-        for s in [
-            &GambleEndStep,
-            &GambleStep { hand_index: 0 },
-            &GambleStep { hand_index: 1 },
-            &GambleStep { hand_index: 2 },
-            &GambleStep { hand_index: 3 },
-            &GambleStep { hand_index: 4 },
-        ] as [&dyn Step; _]
-        {
-            assert!(valid.iter().any(|v| step_eq(v, s)));
-        }
-        assert_eq!(valid.len(), 6);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(GambleEndStep) as Box<dyn Step>,
+                Box::new(GambleStep { hand_index: 0 }),
+                Box::new(GambleStep { hand_index: 1 }),
+                Box::new(GambleStep { hand_index: 2 }),
+                Box::new(GambleStep { hand_index: 3 }),
+                Box::new(GambleStep { hand_index: 4 }),
+            ]
+        );
     }
 
     #[test]
@@ -2534,7 +2535,7 @@ mod tests {
         g.play_card(CardClass::BandageUp, None);
         assert_eq!(g.player.cur_hp, 10);
         g.step_test(EndTurnStep);
-        assert_matches!(g.result(), GameStatus::Defeat);
+        assert_matches!(g.status, GameStatus::Defeat);
     }
 
     #[test]
@@ -2791,7 +2792,7 @@ mod tests {
                 .add_card(CardClass::Strike)
                 .build_combat();
             assert_eq!(g.valid_steps().len(), 3);
-            g.step(g.valid_steps().remove(0));
+            g.step(0);
             if g.hand[0].borrow().class != CardClass::Transmutation {
                 assert_eq!(g.hand[0].borrow().get_temporary_cost(), None);
             }
@@ -2846,7 +2847,7 @@ mod tests {
             .add_relic(RelicClass::NeowsLament)
             .add_relic(RelicClass::MercuryHourglass)
             .build_combat();
-        assert_matches!(g.result(), GameStatus::Victory);
+        assert_matches!(g.status, GameStatus::Victory);
     }
 
     #[test]
@@ -2858,13 +2859,13 @@ mod tests {
             .build_combat();
         g.step_test(EndTurnStep);
         assert_eq!(g.valid_steps().len(), 4);
-        assert!(g.valid_steps().iter().any(|s| step_eq(s, &NilrysSkipStep)));
-        g.step_test(NilrysSkipStep);
+        g.assert_valid_steps_contains(&NoopStep);
+        g.step_test(NoopStep);
 
         for i in 1..10 {
             assert_eq!(g.hand.len(), 10);
             g.step_test(EndTurnStep);
-            g.step_test(NilrysStep {
+            g.step_test_no_check_valid(ChooseCardToShuffleIntoDrawStep {
                 class: CardClass::BloodForBlood,
             });
             assert_eq!(

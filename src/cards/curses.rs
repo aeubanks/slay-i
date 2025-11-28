@@ -38,9 +38,10 @@ mod tests {
     use crate::{
         actions::block::BlockAction,
         cards::CardClass,
-        game::{EndTurnStep, GameBuilder, PlayCardStep, RemoveMasterStep},
+        game::{
+            EndTurnStep, GameBuilder, PlayCardStep, RemoveFromMasterGameState, RemoveFromMasterStep,
+        },
         relic::RelicClass,
-        state::GameState,
         status::Status,
     };
 
@@ -196,8 +197,8 @@ mod tests {
             .build_combat();
         let max_hp = g.player.max_hp;
         g.player.cur_hp = max_hp - 1;
-        g.state.push_state(GameState::RemoveCard);
-        g.step_test(RemoveMasterStep { master_index: 0 });
+        g.state.push_state(RemoveFromMasterGameState);
+        g.step_test_no_check_valid(RemoveFromMasterStep { master_index: 0 });
         assert_eq!(g.player.max_hp, max_hp - 3);
         assert_eq!(g.player.cur_hp, max_hp - 3);
     }

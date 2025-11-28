@@ -1,6 +1,6 @@
 use crate::{
     action::Action, actions::dual_wield::DualWieldAction, card::CardRef, cards::CardType,
-    game::Game, state::GameState,
+    game::Game, state::GameState, step::Step,
 };
 
 pub struct ChooseDualWieldAction(pub i32);
@@ -39,7 +39,7 @@ impl Action for ChooseDualWieldAction {
                     destroy_original: false,
                 });
             }
-            Count::Many => game.state.push_state(GameState::DualWield(self.0)),
+            Count::Many => game.state.push_state(DualWieldGameState { amount: self.0 }),
         }
     }
 }
@@ -47,5 +47,49 @@ impl Action for ChooseDualWieldAction {
 impl std::fmt::Debug for ChooseDualWieldAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "choose dual wield")
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct DualWieldStep {
+    pub hand_index: usize,
+    pub amount: i32,
+}
+
+impl Step for DualWieldStep {
+    fn run(&self, game: &mut Game) {
+        game.action_queue.push_top(DualWieldAction {
+            card: game.hand.remove(self.hand_index),
+            amount: self.amount,
+            destroy_original: true,
+        });
+    }
+
+    fn description(&self, game: &Game) -> String {
+        format!(
+            "dual wield {} ({:?})",
+            self.hand_index,
+            game.hand[self.hand_index].borrow()
+        )
+    }
+}
+
+#[derive(Debug)]
+struct DualWieldGameState {
+    amount: i32,
+}
+
+impl GameState for DualWieldGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for (i, c) in game.hand.iter().enumerate() {
+            if can_dual_wield(c) {
+                moves.push(Box::new(DualWieldStep {
+                    hand_index: i,
+                    amount: self.amount,
+                }));
+            }
+        }
+        Some(moves)
     }
 }

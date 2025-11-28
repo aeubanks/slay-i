@@ -1,6 +1,6 @@
 use crate::{
     action::Action, actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction, game::Game,
-    state::GameState,
+    state::GameState, step::Step,
 };
 
 pub struct ChooseCardInHandToPlaceOnTopOfDrawAction();
@@ -12,7 +12,9 @@ impl Action for ChooseCardInHandToPlaceOnTopOfDrawAction {
             1 => game
                 .action_queue
                 .push_top(PlaceCardOnTopOfDrawAction(game.hand.pop().unwrap())),
-            _ => game.state.push_state(GameState::PlaceCardInHandOnTopOfDraw),
+            _ => game
+                .state
+                .push_state(ChooseCardInHandToPlaceOnTopOfDrawGameState),
         }
     }
 }
@@ -20,5 +22,39 @@ impl Action for ChooseCardInHandToPlaceOnTopOfDrawAction {
 impl std::fmt::Debug for ChooseCardInHandToPlaceOnTopOfDrawAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "move one card in hand on top of draw")
+    }
+}
+
+#[derive(Debug)]
+struct ChooseCardInHandToPlaceOnTopOfDrawGameState;
+
+impl GameState for ChooseCardInHandToPlaceOnTopOfDrawGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+        let mut moves = Vec::<Box<dyn Step>>::new();
+        for i in 0..game.hand.len() {
+            moves.push(Box::new(PlaceCardInHandOnTopOfDrawStep { hand_index: i }));
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct PlaceCardInHandOnTopOfDrawStep {
+    pub hand_index: usize,
+}
+
+impl Step for PlaceCardInHandOnTopOfDrawStep {
+    fn run(&self, game: &mut Game) {
+        game.action_queue.push_top(PlaceCardOnTopOfDrawAction(
+            game.hand.remove(self.hand_index),
+        ));
+    }
+
+    fn description(&self, game: &Game) -> String {
+        format!(
+            "place card on top of draw {} ({:?})",
+            self.hand_index,
+            game.hand[self.hand_index].borrow()
+        )
     }
 }

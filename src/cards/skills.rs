@@ -500,16 +500,23 @@ pub fn violence_behavior(game: &mut Game, info: &CardPlayInfo) {
 mod tests {
     use crate::{
         actions::{
-            block::BlockAction, exhaust_card::ExhaustCardAction, gain_status::GainStatusAction,
+            armaments::ArmamentsStep,
+            block::BlockAction,
+            choose_card_in_draw_to_place_in_hand::FetchFromDrawStep,
+            choose_card_in_hand_to_exhaust::ExhaustOneCardInHandStep,
+            choose_card_in_hand_to_place_on_top_of_draw::PlaceCardInHandOnTopOfDrawStep,
+            choose_cards_in_hand_to_exhaust::{
+                ChooseExhaustCardsInHandEndStep, ChooseExhaustCardsInHandStep,
+            },
+            choose_dual_wield::DualWieldStep,
+            choose_forethought_any::{ForethoughtAnyEndStep, ForethoughtAnyStep},
+            exhaust_card::ExhaustCardAction,
+            exhume::ExhumeStep,
+            gain_status::GainStatusAction,
         },
         assert_matches,
         cards::{CardClass, CardColor, CardCost, CardType},
-        game::{
-            ArmamentsStep, CreatureRef, DualWieldStep, EndTurnStep, ExhaustCardsInHandEndStep,
-            ExhaustCardsInHandStep, ExhaustOneCardInHandStep, ExhumeStep, FetchFromDrawStep,
-            ForethoughtAnyEndStep, ForethoughtAnyStep, GameBuilder, GameStatus,
-            PlaceCardInHandOnTopOfDrawStep, PlayCardStep,
-        },
+        game::{CreatureRef, EndTurnStep, GameBuilder, PlayCardStep},
         monster::Intent,
         monsters::test::{AttackMonster, IntentMonster, NoopMonster},
         status::Status,
@@ -833,10 +840,22 @@ mod tests {
         g.add_card_to_hand(CardClass::Inflame);
         g.add_card_to_hand(CardClass::Defend);
         g.play_card(CardClass::DualWield, None);
-        g.assert_valid_steps_contains(&DualWieldStep { hand_index: 0 });
-        g.assert_valid_steps_contains(&DualWieldStep { hand_index: 1 });
-        g.assert_valid_steps_does_not_contain(&DualWieldStep { hand_index: 2 });
-        g.step_test(DualWieldStep { hand_index: 0 });
+        g.assert_valid_steps_contains(&DualWieldStep {
+            hand_index: 0,
+            amount: 1,
+        });
+        g.assert_valid_steps_contains(&DualWieldStep {
+            hand_index: 1,
+            amount: 1,
+        });
+        g.assert_valid_steps_does_not_contain(&DualWieldStep {
+            hand_index: 2,
+            amount: 1,
+        });
+        g.step_test(DualWieldStep {
+            hand_index: 0,
+            amount: 1,
+        });
         assert_eq!(g.hand.len(), 4);
         assert_eq!(g.hand[0].borrow().class, CardClass::Inflame);
         assert_eq!(g.hand[1].borrow().class, CardClass::Defend);
@@ -857,7 +876,10 @@ mod tests {
         g.add_card_to_hand(CardClass::RitualDagger);
         let id = g.hand[1].borrow().id;
         g.play_card(CardClass::DualWield, None);
-        g.step_test(DualWieldStep { hand_index: 1 });
+        g.step_test(DualWieldStep {
+            hand_index: 1,
+            amount: 1,
+        });
         assert_eq!(g.hand[1].borrow().class, CardClass::RitualDagger);
         assert_ne!(g.hand[1].borrow().id, id);
         assert_eq!(g.hand[2].borrow().class, CardClass::RitualDagger);
@@ -1372,91 +1394,168 @@ mod tests {
             g.add_card_to_hand(CardClass::Defend);
         }
         g.play_card(CardClass::Purity, None);
-        assert_matches!(
-            g.result(),
-            GameStatus::ExhaustCardsInHand {
-                num_cards_remaining: 3
-            }
-        );
         assert_eq!(
             g.valid_steps(),
             vec![
-                Box::new(ExhaustCardsInHandEndStep) as Box<dyn Step>,
-                Box::new(ExhaustCardsInHandStep { hand_index: 0 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 1 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 2 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 3 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 4 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 5 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 6 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 7 }),
+                Box::new(ChooseExhaustCardsInHandEndStep) as Box<dyn Step>,
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 0,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 1,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 2,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 3,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 4,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 5,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 6,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 7,
+                    num_cards_remaining: 3
+                }),
             ]
         );
-        g.step_test(ExhaustCardsInHandEndStep);
+        g.step_test(ChooseExhaustCardsInHandEndStep);
         assert_eq!(g.hand.len(), 8);
         assert_eq!(g.exhaust_pile.len(), 1 + 1);
 
         g.play_card(CardClass::Purity, None);
-        assert_matches!(
-            g.result(),
-            GameStatus::ExhaustCardsInHand {
-                num_cards_remaining: 3
-            }
-        );
         assert_eq!(
             g.valid_steps(),
             vec![
-                Box::new(ExhaustCardsInHandEndStep) as Box<dyn Step>,
-                Box::new(ExhaustCardsInHandStep { hand_index: 0 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 1 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 2 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 3 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 4 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 5 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 6 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 7 }),
+                Box::new(ChooseExhaustCardsInHandEndStep) as Box<dyn Step>,
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 0,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 1,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 2,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 3,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 4,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 5,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 6,
+                    num_cards_remaining: 3
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 7,
+                    num_cards_remaining: 3
+                }),
             ]
         );
-        g.step_test(ExhaustCardsInHandStep { hand_index: 3 });
-        assert_matches!(
-            g.result(),
-            GameStatus::ExhaustCardsInHand {
-                num_cards_remaining: 2
-            }
-        );
+        g.step_test(ChooseExhaustCardsInHandStep {
+            hand_index: 3,
+            num_cards_remaining: 3,
+        });
         assert_eq!(
             g.valid_steps(),
             vec![
-                Box::new(ExhaustCardsInHandEndStep) as Box<dyn Step>,
-                Box::new(ExhaustCardsInHandStep { hand_index: 0 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 1 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 2 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 3 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 4 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 5 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 6 }),
+                Box::new(ChooseExhaustCardsInHandEndStep) as Box<dyn Step>,
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 0,
+                    num_cards_remaining: 2,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 1,
+                    num_cards_remaining: 2,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 2,
+                    num_cards_remaining: 2,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 3,
+                    num_cards_remaining: 2,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 4,
+                    num_cards_remaining: 2,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 5,
+                    num_cards_remaining: 2,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 6,
+                    num_cards_remaining: 2,
+                }),
             ]
         );
-        g.step_test(ExhaustCardsInHandStep { hand_index: 6 });
-        assert_matches!(
-            g.result(),
-            GameStatus::ExhaustCardsInHand {
-                num_cards_remaining: 1
-            }
-        );
+        g.step_test(ChooseExhaustCardsInHandStep {
+            hand_index: 6,
+            num_cards_remaining: 2,
+        });
         assert_eq!(
             g.valid_steps(),
             vec![
-                Box::new(ExhaustCardsInHandEndStep) as Box<dyn Step>,
-                Box::new(ExhaustCardsInHandStep { hand_index: 0 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 1 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 2 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 3 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 4 }),
-                Box::new(ExhaustCardsInHandStep { hand_index: 5 }),
+                Box::new(ChooseExhaustCardsInHandEndStep) as Box<dyn Step>,
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 0,
+                    num_cards_remaining: 1,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 1,
+                    num_cards_remaining: 1,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 2,
+                    num_cards_remaining: 1,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 3,
+                    num_cards_remaining: 1,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 4,
+                    num_cards_remaining: 1,
+                }),
+                Box::new(ChooseExhaustCardsInHandStep {
+                    hand_index: 5,
+                    num_cards_remaining: 1,
+                }),
             ]
         );
-        g.step_test(ExhaustCardsInHandStep { hand_index: 5 });
+        g.step_test(ChooseExhaustCardsInHandStep {
+            hand_index: 5,
+            num_cards_remaining: 1,
+        });
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(ChooseExhaustCardsInHandEndStep) as Box<dyn Step>,]
+        );
+        g.step_test(ChooseExhaustCardsInHandEndStep);
         assert_eq!(g.hand.len(), 5);
         assert_eq!(g.exhaust_pile.len(), 1 + 1 + 1 + 3);
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
@@ -1467,12 +1566,30 @@ mod tests {
 
         g.hand.pop();
         g.play_card_upgraded(CardClass::Purity, None);
-        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
-        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
-        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
-        g.step_test(ExhaustCardsInHandStep { hand_index: 0 });
+        g.step_test(ChooseExhaustCardsInHandStep {
+            hand_index: 0,
+            num_cards_remaining: 5,
+        });
+        g.step_test(ChooseExhaustCardsInHandStep {
+            hand_index: 0,
+            num_cards_remaining: 4,
+        });
+        g.step_test(ChooseExhaustCardsInHandStep {
+            hand_index: 0,
+            num_cards_remaining: 3,
+        });
+        g.step_test(ChooseExhaustCardsInHandStep {
+            hand_index: 0,
+            num_cards_remaining: 2,
+        });
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(ChooseExhaustCardsInHandEndStep) as Box<dyn Step>,]
+        );
+        g.step_test(ChooseExhaustCardsInHandEndStep);
         assert_eq!(g.hand.len(), 0);
         assert_eq!(g.discard_pile.len(), 0);
+        assert_eq!(g.exhaust_pile.len(), 1 + 1 + 1 + 3 + 4 + 1);
     }
 
     #[test]
@@ -1736,6 +1853,7 @@ mod tests {
         g.play_card_upgraded(CardClass::Forethought, None);
         g.step_test(ForethoughtAnyStep { hand_index: 0 });
         g.step_test(ForethoughtAnyStep { hand_index: 0 });
+        g.step_test(ForethoughtAnyEndStep);
         g.draw_pile.pop(&mut g.rng);
         assert_eq!(
             g.draw_pile.pop(&mut g.rng).borrow().class,
@@ -1754,11 +1872,16 @@ mod tests {
             g.energy = 1;
             g.play_card(CardClass::Discovery, None);
             assert_eq!(g.valid_steps().len(), 3);
-            g.step(g.valid_steps().remove(0));
+            g.step(0);
             assert_ne!(g.hand[0].borrow().class, CardClass::Reaper);
+            let target = if g.hand[0].borrow().has_target() {
+                Some(0)
+            } else {
+                None
+            };
             g.step_test(PlayCardStep {
                 hand_index: 0,
-                target: Some(0),
+                target,
             });
         }
     }

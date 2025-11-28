@@ -65,14 +65,11 @@ fn print_state(g: &Game) {
     if let Some(c) = &g.cur_card {
         println!("current card being played: {:?}", c.borrow());
     }
-    match g.result() {
-        GameStatus::ExhaustCardsInHand {
-            num_cards_remaining,
-        } => println!("exhaust cards in hand: {num_cards_remaining} cards left"),
-        GameStatus::Memories {
-            num_cards_remaining,
-        } => println!("memories: {num_cards_remaining} cards left"),
-        _ => {}
+    if !g.chosen_cards.is_empty() {
+        println!("cards being processed:");
+        for c in &g.chosen_cards {
+            println!(" {:?}", c.borrow());
+        }
     }
     println!("moves:");
     for (si, s) in g.valid_steps().iter().enumerate() {
@@ -107,7 +104,7 @@ fn main() {
         .build();
     game.map.print();
     loop {
-        match game.result() {
+        match game.status {
             GameStatus::Defeat => {
                 println!("defeat :(");
                 break;
@@ -116,13 +113,11 @@ fn main() {
                 println!("victory! :)");
                 break;
             }
-            GameStatus::Combat
-            | GameStatus::ExhaustCardsInHand { .. }
-            | GameStatus::Memories { .. } => {
+            GameStatus::Combat => {
                 print_state(&game);
                 let valid_steps = game.valid_steps();
                 let i = read_int_from_stdin(valid_steps.len());
-                game.step(valid_steps.into_iter().nth(i).unwrap());
+                game.step(i);
                 println!("-----------------------------");
             }
         }
