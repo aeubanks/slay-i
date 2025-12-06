@@ -128,7 +128,7 @@ impl Creature {
                     amount: 1,
                     target: CreatureRef::player(),
                 });
-                card_queue.push(PlayCardAction::duplicated(&play));
+                card_queue.push(PlayCardAction::duplicated(play));
             }
             if self.has_status(Status::DoubleTap)
                 && play.card.borrow().class.ty() == CardType::Attack
@@ -138,7 +138,7 @@ impl Creature {
                     amount: 1,
                     target: CreatureRef::player(),
                 });
-                card_queue.push(PlayCardAction::duplicated(&play));
+                card_queue.push(PlayCardAction::duplicated(play));
             }
             if play.card.borrow().class.ty() == CardType::Attack {
                 if self.has_status(Status::PenNib) {

@@ -426,7 +426,6 @@ mod tests {
         for _ in 0..20 {
             let map = Map::generate(&mut rng);
             let num_start_points = (0..WIDTH)
-                .into_iter()
                 .filter(|&x| !map.nodes[x][0].edges.is_empty())
                 .count();
             assert!(num_start_points >= 2);

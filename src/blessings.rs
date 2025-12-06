@@ -60,17 +60,15 @@ pub struct ChooseBlessingGameState;
 
 impl GameState for ChooseBlessingGameState {
     fn valid_steps(&self, _: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
-        moves.push(Box::new(ChooseBlessingStep(Blessing::GainMaxHPSmall)));
-        moves.push(Box::new(ChooseBlessingStep(Blessing::CommonRelic)));
-        moves.push(Box::new(ChooseBlessingStep(Blessing::RemoveRelic)));
-        moves.push(Box::new(ChooseBlessingStep(Blessing::TransformOne)));
-        moves.push(Box::new(ChooseBlessingStep(Blessing::RemoveOne)));
-        moves.push(Box::new(ChooseBlessingStep(
-            Blessing::RandomUncommonColorless,
-        )));
-        moves.push(Box::new(ChooseBlessingStep(Blessing::RandomPotion)));
-        Some(moves)
+        Some(vec![
+            Box::new(ChooseBlessingStep(Blessing::GainMaxHPSmall)),
+            Box::new(ChooseBlessingStep(Blessing::CommonRelic)),
+            Box::new(ChooseBlessingStep(Blessing::RemoveRelic)),
+            Box::new(ChooseBlessingStep(Blessing::TransformOne)),
+            Box::new(ChooseBlessingStep(Blessing::RemoveOne)),
+            Box::new(ChooseBlessingStep(Blessing::RandomUncommonColorless)),
+            Box::new(ChooseBlessingStep(Blessing::RandomPotion)),
+        ])
     }
 }
 
