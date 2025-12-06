@@ -1236,20 +1236,6 @@ impl Game {
             .unwrap()
     }
 
-    #[cfg(test)]
-    pub fn assert_valid_steps_contains(&self, a: &dyn Step) {
-        use crate::step::step_eq;
-
-        assert!(self.valid_steps().iter().any(|s| step_eq(s, a)));
-    }
-
-    #[cfg(test)]
-    pub fn assert_valid_steps_does_not_contain(&self, a: &dyn Step) {
-        use crate::step::step_eq;
-
-        assert!(!self.valid_steps().iter().any(|s| step_eq(s, a)));
-    }
-
     pub fn assert_no_actions(&self) {
         assert!(self.action_queue.is_empty());
         assert!(self.card_queue.is_empty());

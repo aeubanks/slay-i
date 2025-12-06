@@ -351,7 +351,7 @@ mod tests {
         game::{DiscardPotionStep, EndTurnStep, GameBuilder, UsePotionStep},
         monsters::test::{AttackMonster, NoopMonster},
         relic::RelicClass,
-        step::{Step, step_eq},
+        step::Step,
     };
 
     use super::*;
@@ -773,18 +773,12 @@ mod tests {
                 .add_monster(AttackMonster::new(1000))
                 .build_combat();
             g.add_potion(Potion::Fairy);
-            let valid = g.valid_steps();
-            assert!(!valid.iter().any(|s| step_eq(
-                s,
-                &UsePotionStep {
-                    potion_index: 0,
-                    target: None
-                }
-            )));
-            assert!(
-                valid
-                    .iter()
-                    .any(|s| step_eq(s, &DiscardPotionStep { potion_index: 0 }))
+            assert_eq!(
+                g.valid_steps(),
+                vec![
+                    Box::new(EndTurnStep) as Box<dyn Step>,
+                    Box::new(DiscardPotionStep { potion_index: 0 })
+                ]
             );
 
             g.step_test(EndTurnStep);

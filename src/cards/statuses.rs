@@ -19,7 +19,7 @@ mod tests {
         actions::block::BlockAction,
         cards::CardClass,
         game::{EndTurnStep, GameBuilder, PlayCardStep},
-        step::step_eq,
+        step::Step,
     };
 
     #[test]
@@ -28,27 +28,16 @@ mod tests {
         g.add_card_to_hand(CardClass::Wound);
         g.add_card_to_hand(CardClass::Slimed);
         g.add_card_to_hand(CardClass::Dazed);
-        assert!(g.valid_steps().iter().any(|s| step_eq(
-            s,
-            &PlayCardStep {
-                hand_index: 1,
-                target: None
-            }
-        )));
-        assert!(!g.valid_steps().iter().any(|s| step_eq(
-            s,
-            &PlayCardStep {
-                hand_index: 0,
-                target: None
-            }
-        )));
-        assert!(!g.valid_steps().iter().any(|s| step_eq(
-            s,
-            &PlayCardStep {
-                hand_index: 2,
-                target: None
-            }
-        )));
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(EndTurnStep) as Box<dyn Step>,
+                Box::new(PlayCardStep {
+                    hand_index: 1,
+                    target: None,
+                })
+            ]
+        );
         g.step_test(PlayCardStep {
             hand_index: 1,
             target: None,

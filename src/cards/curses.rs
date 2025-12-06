@@ -43,13 +43,17 @@ mod tests {
         },
         relic::RelicClass,
         status::Status,
+        step::Step,
     };
 
     #[test]
     fn test_playable() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::AscendersBane);
-        g.assert_valid_steps_contains(&EndTurnStep);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(EndTurnStep) as Box<dyn Step>,]
+        );
         assert_eq!(g.valid_steps().len(), 1);
     }
 

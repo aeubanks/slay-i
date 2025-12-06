@@ -555,9 +555,13 @@ mod tests {
             g.add_card_to_hand_upgraded(CardClass::Defend);
             g.add_card_to_hand(CardClass::TwinStrike);
             g.play_card(CardClass::Armaments, None);
-            g.assert_valid_steps_contains(&ArmamentsStep { hand_index: 0 });
-            g.assert_valid_steps_contains(&ArmamentsStep { hand_index: 2 });
-            g.assert_valid_steps_does_not_contain(&ArmamentsStep { hand_index: 1 });
+            assert_eq!(
+                g.valid_steps(),
+                vec![
+                    Box::new(ArmamentsStep { hand_index: 0 }) as Box<dyn Step>,
+                    Box::new(ArmamentsStep { hand_index: 2 }),
+                ]
+            );
 
             g.step_test(ArmamentsStep { hand_index: 0 });
             assert_eq!(g.hand[0].borrow().upgrade_count, 1);
@@ -840,18 +844,19 @@ mod tests {
         g.add_card_to_hand(CardClass::Inflame);
         g.add_card_to_hand(CardClass::Defend);
         g.play_card(CardClass::DualWield, None);
-        g.assert_valid_steps_contains(&DualWieldStep {
-            hand_index: 0,
-            amount: 1,
-        });
-        g.assert_valid_steps_contains(&DualWieldStep {
-            hand_index: 1,
-            amount: 1,
-        });
-        g.assert_valid_steps_does_not_contain(&DualWieldStep {
-            hand_index: 2,
-            amount: 1,
-        });
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(DualWieldStep {
+                    hand_index: 0,
+                    amount: 1,
+                }) as Box<dyn Step>,
+                Box::new(DualWieldStep {
+                    hand_index: 1,
+                    amount: 1,
+                })
+            ]
+        );
         g.step_test(DualWieldStep {
             hand_index: 0,
             amount: 1,
@@ -989,9 +994,13 @@ mod tests {
             g.cur_card.clone().unwrap().borrow().class,
             CardClass::BurningPact
         );
-        g.assert_valid_steps_contains(&ExhaustOneCardInHandStep { hand_index: 0 });
-        g.assert_valid_steps_contains(&ExhaustOneCardInHandStep { hand_index: 1 });
-        assert_eq!(g.valid_steps().len(), 2);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(ExhaustOneCardInHandStep { hand_index: 0 }) as Box<dyn Step>,
+                Box::new(ExhaustOneCardInHandStep { hand_index: 1 }),
+            ]
+        );
         g.step_test(ExhaustOneCardInHandStep { hand_index: 1 });
         assert_eq!(g.exhaust_pile.len(), 1);
         assert_eq!(g.exhaust_pile[0].borrow().class, CardClass::Defend);
@@ -1062,9 +1071,13 @@ mod tests {
         g.add_card_to_exhaust_pile(CardClass::Exhume);
         g.add_card_to_exhaust_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Exhume, None);
-        g.assert_valid_steps_contains(&ExhumeStep { exhaust_index: 0 });
-        g.assert_valid_steps_contains(&ExhumeStep { exhaust_index: 2 });
-        assert_eq!(g.valid_steps().len(), 2);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(ExhumeStep { exhaust_index: 0 }) as Box<dyn Step>,
+                Box::new(ExhumeStep { exhaust_index: 2 })
+            ]
+        );
         g.step_test(ExhumeStep { exhaust_index: 2 });
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
@@ -1596,8 +1609,10 @@ mod tests {
     fn test_secret_weapon() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::SecretWeapon);
-        g.assert_valid_steps_contains(&EndTurnStep);
-        assert_eq!(g.valid_steps().len(), 1);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(EndTurnStep) as Box<dyn Step>]
+        );
 
         g.hand.clear();
         g.add_card_to_draw_pile(CardClass::Strike);
@@ -1613,9 +1628,13 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Defend);
         g.add_card_to_draw_pile(CardClass::TwinStrike);
         g.play_card(CardClass::SecretWeapon, None);
-        g.assert_valid_steps_contains(&FetchFromDrawStep { draw_index: 0 });
-        g.assert_valid_steps_contains(&FetchFromDrawStep { draw_index: 2 });
-        assert_eq!(g.valid_steps().len(), 2);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(FetchFromDrawStep { draw_index: 0 }) as Box<dyn Step>,
+                Box::new(FetchFromDrawStep { draw_index: 2 })
+            ]
+        );
         g.step_test(FetchFromDrawStep { draw_index: 2 });
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.hand.len(), 1);
@@ -1637,7 +1656,10 @@ mod tests {
     fn test_secret_technique() {
         let mut g = GameBuilder::default().build_combat();
         g.add_card_to_hand(CardClass::SecretTechnique);
-        g.assert_valid_steps_contains(&EndTurnStep);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(EndTurnStep) as Box<dyn Step>]
+        );
         assert_eq!(g.valid_steps().len(), 1);
 
         g.hand.clear();
@@ -1654,9 +1676,13 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Strike);
         g.add_card_to_draw_pile(CardClass::FlameBarrier);
         g.play_card(CardClass::SecretTechnique, None);
-        g.assert_valid_steps_contains(&FetchFromDrawStep { draw_index: 0 });
-        g.assert_valid_steps_contains(&FetchFromDrawStep { draw_index: 2 });
-        assert_eq!(g.valid_steps().len(), 2);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(FetchFromDrawStep { draw_index: 0 }) as Box<dyn Step>,
+                Box::new(FetchFromDrawStep { draw_index: 2 })
+            ]
+        );
         g.step_test(FetchFromDrawStep { draw_index: 2 });
         assert_eq!(g.draw_pile.len(), 2);
         assert_eq!(g.hand.len(), 1);
@@ -1819,14 +1845,22 @@ mod tests {
         g.add_card_to_hand(CardClass::TwinStrike);
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Forethought, None);
-        g.assert_valid_steps_contains(&ForethoughtAnyEndStep);
-        g.assert_valid_steps_contains(&ForethoughtAnyStep { hand_index: 0 });
-        g.assert_valid_steps_contains(&ForethoughtAnyStep { hand_index: 1 });
-        assert_eq!(g.valid_steps().len(), 3);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(ForethoughtAnyEndStep) as Box<dyn Step>,
+                Box::new(ForethoughtAnyStep { hand_index: 0 }),
+                Box::new(ForethoughtAnyStep { hand_index: 1 }),
+            ]
+        );
         g.step_test(ForethoughtAnyStep { hand_index: 0 });
-        g.assert_valid_steps_contains(&ForethoughtAnyEndStep);
-        g.assert_valid_steps_contains(&ForethoughtAnyStep { hand_index: 0 });
-        assert_eq!(g.valid_steps().len(), 2);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(ForethoughtAnyEndStep) as Box<dyn Step>,
+                Box::new(ForethoughtAnyStep { hand_index: 0 }),
+            ]
+        );
         g.step_test(ForethoughtAnyEndStep);
         assert_eq!(g.hand.len(), 1);
         assert_eq!(g.draw_pile.len(), 2);

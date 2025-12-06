@@ -2851,15 +2851,40 @@ mod tests {
     }
 
     #[test]
-    fn test_nilrys_codex() {
+    fn test_nilrys_codex_1() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::NilrysCodex)
+            .build_combat();
+
+        let mut found_twin = false;
+        for _ in 0..10000 {
+            g.step_test(EndTurnStep);
+            let valid_steps = g.valid_steps();
+            assert_ne!(valid_steps[1], valid_steps[2]);
+            assert_ne!(valid_steps[1], valid_steps[3]);
+            assert_ne!(valid_steps[2], valid_steps[3]);
+            g.step(1);
+            if g.hand[0].borrow().class == CardClass::TwinStrike {
+                found_twin = true;
+                break;
+            }
+            g.clear_all_piles();
+        }
+        assert!(found_twin);
+    }
+
+    #[test]
+    fn test_nilrys_codex_2() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::NilrysCodex)
             .add_relic(RelicClass::RunicPyramid)
             .add_cards(CardClass::Strike, 20)
             .build_combat();
         g.step_test(EndTurnStep);
+
         assert_eq!(g.valid_steps().len(), 4);
-        g.assert_valid_steps_contains(&NoopStep);
+        assert_eq!(g.valid_steps()[0], Box::new(NoopStep) as Box<dyn Step>);
+
         g.step_test(NoopStep);
 
         for i in 1..10 {

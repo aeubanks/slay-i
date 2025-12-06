@@ -124,7 +124,7 @@ mod tests {
         game::{CreatureRef, EndTurnStep, GameBuilder, PlayCardStep},
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         status::Status,
-        step::step_eq,
+        step::Step,
     };
 
     #[test]
@@ -963,20 +963,16 @@ mod tests {
             .build_combat();
         g.add_card_to_hand(CardClass::Strike);
         g.add_card_to_hand(CardClass::Defend);
-        assert!(g.valid_steps().iter().any(|s| step_eq(
-            s,
-            &PlayCardStep {
-                hand_index: 1,
-                target: None,
-            }
-        )));
-        assert!(!g.valid_steps().iter().any(|s| step_eq(
-            s,
-            &PlayCardStep {
-                hand_index: 0,
-                target: Some(0)
-            }
-        )));
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(EndTurnStep) as Box<dyn Step>,
+                Box::new(PlayCardStep {
+                    hand_index: 1,
+                    target: None,
+                })
+            ]
+        );
     }
 
     #[test]
