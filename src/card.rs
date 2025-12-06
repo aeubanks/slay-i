@@ -50,13 +50,15 @@ impl Card {
             ..
         } = &mut self.cost
         {
-            let prev_base_cost = *base_cost;
-            *base_cost = new_cost;
-            // temporary cost gets adjusted the same amount
-            if let Some(temp) = temporary_cost {
-                *temp += new_cost - prev_base_cost;
-                if *temp < 0 {
-                    *temp = 0;
+            if *base_cost != 0 {
+                let prev_base_cost = *base_cost;
+                *base_cost = new_cost;
+                // temporary cost gets adjusted the same amount
+                if let Some(temp) = temporary_cost {
+                    *temp += new_cost - prev_base_cost;
+                    if *temp < 0 {
+                        *temp = 0;
+                    }
                 }
             }
         } else {
@@ -183,6 +185,7 @@ mod tests {
     use crate::{
         cards::{CardClass, CardCost},
         game::GameBuilder,
+        potion::Potion,
     };
 
     #[test]
@@ -219,5 +222,23 @@ mod tests {
                 }
             );
         }
+    }
+
+    #[test]
+    fn test_upgrade_temp_cost_2() {
+        let mut g = GameBuilder::default().build_combat();
+
+        let c = g.new_card(CardClass::DarkEmbrace);
+        c.borrow_mut().set_cost(3, None);
+        g.hand.push(c);
+
+        let c = g.new_card(CardClass::DarkEmbrace);
+        c.borrow_mut().set_cost(0, None);
+        g.hand.push(c);
+
+        g.throw_potion(Potion::Forge, None);
+
+        assert_eq!(g.hand[0].borrow().get_base_cost(), 1);
+        assert_eq!(g.hand[1].borrow().get_base_cost(), 0);
     }
 }
