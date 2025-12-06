@@ -78,7 +78,6 @@ struct TestCombatStartGameState;
 
 impl GameState for TestCombatStartGameState {
     fn run(&self, game: &mut Game) {
-        game.state.push_state(VictoryGameState);
         game.state.push_state(RollCombatGameState);
     }
 }
@@ -126,12 +125,11 @@ impl GameState for RollCombatGameState {
         if let Some(m) = game.combat_monsters_queue.pop() {
             game.monsters = m;
             game.state.push_state(CombatBeginGameState);
-        } else {
-            game.state.push_state(VictoryGameState);
         }
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 struct VictoryGameState;
 

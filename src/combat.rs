@@ -133,7 +133,10 @@ impl GameState for ResetCombatGameState {
         game.energy = 0;
         game.turn = 0;
         game.clear_all_piles();
-        game.state.push_state(RollCombatGameState);
+
+        if !game.combat_monsters_queue.is_empty() {
+            game.state.push_state(RollCombatGameState);
+        }
     }
 }
 

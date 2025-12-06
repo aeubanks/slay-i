@@ -361,7 +361,7 @@ mod tests {
         assert_matches,
         cards::{CardClass, CardCost},
         combat::{EndTurnStep, PlayCardStep},
-        game::{CreatureRef, Game, GameBuilder, GameStatus},
+        game::{CreatureRef, Game, GameBuilder},
         monster::Monster,
         monsters::test::{AttackMonster, NoopMonster},
         status::Status,
@@ -861,7 +861,7 @@ mod tests {
 
             g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
-            while !matches!(g.status, GameStatus::Victory) {
+            while !g.monsters.is_empty() {
                 g.step_test(PlayCardStep {
                     hand_index: 0,
                     target: Some(0),
@@ -876,7 +876,7 @@ mod tests {
 
             g.monsters[0].creature.set_status(Status::Vulnerable, 1);
 
-            while !matches!(g.status, GameStatus::Victory) {
+            while !g.monsters.is_empty() {
                 let double_tap_card_index = g
                     .hand
                     .iter()
@@ -1024,7 +1024,7 @@ mod tests {
 
         g.monsters[0].creature.cur_hp = 8;
         g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
-        assert_matches!(g.status, GameStatus::Victory);
+        assert!(g.monsters.is_empty());
         assert_eq!(g.player.max_hp, player_max_hp + 3);
         assert_eq!(g.player.cur_hp, player_cur_hp + 3);
     }
@@ -1043,8 +1043,7 @@ mod tests {
 
         g.monsters[0].creature.cur_hp = 11;
         g.play_card_upgraded(CardClass::Feed, Some(CreatureRef::monster(0)));
-        assert_matches!(g.status, GameStatus::Victory);
-        // assert_eq!(g.monsters[0].creature.cur_hp, 0);
+        assert!(g.monsters.is_empty());
         assert_eq!(g.player.max_hp, player_max_hp + 4);
         assert_eq!(g.player.cur_hp, player_cur_hp + 4);
     }
@@ -1181,7 +1180,7 @@ mod tests {
     fn test_debug_kill() {
         let mut g = GameBuilder::default().build_combat();
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
-        assert_matches!(g.status, GameStatus::Victory);
+        assert!(g.monsters.is_empty());
     }
 
     #[test]

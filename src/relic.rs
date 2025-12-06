@@ -2848,7 +2848,7 @@ mod tests {
             .add_relic(RelicClass::NeowsLament)
             .add_relic(RelicClass::MercuryHourglass)
             .build_combat();
-        assert_matches!(g.status, GameStatus::Victory);
+        assert!(g.monsters.is_empty());
     }
 
     #[test]
