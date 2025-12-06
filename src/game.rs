@@ -443,12 +443,7 @@ pub struct Game {
 impl Game {
     pub const MAX_HAND_SIZE: i32 = 10;
 
-    fn new(
-        mut rng: Rand,
-        // start_state: Box<dyn GameState>,
-        master_deck: &[(CardClass, bool)],
-        monsters: Vec<Monster>,
-    ) -> Self {
+    fn new(mut rng: Rand, master_deck: &[(CardClass, bool)], monsters: Vec<Monster>) -> Self {
         let map = Map::generate(&mut rng);
         let mut g = Self {
             map,
