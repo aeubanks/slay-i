@@ -166,7 +166,8 @@ mod tests {
     use crate::{
         actions::{block::BlockAction, draw::DrawAction, exhaust_card::ExhaustCardAction},
         cards::CardClass,
-        game::{EndTurnStep, GameBuilder},
+        combat::EndTurnStep,
+        game::GameBuilder,
         status::Status,
     };
 

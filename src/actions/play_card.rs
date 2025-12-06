@@ -167,10 +167,7 @@ impl std::fmt::Debug for PlayCardAction {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        cards::CardClass,
-        game::{GameBuilder, PlayCardStep},
-    };
+    use crate::{cards::CardClass, combat::PlayCardStep, game::GameBuilder};
 
     #[test]
     fn test_play_attack_skill() {

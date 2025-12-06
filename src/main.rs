@@ -3,6 +3,7 @@ mod actions;
 mod blessings;
 mod card;
 mod cards;
+mod combat;
 mod creature;
 mod draw_pile;
 mod game;

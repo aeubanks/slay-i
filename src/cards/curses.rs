@@ -38,9 +38,8 @@ mod tests {
     use crate::{
         actions::block::BlockAction,
         cards::CardClass,
-        game::{
-            EndTurnStep, GameBuilder, PlayCardStep, RemoveFromMasterGameState, RemoveFromMasterStep,
-        },
+        combat::{EndTurnStep, PlayCardStep},
+        game::{GameBuilder, RemoveFromMasterGameState, RemoveFromMasterStep},
         relic::RelicClass,
         status::Status,
         step::Step,

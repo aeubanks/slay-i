@@ -33,10 +33,7 @@ impl std::fmt::Debug for EndOfTurnDiscardAction {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        cards::CardClass,
-        game::{EndTurnStep, GameBuilder},
-    };
+    use crate::{cards::CardClass, combat::EndTurnStep, game::GameBuilder};
 
     #[test]
     fn test_ethereal() {
