@@ -1,6 +1,11 @@
 use crate::{
-    action::Action, actions::dual_wield::DualWieldAction, card::CardRef, cards::CardType,
-    game::Game, state::GameState, step::Step,
+    action::Action,
+    actions::dual_wield::DualWieldAction,
+    card::CardRef,
+    cards::CardType,
+    game::Game,
+    state::{GameState, Steps},
+    step::Step,
 };
 
 pub struct ChooseDualWieldAction(pub i32);
@@ -80,14 +85,14 @@ struct DualWieldGameState {
 }
 
 impl GameState for DualWieldGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for (i, c) in game.hand.iter().enumerate() {
             if can_dual_wield(c) {
-                moves.push(Box::new(DualWieldStep {
+                moves.push(DualWieldStep {
                     hand_index: i,
                     amount: self.amount,
-                }));
+                });
             }
         }
         Some(moves)

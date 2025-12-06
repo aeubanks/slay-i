@@ -7,7 +7,7 @@ use crate::{
     game::{Game, RemoveFromMasterGameState, RunActionsGameState, TransformMasterGameState},
     potion::random_common_potion,
     relic::random_common_relic,
-    state::GameState,
+    state::{GameState, Steps},
     step::Step,
 };
 
@@ -59,16 +59,16 @@ impl Blessing {
 pub struct ChooseBlessingGameState;
 
 impl GameState for ChooseBlessingGameState {
-    fn valid_steps(&self, _: &Game) -> Option<Vec<Box<dyn Step>>> {
-        Some(vec![
-            Box::new(ChooseBlessingStep(Blessing::GainMaxHPSmall)),
-            Box::new(ChooseBlessingStep(Blessing::CommonRelic)),
-            Box::new(ChooseBlessingStep(Blessing::RemoveRelic)),
-            Box::new(ChooseBlessingStep(Blessing::TransformOne)),
-            Box::new(ChooseBlessingStep(Blessing::RemoveOne)),
-            Box::new(ChooseBlessingStep(Blessing::RandomUncommonColorless)),
-            Box::new(ChooseBlessingStep(Blessing::RandomPotion)),
-        ])
+    fn valid_steps(&self, _: &Game) -> Option<Steps> {
+        let mut steps = Steps::default();
+        steps.push(ChooseBlessingStep(Blessing::GainMaxHPSmall));
+        steps.push(ChooseBlessingStep(Blessing::CommonRelic));
+        steps.push(ChooseBlessingStep(Blessing::RemoveRelic));
+        steps.push(ChooseBlessingStep(Blessing::TransformOne));
+        steps.push(ChooseBlessingStep(Blessing::RemoveOne));
+        steps.push(ChooseBlessingStep(Blessing::RandomUncommonColorless));
+        steps.push(ChooseBlessingStep(Blessing::RandomPotion));
+        Some(steps)
     }
 }
 

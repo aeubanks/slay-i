@@ -1,5 +1,8 @@
 use crate::{
-    action::Action, actions::forethought::ForethoughtAction, game::Game, state::GameState,
+    action::Action,
+    actions::forethought::ForethoughtAction,
+    game::Game,
+    state::{GameState, Steps},
     step::Step,
 };
 
@@ -27,10 +30,10 @@ impl std::fmt::Debug for ChooseForethoughtOneAction {
 struct ForethoughtOneGameState;
 
 impl GameState for ForethoughtOneGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for c in 0..game.hand.len() {
-            moves.push(Box::new(ForethoughtOneStep { hand_index: c }));
+            moves.push(ForethoughtOneStep { hand_index: c });
         }
         Some(moves)
     }

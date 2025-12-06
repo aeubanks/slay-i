@@ -1,6 +1,10 @@
 use crate::{
-    action::Action, actions::place_card_in_hand::PlaceCardInHandAction, cards::CardClass,
-    game::Game, state::GameState, step::Step,
+    action::Action,
+    actions::place_card_in_hand::PlaceCardInHandAction,
+    cards::CardClass,
+    game::Game,
+    state::{GameState, Steps},
+    step::Step,
 };
 
 pub struct ExhumeAction();
@@ -47,11 +51,11 @@ impl std::fmt::Debug for ExhumeAction {
 struct ChooseExhumeGameState;
 
 impl GameState for ChooseExhumeGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for (i, c) in game.exhaust_pile.iter().enumerate() {
             if c.borrow().class != CardClass::Exhume {
-                moves.push(Box::new(ExhumeStep { exhaust_index: i }));
+                moves.push(ExhumeStep { exhaust_index: i });
             }
         }
         Some(moves)

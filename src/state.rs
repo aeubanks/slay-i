@@ -2,9 +2,20 @@ use crate::{game::Game, step::Step};
 
 use std::fmt::Debug;
 
+#[derive(Default, Debug)]
+pub struct Steps {
+    pub steps: Vec<Box<dyn Step>>,
+}
+
+impl Steps {
+    pub fn push<T: Step>(&mut self, step: T) {
+        self.steps.push(Box::new(step));
+    }
+}
+
 pub trait GameState: Debug {
     fn run(&self, _: &mut Game) {}
-    fn valid_steps(&self, _: &Game) -> Option<Vec<Box<dyn Step>>> {
+    fn valid_steps(&self, _: &Game) -> Option<Steps> {
         None
     }
 }

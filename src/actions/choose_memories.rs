@@ -1,5 +1,9 @@
 use crate::{
-    action::Action, actions::memories::MemoriesAction, game::Game, state::GameState, step::Step,
+    action::Action,
+    actions::memories::MemoriesAction,
+    game::Game,
+    state::{GameState, Steps},
+    step::Step,
 };
 
 pub struct ChooseMemoriesAction(pub i32);
@@ -33,15 +37,15 @@ struct ChooseMemoriesGameState {
 }
 
 impl GameState for ChooseMemoriesGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
-        moves.push(Box::new(ChooseMemoriesEndStep));
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
+        moves.push(ChooseMemoriesEndStep);
         if self.num_cards_remaining != 0 {
             for c in 0..game.discard_pile.len() {
-                moves.push(Box::new(ChooseMemoriesStep {
+                moves.push(ChooseMemoriesStep {
                     discard_index: c,
                     num_cards_remaining: self.num_cards_remaining,
-                }));
+                });
             }
         }
         Some(moves)

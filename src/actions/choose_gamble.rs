@@ -2,7 +2,7 @@ use crate::{
     action::Action,
     actions::{discard_card::DiscardCardAction, draw::DrawAction},
     game::Game,
-    state::GameState,
+    state::{GameState, Steps},
     step::Step,
 };
 
@@ -27,11 +27,11 @@ impl std::fmt::Debug for ChooseGambleAction {
 struct ChooseGambleGameState;
 
 impl GameState for ChooseGambleGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
-        moves.push(Box::new(GambleEndStep));
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
+        moves.push(GambleEndStep);
         for c in 0..game.hand.len() {
-            moves.push(Box::new(GambleStep { hand_index: c }));
+            moves.push(GambleStep { hand_index: c });
         }
         Some(moves)
     }

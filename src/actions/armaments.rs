@@ -1,5 +1,9 @@
 use crate::{
-    action::Action, actions::upgrade::UpgradeAction, game::Game, state::GameState, step::Step,
+    action::Action,
+    actions::upgrade::UpgradeAction,
+    game::Game,
+    state::{GameState, Steps},
+    step::Step,
 };
 
 pub struct ArmamentsAction();
@@ -29,11 +33,11 @@ impl std::fmt::Debug for ArmamentsAction {
 struct ChooseArmamentsGameState;
 
 impl GameState for ChooseArmamentsGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for (i, c) in game.hand.iter().enumerate() {
             if c.borrow().can_upgrade() {
-                moves.push(Box::new(ArmamentsStep { hand_index: i }));
+                moves.push(ArmamentsStep { hand_index: i });
             }
         }
         Some(moves)

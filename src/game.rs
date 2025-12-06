@@ -27,7 +27,7 @@ use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{Relic, RelicClass, new_relic};
 use crate::rng::rand_slice;
-use crate::state::{GameState, GameStateManager};
+use crate::state::{GameState, GameStateManager, Steps};
 use crate::status::Status;
 use crate::step::Step;
 
@@ -154,11 +154,11 @@ impl GameState for DefeatGameState {
 pub struct RemoveFromMasterGameState;
 
 impl GameState for RemoveFromMasterGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for (i, c) in game.master_deck.iter().enumerate() {
             if c.borrow().class.can_remove_from_master_deck() {
-                moves.push(Box::new(RemoveFromMasterStep { master_index: i }));
+                moves.push(RemoveFromMasterStep { master_index: i });
             }
         }
         Some(moves)
@@ -169,11 +169,11 @@ impl GameState for RemoveFromMasterGameState {
 pub struct TransformMasterGameState;
 
 impl GameState for TransformMasterGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for (i, c) in game.master_deck.iter().enumerate() {
             if c.borrow().class.can_remove_from_master_deck() {
-                moves.push(Box::new(TransformMasterStep { master_index: i }));
+                moves.push(TransformMasterStep { master_index: i });
             }
         }
         Some(moves)
@@ -888,6 +888,7 @@ impl Game {
             .unwrap()
             .valid_steps(self)
             .unwrap()
+            .steps
     }
 
     pub fn assert_no_actions(&self) {

@@ -6,7 +6,7 @@ use crate::{
         random_red_power_in_combat, random_red_skill_in_combat,
     },
     game::Game,
-    state::GameState,
+    state::{GameState, Steps},
     step::Step,
 };
 
@@ -61,14 +61,14 @@ struct ChooseDiscoveryGameState {
 }
 
 impl GameState for ChooseDiscoveryGameState {
-    fn valid_steps(&self, _: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, _: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for &class in &self.classes {
-            moves.push(Box::new(DiscoveryStep {
+            moves.push(DiscoveryStep {
                 class,
                 amount: self.amount,
                 is_free: self.is_free,
-            }))
+            });
         }
         Some(moves)
     }

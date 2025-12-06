@@ -1,5 +1,8 @@
 use crate::{
-    action::Action, actions::exhaust_card::ExhaustCardAction, game::Game, state::GameState,
+    action::Action,
+    actions::exhaust_card::ExhaustCardAction,
+    game::Game,
+    state::{GameState, Steps},
     step::Step,
 };
 
@@ -27,10 +30,10 @@ impl std::fmt::Debug for ChooseCardInHandToExhaustAction {
 struct ChooseExhaustOneCardInHandGameState;
 
 impl GameState for ChooseExhaustOneCardInHandGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for i in 0..game.hand.len() {
-            moves.push(Box::new(ExhaustOneCardInHandStep { hand_index: i }));
+            moves.push(ExhaustOneCardInHandStep { hand_index: i });
         }
         Some(moves)
     }

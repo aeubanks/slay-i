@@ -11,7 +11,7 @@ use crate::{
     },
     monster::MonsterInfo,
     relic::RelicClass,
-    state::GameState,
+    state::{GameState, Steps},
     step::Step,
 };
 
@@ -250,12 +250,12 @@ impl GameState for PlayerTurnGameState {
         }
         game.state.push_state(PlayerTurnGameState);
     }
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
         if game.all_monsters_dead() {
             return None;
         }
-        let mut moves = Vec::<Box<dyn Step>>::new();
-        moves.push(Box::new(EndTurnStep));
+        let mut moves = Steps::default();
+        moves.push(EndTurnStep);
         for (ci, c) in game.hand.iter().enumerate() {
             if !game.can_play_card(&PlayCardAction::new(c.clone(), None, game)) {
                 continue;
@@ -266,21 +266,21 @@ impl GameState for PlayerTurnGameState {
                     if !m.creature.is_alive() {
                         continue;
                     }
-                    moves.push(Box::new(PlayCardStep {
+                    moves.push(PlayCardStep {
                         hand_index: ci,
                         target: Some(mi),
-                    }));
+                    });
                 }
             } else {
-                moves.push(Box::new(PlayCardStep {
+                moves.push(PlayCardStep {
                     hand_index: ci,
                     target: None,
-                }));
+                });
             }
         }
         for (pi, p) in game.potions.iter().enumerate() {
             if let Some(p) = p {
-                moves.push(Box::new(DiscardPotionStep { potion_index: pi }));
+                moves.push(DiscardPotionStep { potion_index: pi });
                 if !p.can_use() {
                     continue;
                 }
@@ -289,16 +289,16 @@ impl GameState for PlayerTurnGameState {
                         if !m.creature.is_alive() {
                             continue;
                         }
-                        moves.push(Box::new(UsePotionStep {
+                        moves.push(UsePotionStep {
                             potion_index: pi,
                             target: Some(mi),
-                        }));
+                        });
                     }
                 } else {
-                    moves.push(Box::new(UsePotionStep {
+                    moves.push(UsePotionStep {
                         potion_index: pi,
                         target: None,
-                    }));
+                    });
                 }
             }
         }

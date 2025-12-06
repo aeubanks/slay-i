@@ -1,6 +1,10 @@
 use crate::{
-    action::Action, actions::place_card_in_hand::PlaceCardInHandAction, cards::CardType,
-    game::Game, state::GameState, step::Step,
+    action::Action,
+    actions::place_card_in_hand::PlaceCardInHandAction,
+    cards::CardType,
+    game::Game,
+    state::{GameState, Steps},
+    step::Step,
 };
 
 pub struct ChooseCardInDrawToPlaceInHandAction(pub CardType);
@@ -47,15 +51,17 @@ impl std::fmt::Debug for ChooseCardInDrawToPlaceInHandAction {
 struct FetchCardFromDrawGameState(CardType);
 
 impl GameState for FetchCardFromDrawGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for (i, c) in game.draw_pile.get_all().iter().enumerate() {
             if c.borrow().class.ty() == self.0 {
-                moves.push(Box::new(FetchFromDrawStep { draw_index: i }));
+                moves.push(FetchFromDrawStep { draw_index: i });
             }
         }
         Some(moves)
     }
+
+    fn run(&self, _: &mut Game) {}
 }
 
 #[derive(Eq, PartialEq, Debug)]

@@ -1,6 +1,9 @@
 use crate::{
-    action::Action, actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction, game::Game,
-    state::GameState, step::Step,
+    action::Action,
+    actions::place_card_on_top_of_draw::PlaceCardOnTopOfDrawAction,
+    game::Game,
+    state::{GameState, Steps},
+    step::Step,
 };
 
 pub struct ChooseCardInDiscardToPlaceOnTopOfDrawAction();
@@ -29,12 +32,10 @@ impl std::fmt::Debug for ChooseCardInDiscardToPlaceOnTopOfDrawAction {
 struct ChooseCardInDiscardToPlaceOnTopOfDrawGameState;
 
 impl GameState for ChooseCardInDiscardToPlaceOnTopOfDrawGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
         for i in 0..game.discard_pile.len() {
-            moves.push(Box::new(PlaceCardInDiscardOnTopOfDrawStep {
-                discard_index: i,
-            }));
+            moves.push(PlaceCardInDiscardOnTopOfDrawStep { discard_index: i });
         }
         Some(moves)
     }

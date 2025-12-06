@@ -1,5 +1,8 @@
 use crate::{
-    action::Action, actions::exhaust_card::ExhaustCardAction, game::Game, state::GameState,
+    action::Action,
+    actions::exhaust_card::ExhaustCardAction,
+    game::Game,
+    state::{GameState, Steps},
     step::Step,
 };
 
@@ -27,15 +30,15 @@ struct ChooseExhaustCardsInHandGameState {
 }
 
 impl GameState for ChooseExhaustCardsInHandGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Vec<Box<dyn Step>>> {
-        let mut moves = Vec::<Box<dyn Step>>::new();
-        moves.push(Box::new(ChooseExhaustCardsInHandEndStep));
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
+        moves.push(ChooseExhaustCardsInHandEndStep);
         if self.num_cards_remaining > 0 {
             for c in 0..game.hand.len() {
-                moves.push(Box::new(ChooseExhaustCardsInHandStep {
+                moves.push(ChooseExhaustCardsInHandStep {
                     hand_index: c,
                     num_cards_remaining: self.num_cards_remaining,
-                }));
+                });
             }
         }
         Some(moves)
