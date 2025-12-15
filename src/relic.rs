@@ -150,13 +150,13 @@ r!(
     FossilizedHelix => Rare,
     GamblingChip => Rare,
     Ginger => Rare,
-    Girya => Rare, // TODO
+    Girya => Rare,
     IceCream => Rare,
     IncenseBurner => Rare,
     LizardTail => Rare,
     Mango => Rare,
     OldCoin => Rare,
-    PeacePipe => Rare, // TODO
+    PeacePipe => Rare,
     Pocketwatch => Rare,
     PrayerWheel => Rare, // TODO
     Shovel => Rare, // TODO
@@ -306,6 +306,7 @@ impl RelicClass {
             BagOfMarbles => Some(bag_of_marbles),
             BronzeScales => Some(bronze_scales),
             Vajra => Some(vajra),
+            Girya => Some(girya),
             OddlySmoothStone => Some(oddly_smooth_stone),
             DuVuDoll => Some(du_vu_doll),
             Akabeko => Some(akabeko),
@@ -729,6 +730,14 @@ fn vajra(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainStatusAction {
         status: Status::Strength,
         amount: 1,
+        target: CreatureRef::player(),
+    });
+}
+
+fn girya(v: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(GainStatusAction {
+        status: Status::Strength,
+        amount: *v,
         target: CreatureRef::player(),
     });
 }

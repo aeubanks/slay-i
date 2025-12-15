@@ -1,6 +1,9 @@
 use crate::{
     actions::heal::HealAction,
-    game::{ChooseUpgradeMasterGameState, CreatureRef, Game, RunActionsGameState},
+    game::{
+        ChooseRemoveFromMasterGameState, ChooseUpgradeMasterGameState, CreatureRef, Game,
+        RunActionsGameState,
+    },
     relic::RelicClass,
     step::Step,
 };
@@ -36,5 +39,176 @@ impl Step for CampfireUpgradeStep {
 
     fn description(&self, _: &Game) -> String {
         "campfire upgrade".to_owned()
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct CampfireLiftStep;
+
+impl Step for CampfireLiftStep {
+    fn run(&self, game: &mut Game) {
+        let v = game.get_relic_value(RelicClass::Girya).unwrap();
+        game.set_relic_value(RelicClass::Girya, v + 1);
+    }
+
+    fn description(&self, _: &Game) -> String {
+        "lift".to_owned()
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct CampfireTokeStep;
+
+impl Step for CampfireTokeStep {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(ChooseRemoveFromMasterGameState);
+    }
+
+    fn description(&self, _: &Game) -> String {
+        "toke".to_owned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        campfire::{CampfireLiftStep, CampfireRestStep, CampfireTokeStep, CampfireUpgradeStep},
+        cards::CardClass,
+        game::{
+            AscendStep, ChooseRemoveFromMasterStep, ChooseUpgradeMasterStep, CreatureRef,
+            GameBuilder,
+        },
+        map::RoomType,
+        relic::RelicClass,
+        state::NoopStep,
+        status::Status,
+        step::Step,
+    };
+
+    #[test]
+    fn test_campfire_basic() {
+        let g = GameBuilder::default()
+            .add_card(CardClass::Strike)
+            .add_card(CardClass::Defend)
+            .build_campfire();
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(CampfireRestStep) as Box<dyn Step>,
+                Box::new(CampfireUpgradeStep),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_campfire_no_actions_available() {
+        let g = GameBuilder::default()
+            .add_relic(RelicClass::FusionHammer)
+            .add_relic(RelicClass::CoffeeDripper)
+            .build_campfire();
+        assert_eq!(g.valid_steps(), vec![Box::new(NoopStep) as Box<dyn Step>,]);
+    }
+
+    #[test]
+    fn test_campfire_upgrade() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Strike)
+            .add_card(CardClass::Defend)
+            .build_campfire();
+        g.step_test(CampfireUpgradeStep);
+        g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
+        assert_eq!(g.master_deck[0].borrow().upgrade_count, 1);
+        assert_eq!(g.master_deck[1].borrow().upgrade_count, 0);
+    }
+
+    #[test]
+    fn test_campfire_upgrade_none_to_upgrade() {
+        let g = GameBuilder::default()
+            .add_card_upgraded(CardClass::Strike)
+            .build_campfire();
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(CampfireRestStep) as Box<dyn Step>,]
+        );
+    }
+
+    #[test]
+    fn test_campfire_rest() {
+        let mut g = GameBuilder::default().build_campfire();
+        g.player.cur_hp = 10;
+        g.player.max_hp = 51;
+        g.step_test(CampfireRestStep);
+        assert_eq!(g.player.cur_hp, 10 + 15);
+    }
+
+    #[test]
+    fn test_campfire_lift() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Girya)
+            .build_with_rooms(&[
+                RoomType::Monster,
+                RoomType::Campfire,
+                RoomType::Monster,
+                RoomType::Campfire,
+                RoomType::Campfire,
+                RoomType::Campfire,
+                RoomType::Monster,
+            ]);
+
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.player.get_status(Status::Strength), None);
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(CampfireLiftStep);
+        g.step_test(AscendStep { x: 0, y: 2 });
+        assert_eq!(g.player.get_status(Status::Strength), Some(1));
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(AscendStep { x: 0, y: 3 });
+        g.step_test(CampfireLiftStep);
+        g.step_test(AscendStep { x: 0, y: 4 });
+        g.step_test(CampfireLiftStep);
+        g.step_test(AscendStep { x: 0, y: 5 });
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(CampfireRestStep) as Box<dyn Step>,]
+        );
+        g.step_test(CampfireRestStep);
+        g.step_test(AscendStep { x: 0, y: 6 });
+        assert_eq!(g.player.get_status(Status::Strength), Some(3));
+    }
+
+    #[test]
+    fn test_campfire_toke() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Strike, 2)
+            .add_card(CardClass::Defend)
+            .add_card(CardClass::CurseOfTheBell)
+            .add_relic(RelicClass::PeacePipe)
+            .build_campfire();
+        g.step_test(CampfireTokeStep);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(ChooseRemoveFromMasterStep { master_index: 0 }) as Box<dyn Step>,
+                Box::new(ChooseRemoveFromMasterStep { master_index: 1 }),
+                Box::new(ChooseRemoveFromMasterStep { master_index: 2 }),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_campfire_toke_none_to_toke() {
+        // TODO: test bottled
+        let g = GameBuilder::default()
+            .add_card(CardClass::CurseOfTheBell)
+            .add_relic(RelicClass::PeacePipe)
+            .build_campfire();
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(CampfireRestStep) as Box<dyn Step>,
+                // Box::new(CampfireUpgradeStep),
+            ]
+        );
     }
 }

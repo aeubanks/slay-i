@@ -15,7 +15,7 @@ use crate::actions::removed_card_from_master_deck::RemovedCardFromMasterDeckActi
 use crate::actions::upgrade::UpgradeAction;
 use crate::actions::use_potion::UsePotionAction;
 use crate::blessings::ChooseBlessingGameState;
-use crate::campfire::{CampfireRestStep, CampfireUpgradeStep};
+use crate::campfire::{CampfireLiftStep, CampfireRestStep, CampfireTokeStep, CampfireUpgradeStep};
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
 use crate::combat::CombatBeginGameState;
@@ -237,6 +237,20 @@ impl GameState for CampfireGameState {
             && game.master_deck.iter().any(|c| c.borrow().can_upgrade())
         {
             steps.push(CampfireUpgradeStep);
+        }
+        if game
+            .get_relic_value(RelicClass::Girya)
+            .map_or(false, |v| v < 3)
+        {
+            steps.push(CampfireLiftStep);
+        }
+        if game.has_relic(RelicClass::PeacePipe)
+            && game
+                .master_deck
+                .iter()
+                .any(|c| c.borrow().class.can_remove_from_master_deck())
+        {
+            steps.push(CampfireTokeStep);
         }
         if steps.steps.is_empty() {
             steps.push(NoopStep);
@@ -1350,27 +1364,5 @@ mod tests {
         g.step_test(AscendStep { x: 0, y: 3 });
         g.step_test(CampfireUpgradeStep);
         g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
-    }
-
-    #[test]
-    fn test_campfire_upgrade() {
-        let mut g = GameBuilder::default()
-            .add_card(CardClass::Strike)
-            .add_card(CardClass::Defend)
-            .build_campfire();
-        g.step_test(CampfireUpgradeStep);
-        g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
-        assert_eq!(g.master_deck[0].borrow().upgrade_count, 1);
-        assert_eq!(g.master_deck[1].borrow().upgrade_count, 0);
-    }
-
-    #[test]
-    fn test_campfire_rest() {
-        let mut g = GameBuilder::default().build_campfire();
-        g.player.cur_hp = 10;
-        g.player.max_hp = 51;
-        g.set_debug();
-        g.step_test(CampfireRestStep);
-        assert_eq!(g.player.cur_hp, 10 + 15);
     }
 }
