@@ -100,7 +100,7 @@ r!(
     PenNib => Common,
     PotionBelt => Common,
     PreservedInsect => Common, // TODO
-    RegalPillow => Common, // TODO
+    RegalPillow => Common,
     SmilingMask => Common, // TODO
     Strawberry => Common,
     Boot => Common,
@@ -3008,5 +3008,16 @@ mod tests {
         assert_eq!(g.energy, 4);
         g.add_potion(Potion::Ancient);
         assert_eq!(g.potions, vec![None, None]);
+    }
+
+    #[test]
+    fn test_regal_pillow() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::RegalPillow)
+            .build_campfire();
+        g.player.cur_hp = 10;
+        g.player.max_hp = 100;
+        g.step_test(CampfireRestStep);
+        assert_eq!(g.player.cur_hp, 10 + 30 + 15)
     }
 }

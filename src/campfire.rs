@@ -1,6 +1,7 @@
 use crate::{
     actions::heal::HealAction,
     game::{ChooseUpgradeMasterGameState, CreatureRef, Game, RunActionsGameState},
+    relic::RelicClass,
     step::Step,
 };
 
@@ -9,9 +10,13 @@ pub struct CampfireRestStep;
 
 impl Step for CampfireRestStep {
     fn run(&self, game: &mut Game) {
+        let mut amount = (game.player.max_hp as f32 * 0.3) as i32;
+        if game.has_relic(RelicClass::RegalPillow) {
+            amount += 15;
+        }
         game.action_queue.push_bot(HealAction {
             target: CreatureRef::player(),
-            amount: (game.player.max_hp as f32 * 0.3) as i32,
+            amount,
         });
         game.state.push_state(RunActionsGameState);
     }
