@@ -193,11 +193,11 @@ r!(
     BlackStar => Boss, // TODO
     BustedCrown => Boss, // TODO
     CallingBell => Boss, // TODO
-    CoffeeDripper => Boss, // TODO
+    CoffeeDripper => Boss,
     CursedKey => Boss, // TODO
     Ectoplasm => Boss,
     EmptyCage => Boss, // TODO
-    FusionHammer => Boss, // TODO
+    FusionHammer => Boss,
     PandorasBox => Boss, // TODO
     PhilosophersStone => Boss, // TODO
     // RunicDome => Boss, // not supported

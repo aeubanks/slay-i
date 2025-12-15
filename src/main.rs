@@ -1,6 +1,7 @@
 mod action;
 mod actions;
 mod blessings;
+mod campfire;
 mod card;
 mod cards;
 mod combat;

@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-#[cfg(test)]
 use crate::action::Action;
 use crate::actions::add_card_to_master_deck::AddCardToMasterDeckAction;
 use crate::actions::damage::{DamageAction, DamageType};
@@ -13,21 +12,23 @@ use crate::actions::gain_status::GainStatusAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
 use crate::actions::removed_card_from_master_deck::RemovedCardFromMasterDeckAction;
+use crate::actions::upgrade::UpgradeAction;
 use crate::actions::use_potion::UsePotionAction;
 use crate::blessings::ChooseBlessingGameState;
+use crate::campfire::{CampfireRestStep, CampfireUpgradeStep};
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
 use crate::combat::CombatBeginGameState;
 use crate::creature::Creature;
 use crate::draw_pile::DrawPile;
-use crate::map::Map;
+use crate::map::{MAP_WIDTH, Map, RoomType};
 use crate::monster::{Monster, MonsterBehavior};
-use crate::monsters::test::NoopMonster;
+use crate::monsters::test::{ApplyStatusMonster, NoopMonster};
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{Relic, RelicClass, new_relic};
 use crate::rng::rand_slice;
-use crate::state::{GameState, GameStateManager, Steps};
+use crate::state::{GameState, GameStateManager, NoopStep, Steps};
 use crate::status::Status;
 use crate::step::Step;
 
@@ -67,7 +68,7 @@ struct GameStartGameState;
 
 impl GameState for GameStartGameState {
     fn run(&self, game: &mut Game) {
-        game.state.push_state(RollCombatGameState);
+        game.state.push_state(AscendGameState);
         game.state.push_state(ChooseBlessingGameState);
     }
 }
@@ -117,6 +118,56 @@ impl GameState for RunActionsGameState {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct AscendStep {
+    x: usize,
+    y: usize,
+}
+
+impl Step for AscendStep {
+    fn run(&self, game: &mut Game) {
+        game.map_position = Some((self.x, self.y));
+        match game.map.nodes[self.x][self.y].ty.unwrap() {
+            RoomType::Monster => game.state.push_state(RollCombatGameState),
+            RoomType::Elite => game.state.push_state(RollEliteCombatGameState),
+            RoomType::Event => game.state.push_state(RollEventGameState),
+            RoomType::Campfire => game.state.push_state(CampfireGameState),
+            RoomType::Shop => game.state.push_state(RollShopGameState),
+            RoomType::Treasure => game.state.push_state(RollTreasureGameState),
+        };
+    }
+    fn description(&self, _: &Game) -> String {
+        format!("ascend to ({}, {})", self.x, self.y)
+    }
+}
+
+#[derive(Debug)]
+struct AscendGameState;
+
+impl GameState for AscendGameState {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(AscendGameState);
+    }
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut steps = Steps::default();
+        match game.map_position {
+            Some(p) => {
+                for e in &game.map.nodes[p.0][p.1].edges {
+                    steps.push(AscendStep { x: *e, y: p.1 + 1 });
+                }
+            }
+            None => {
+                for x in 0..MAP_WIDTH {
+                    if !game.map.nodes[x][0].edges.is_empty() {
+                        steps.push(AscendStep { x, y: 0 });
+                    }
+                }
+            }
+        }
+        Some(steps)
+    }
+}
+
 #[derive(Debug)]
 pub struct RollCombatGameState;
 
@@ -124,8 +175,74 @@ impl GameState for RollCombatGameState {
     fn run(&self, game: &mut Game) {
         if let Some(m) = game.combat_monsters_queue.pop() {
             game.monsters = m;
-            game.state.push_state(CombatBeginGameState);
+        } else {
+            game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         }
+        game.state.push_state(CombatBeginGameState);
+    }
+}
+
+#[derive(Debug)]
+pub struct RollEliteCombatGameState;
+
+impl GameState for RollEliteCombatGameState {
+    fn run(&self, game: &mut Game) {
+        game.monsters = vec![Monster::new(
+            ApplyStatusMonster {
+                status: Status::Vulnerable,
+                amount: 1,
+            },
+            &mut game.rng,
+        )];
+        game.state.push_state(CombatBeginGameState);
+    }
+}
+
+#[derive(Debug)]
+pub struct RollEventGameState;
+
+impl GameState for RollEventGameState {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(RollCombatGameState);
+    }
+}
+
+#[derive(Debug)]
+pub struct CampfireGameState;
+
+impl GameState for CampfireGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut steps = Steps::default();
+        if !game.has_relic(RelicClass::CoffeeDripper) {
+            steps.push(CampfireRestStep);
+        }
+        if !game.has_relic(RelicClass::FusionHammer)
+            && game.master_deck.iter().any(|c| c.borrow().can_upgrade())
+        {
+            steps.push(CampfireUpgradeStep);
+        }
+        if steps.steps.is_empty() {
+            steps.push(NoopStep);
+        }
+        Some(steps)
+    }
+}
+
+#[derive(Debug)]
+pub struct RollShopGameState;
+
+impl GameState for RollShopGameState {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(RollCombatGameState);
+    }
+}
+
+#[derive(Debug)]
+pub struct RollTreasureGameState;
+
+impl GameState for RollTreasureGameState {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(RollCombatGameState);
     }
 }
 
@@ -145,21 +262,6 @@ struct DefeatGameState;
 impl GameState for DefeatGameState {
     fn run(&self, game: &mut Game) {
         game.status = GameStatus::Defeat;
-    }
-}
-
-#[derive(Debug)]
-pub struct RemoveFromMasterGameState;
-
-impl GameState for RemoveFromMasterGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Steps> {
-        let mut moves = Steps::default();
-        for (i, c) in game.master_deck.iter().enumerate() {
-            if c.borrow().class.can_remove_from_master_deck() {
-                moves.push(RemoveFromMasterStep { master_index: i });
-            }
-        }
-        Some(moves)
     }
 }
 
@@ -202,12 +304,59 @@ impl Step for TransformMasterStep {
     }
 }
 
+#[derive(Debug)]
+pub struct ChooseUpgradeMasterGameState;
+
+impl GameState for ChooseUpgradeMasterGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
+        for (i, c) in game.master_deck.iter().enumerate() {
+            if c.borrow().can_upgrade() {
+                moves.push(ChooseUpgradeMasterStep { master_index: i });
+            }
+        }
+        Some(moves)
+    }
+}
+
 #[derive(Eq, PartialEq, Debug)]
-pub struct RemoveFromMasterStep {
+pub struct ChooseUpgradeMasterStep {
     pub master_index: usize,
 }
 
-impl Step for RemoveFromMasterStep {
+impl Step for ChooseUpgradeMasterStep {
+    fn run(&self, game: &mut Game) {
+        let c = game.master_deck[self.master_index].clone();
+        game.action_queue.push_bot(UpgradeAction(c));
+        game.state.push_state(RunActionsGameState);
+    }
+
+    fn description(&self, game: &Game) -> String {
+        format!("upgrade {:?}", game.master_deck[self.master_index].borrow())
+    }
+}
+
+#[derive(Debug)]
+pub struct ChooseRemoveFromMasterGameState;
+
+impl GameState for ChooseRemoveFromMasterGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut moves = Steps::default();
+        for (i, c) in game.master_deck.iter().enumerate() {
+            if c.borrow().class.can_remove_from_master_deck() {
+                moves.push(ChooseRemoveFromMasterStep { master_index: i });
+            }
+        }
+        Some(moves)
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct ChooseRemoveFromMasterStep {
+    pub master_index: usize,
+}
+
+impl Step for ChooseRemoveFromMasterStep {
     fn run(&self, game: &mut Game) {
         let c = game.master_deck.remove(self.master_index);
         game.action_queue
@@ -361,6 +510,10 @@ impl GameBuilder {
         }
         g
     }
+    #[cfg(test)]
+    pub fn build_campfire(self) -> Game {
+        self.build_impl(CampfireGameState)
+    }
     pub fn build(self) -> Game {
         self.build_impl(GameStartGameState)
     }
@@ -411,8 +564,10 @@ pub struct Game {
     pub state: GameStateManager,
     pub status: GameStatus,
     valid_steps: Option<Box<dyn GameState>>,
+    pub is_running: bool,
 
     pub map: Map,
+    pub map_position: Option<(usize, usize)>,
     pub player: Creature,
     pub relics: Vec<Relic>,
     pub potions: Vec<Option<Potion>>,
@@ -445,6 +600,7 @@ impl Game {
         let map = Map::generate(&mut rng);
         let mut g = Self {
             map,
+            map_position: Default::default(),
             valid_steps: Default::default(),
             player: Creature::new("Ironclad", 80),
             relics: Default::default(),
@@ -472,6 +628,7 @@ impl Game {
             chosen_cards: Default::default(),
             next_id: 1,
             status: GameStatus::Combat,
+            is_running: false,
         };
 
         for (c, u) in master_deck {
@@ -829,8 +986,13 @@ impl Game {
     }
 
     fn step_impl(&mut self, step: Box<dyn Step>) {
+        assert!(!self.is_running);
+        self.is_running = true;
+
         step.run(self);
         self.run();
+
+        self.is_running = false;
     }
 
     pub fn can_play_card(&self, play: &PlayCardAction) -> bool {
@@ -896,11 +1058,15 @@ impl Game {
     }
 
     pub fn run_all_actions(&mut self) {
+        assert!(!self.is_running);
+        self.is_running = true;
+
         self.state.push_state(RunActionsGameState);
         self.run();
+
+        self.is_running = false;
     }
 
-    #[cfg(test)]
     pub fn run_action<A: Action + 'static>(&mut self, a: A) {
         self.assert_no_actions();
         self.action_queue.push_bot(a);
@@ -1121,4 +1287,67 @@ impl Game {
     trigger!(trigger_relics_on_lose_hp, on_lose_hp);
     trigger!(trigger_relics_at_combat_finish, at_combat_finish);
     trigger_card!(trigger_relics_on_card_played, on_card_played);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        blessings::{Blessing, ChooseBlessingStep},
+        campfire::{CampfireRestStep, CampfireUpgradeStep},
+        cards::CardClass,
+        combat::PlayCardStep,
+        game::{AscendStep, ChooseUpgradeMasterStep, GameBuilder},
+        map::{Map, RoomType},
+    };
+
+    #[test]
+    fn test_game() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::DebugKill)
+            .build();
+        g.map = Map::straight_single_path(&[
+            RoomType::Monster,
+            RoomType::Campfire,
+            RoomType::Monster,
+            RoomType::Campfire,
+        ]);
+        g.step_test(ChooseBlessingStep(Blessing::GainMaxHPSmall));
+        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(PlayCardStep {
+            hand_index: 0,
+            target: Some(0),
+        });
+        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(CampfireRestStep);
+        g.step_test(AscendStep { x: 0, y: 2 });
+        g.step_test(PlayCardStep {
+            hand_index: 0,
+            target: Some(0),
+        });
+        g.step_test(AscendStep { x: 0, y: 3 });
+        g.step_test(CampfireUpgradeStep);
+        g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
+    }
+
+    #[test]
+    fn test_campfire_upgrade() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Strike)
+            .add_card(CardClass::Defend)
+            .build_campfire();
+        g.step_test(CampfireUpgradeStep);
+        g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
+        assert_eq!(g.master_deck[0].borrow().upgrade_count, 1);
+        assert_eq!(g.master_deck[1].borrow().upgrade_count, 0);
+    }
+
+    #[test]
+    fn test_campfire_rest() {
+        let mut g = GameBuilder::default().build_campfire();
+        g.player.cur_hp = 10;
+        g.player.max_hp = 51;
+        g.set_debug();
+        g.step_test(CampfireRestStep);
+        assert_eq!(g.player.cur_hp, 10 + 15);
+    }
 }

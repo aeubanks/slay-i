@@ -5,7 +5,7 @@ use rand::{Rng, seq::SliceRandom};
 use crate::{game::Rand, rng::rand_slice};
 
 pub struct Map {
-    nodes: Vec<Vec<Node>>,
+    pub nodes: Vec<Vec<Node>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -32,16 +32,16 @@ impl RoomType {
 }
 
 #[derive(Default, Clone)]
-struct Node {
-    ty: Option<RoomType>,
+pub struct Node {
+    pub ty: Option<RoomType>,
     // x of connected nodes above
-    edges: Vec<usize>,
+    pub edges: Vec<usize>,
 }
 
-const WIDTH: usize = 7;
-const HEIGHT: usize = 15;
-const PRINT_WIDTH: usize = WIDTH * 2 - 1;
-const PRINT_HEIGHT: usize = HEIGHT * 2 - 1;
+pub const MAP_WIDTH: usize = 7;
+pub const MAP_HEIGHT: usize = 15;
+const PRINT_WIDTH: usize = MAP_WIDTH * 2 - 1;
+const PRINT_HEIGHT: usize = MAP_HEIGHT * 2 - 1;
 const PRINT_TOTAL: usize = PRINT_WIDTH * PRINT_HEIGHT;
 
 struct Print {
@@ -77,7 +77,7 @@ impl Print {
 impl Map {
     fn new() -> Self {
         Self {
-            nodes: vec![vec![Node::default(); HEIGHT]; WIDTH],
+            nodes: vec![vec![Node::default(); MAP_HEIGHT]; MAP_WIDTH],
         }
     }
     fn ancestor_depth(
@@ -108,7 +108,7 @@ impl Map {
             ret.push(x - 1);
         }
         ret.push(x);
-        if x != WIDTH - 1 {
+        if x != MAP_WIDTH - 1 {
             ret.push(x + 1);
         }
         ret
@@ -127,10 +127,10 @@ impl Map {
     }
     fn node_indexes(&self) -> Vec<(usize, usize)> {
         let mut ret = Vec::new();
-        let mut cur_row = (0..WIDTH)
+        let mut cur_row = (0..MAP_WIDTH)
             .filter(|x| !self.nodes[*x][0].edges.is_empty())
             .collect::<Vec<_>>();
-        for y in 0..HEIGHT {
+        for y in 0..MAP_HEIGHT {
             let mut next_row = HashSet::new();
             for x in cur_row {
                 ret.push((x, y));
@@ -148,8 +148,8 @@ impl Map {
     }
     fn str(&self) -> String {
         let mut print = Print::new();
-        for y in 0..HEIGHT {
-            for x in 0..WIDTH {
+        for y in 0..MAP_HEIGHT {
+            for x in 0..MAP_WIDTH {
                 if !self.nodes[x][y].edges.is_empty() || !self.parents(x, y).is_empty() {
                     print.set(x * 2, y * 2, self.nodes[x][y].ty.unwrap().char());
                     for &e in &self.nodes[x][y].edges {
@@ -174,17 +174,17 @@ impl Map {
     fn generate_nodes(rng: &mut Rand, map: &mut Map) {
         let mut first_x = None;
         for _ in 0..6 {
-            let mut cur_x = rng.random_range(0..WIDTH);
+            let mut cur_x = rng.random_range(0..MAP_WIDTH);
             // second starting x must be different from first starting x
             match first_x {
                 Some(x) => {
                     while cur_x == x {
-                        cur_x = rng.random_range(0..WIDTH);
+                        cur_x = rng.random_range(0..MAP_WIDTH);
                     }
                 }
                 None => first_x = Some(cur_x),
             }
-            for y in 0..(HEIGHT - 1) {
+            for y in 0..(MAP_HEIGHT - 1) {
                 // choose one of three closest x values
                 let mut next_x = rand_slice(rng, &Map::x_neighbors(cur_x));
                 // reroll if ancestors are too close
@@ -203,8 +203,8 @@ impl Map {
                             }
                         } else if next_x == cur_x {
                             next_x = rand_slice(rng, &Map::x_neighbors(cur_x));
-                        } else if cur_x == WIDTH - 1 {
-                            next_x = WIDTH - 1;
+                        } else if cur_x == MAP_WIDTH - 1 {
+                            next_x = MAP_WIDTH - 1;
                         } else {
                             next_x = cur_x + rng.random_range(0..=1);
                         }
@@ -227,7 +227,7 @@ impl Map {
         let count1 = map
             .node_indexes()
             .iter()
-            .filter(|(_, y)| *y != HEIGHT - 2)
+            .filter(|(_, y)| *y != MAP_HEIGHT - 2)
             .count() as f32;
         let num_shops = (0.05 * count1) as usize;
         let num_campfires = (0.12 * count1) as usize;
@@ -292,10 +292,10 @@ impl Map {
         true
     }
     fn generate_rooms(rng: &mut Rand, map: &mut Map) {
-        for x in 0..WIDTH {
+        for x in 0..MAP_WIDTH {
             map.nodes[x][0].ty = Some(RoomType::Monster);
             map.nodes[x][8].ty = Some(RoomType::Treasure);
-            map.nodes[x][HEIGHT - 1].ty = Some(RoomType::Campfire);
+            map.nodes[x][MAP_HEIGHT - 1].ty = Some(RoomType::Campfire);
         }
         let mut rooms = Map::generate_rooms_bag(rng, map);
         for (x, y) in map.node_indexes() {
@@ -324,6 +324,14 @@ impl Map {
         let mut map = Map::new();
         Map::generate_nodes(rng, &mut map);
         Map::generate_rooms(rng, &mut map);
+        map
+    }
+    pub fn straight_single_path(rooms: &[RoomType]) -> Self {
+        let mut map = Map::new();
+        for (i, room) in rooms.iter().enumerate() {
+            map.nodes[0][i].ty = Some(*room);
+            map.nodes[0][i].edges = vec![0];
+        }
         map
     }
 }
@@ -425,12 +433,12 @@ mod tests {
         let mut rng = Rand::default();
         for _ in 0..20 {
             let map = Map::generate(&mut rng);
-            let num_start_points = (0..WIDTH)
+            let num_start_points = (0..MAP_WIDTH)
                 .filter(|&x| !map.nodes[x][0].edges.is_empty())
                 .count();
             assert!(num_start_points >= 2);
-            for y in 0..HEIGHT {
-                for x in 0..(WIDTH - 1) {
+            for y in 0..MAP_HEIGHT {
+                for x in 0..(MAP_WIDTH - 1) {
                     // check no overlapping edges
                     assert!(
                         !(map.nodes[x][y].edges.contains(&(x + 1))

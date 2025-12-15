@@ -12,6 +12,6 @@ impl Action for UpgradeAction {
 
 impl std::fmt::Debug for UpgradeAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "upgrade {:?} in hand", self.0.borrow())
+        write!(f, "upgrade {:?}", self.0.borrow())
     }
 }

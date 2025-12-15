@@ -4,7 +4,7 @@ use crate::{
         increase_max_hp::IncreaseMaxHPAction,
     },
     cards::random_uncommon_colorless,
-    game::{Game, RemoveFromMasterGameState, RunActionsGameState, TransformMasterGameState},
+    game::{ChooseRemoveFromMasterGameState, Game, RunActionsGameState, TransformMasterGameState},
     potion::random_common_potion,
     relic::random_common_relic,
     state::{GameState, Steps},
@@ -40,7 +40,7 @@ impl Blessing {
                 game.state.push_state(TransformMasterGameState);
             }
             RemoveOne => {
-                game.state.push_state(RemoveFromMasterGameState);
+                game.state.push_state(ChooseRemoveFromMasterGameState);
             }
             RandomUncommonColorless => {
                 let r = random_uncommon_colorless(&mut game.rng);
@@ -73,7 +73,7 @@ impl GameState for ChooseBlessingGameState {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-struct ChooseBlessingStep(Blessing);
+pub struct ChooseBlessingStep(pub Blessing);
 
 impl Step for ChooseBlessingStep {
     fn run(&self, game: &mut Game) {

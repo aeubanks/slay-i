@@ -39,7 +39,7 @@ mod tests {
         actions::block::BlockAction,
         cards::CardClass,
         combat::{EndTurnStep, PlayCardStep},
-        game::{GameBuilder, RemoveFromMasterGameState, RemoveFromMasterStep},
+        game::{ChooseRemoveFromMasterGameState, ChooseRemoveFromMasterStep, GameBuilder},
         relic::RelicClass,
         status::Status,
         step::Step,
@@ -200,8 +200,8 @@ mod tests {
             .build_combat();
         let max_hp = g.player.max_hp;
         g.player.cur_hp = max_hp - 1;
-        g.state.push_state(RemoveFromMasterGameState);
-        g.step_test_no_check_valid(RemoveFromMasterStep { master_index: 0 });
+        g.state.push_state(ChooseRemoveFromMasterGameState);
+        g.step_test_no_check_valid(ChooseRemoveFromMasterStep { master_index: 0 });
         assert_eq!(g.player.max_hp, max_hp - 3);
         assert_eq!(g.player.cur_hp, max_hp - 3);
     }
