@@ -74,9 +74,21 @@ impl GameState for GameStartGameState {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
+#[cfg(test)]
+struct TestStartNoBlessingGameState;
+
+#[cfg(test)]
+impl GameState for TestStartNoBlessingGameState {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(AscendGameState);
+    }
+}
+
+#[derive(Debug)]
+#[cfg(test)]
 struct TestCombatStartGameState;
 
+#[cfg(test)]
 impl GameState for TestCombatStartGameState {
     fn run(&self, game: &mut Game) {
         game.state.push_state(RollCombatGameState);
@@ -119,9 +131,9 @@ impl GameState for RunActionsGameState {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct AscendStep {
-    x: usize,
-    y: usize,
+pub struct AscendStep {
+    pub x: usize,
+    pub y: usize,
 }
 
 impl Step for AscendStep {
@@ -211,6 +223,11 @@ impl GameState for RollEventGameState {
 pub struct CampfireGameState;
 
 impl GameState for CampfireGameState {
+    fn run(&self, game: &mut Game) {
+        if game.has_relic(RelicClass::AncientTeaSet) {
+            game.set_relic_value(RelicClass::AncientTeaSet, 1);
+        }
+    }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut steps = Steps::default();
         if !game.has_relic(RelicClass::CoffeeDripper) {
@@ -513,6 +530,12 @@ impl GameBuilder {
     #[cfg(test)]
     pub fn build_campfire(self) -> Game {
         self.build_impl(CampfireGameState)
+    }
+    #[cfg(test)]
+    pub fn build_with_rooms(self, rooms: &[RoomType]) -> Game {
+        let mut g = self.build_impl(TestStartNoBlessingGameState);
+        g.map = Map::straight_single_path(rooms);
+        g
     }
     pub fn build(self) -> Game {
         self.build_impl(GameStartGameState)

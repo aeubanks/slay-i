@@ -79,7 +79,7 @@ r!(
 
     Akabeko => Common,
     Anchor => Common,
-    AncientTeaSet => Common, // TODO
+    AncientTeaSet => Common,
     ArtOfWar => Common,
     BagOfMarbles => Common,
     BagOfPrep => Common,
@@ -297,6 +297,7 @@ impl RelicClass {
         match self {
             NeowsLament => Some(neows_lament),
             BloodVial => Some(blood_vial),
+            AncientTeaSet => Some(ancient_tea_set),
             Lantern => Some(lantern),
             GremlinVisage => Some(gremlin_visage),
             MutagenicStrength => Some(mutagenic_strength),
@@ -652,6 +653,13 @@ fn blood_vial(_: &mut i32, queue: &mut ActionQueue) {
 
 fn lantern(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(GainEnergyAction(1));
+}
+
+fn ancient_tea_set(v: &mut i32, queue: &mut ActionQueue) {
+    if *v != 0 {
+        *v = 0;
+        queue.push_bot(GainEnergyAction(2));
+    }
 }
 
 fn red_mask(_: &mut i32, queue: &mut ActionQueue) {
@@ -1023,9 +1031,11 @@ mod tests {
             choose_gamble::{GambleEndStep, GambleStep},
         },
         assert_matches,
+        campfire::CampfireRestStep,
         cards::{CardClass, CardColor},
         combat::{EndTurnStep, PlayCardStep},
-        game::{GameBuilder, GameStatus},
+        game::{AscendStep, GameBuilder, GameStatus},
+        map::RoomType,
         monster::Monster,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
@@ -1454,6 +1464,32 @@ mod tests {
             .build_combat();
         assert_eq!(g.energy, 4);
         g.step_test(EndTurnStep);
+        assert_eq!(g.energy, 3);
+    }
+
+    #[test]
+    fn test_ancient_tea_set() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::AncientTeaSet)
+            .build_with_rooms(&[
+                RoomType::Monster,
+                RoomType::Campfire,
+                RoomType::Monster,
+                RoomType::Monster,
+            ]);
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.energy, 3);
+        g.step_test(EndTurnStep);
+        assert_eq!(g.energy, 3);
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(CampfireRestStep);
+        g.step_test(AscendStep { x: 0, y: 2 });
+        assert_eq!(g.energy, 5);
+        g.step_test(EndTurnStep);
+        assert_eq!(g.energy, 3);
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(AscendStep { x: 0, y: 3 });
         assert_eq!(g.energy, 3);
     }
 
