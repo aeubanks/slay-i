@@ -29,6 +29,7 @@ use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{Relic, RelicClass};
 use crate::rng::rand_slice;
+use crate::shop::{Shop, ShopGameState};
 use crate::state::{GameState, GameStateManager, NoopStep, Steps};
 use crate::status::Status;
 use crate::step::Step;
@@ -265,7 +266,8 @@ pub struct RollShopGameState;
 
 impl GameState for RollShopGameState {
     fn run(&self, game: &mut Game) {
-        game.state.push_state(RollCombatGameState);
+        game.shop = Shop::new(game);
+        game.state.push_state(ShopGameState);
     }
 }
 
@@ -547,6 +549,10 @@ impl GameBuilder {
         self.build_impl(CampfireGameState)
     }
     #[cfg(test)]
+    pub fn build_shop(self) -> Game {
+        self.build_impl(RollShopGameState)
+    }
+    #[cfg(test)]
     pub fn build_with_rooms(self, rooms: &[RoomType]) -> Game {
         let mut g = self.build_impl(TestStartNoBlessingGameState);
         g.map = Map::straight_single_path(rooms);
@@ -617,6 +623,9 @@ pub struct Game {
     next_id: u32,
     pub combat_monsters_queue: Vec<Vec<Monster>>,
 
+    pub shop: Shop,
+    pub shop_remove_count: i32,
+
     pub turn: i32,
     pub monsters: Vec<Monster>,
     pub energy: i32,
@@ -648,6 +657,8 @@ impl Game {
             potions: vec![None; 2],
             gold: 0,
             master_deck: Default::default(),
+            shop: Default::default(),
+            shop_remove_count: 0,
             turn: 0,
             energy: 0,
             draw_per_turn: 5,
@@ -984,6 +995,8 @@ impl Game {
             GameStatus::Defeat | GameStatus::Victory
         ));
         assert!(!self.state.is_empty());
+
+        self.valid_steps = None;
 
         while !matches!(self.status, GameStatus::Defeat | GameStatus::Victory)
             && let Some(state) = self.state.pop_state()

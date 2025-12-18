@@ -16,6 +16,7 @@ mod potion;
 mod queue;
 mod relic;
 mod rng;
+mod shop;
 mod state;
 mod status;
 mod step;

@@ -101,7 +101,7 @@ r!(
     PotionBelt => Common,
     PreservedInsect => Common, // TODO
     RegalPillow => Common,
-    SmilingMask => Common, // TODO
+    SmilingMask => Common,
     Strawberry => Common,
     Boot => Common,
     TinyChest => Common, // TODO
@@ -136,7 +136,7 @@ r!(
     SingingBowl => Uncommon, // TODO
     StrikeDummy => Uncommon,
     Sundial => Uncommon,
-    TheCourier => Uncommon, // TODO
+    TheCourier => Uncommon,
     ToxicEgg => Uncommon, // TODO
     WhiteBeastStatue => Uncommon, // TODO
     PaperPhrog => Uncommon,
@@ -179,7 +179,7 @@ r!(
     HandDrill => Shop,
     LeesWaffle => Shop,
     MedicalKit => Shop,
-    MembershipCard => Shop, // TODO
+    MembershipCard => Shop,
     OrangePellets => Shop, // TODO
     Orrery => Shop, // TODO
     // PrismaticShard => Shop, // not supported
@@ -1023,10 +1023,34 @@ lazy_static! {
         .into_iter()
         .filter(|r| r.rarity() == RelicRarity::Common)
         .collect();
+    static ref ALL_UNCOMMON: Vec<RelicClass> = RelicClass::all()
+        .into_iter()
+        .filter(|r| r.rarity() == RelicRarity::Uncommon)
+        .collect();
+    static ref ALL_RARE: Vec<RelicClass> = RelicClass::all()
+        .into_iter()
+        .filter(|r| r.rarity() == RelicRarity::Rare)
+        .collect();
+    static ref ALL_SHOP: Vec<RelicClass> = RelicClass::all()
+        .into_iter()
+        .filter(|r| r.rarity() == RelicRarity::Shop)
+        .collect();
 }
 
 pub fn random_common_relic(rng: &mut Rand) -> RelicClass {
     rand_slice(rng, &ALL_COMMON)
+}
+
+pub fn random_uncommon_relic(rng: &mut Rand) -> RelicClass {
+    rand_slice(rng, &ALL_UNCOMMON)
+}
+
+pub fn random_rare_relic(rng: &mut Rand) -> RelicClass {
+    rand_slice(rng, &ALL_RARE)
+}
+
+pub fn random_shop_relic(rng: &mut Rand) -> RelicClass {
+    rand_slice(rng, &ALL_RARE)
 }
 
 #[cfg(test)]

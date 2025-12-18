@@ -327,6 +327,11 @@ lazy_static! {
         .copied()
         .filter(|c| c.rarity() == CardRarity::Uncommon)
         .collect();
+    static ref ALL_RARE_COLORLESS: Vec<CardClass> = ALL_COLORLESS
+        .iter()
+        .copied()
+        .filter(|c| c.rarity() == CardRarity::Rare)
+        .collect();
     static ref ALL_COLORLESS_IN_COMBAT: Vec<CardClass> = ALL_COLORLESS
         .iter()
         .copied()
@@ -337,6 +342,21 @@ lazy_static! {
         .copied()
         .filter(|c| c.color() == CardColor::Red)
         .filter(|c| c.rarity() != CardRarity::Basic)
+        .collect();
+    static ref ALL_NON_BASIC_RED_ATTACKS: Vec<CardClass> = ALL_NON_BASIC_RED
+        .iter()
+        .copied()
+        .filter(|c| c.ty() == CardType::Attack)
+        .collect();
+    static ref ALL_NON_BASIC_RED_SKILLS: Vec<CardClass> = ALL_NON_BASIC_RED
+        .iter()
+        .copied()
+        .filter(|c| c.ty() == CardType::Skill)
+        .collect();
+    static ref ALL_NON_BASIC_RED_POWERS: Vec<CardClass> = ALL_NON_BASIC_RED
+        .iter()
+        .copied()
+        .filter(|c| c.ty() == CardType::Power)
         .collect();
     static ref ALL_RED_IN_COMBAT: Vec<CardClass> = ALL_NON_BASIC_RED
         .iter()
@@ -370,6 +390,18 @@ fn random_red(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_NON_BASIC_RED)
 }
 
+pub fn random_red_attack(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_NON_BASIC_RED_ATTACKS)
+}
+
+pub fn random_red_skill(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_NON_BASIC_RED_SKILLS)
+}
+
+pub fn random_red_power(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_NON_BASIC_RED_POWERS)
+}
+
 pub fn random_red_in_combat(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_RED_IN_COMBAT)
 }
@@ -396,6 +428,10 @@ pub fn random_colorless_in_combat(rng: &mut Rand) -> CardClass {
 
 pub fn random_uncommon_colorless(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_UNCOMMON_COLORLESS)
+}
+
+pub fn random_rare_colorless(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_RARE_COLORLESS)
 }
 
 fn random_curse(rng: &mut Rand) -> CardClass {

@@ -23,7 +23,7 @@ use crate::{
 use lazy_static::lazy_static;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum PotionRarity {
+pub enum PotionRarity {
     Common,
     Uncommon,
     Rare,
@@ -40,7 +40,7 @@ macro_rules! p {
             )+
         }
         impl Potion {
-            fn rarity(&self) -> PotionRarity {
+            pub fn rarity(&self) -> PotionRarity {
                 use PotionRarity::*;
                 match self {
                     $(Self::$name => $rarity,)+
@@ -327,14 +327,39 @@ fn smoke(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn entropic(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 
 lazy_static! {
-    static ref ALL_COMMON: Vec<Potion> = Potion::all()
-        .into_iter()
+    static ref ALL: Vec<Potion> = Potion::all();
+    static ref ALL_COMMON: Vec<Potion> = ALL
+        .iter()
+        .copied()
         .filter(|r| r.rarity() == PotionRarity::Common)
         .collect();
+    static ref ALL_UNCOMMON: Vec<Potion> = ALL
+        .iter()
+        .copied()
+        .filter(|r| r.rarity() == PotionRarity::Uncommon)
+        .collect();
+    static ref ALL_RARE: Vec<Potion> = ALL
+        .iter()
+        .copied()
+        .filter(|r| r.rarity() == PotionRarity::Rare)
+        .collect();
+}
+
+#[allow(dead_code)]
+pub fn random_potion(rng: &mut Rand) -> Potion {
+    rand_slice(rng, &ALL)
 }
 
 pub fn random_common_potion(rng: &mut Rand) -> Potion {
     rand_slice(rng, &ALL_COMMON)
+}
+
+pub fn random_uncommon_potion(rng: &mut Rand) -> Potion {
+    rand_slice(rng, &ALL_UNCOMMON)
+}
+
+pub fn random_rare_potion(rng: &mut Rand) -> Potion {
+    rand_slice(rng, &ALL_RARE)
 }
 
 #[cfg(test)]
