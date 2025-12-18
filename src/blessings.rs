@@ -1,7 +1,8 @@
 use crate::{
     actions::{
         add_card_to_master_deck::AddCardToMasterDeckAction, gain_potion::GainPotionAction,
-        increase_max_hp::IncreaseMaxHPAction,
+        gain_relic::GainRelicAction, increase_max_hp::IncreaseMaxHPAction,
+        remove_relic::RemoveRelicAction,
     },
     cards::random_uncommon_colorless,
     game::{ChooseRemoveFromMasterGameState, Game, RunActionsGameState, TransformMasterGameState},
@@ -31,10 +32,11 @@ impl Blessing {
             }
             CommonRelic => {
                 let r = random_common_relic(&mut game.rng);
-                game.add_relic(r);
+                game.action_queue.push_bot(GainRelicAction(r));
             }
             RemoveRelic => {
-                game.remove_relic(game.relics[0].get_class());
+                let r = game.relics[0].get_class();
+                game.action_queue.push_bot(RemoveRelicAction(r));
             }
             TransformOne => {
                 game.state.push_state(TransformMasterGameState);

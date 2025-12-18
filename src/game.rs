@@ -8,6 +8,7 @@ use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
 use crate::actions::gain_energy::GainEnergyAction;
+use crate::actions::gain_relic::GainRelicAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
@@ -26,7 +27,7 @@ use crate::monster::{Monster, MonsterBehavior};
 use crate::monsters::test::{ApplyStatusMonster, NoopMonster};
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
-use crate::relic::{Relic, RelicClass, new_relic};
+use crate::relic::{Relic, RelicClass};
 use crate::rng::rand_slice;
 use crate::state::{GameState, GameStateManager, NoopStep, Steps};
 use crate::status::Status;
@@ -563,8 +564,10 @@ impl GameBuilder {
             g.player.set_status(k, v);
         }
         for r in self.relics {
-            g.add_relic(r);
+            g.action_queue.push_bot(GainRelicAction(r));
         }
+        g.state.push_state(RunActionsGameState);
+        g.run();
         if let Some(hp) = self.player_hp {
             g.player.cur_hp = hp;
         }
@@ -1272,19 +1275,15 @@ impl Game {
         self.potions[i] = None;
         p
     }
+    #[cfg(test)]
     pub fn add_relic(&mut self, class: RelicClass) {
-        self.assert_no_actions();
-
-        let mut r = new_relic(class);
-        r.on_equip(&mut self.action_queue);
-        self.relics.push(r);
-        self.run_all_actions();
+        self.run_action(GainRelicAction(class));
     }
+    #[cfg(test)]
     pub fn remove_relic(&mut self, class: RelicClass) {
-        let idx = self.relics.iter().position(|r| r.get_class() == class);
-        let mut r = self.relics.remove(idx.unwrap());
-        r.on_unequip(&mut self.action_queue);
-        self.run_all_actions();
+        use crate::actions::remove_relic::RemoveRelicAction;
+
+        self.run_action(RemoveRelicAction(class));
     }
     pub fn has_relic(&self, class: RelicClass) -> bool {
         self.relics.iter().any(|r| r.get_class() == class)
