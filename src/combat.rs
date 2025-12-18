@@ -283,7 +283,6 @@ impl GameState for PlayerTurnGameState {
         }
         for (pi, p) in game.potions.iter().enumerate() {
             if let Some(p) = p {
-                moves.push(DiscardPotionStep { potion_index: pi });
                 if !p.can_use() {
                     continue;
                 }
@@ -303,6 +302,11 @@ impl GameState for PlayerTurnGameState {
                         target: None,
                     });
                 }
+            }
+        }
+        for (pi, p) in game.potions.iter().enumerate() {
+            if p.is_some() {
+                moves.push(DiscardPotionStep { potion_index: pi });
             }
         }
         Some(moves)
@@ -364,7 +368,6 @@ mod tests {
         monsters::test::{AttackMonster, NoopMonster},
         potion::Potion,
         status::Status,
-        step::step_eq,
     };
 
     use super::*;
@@ -379,39 +382,38 @@ mod tests {
         g.add_card_to_hand(CardClass::Defend);
         g.add_potion(Potion::Fire);
         g.add_potion(Potion::Flex);
-        let valid = g.valid_steps();
-        for s in [
-            &EndTurnStep,
-            &PlayCardStep {
-                hand_index: 0,
-                target: Some(0),
-            },
-            &PlayCardStep {
-                hand_index: 0,
-                target: Some(1),
-            },
-            &PlayCardStep {
-                hand_index: 1,
-                target: None,
-            },
-            &UsePotionStep {
-                potion_index: 0,
-                target: Some(0),
-            },
-            &UsePotionStep {
-                potion_index: 0,
-                target: Some(1),
-            },
-            &UsePotionStep {
-                potion_index: 1,
-                target: None,
-            },
-            &DiscardPotionStep { potion_index: 0 },
-            &DiscardPotionStep { potion_index: 1 },
-        ] as [&dyn Step; _]
-        {
-            assert!(valid.iter().any(|v| step_eq(v, s)));
-        }
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(EndTurnStep) as Box<dyn Step>,
+                Box::new(PlayCardStep {
+                    hand_index: 0,
+                    target: Some(0),
+                }),
+                Box::new(PlayCardStep {
+                    hand_index: 0,
+                    target: Some(1),
+                }),
+                Box::new(PlayCardStep {
+                    hand_index: 1,
+                    target: None,
+                }),
+                Box::new(UsePotionStep {
+                    potion_index: 0,
+                    target: Some(0),
+                }),
+                Box::new(UsePotionStep {
+                    potion_index: 0,
+                    target: Some(1),
+                }),
+                Box::new(UsePotionStep {
+                    potion_index: 1,
+                    target: None,
+                }),
+                Box::new(DiscardPotionStep { potion_index: 0 }),
+                Box::new(DiscardPotionStep { potion_index: 1 }),
+            ]
+        );
     }
 
     #[test]

@@ -9,8 +9,3 @@ pub trait Step: DynEq + Debug {
 }
 
 dyn_eq::eq_trait_object!(Step);
-
-#[cfg(test)]
-pub fn step_eq(a: &Box<dyn Step>, b: &dyn Step) -> bool {
-    **a == *b
-}
