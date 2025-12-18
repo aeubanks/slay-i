@@ -242,7 +242,7 @@ impl GameState for CampfireGameState {
         }
         if game
             .get_relic_value(RelicClass::Girya)
-            .map_or(false, |v| v < 3)
+            .is_some_and(|v| v < 3)
         {
             steps.push(CampfireLiftStep);
         }
@@ -868,8 +868,7 @@ impl Game {
             });
         }
         if target.is_player()
-            && amount <= 5
-            && amount >= 1
+            && (1..=5).contains(&amount)
             && matches!(ty, DamageType::Attack { .. })
             && self.has_relic(RelicClass::Torii)
         {
