@@ -158,7 +158,7 @@ impl Shop {
             CardRarity::Common => 50,
             CardRarity::Uncommon => 75,
             CardRarity::Rare => 150,
-            CardRarity::Basic | CardRarity::Special => panic!(),
+            CardRarity::Basic | CardRarity::Special | CardRarity::Curse => panic!(),
         };
         if class.color() == CardColor::Colorless {
             price = (price as f32 * 1.2).floor() as i32;

@@ -28,6 +28,7 @@ pub enum CardRarity {
     Uncommon,
     Rare,
     Special,
+    Curse,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -234,19 +235,19 @@ c!(
     BurnPlus => (Special, Status, Special, Zero, noop_behavior, true),
     Void => (Special, Status, Special, Zero, noop_behavior, true),
     // Curses
-    AscendersBane => (Special, Curse, Curse, Zero, noop_behavior, true),
-    CurseOfTheBell => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Clumsy => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Injury => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Writhe => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Parasite => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Shame => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Doubt => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Decay => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Regret => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Pain => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Normality => (Special, Curse, Curse, Zero, noop_behavior, true),
-    Necronomicurse => (Special, Curse, Curse, Zero, noop_behavior, true),
+    AscendersBane => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    CurseOfTheBell => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Clumsy => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Injury => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Writhe => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Parasite => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Shame => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Doubt => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Decay => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Regret => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Pain => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Normality => (Curse, Curse, Curse, Zero, noop_behavior, true),
+    Necronomicurse => (Curse, Curse, Curse, Zero, noop_behavior, true),
     // Other
     DebugKill => (Special, Attack, Special, cost(0), attacks::debug_kill_behavior, false),
     TestAttack => (Special, Attack, Special, cost(0), noop_behavior, false),
@@ -488,12 +489,12 @@ mod tests {
             {
                 let t = transformed(CardClass::AscendersBane, &mut rng);
                 assert_eq!(t.color(), CardColor::Curse);
-                assert_eq!(t.rarity(), CardRarity::Special);
+                assert_eq!(t.rarity(), CardRarity::Curse);
             }
             {
                 let t = transformed(CardClass::Injury, &mut rng);
                 assert_eq!(t.color(), CardColor::Curse);
-                assert_eq!(t.rarity(), CardRarity::Special);
+                assert_eq!(t.rarity(), CardRarity::Curse);
                 assert_ne!(t, CardClass::AscendersBane);
                 assert_ne!(t, CardClass::Injury);
             }
