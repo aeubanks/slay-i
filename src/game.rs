@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::action::Action;
-use crate::actions::add_card_to_master_deck::AddCardToMasterDeckAction;
 use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
@@ -12,13 +11,11 @@ use crate::actions::gain_relic::GainRelicAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
-use crate::actions::removed_card_from_master_deck::RemovedCardFromMasterDeckAction;
-use crate::actions::upgrade::UpgradeAction;
 use crate::actions::use_potion::UsePotionAction;
 use crate::blessings::ChooseBlessingGameState;
 use crate::campfire::CampfireGameState;
 use crate::card::{Card, CardPile, CardRef};
-use crate::cards::{CardClass, CardCost, CardType, transformed};
+use crate::cards::{CardClass, CardCost, CardType};
 use crate::combat::RollCombatGameState;
 use crate::combat::RollEliteCombatGameState;
 use crate::creature::Creature;
@@ -227,122 +224,6 @@ struct DefeatGameState;
 impl GameState for DefeatGameState {
     fn run(&self, game: &mut Game) {
         game.status = GameStatus::Defeat;
-    }
-}
-
-#[derive(Debug)]
-pub struct TransformMasterGameState;
-
-impl GameState for TransformMasterGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Steps> {
-        let mut moves = Steps::default();
-        for (i, c) in game.master_deck.iter().enumerate() {
-            if c.borrow().class.can_remove_from_master_deck() {
-                moves.push(TransformMasterStep { master_index: i });
-            }
-        }
-        Some(moves)
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-struct TransformMasterStep {
-    master_index: usize,
-}
-
-impl Step for TransformMasterStep {
-    fn should_pop_state(&self) -> bool {
-        true
-    }
-
-    fn run(&self, game: &mut Game) {
-        let class = game.master_deck.remove(self.master_index).borrow().class;
-        let transformed = transformed(class, &mut game.rng);
-        game.action_queue
-            .push_bot(RemovedCardFromMasterDeckAction(class));
-        game.action_queue
-            .push_bot(AddCardToMasterDeckAction(transformed));
-        game.state.push_state(RunActionsGameState);
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!(
-            "transform {:?}",
-            game.master_deck[self.master_index].borrow()
-        )
-    }
-}
-
-#[derive(Debug)]
-pub struct ChooseUpgradeMasterGameState;
-
-impl GameState for ChooseUpgradeMasterGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Steps> {
-        let mut moves = Steps::default();
-        for (i, c) in game.master_deck.iter().enumerate() {
-            if c.borrow().can_upgrade() {
-                moves.push(ChooseUpgradeMasterStep { master_index: i });
-            }
-        }
-        Some(moves)
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct ChooseUpgradeMasterStep {
-    pub master_index: usize,
-}
-
-impl Step for ChooseUpgradeMasterStep {
-    fn should_pop_state(&self) -> bool {
-        true
-    }
-
-    fn run(&self, game: &mut Game) {
-        let c = game.master_deck[self.master_index].clone();
-        game.action_queue.push_bot(UpgradeAction(c));
-        game.state.push_state(RunActionsGameState);
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!("upgrade {:?}", game.master_deck[self.master_index].borrow())
-    }
-}
-
-#[derive(Debug)]
-pub struct ChooseRemoveFromMasterGameState;
-
-impl GameState for ChooseRemoveFromMasterGameState {
-    fn valid_steps(&self, game: &Game) -> Option<Steps> {
-        let mut moves = Steps::default();
-        for (i, c) in game.master_deck.iter().enumerate() {
-            if c.borrow().class.can_remove_from_master_deck() {
-                moves.push(ChooseRemoveFromMasterStep { master_index: i });
-            }
-        }
-        Some(moves)
-    }
-}
-
-#[derive(Eq, PartialEq, Debug)]
-pub struct ChooseRemoveFromMasterStep {
-    pub master_index: usize,
-}
-
-impl Step for ChooseRemoveFromMasterStep {
-    fn should_pop_state(&self) -> bool {
-        true
-    }
-
-    fn run(&self, game: &mut Game) {
-        let c = game.master_deck.remove(self.master_index);
-        game.action_queue
-            .push_bot(RemovedCardFromMasterDeckAction(c.borrow().class));
-        game.state.push_state(RunActionsGameState);
-    }
-
-    fn description(&self, game: &Game) -> String {
-        format!("remove {:?}", game.master_deck[self.master_index].borrow())
     }
 }
 
@@ -1289,8 +1170,9 @@ mod tests {
         campfire::{CampfireRestStep, CampfireUpgradeStep},
         cards::CardClass,
         combat::PlayCardStep,
-        game::{AscendStep, ChooseUpgradeMasterStep, GameBuilder},
+        game::{AscendStep, GameBuilder},
         map::{Map, RoomType},
+        master_deck::ChooseUpgradeMasterStep,
     };
 
     #[test]

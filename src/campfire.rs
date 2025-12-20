@@ -1,9 +1,7 @@
 use crate::{
     actions::heal::HealAction,
-    game::{
-        ChooseRemoveFromMasterGameState, ChooseUpgradeMasterGameState, CreatureRef, Game,
-        RunActionsGameState,
-    },
+    game::{CreatureRef, Game, RunActionsGameState},
+    master_deck::{ChooseRemoveFromMasterGameState, ChooseUpgradeMasterGameState},
     relic::RelicClass,
     state::{GameState, NoopStep, Steps},
     step::Step,
@@ -131,11 +129,9 @@ mod tests {
     use crate::{
         campfire::{CampfireLiftStep, CampfireRestStep, CampfireTokeStep, CampfireUpgradeStep},
         cards::CardClass,
-        game::{
-            AscendStep, ChooseRemoveFromMasterStep, ChooseUpgradeMasterStep, CreatureRef,
-            GameBuilder,
-        },
+        game::{AscendStep, CreatureRef, GameBuilder},
         map::RoomType,
+        master_deck::{ChooseRemoveFromMasterStep, ChooseUpgradeMasterStep},
         relic::RelicClass,
         state::NoopStep,
         status::Status,

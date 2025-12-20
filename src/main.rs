@@ -9,6 +9,7 @@ mod creature;
 mod draw_pile;
 mod game;
 mod map;
+mod master_deck;
 mod monster;
 mod monsters;
 mod move_history;

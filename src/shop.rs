@@ -9,7 +9,8 @@ use crate::{
         CardClass, CardColor, CardRarity, CardType, random_rare_colorless, random_red_attack,
         random_red_power, random_red_skill, random_uncommon_colorless,
     },
-    game::{ChooseRemoveFromMasterGameState, Game, RunActionsGameState},
+    game::{Game, RunActionsGameState},
+    master_deck::ChooseRemoveFromMasterGameState,
     potion::{
         Potion, PotionRarity, random_common_potion, random_rare_potion, random_uncommon_potion,
     },
@@ -368,8 +369,9 @@ impl Step for ShopExitStep {
 mod tests {
     use crate::{
         cards::{CardClass, CardColor, CardRarity, CardType},
-        game::{AscendStep, ChooseRemoveFromMasterStep, GameBuilder},
+        game::{AscendStep, GameBuilder},
         map::RoomType,
+        master_deck::ChooseRemoveFromMasterStep,
         potion::{Potion, PotionRarity},
         relic::{RelicClass, RelicRarity},
         shop::{
