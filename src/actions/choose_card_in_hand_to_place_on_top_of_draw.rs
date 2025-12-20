@@ -47,6 +47,10 @@ pub struct PlaceCardInHandOnTopOfDrawStep {
 }
 
 impl Step for PlaceCardInHandOnTopOfDrawStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.action_queue.push_top(PlaceCardOnTopOfDrawAction(
             game.hand.remove(self.hand_index),

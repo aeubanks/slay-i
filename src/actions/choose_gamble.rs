@@ -43,9 +43,12 @@ pub struct GambleStep {
 }
 
 impl Step for GambleStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+
     fn run(&self, game: &mut Game) {
         game.chosen_cards.push(game.hand.remove(self.hand_index));
-        game.state.push_state(ChooseGambleGameState);
     }
 
     fn description(&self, game: &Game) -> String {
@@ -61,6 +64,10 @@ impl Step for GambleStep {
 pub struct GambleEndStep;
 
 impl Step for GambleEndStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         let count = game.chosen_cards.len() as i32;
         game.action_queue.push_top(DrawAction(count));

@@ -4,6 +4,7 @@ use dyn_eq::DynEq;
 use std::fmt::Debug;
 
 pub trait Step: DynEq + Debug {
+    fn should_pop_state(&self) -> bool;
     fn run(&self, game: &mut Game);
     fn description(&self, game: &Game) -> String;
 }

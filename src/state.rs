@@ -24,6 +24,9 @@ pub trait GameState: Debug {
 pub struct NoopStep;
 
 impl Step for NoopStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
     fn run(&self, _: &mut Game) {}
 
     fn description(&self, _: &Game) -> String {
@@ -54,10 +57,13 @@ impl GameStateManager {
         self.debug = true;
     }
     pub fn push_state<T: GameState + 'static>(&mut self, state: T) {
+        self.push_boxed_state(Box::new(state));
+    }
+    pub fn push_boxed_state(&mut self, state: Box<dyn GameState>) {
         if self.debug {
             println!("push_state {:?}", state);
         }
-        self.stack.push(Box::new(state));
+        self.stack.push(state);
     }
     pub fn pop_state(&mut self) -> Option<Box<dyn GameState>> {
         let state = self.stack.pop();
@@ -67,5 +73,8 @@ impl GameStateManager {
             println!("pop_state {:?} ({:?})", s, self.stack);
         }
         state
+    }
+    pub fn peek(&self) -> &dyn GameState {
+        self.stack.last().unwrap().as_ref()
     }
 }

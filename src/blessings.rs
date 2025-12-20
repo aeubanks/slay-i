@@ -78,6 +78,10 @@ impl GameState for ChooseBlessingGameState {
 pub struct ChooseBlessingStep(pub Blessing);
 
 impl Step for ChooseBlessingStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         self.0.run(game);
         game.state.push_state(RunActionsGameState);

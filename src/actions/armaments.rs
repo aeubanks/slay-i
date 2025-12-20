@@ -50,6 +50,9 @@ pub struct ArmamentsStep {
 }
 
 impl Step for ArmamentsStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
     fn run(&self, game: &mut Game) {
         game.action_queue
             .push_top(UpgradeAction(game.hand[self.hand_index].clone()));

@@ -70,6 +70,10 @@ pub struct FetchFromDrawStep {
 }
 
 impl Step for FetchFromDrawStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         let c = game.draw_pile.take(self.draw_index);
         game.action_queue.push_top(PlaceCardInHandAction(c));

@@ -139,6 +139,9 @@ pub struct AscendStep {
 }
 
 impl Step for AscendStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
     fn run(&self, game: &mut Game) {
         game.map_position = Some((self.x, self.y));
         match game.map.nodes[self.x][self.y].ty.unwrap() {
@@ -159,9 +162,9 @@ impl Step for AscendStep {
 struct AscendGameState;
 
 impl GameState for AscendGameState {
-    fn run(&self, game: &mut Game) {
-        game.state.push_state(AscendGameState);
-    }
+    // fn run(&self, game: &mut Game) {
+    //     game.state.push_state(AscendGameState);
+    // }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut steps = Steps::default();
         match game.map_position {
@@ -320,6 +323,10 @@ struct TransformMasterStep {
 }
 
 impl Step for TransformMasterStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         let class = game.master_deck.remove(self.master_index).borrow().class;
         let transformed = transformed(class, &mut game.rng);
@@ -359,6 +366,10 @@ pub struct ChooseUpgradeMasterStep {
 }
 
 impl Step for ChooseUpgradeMasterStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         let c = game.master_deck[self.master_index].clone();
         game.action_queue.push_bot(UpgradeAction(c));
@@ -391,6 +402,10 @@ pub struct ChooseRemoveFromMasterStep {
 }
 
 impl Step for ChooseRemoveFromMasterStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         let c = game.master_deck.remove(self.master_index);
         game.action_queue
@@ -410,6 +425,10 @@ pub struct UsePotionStep {
 }
 
 impl Step for UsePotionStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+
     fn run(&self, game: &mut Game) {
         let p = game.take_potion(self.potion_index);
         game.action_queue.push_bot(UsePotionAction {
@@ -442,6 +461,10 @@ pub struct DiscardPotionStep {
 }
 
 impl Step for DiscardPotionStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+
     fn run(&self, game: &mut Game) {
         game.take_potion(self.potion_index);
     }
@@ -609,7 +632,6 @@ pub struct Game {
     pub action_queue: ActionQueue,
     pub state: GameStateManager,
     pub status: GameStatus,
-    valid_steps: Option<Box<dyn GameState>>,
     pub is_running: bool,
 
     pub map: Map,
@@ -650,7 +672,6 @@ impl Game {
         let mut g = Self {
             map,
             map_position: Default::default(),
-            valid_steps: Default::default(),
             player: Creature::new("Ironclad", 80),
             relics: Default::default(),
             monsters: Default::default(),
@@ -995,14 +1016,12 @@ impl Game {
         ));
         assert!(!self.state.is_empty());
 
-        self.valid_steps = None;
-
         while !matches!(self.status, GameStatus::Defeat | GameStatus::Victory)
             && let Some(state) = self.state.pop_state()
         {
             state.run(self);
             if state.valid_steps(self).is_some() {
-                self.valid_steps = Some(state);
+                self.state.push_boxed_state(state);
                 break;
             }
         }
@@ -1041,6 +1060,9 @@ impl Game {
         assert!(!self.is_running);
         self.is_running = true;
 
+        if step.should_pop_state() {
+            self.state.pop_state();
+        }
         step.run(self);
         self.run();
 
@@ -1095,12 +1117,7 @@ impl Game {
     }
 
     pub fn valid_steps(&self) -> Vec<Box<dyn Step>> {
-        self.valid_steps
-            .as_ref()
-            .unwrap()
-            .valid_steps(self)
-            .unwrap()
-            .steps
+        self.state.peek().valid_steps(self).unwrap().steps
     }
 
     pub fn assert_no_actions(&self) {

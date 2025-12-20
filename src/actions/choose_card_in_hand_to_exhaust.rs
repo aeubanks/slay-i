@@ -45,6 +45,10 @@ pub struct ExhaustOneCardInHandStep {
 }
 
 impl Step for ExhaustOneCardInHandStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.action_queue
             .push_top(ExhaustCardAction(game.hand.remove(self.hand_index)));

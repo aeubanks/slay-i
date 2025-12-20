@@ -43,6 +43,10 @@ pub struct ForethoughtAnyStep {
 }
 
 impl Step for ForethoughtAnyStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.chosen_cards.push(game.hand.remove(self.hand_index));
         game.state.push_state(ForethoughtAnyGameState);
@@ -61,6 +65,10 @@ impl Step for ForethoughtAnyStep {
 pub struct ForethoughtAnyEndStep;
 
 impl Step for ForethoughtAnyEndStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         while !game.chosen_cards.is_empty() {
             game.action_queue

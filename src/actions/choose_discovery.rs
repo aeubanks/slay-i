@@ -82,6 +82,10 @@ struct DiscoveryStep {
 }
 
 impl Step for DiscoveryStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.action_queue.push_top(DiscoveryAction {
             class: self.class,

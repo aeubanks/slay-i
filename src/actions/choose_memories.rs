@@ -59,6 +59,10 @@ pub struct ChooseMemoriesStep {
 }
 
 impl Step for ChooseMemoriesStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.chosen_cards
             .push(game.discard_pile.remove(self.discard_index));
@@ -86,6 +90,10 @@ impl Step for ChooseMemoriesStep {
 pub struct ChooseMemoriesEndStep;
 
 impl Step for ChooseMemoriesEndStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         while let Some(c) = game.chosen_cards.pop() {
             game.action_queue.push_top(MemoriesAction(c));

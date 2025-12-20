@@ -45,6 +45,10 @@ pub struct ForethoughtOneStep {
 }
 
 impl Step for ForethoughtOneStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         let c = game.hand.remove(self.hand_index);
         game.action_queue.push_top(ForethoughtAction(c));

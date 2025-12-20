@@ -47,6 +47,10 @@ pub struct PlaceCardInDiscardOnTopOfDrawStep {
 }
 
 impl Step for PlaceCardInDiscardOnTopOfDrawStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.action_queue.push_top(PlaceCardOnTopOfDrawAction(
             game.discard_pile.remove(self.discard_index),

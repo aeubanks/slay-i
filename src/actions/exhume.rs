@@ -68,6 +68,10 @@ pub struct ExhumeStep {
 }
 
 impl Step for ExhumeStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.action_queue.push_top(PlaceCardInHandAction(
             game.exhaust_pile.remove(self.exhaust_index),

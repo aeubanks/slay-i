@@ -215,9 +215,6 @@ impl Shop {
 pub struct ShopGameState;
 
 impl GameState for ShopGameState {
-    fn run(&self, game: &mut Game) {
-        game.state.push_state(ShopGameState);
-    }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut steps = Steps::default();
         for (i, (_, price)) in game.shop.cards.iter().enumerate() {
@@ -251,6 +248,10 @@ struct ShopBuyCardStep {
 }
 
 impl Step for ShopBuyCardStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+
     fn run(&self, game: &mut Game) {
         let (class, price) = game.shop.get_card(self.shop_index, game);
         if game.has_relic(RelicClass::TheCourier) {
@@ -276,6 +277,10 @@ struct ShopBuyPotionStep {
 }
 
 impl Step for ShopBuyPotionStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+
     fn run(&self, game: &mut Game) {
         let (potion, price) = game.shop.get_potion(self.shop_index, game);
         if game.has_relic(RelicClass::TheCourier) {
@@ -301,6 +306,10 @@ struct ShopBuyRelicStep {
 }
 
 impl Step for ShopBuyRelicStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+
     fn run(&self, game: &mut Game) {
         let (relic, price) = game.shop.get_relic(self.shop_index, game);
         if game.has_relic(RelicClass::TheCourier) {
@@ -324,6 +333,10 @@ impl Step for ShopBuyRelicStep {
 struct ShopRemoveCardStep;
 
 impl Step for ShopRemoveCardStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+
     fn run(&self, game: &mut Game) {
         let price = Shop::remove_cost(game);
         game.gold -= price;
@@ -340,9 +353,11 @@ impl Step for ShopRemoveCardStep {
 struct ShopExitStep;
 
 impl Step for ShopExitStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
     fn run(&self, game: &mut Game) {
         game.shop = Shop::default();
-        game.state.pop_state();
     }
     fn description(&self, _: &Game) -> String {
         "exit shop".to_owned()

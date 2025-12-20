@@ -12,6 +12,10 @@ use crate::{
 pub struct CampfireRestStep;
 
 impl Step for CampfireRestStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         let mut amount = (game.player.max_hp as f32 * 0.3) as i32;
         if game.has_relic(RelicClass::RegalPillow) {
@@ -33,6 +37,10 @@ impl Step for CampfireRestStep {
 pub struct CampfireUpgradeStep;
 
 impl Step for CampfireUpgradeStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.state.push_state(ChooseUpgradeMasterGameState);
     }
@@ -46,6 +54,10 @@ impl Step for CampfireUpgradeStep {
 pub struct CampfireLiftStep;
 
 impl Step for CampfireLiftStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         let v = game.get_relic_value(RelicClass::Girya).unwrap();
         game.set_relic_value(RelicClass::Girya, v + 1);
@@ -60,6 +72,10 @@ impl Step for CampfireLiftStep {
 pub struct CampfireTokeStep;
 
 impl Step for CampfireTokeStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.state.push_state(ChooseRemoveFromMasterGameState);
     }

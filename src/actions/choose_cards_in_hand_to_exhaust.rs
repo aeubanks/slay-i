@@ -52,6 +52,10 @@ pub struct ChooseExhaustCardsInHandStep {
 }
 
 impl Step for ChooseExhaustCardsInHandStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.chosen_cards.push(game.hand.remove(self.hand_index));
         game.state.push_state(ChooseExhaustCardsInHandGameState {
@@ -72,6 +76,10 @@ impl Step for ChooseExhaustCardsInHandStep {
 pub struct ChooseExhaustCardsInHandEndStep;
 
 impl Step for ChooseExhaustCardsInHandEndStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         while let Some(c) = game.chosen_cards.pop() {
             game.action_queue.push_top(ExhaustCardAction(c));

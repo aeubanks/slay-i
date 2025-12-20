@@ -62,6 +62,10 @@ pub struct DualWieldStep {
 }
 
 impl Step for DualWieldStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.action_queue.push_top(DualWieldAction {
             card: game.hand.remove(self.hand_index),

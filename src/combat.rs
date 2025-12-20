@@ -249,9 +249,7 @@ impl GameState for PlayerTurnGameState {
     fn run(&self, game: &mut Game) {
         if game.all_monsters_dead() {
             game.state.push_state(CombatEndGameState);
-            return;
         }
-        game.state.push_state(PlayerTurnGameState);
     }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         if game.all_monsters_dead() {
@@ -317,6 +315,10 @@ impl GameState for PlayerTurnGameState {
 pub struct EndTurnStep;
 
 impl Step for EndTurnStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
     fn run(&self, game: &mut Game) {
         game.state.push_state(PlayerTurnEndGameState);
     }
@@ -333,6 +335,10 @@ pub struct PlayCardStep {
 }
 
 impl Step for PlayCardStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+
     fn run(&self, game: &mut Game) {
         let c = game.hand.remove(self.hand_index);
         let action = PlayCardAction::new(c, self.target.map(CreatureRef::monster), game);
