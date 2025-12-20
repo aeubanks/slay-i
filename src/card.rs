@@ -116,6 +116,12 @@ impl Card {
             _ => unreachable!(),
         }
     }
+    pub fn can_remove_from_master_deck(&self) -> bool {
+        !matches!(
+            self.class,
+            CardClass::AscendersBane | CardClass::CurseOfTheBell
+        )
+    }
 }
 
 #[cfg(test)]

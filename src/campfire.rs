@@ -36,7 +36,7 @@ impl GameState for CampfireGameState {
             && game
                 .master_deck
                 .iter()
-                .any(|c| c.borrow().class.can_remove_from_master_deck())
+                .any(|c| c.borrow().can_remove_from_master_deck())
         {
             steps.push(CampfireTokeStep);
         }

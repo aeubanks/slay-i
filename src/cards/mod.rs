@@ -272,9 +272,6 @@ impl CardClass {
     pub fn can_upgrade_forever(&self) -> bool {
         matches!(self, CardClass::SearingBlow)
     }
-    pub fn can_remove_from_master_deck(&self) -> bool {
-        !matches!(self, CardClass::AscendersBane | CardClass::CurseOfTheBell)
-    }
     pub fn end_of_turn_in_hand_behavior(&self) -> Option<CardEndOfTurnBehavior> {
         use CardClass::*;
         match self {

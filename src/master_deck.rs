@@ -16,7 +16,7 @@ impl GameState for TransformMasterGameState {
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut moves = Steps::default();
         for (i, c) in game.master_deck.iter().enumerate() {
-            if c.borrow().class.can_remove_from_master_deck() {
+            if c.borrow().can_remove_from_master_deck() {
                 moves.push(TransformMasterStep { master_index: i });
             }
         }
@@ -95,7 +95,7 @@ impl GameState for ChooseRemoveFromMasterGameState {
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut moves = Steps::default();
         for (i, c) in game.master_deck.iter().enumerate() {
-            if c.borrow().class.can_remove_from_master_deck() {
+            if c.borrow().can_remove_from_master_deck() {
                 moves.push(ChooseRemoveFromMasterStep { master_index: i });
             }
         }
