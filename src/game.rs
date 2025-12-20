@@ -162,9 +162,6 @@ impl Step for AscendStep {
 struct AscendGameState;
 
 impl GameState for AscendGameState {
-    // fn run(&self, game: &mut Game) {
-    //     game.state.push_state(AscendGameState);
-    // }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut steps = Steps::default();
         match game.map_position {
