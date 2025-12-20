@@ -5,15 +5,44 @@ use crate::{
         start_of_turn_energy::StartOfTurnEnergyAction,
     },
     draw_pile::DrawPile,
-    game::{
-        CreatureRef, DiscardPotionStep, Game, RollCombatGameState, RunActionsGameState,
-        UsePotionStep,
-    },
-    monster::MonsterInfo,
+    game::{CreatureRef, DiscardPotionStep, Game, RunActionsGameState, UsePotionStep},
+    monster::{Monster, MonsterInfo},
+    monsters::test::{ApplyStatusMonster, NoopMonster},
     relic::RelicClass,
     state::{GameState, Steps},
+    status::Status,
     step::Step,
 };
+
+#[derive(Debug)]
+pub struct RollCombatGameState;
+
+impl GameState for RollCombatGameState {
+    fn run(&self, game: &mut Game) {
+        if let Some(m) = game.combat_monsters_queue.pop() {
+            game.monsters = m;
+        } else {
+            game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
+        }
+        game.state.push_state(CombatBeginGameState);
+    }
+}
+
+#[derive(Debug)]
+pub struct RollEliteCombatGameState;
+
+impl GameState for RollEliteCombatGameState {
+    fn run(&self, game: &mut Game) {
+        game.monsters = vec![Monster::new(
+            ApplyStatusMonster {
+                status: Status::Vulnerable,
+                amount: 1,
+            },
+            &mut game.rng,
+        )];
+        game.state.push_state(CombatBeginGameState);
+    }
+}
 
 #[derive(Debug)]
 struct PlayerTurnEndGameState;

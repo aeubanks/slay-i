@@ -19,12 +19,13 @@ use crate::blessings::ChooseBlessingGameState;
 use crate::campfire::CampfireGameState;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardType, transformed};
-use crate::combat::CombatBeginGameState;
+use crate::combat::RollCombatGameState;
+use crate::combat::RollEliteCombatGameState;
 use crate::creature::Creature;
 use crate::draw_pile::DrawPile;
 use crate::map::{MAP_WIDTH, Map, RoomType};
 use crate::monster::{Monster, MonsterBehavior};
-use crate::monsters::test::{ApplyStatusMonster, NoopMonster};
+use crate::monsters::test::NoopMonster;
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{Relic, RelicClass};
@@ -179,36 +180,6 @@ impl GameState for AscendGameState {
             }
         }
         Some(steps)
-    }
-}
-
-#[derive(Debug)]
-pub struct RollCombatGameState;
-
-impl GameState for RollCombatGameState {
-    fn run(&self, game: &mut Game) {
-        if let Some(m) = game.combat_monsters_queue.pop() {
-            game.monsters = m;
-        } else {
-            game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
-        }
-        game.state.push_state(CombatBeginGameState);
-    }
-}
-
-#[derive(Debug)]
-pub struct RollEliteCombatGameState;
-
-impl GameState for RollEliteCombatGameState {
-    fn run(&self, game: &mut Game) {
-        game.monsters = vec![Monster::new(
-            ApplyStatusMonster {
-                status: Status::Vulnerable,
-                amount: 1,
-            },
-            &mut game.rng,
-        )];
-        game.state.push_state(CombatBeginGameState);
     }
 }
 
