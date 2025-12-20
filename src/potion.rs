@@ -107,6 +107,9 @@ impl Potion {
     pub fn can_use(&self) -> bool {
         !matches!(self, Potion::Fairy)
     }
+    pub fn can_use_outside_combat(&self) -> bool {
+        matches!(self, Potion::Fruit | Potion::Entropic | Potion::Blood)
+    }
 }
 
 fn blood(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {

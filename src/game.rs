@@ -926,7 +926,23 @@ impl Game {
     }
 
     pub fn valid_steps(&self) -> Vec<Box<dyn Step>> {
-        self.state.peek().valid_steps(self).unwrap().steps
+        let mut steps = self.state.peek().valid_steps(self).unwrap();
+        for (pi, p) in self.potions.iter().enumerate() {
+            if let Some(p) = p
+                && p.can_use_outside_combat()
+            {
+                steps.push(UsePotionStep {
+                    potion_index: pi,
+                    target: None,
+                });
+            }
+        }
+        for (pi, p) in self.potions.iter().enumerate() {
+            if p.is_some() {
+                steps.push(DiscardPotionStep { potion_index: pi });
+            }
+        }
+        steps.steps
     }
 
     pub fn assert_no_actions(&self) {

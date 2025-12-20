@@ -129,9 +129,10 @@ mod tests {
     use crate::{
         campfire::{CampfireLiftStep, CampfireRestStep, CampfireTokeStep, CampfireUpgradeStep},
         cards::CardClass,
-        game::{AscendStep, CreatureRef, GameBuilder},
+        game::{AscendStep, CreatureRef, DiscardPotionStep, GameBuilder, UsePotionStep},
         map::RoomType,
         master_deck::{ChooseRemoveFromMasterStep, ChooseUpgradeMasterStep},
+        potion::Potion,
         relic::RelicClass,
         state::NoopStep,
         status::Status,
@@ -261,6 +262,38 @@ mod tests {
             vec![
                 Box::new(CampfireRestStep) as Box<dyn Step>,
                 // Box::new(CampfireUpgradeStep),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_campfire_use_potion() {
+        let mut g = GameBuilder::default().build_campfire();
+        g.add_potion(Potion::Fire);
+        g.add_potion(Potion::Fruit);
+        let max_hp = g.player.max_hp;
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(CampfireRestStep) as Box<dyn Step>,
+                Box::new(UsePotionStep {
+                    potion_index: 1,
+                    target: None
+                }),
+                Box::new(DiscardPotionStep { potion_index: 0 }),
+                Box::new(DiscardPotionStep { potion_index: 1 }),
+            ]
+        );
+        g.step_test(UsePotionStep {
+            potion_index: 1,
+            target: None,
+        });
+        assert_eq!(g.player.max_hp, max_hp + 5);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(CampfireRestStep) as Box<dyn Step>,
+                Box::new(DiscardPotionStep { potion_index: 0 }),
             ]
         );
     }

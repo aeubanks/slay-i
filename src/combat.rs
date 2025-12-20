@@ -5,7 +5,7 @@ use crate::{
         start_of_turn_energy::StartOfTurnEnergyAction,
     },
     draw_pile::DrawPile,
-    game::{CreatureRef, DiscardPotionStep, Game, RunActionsGameState, UsePotionStep},
+    game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::{Monster, MonsterInfo},
     monsters::test::{ApplyStatusMonster, NoopMonster},
     relic::RelicClass,
@@ -309,10 +309,10 @@ impl GameState for PlayerTurnGameState {
             }
         }
         for (pi, p) in game.potions.iter().enumerate() {
-            if let Some(p) = p {
-                if !p.can_use() {
-                    continue;
-                }
+            if let Some(p) = p
+                && p.can_use()
+                && !p.can_use_outside_combat()
+            {
                 if p.has_target() {
                     for (mi, m) in game.monsters.iter().enumerate() {
                         if !m.creature.is_alive() {
@@ -329,11 +329,6 @@ impl GameState for PlayerTurnGameState {
                         target: None,
                     });
                 }
-            }
-        }
-        for (pi, p) in game.potions.iter().enumerate() {
-            if p.is_some() {
-                moves.push(DiscardPotionStep { potion_index: pi });
             }
         }
         Some(moves)
@@ -399,7 +394,7 @@ mod tests {
         actions::block::BlockAction,
         assert_matches,
         cards::{CardClass, CardCost},
-        game::{GameBuilder, GameStatus},
+        game::{DiscardPotionStep, GameBuilder, GameStatus},
         monsters::test::{AttackMonster, NoopMonster},
         potion::Potion,
         status::Status,
