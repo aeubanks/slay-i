@@ -7,6 +7,7 @@ mod cards;
 mod combat;
 mod creature;
 mod draw_pile;
+mod events;
 mod game;
 mod map;
 mod master_deck;

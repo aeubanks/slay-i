@@ -2,6 +2,8 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use rand::Rng;
+
 use crate::action::Action;
 use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
@@ -20,6 +22,8 @@ use crate::combat::RollCombatGameState;
 use crate::combat::RollEliteCombatGameState;
 use crate::creature::Creature;
 use crate::draw_pile::DrawPile;
+use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
+use crate::events::bonfire::BonfireGameState;
 use crate::map::{MAP_WIDTH, Map, RoomType};
 use crate::monster::{Monster, MonsterBehavior};
 use crate::monsters::test::NoopMonster;
@@ -185,7 +189,16 @@ pub struct RollEventGameState;
 
 impl GameState for RollEventGameState {
     fn run(&self, game: &mut Game) {
-        game.state.push_state(RollCombatGameState);
+        if !game.event_queue.is_empty() {
+            let e = game.event_queue.remove(0);
+            game.state.push_boxed_state(e);
+        } else if game.rng.random_bool(0.5) {
+            game.state.push_state(RollCombatGameState);
+        } else {
+            let i = game.rng.random_range(0..game.event_pool.len());
+            let e = game.event_pool.remove(i);
+            game.state.push_boxed_state(e);
+        }
     }
 }
 
@@ -368,7 +381,7 @@ impl GameBuilder {
     #[cfg(test)]
     pub fn build_combat(self) -> Game {
         let monster_statuses = self.monster_statuses.clone();
-        let mut g = self.build_impl(TestCombatStartGameState);
+        let mut g = self.build_with_game_state(TestCombatStartGameState);
         for m in &mut g.monsters {
             for (&k, &v) in &monster_statuses {
                 m.creature.set_status(k, v);
@@ -378,22 +391,22 @@ impl GameBuilder {
     }
     #[cfg(test)]
     pub fn build_campfire(self) -> Game {
-        self.build_impl(CampfireGameState)
+        self.build_with_game_state(CampfireGameState)
     }
     #[cfg(test)]
     pub fn build_shop(self) -> Game {
-        self.build_impl(RollShopGameState)
+        self.build_with_game_state(RollShopGameState)
     }
     #[cfg(test)]
     pub fn build_with_rooms(self, rooms: &[RoomType]) -> Game {
-        let mut g = self.build_impl(TestStartNoBlessingGameState);
+        let mut g = self.build_with_game_state(TestStartNoBlessingGameState);
         g.map = Map::straight_single_path(rooms);
         g
     }
     pub fn build(self) -> Game {
-        self.build_impl(GameStartGameState)
+        self.build_with_game_state(GameStartGameState)
     }
-    fn build_impl<T: GameState + 'static>(mut self, start_state: T) -> Game {
+    pub fn build_with_game_state<T: GameState + 'static>(mut self, start_state: T) -> Game {
         if self.monsters.is_empty() {
             self = self.add_monster(NoopMonster::new());
         }
@@ -453,6 +466,9 @@ pub struct Game {
     pub master_deck: CardPile,
     next_id: u32,
     pub combat_monsters_queue: Vec<Vec<Monster>>,
+    pub event_queue: Vec<Box<dyn GameState>>,
+
+    pub event_pool: Vec<Box<dyn GameState>>,
 
     pub shop: Shop,
     pub shop_remove_count: i32,
@@ -477,6 +493,10 @@ impl Game {
     pub const MAX_HAND_SIZE: i32 = 10;
 
     fn new(mut rng: Rand, master_deck: &[(CardClass, bool)], monsters: Vec<Monster>) -> Self {
+        let event_pool = vec![
+            Box::new(BonfireGameState) as Box<dyn GameState>,
+            Box::new(AccursedBlackSmithGameState),
+        ];
         let map = Map::generate(&mut rng);
         let mut g = Self {
             map,
@@ -504,12 +524,14 @@ impl Game {
             num_cards_played_this_turn: 0,
             num_times_took_damage: 0,
             combat_monsters_queue: vec![monsters],
+            event_queue: Default::default(),
             rng,
             state: Default::default(),
             chosen_cards: Default::default(),
             next_id: 1,
             status: GameStatus::Combat,
             is_running: false,
+            event_pool,
         };
 
         for (c, u) in master_deck {
@@ -1186,9 +1208,11 @@ mod tests {
         campfire::{CampfireRestStep, CampfireUpgradeStep},
         cards::CardClass,
         combat::PlayCardStep,
+        events::accursed_blacksmith::AccursedBlackSmithGameState,
         game::{AscendStep, GameBuilder},
         map::{Map, RoomType},
         master_deck::ChooseUpgradeMasterStep,
+        state::NoopStep,
     };
 
     #[test]
@@ -1201,7 +1225,9 @@ mod tests {
             RoomType::Campfire,
             RoomType::Monster,
             RoomType::Campfire,
+            RoomType::Event,
         ]);
+
         g.step_test(ChooseBlessingStep(Blessing::GainMaxHPSmall));
         g.step_test(AscendStep { x: 0, y: 0 });
         g.step_test(PlayCardStep {
@@ -1218,5 +1244,9 @@ mod tests {
         g.step_test(AscendStep { x: 0, y: 3 });
         g.step_test(CampfireUpgradeStep);
         g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
+
+        g.event_queue.push(Box::new(AccursedBlackSmithGameState));
+        g.step_test(AscendStep { x: 0, y: 4 });
+        g.step_test(NoopStep);
     }
 }
