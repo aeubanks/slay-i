@@ -1212,7 +1212,7 @@ mod tests {
         game::{AscendStep, GameBuilder},
         map::{Map, RoomType},
         master_deck::ChooseUpgradeMasterStep,
-        state::NoopStep,
+        state::ContinueStep,
     };
 
     #[test]
@@ -1247,6 +1247,6 @@ mod tests {
 
         g.event_queue.push(Box::new(AccursedBlackSmithGameState));
         g.step_test(AscendStep { x: 0, y: 4 });
-        g.step_test(NoopStep);
+        g.step_test(ContinueStep);
     }
 }

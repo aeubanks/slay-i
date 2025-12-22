@@ -3,7 +3,7 @@ use crate::{
     game::{CreatureRef, Game, RunActionsGameState},
     master_deck::{ChooseRemoveFromMasterGameState, ChooseUpgradeMasterGameState},
     relic::RelicClass,
-    state::{GameState, NoopStep, Steps},
+    state::{GameState, ContinueStep, Steps},
     step::Step,
 };
 
@@ -41,7 +41,7 @@ impl GameState for CampfireGameState {
             steps.push(CampfireTokeStep);
         }
         if steps.steps.is_empty() {
-            steps.push(NoopStep);
+            steps.push(ContinueStep);
         }
         Some(steps)
     }
@@ -134,7 +134,7 @@ mod tests {
         master_deck::{ChooseRemoveFromMasterStep, ChooseUpgradeMasterStep},
         potion::Potion,
         relic::RelicClass,
-        state::NoopStep,
+        state::ContinueStep,
         status::Status,
         step::Step,
     };
@@ -160,7 +160,7 @@ mod tests {
             .add_relic(RelicClass::FusionHammer)
             .add_relic(RelicClass::CoffeeDripper)
             .build_campfire();
-        assert_eq!(g.valid_steps(), vec![Box::new(NoopStep) as Box<dyn Step>,]);
+        assert_eq!(g.valid_steps(), vec![Box::new(ContinueStep) as Box<dyn Step>,]);
     }
 
     #[test]

@@ -6,7 +6,7 @@ use crate::{
     cards::CardRarity,
     game::{CreatureRef, Game, RunActionsGameState},
     relic::RelicClass,
-    state::{GameState, NoopStep, Steps},
+    state::{GameState, ContinueStep, Steps},
     step::Step,
 };
 
@@ -22,7 +22,7 @@ impl GameState for BonfireGameState {
             }
         }
         if steps.steps.is_empty() {
-            steps.push(NoopStep);
+            steps.push(ContinueStep);
         }
         Some(steps)
     }
@@ -132,6 +132,6 @@ mod tests {
         let g = GameBuilder::default()
             .add_cards(CardClass::AscendersBane, 2)
             .build_with_game_state(BonfireGameState);
-        assert_eq!(g.valid_steps(), vec![Box::new(NoopStep) as Box<dyn Step>]);
+        assert_eq!(g.valid_steps(), vec![Box::new(ContinueStep) as Box<dyn Step>]);
     }
 }

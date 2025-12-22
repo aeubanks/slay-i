@@ -21,16 +21,16 @@ pub trait GameState: Debug {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub struct NoopStep;
+pub struct ContinueStep;
 
-impl Step for NoopStep {
+impl Step for ContinueStep {
     fn should_pop_state(&self) -> bool {
         true
     }
     fn run(&self, _: &mut Game) {}
 
     fn description(&self, _: &Game) -> String {
-        "noop".to_owned()
+        "continue".to_owned()
     }
 }
 

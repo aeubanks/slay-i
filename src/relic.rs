@@ -1072,7 +1072,7 @@ mod tests {
         monster::Monster,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
-        state::NoopStep,
+        state::ContinueStep,
         status::Status,
         step::Step,
     };
@@ -2953,9 +2953,9 @@ mod tests {
         g.step_test(EndTurnStep);
 
         assert_eq!(g.valid_steps().len(), 4);
-        assert_eq!(g.valid_steps()[0], Box::new(NoopStep) as Box<dyn Step>);
+        assert_eq!(g.valid_steps()[0], Box::new(ContinueStep) as Box<dyn Step>);
 
-        g.step_test(NoopStep);
+        g.step_test(ContinueStep);
 
         for i in 1..10 {
             assert_eq!(g.hand.len(), 10);

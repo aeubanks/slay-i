@@ -6,7 +6,7 @@ use crate::{
     game::{Game, RunActionsGameState},
     master_deck::ChooseUpgradeMasterGameState,
     relic::RelicClass,
-    state::{GameState, NoopStep, Steps},
+    state::{ContinueStep, GameState, Steps},
     step::Step,
 };
 
@@ -20,7 +20,7 @@ impl GameState for AccursedBlackSmithGameState {
             steps.push(UpgradeStep);
         }
         steps.push(RummageStep);
-        steps.push(NoopStep);
+        steps.push(ContinueStep);
         Some(steps)
     }
 }
@@ -82,7 +82,10 @@ mod tests {
             .build_with_game_state(AccursedBlackSmithGameState);
         assert_eq!(
             g.valid_steps(),
-            vec![Box::new(RummageStep) as Box<dyn Step>, Box::new(NoopStep),]
+            vec![
+                Box::new(RummageStep) as Box<dyn Step>,
+                Box::new(ContinueStep),
+            ]
         );
     }
 

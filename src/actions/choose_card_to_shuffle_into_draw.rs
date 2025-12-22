@@ -3,7 +3,7 @@ use crate::{
     actions::shuffle_card_into_draw::ShuffleCardIntoDrawAction,
     cards::{CardClass, random_red_in_combat},
     game::Game,
-    state::{GameState, NoopStep, Steps},
+    state::{GameState, ContinueStep, Steps},
     step::Step,
 };
 
@@ -37,7 +37,7 @@ struct ChooseCardToShuffleIntoDrawGameState {
 impl GameState for ChooseCardToShuffleIntoDrawGameState {
     fn valid_steps(&self, _: &Game) -> Option<Steps> {
         let mut moves = Steps::default();
-        moves.push(NoopStep);
+        moves.push(ContinueStep);
         for &class in &self.classes {
             moves.push(ChooseCardToShuffleIntoDrawStep { class })
         }
