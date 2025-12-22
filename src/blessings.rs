@@ -1,8 +1,8 @@
 use crate::{
     actions::{
-        add_card_to_master_deck::AddCardToMasterDeckAction, gain_potion::GainPotionAction,
-        gain_relic::GainRelicAction, increase_max_hp::IncreaseMaxHPAction,
-        remove_relic::RemoveRelicAction,
+        add_card_class_to_master_deck::AddCardClassToMasterDeckAction,
+        gain_potion::GainPotionAction, gain_relic::GainRelicAction,
+        increase_max_hp::IncreaseMaxHPAction, remove_relic::RemoveRelicAction,
     },
     cards::random_uncommon_colorless,
     game::{Game, RunActionsGameState},
@@ -47,7 +47,8 @@ impl Blessing {
             }
             RandomUncommonColorless => {
                 let r = random_uncommon_colorless(&mut game.rng);
-                game.action_queue.push_bot(AddCardToMasterDeckAction(r));
+                game.action_queue
+                    .push_bot(AddCardClassToMasterDeckAction(r));
             }
             RandomPotion => {
                 let p = random_common_potion(&mut game.rng);

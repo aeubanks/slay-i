@@ -1,6 +1,6 @@
 use crate::{
     actions::{
-        add_card_to_master_deck::AddCardToMasterDeckAction,
+        add_card_class_to_master_deck::AddCardClassToMasterDeckAction,
         removed_card_from_master_deck::RemovedCardFromMasterDeckAction, upgrade::UpgradeAction,
     },
     cards::transformed,
@@ -40,7 +40,7 @@ impl Step for TransformMasterStep {
         game.action_queue
             .push_bot(RemovedCardFromMasterDeckAction(class));
         game.action_queue
-            .push_bot(AddCardToMasterDeckAction(transformed));
+            .push_bot(AddCardClassToMasterDeckAction(transformed));
         game.state.push_state(RunActionsGameState);
     }
 

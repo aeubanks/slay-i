@@ -1,16 +1,17 @@
 use crate::{
     action::Action,
     actions::{gain_gold::GainGoldAction, increase_max_hp::IncreaseMaxHPAction},
-    cards::{CardClass, CardType},
+    card::CardRef,
+    cards::CardType,
     game::Game,
     relic::RelicClass,
 };
 
-pub struct AddCardToMasterDeckAction(pub CardClass);
+pub struct AddCardToMasterDeckAction(pub CardRef);
 
 impl Action for AddCardToMasterDeckAction {
     fn run(&self, game: &mut Game) {
-        if self.0.ty() == CardType::Curse
+        if self.0.borrow().class.ty() == CardType::Curse
             && let Some(v) = game.get_relic_value(RelicClass::Omamori)
             && v > 0
         {
@@ -18,16 +19,16 @@ impl Action for AddCardToMasterDeckAction {
             return;
         }
 
-        if self.0.ty() == CardType::Curse && game.has_relic(RelicClass::DarkstonePeriapt) {
+        if self.0.borrow().class.ty() == CardType::Curse
+            && game.has_relic(RelicClass::DarkstonePeriapt)
+        {
             game.action_queue.push_bot(IncreaseMaxHPAction(6));
         }
         if game.has_relic(RelicClass::CeramicFish) {
             game.action_queue.push_bot(GainGoldAction(9));
         }
 
-        let c = game.new_card(self.0);
-
-        game.master_deck.push(c);
+        game.master_deck.push(self.0.clone());
     }
 }
 

@@ -1,3 +1,4 @@
+pub mod add_card_class_to_master_deck;
 pub mod add_card_to_master_deck;
 pub mod armaments;
 pub mod block;

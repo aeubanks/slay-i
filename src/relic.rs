@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 
 use crate::{
     actions::{
-        add_card_to_master_deck::AddCardToMasterDeckAction,
+        add_card_class_to_master_deck::AddCardClassToMasterDeckAction,
         block::BlockAction,
         choose_card_to_shuffle_into_draw::ChooseCardToShuffleIntoDrawAction,
         choose_discovery::{ChooseDiscoveryAction, ChooseDiscoveryType},
@@ -477,7 +477,7 @@ fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn necronomicon_equip(_: &mut i32, queue: &mut ActionQueue) {
-    queue.push_bot(AddCardToMasterDeckAction(CardClass::Necronomicurse));
+    queue.push_bot(AddCardClassToMasterDeckAction(CardClass::Necronomicurse));
 }
 
 fn necronomicon_unequip(_: &mut i32, queue: &mut ActionQueue) {
@@ -1058,7 +1058,7 @@ mod tests {
     use super::*;
     use crate::{
         actions::{
-            add_card_to_master_deck::AddCardToMasterDeckAction,
+            add_card_class_to_master_deck::AddCardClassToMasterDeckAction,
             block::BlockAction,
             choose_card_to_shuffle_into_draw::ChooseCardToShuffleIntoDrawStep,
             choose_gamble::{GambleEndStep, GambleStep},
@@ -2301,12 +2301,12 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::CeramicFish)
             .build();
-        g.run_action(AddCardToMasterDeckAction(CardClass::Parasite));
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::Parasite));
         assert_eq!(g.gold, 9);
-        g.run_action(AddCardToMasterDeckAction(CardClass::Strike));
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::Strike));
         assert_eq!(g.gold, 18);
         g.add_relic(RelicClass::Omamori);
-        g.run_action(AddCardToMasterDeckAction(CardClass::Parasite));
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::Parasite));
         assert_eq!(g.gold, 18);
     }
 
@@ -2365,7 +2365,7 @@ mod tests {
         g.remove_relic(RelicClass::Necronomicon);
         assert_eq!(g.master_deck.len(), 0);
 
-        g.run_action(AddCardToMasterDeckAction(CardClass::Necronomicurse));
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::Necronomicurse));
         g.add_relic(RelicClass::Necronomicon);
         assert_eq!(g.master_deck.len(), 2);
         g.remove_relic(RelicClass::Necronomicon);

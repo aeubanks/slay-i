@@ -2,8 +2,8 @@ use rand::Rng;
 
 use crate::{
     actions::{
-        add_card_to_master_deck::AddCardToMasterDeckAction, gain_potion::GainPotionAction,
-        gain_relic::GainRelicAction,
+        add_card_class_to_master_deck::AddCardClassToMasterDeckAction,
+        gain_potion::GainPotionAction, gain_relic::GainRelicAction,
     },
     cards::{
         CardClass, CardColor, CardRarity, CardType, random_rare_colorless, random_red_attack,
@@ -263,7 +263,8 @@ impl Step for ShopBuyCardStep {
             game.shop.cards.remove(self.shop_index);
         }
         game.gold -= price;
-        game.action_queue.push_bot(AddCardToMasterDeckAction(class));
+        game.action_queue
+            .push_bot(AddCardClassToMasterDeckAction(class));
         game.state.push_state(RunActionsGameState);
     }
     fn description(&self, game: &Game) -> String {

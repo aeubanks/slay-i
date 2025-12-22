@@ -860,9 +860,9 @@ impl Game {
 
     #[cfg(test)]
     pub fn add_card_to_master_deck(&mut self, class: CardClass) {
-        use crate::actions::add_card_to_master_deck::AddCardToMasterDeckAction;
+        use crate::actions::add_card_class_to_master_deck::AddCardClassToMasterDeckAction;
 
-        self.run_action(AddCardToMasterDeckAction(class));
+        self.run_action(AddCardClassToMasterDeckAction(class));
     }
 
     #[cfg(test)]

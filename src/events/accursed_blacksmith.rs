@@ -1,5 +1,7 @@
 use crate::{
-    actions::{add_card_to_master_deck::AddCardToMasterDeckAction, gain_relic::GainRelicAction},
+    actions::{
+        add_card_class_to_master_deck::AddCardClassToMasterDeckAction, gain_relic::GainRelicAction,
+    },
     cards::CardClass,
     game::{Game, RunActionsGameState},
     master_deck::ChooseUpgradeMasterGameState,
@@ -47,7 +49,7 @@ impl Step for RummageStep {
     }
     fn run(&self, game: &mut Game) {
         game.action_queue
-            .push_bot(AddCardToMasterDeckAction(CardClass::Pain));
+            .push_bot(AddCardClassToMasterDeckAction(CardClass::Pain));
         game.action_queue
             .push_bot(GainRelicAction(RelicClass::WarpedTongs));
         game.state.push_state(RunActionsGameState);
