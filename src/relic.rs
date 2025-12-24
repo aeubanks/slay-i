@@ -32,9 +32,8 @@ use crate::{
         upgrade_random_in_master::UpgradeRandomInMasterAction,
     },
     cards::{CardClass, CardType},
-    game::{CreatureRef, Rand},
+    game::CreatureRef,
     queue::ActionQueue,
-    rng::rand_slice,
     status::Status,
 };
 
@@ -1035,22 +1034,30 @@ lazy_static! {
         .into_iter()
         .filter(|r| r.rarity() == RelicRarity::Shop)
         .collect();
+    static ref ALL_BOSS: Vec<RelicClass> = RelicClass::all()
+        .into_iter()
+        .filter(|r| r.rarity() == RelicRarity::Boss)
+        .collect();
 }
 
-pub fn random_common_relic(rng: &mut Rand) -> RelicClass {
-    rand_slice(rng, &ALL_COMMON)
+pub fn all_common_relics() -> Vec<RelicClass> {
+    ALL_COMMON.clone()
 }
 
-pub fn random_uncommon_relic(rng: &mut Rand) -> RelicClass {
-    rand_slice(rng, &ALL_UNCOMMON)
+pub fn all_uncommon_relics() -> Vec<RelicClass> {
+    ALL_UNCOMMON.clone()
 }
 
-pub fn random_rare_relic(rng: &mut Rand) -> RelicClass {
-    rand_slice(rng, &ALL_RARE)
+pub fn all_rare_relics() -> Vec<RelicClass> {
+    ALL_RARE.clone()
 }
 
-pub fn random_shop_relic(rng: &mut Rand) -> RelicClass {
-    rand_slice(rng, &ALL_SHOP)
+pub fn all_shop_relics() -> Vec<RelicClass> {
+    ALL_SHOP.clone()
+}
+
+pub fn all_boss_relics() -> Vec<RelicClass> {
+    ALL_SHOP.clone()
 }
 
 #[cfg(test)]

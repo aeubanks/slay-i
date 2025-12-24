@@ -14,10 +14,7 @@ use crate::{
     potion::{
         Potion, PotionRarity, random_common_potion, random_rare_potion, random_uncommon_potion,
     },
-    relic::{
-        RelicClass, RelicRarity, random_common_relic, random_rare_relic, random_shop_relic,
-        random_uncommon_relic,
-    },
+    relic::{RelicClass, RelicRarity},
     state::{GameState, Steps},
     step::Step,
 };
@@ -69,7 +66,7 @@ impl Shop {
                 .push((relic, Self::base_relic_cost(game, relic, true)));
         }
         {
-            let relic = random_shop_relic(&mut game.rng);
+            let relic = game.next_relic(RelicRarity::Shop);
             shop.relics
                 .push((relic, Self::base_relic_cost(game, relic, true)));
         }
@@ -125,11 +122,12 @@ impl Shop {
         // 50% common
         // 33% uncommon
         // 17% rare
-        match game.rng.random_range(0..100) {
-            0..50 => random_common_relic(&mut game.rng),
-            50..83 => random_uncommon_relic(&mut game.rng),
-            _ => random_rare_relic(&mut game.rng),
-        }
+        let rarity = match game.rng.random_range(0..100) {
+            0..50 => RelicRarity::Common,
+            50..83 => RelicRarity::Uncommon,
+            _ => RelicRarity::Rare,
+        };
+        game.next_relic(rarity)
     }
 
     fn price_variance(game: &mut Game) -> f32 {

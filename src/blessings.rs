@@ -8,7 +8,7 @@ use crate::{
     game::{Game, RunActionsGameState},
     master_deck::{ChooseRemoveFromMasterGameState, TransformMasterGameState},
     potion::random_common_potion,
-    relic::random_common_relic,
+    relic::RelicRarity,
     state::{GameState, Steps},
     step::Step,
 };
@@ -32,7 +32,7 @@ impl Blessing {
                 game.action_queue.push_bot(IncreaseMaxHPAction(8));
             }
             CommonRelic => {
-                let r = random_common_relic(&mut game.rng);
+                let r = game.next_relic(RelicRarity::Common);
                 game.action_queue.push_bot(GainRelicAction(r));
             }
             RemoveRelic => {

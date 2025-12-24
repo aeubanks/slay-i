@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use rand::Rng;
+use rand::seq::SliceRandom;
 
 use crate::action::Action;
 use crate::actions::damage::{DamageAction, DamageType};
@@ -29,7 +30,10 @@ use crate::monster::{Monster, MonsterBehavior};
 use crate::monsters::test::NoopMonster;
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
-use crate::relic::{Relic, RelicClass};
+use crate::relic::{
+    Relic, RelicClass, RelicRarity, all_boss_relics, all_common_relics, all_rare_relics,
+    all_shop_relics, all_uncommon_relics,
+};
 use crate::rewards::Rewards;
 use crate::rng::rand_slice;
 use crate::shop::{Shop, ShopGameState};
@@ -471,6 +475,12 @@ pub struct Game {
 
     pub event_pool: Vec<Box<dyn GameState>>,
 
+    pub common_relic_pool: Vec<RelicClass>,
+    pub uncommon_relic_pool: Vec<RelicClass>,
+    pub rare_relic_pool: Vec<RelicClass>,
+    pub shop_relic_pool: Vec<RelicClass>,
+    pub boss_relic_pool: Vec<RelicClass>,
+
     pub rewards: Rewards,
     pub potion_chance: i32,
     pub rare_card_chance: i32,
@@ -502,12 +512,27 @@ impl Game {
             Box::new(BonfireGameState) as Box<dyn GameState>,
             Box::new(AccursedBlackSmithGameState),
         ];
+        let mut common_relic_pool = all_common_relics();
+        let mut uncommon_relic_pool = all_uncommon_relics();
+        let mut rare_relic_pool = all_rare_relics();
+        let mut shop_relic_pool = all_shop_relics();
+        let mut boss_relic_pool = all_boss_relics();
+        common_relic_pool.shuffle(&mut rng);
+        uncommon_relic_pool.shuffle(&mut rng);
+        rare_relic_pool.shuffle(&mut rng);
+        shop_relic_pool.shuffle(&mut rng);
+        boss_relic_pool.shuffle(&mut rng);
         let map = Map::generate(&mut rng);
         let mut g = Self {
             map,
             map_position: Default::default(),
             player: Creature::new("Ironclad", 80),
             relics: Default::default(),
+            common_relic_pool,
+            uncommon_relic_pool,
+            rare_relic_pool,
+            shop_relic_pool,
+            boss_relic_pool,
             monsters: Default::default(),
             potions: vec![None; 2],
             gold: 0,
@@ -1170,6 +1195,17 @@ impl Game {
         let p = self.potions[i].unwrap();
         self.potions[i] = None;
         p
+    }
+    pub fn next_relic(&mut self, rarity: RelicRarity) -> RelicClass {
+        let pool = match rarity {
+            RelicRarity::Common => &mut self.common_relic_pool,
+            RelicRarity::Uncommon => &mut self.uncommon_relic_pool,
+            RelicRarity::Rare => &mut self.rare_relic_pool,
+            RelicRarity::Shop => &mut self.shop_relic_pool,
+            RelicRarity::Boss => &mut self.boss_relic_pool,
+            _ => panic!(),
+        };
+        pool.pop().unwrap()
     }
     #[cfg(test)]
     pub fn add_relic(&mut self, class: RelicClass) {
