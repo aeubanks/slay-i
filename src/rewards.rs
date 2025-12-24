@@ -4,7 +4,7 @@ use crate::{
         gain_potion::GainPotionAction, gain_relic::GainRelicAction,
     },
     card::CardRef,
-    cards::random_red,
+    cards::{CardRarity, random_common_red, random_rare_red, random_uncommon_red},
     game::{Game, RunActionsGameState},
     potion::Potion,
     relic::RelicClass,
@@ -31,10 +31,22 @@ impl Rewards {
         }
         let mut cards = Vec::<CardRef>::new();
         for _ in 0..num {
+            let rarity = game.roll_rarity();
+            match rarity {
+                CardRarity::Common => game.rare_card_chance += 1,
+                CardRarity::Uncommon => {}
+                // FIXME: elite room
+                CardRarity::Rare => game.rare_card_chance = -2,
+                CardRarity::Basic | CardRarity::Special | CardRarity::Curse => panic!(),
+            };
             let mut class;
             loop {
-                // FIXME: rarity
-                class = random_red(&mut game.rng);
+                class = match rarity {
+                    CardRarity::Common => random_common_red(&mut game.rng),
+                    CardRarity::Uncommon => random_uncommon_red(&mut game.rng),
+                    CardRarity::Rare => random_rare_red(&mut game.rng),
+                    CardRarity::Basic | CardRarity::Special | CardRarity::Curse => panic!(),
+                };
                 if cards.iter().all(|c| c.borrow().class != class) {
                     break;
                 }
@@ -199,7 +211,8 @@ impl Step for RewardExitStep {
 mod tests {
     use crate::{
         cards::CardClass,
-        game::{CreatureRef, GameBuilder},
+        game::{AscendStep, CreatureRef, GameBuilder},
+        map::RoomType,
     };
 
     use super::*;
@@ -265,5 +278,36 @@ mod tests {
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
         g.step_test(PotionRewardStep { potion_index: 0 });
         assert!(g.potions[0].is_some());
+    }
+
+    #[test]
+    fn test_rare() {
+        let mut found_rare = false;
+        for _ in 0..100 {
+            let mut g =
+                GameBuilder::default().build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
+            g.step_test(AscendStep { x: 0, y: 0 });
+            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            assert!(
+                g.rewards
+                    .cards
+                    .iter()
+                    .flatten()
+                    .all(|c| c.borrow().class.rarity() != CardRarity::Rare)
+            );
+            g.step_test(RewardExitStep);
+            g.step_test(AscendStep { x: 0, y: 1 });
+            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            found_rare = g
+                .rewards
+                .cards
+                .iter()
+                .flatten()
+                .any(|c| c.borrow().class.rarity() == CardRarity::Rare);
+            if found_rare {
+                break;
+            }
+        }
+        assert!(found_rare);
     }
 }

@@ -341,6 +341,21 @@ lazy_static! {
         .filter(|c| c.color() == CardColor::Red)
         .filter(|c| c.rarity() != CardRarity::Basic)
         .collect();
+    static ref ALL_COMMON_RED: Vec<CardClass> = ALL_NON_BASIC_RED
+        .iter()
+        .copied()
+        .filter(|c| c.rarity() == CardRarity::Common)
+        .collect();
+    static ref ALL_UNCOMMON_RED: Vec<CardClass> = ALL_NON_BASIC_RED
+        .iter()
+        .copied()
+        .filter(|c| c.rarity() == CardRarity::Uncommon)
+        .collect();
+    static ref ALL_RARE_RED: Vec<CardClass> = ALL_NON_BASIC_RED
+        .iter()
+        .copied()
+        .filter(|c| c.rarity() == CardRarity::Rare)
+        .collect();
     static ref ALL_NON_BASIC_RED_ATTACKS: Vec<CardClass> = ALL_NON_BASIC_RED
         .iter()
         .copied()
@@ -386,6 +401,18 @@ lazy_static! {
 
 pub fn random_red(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_NON_BASIC_RED)
+}
+
+pub fn random_common_red(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_COMMON_RED)
+}
+
+pub fn random_uncommon_red(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_UNCOMMON_RED)
+}
+
+pub fn random_rare_red(rng: &mut Rand) -> CardClass {
+    rand_slice(rng, &ALL_RARE_RED)
 }
 
 pub fn random_red_attack(rng: &mut Rand) -> CardClass {

@@ -17,7 +17,7 @@ use crate::actions::use_potion::UsePotionAction;
 use crate::blessings::ChooseBlessingGameState;
 use crate::campfire::CampfireGameState;
 use crate::card::{Card, CardPile, CardRef};
-use crate::cards::{CardClass, CardCost, CardType};
+use crate::cards::{CardClass, CardCost, CardRarity, CardType};
 use crate::combat::RollCombatGameState;
 use crate::combat::RollEliteCombatGameState;
 use crate::creature::Creature;
@@ -473,6 +473,7 @@ pub struct Game {
 
     pub rewards: Rewards,
     pub potion_chance: i32,
+    pub rare_card_chance: i32,
 
     pub shop: Shop,
     pub shop_remove_count: i32,
@@ -514,6 +515,7 @@ impl Game {
             shop: Default::default(),
             shop_remove_count: 0,
             potion_chance: 40,
+            rare_card_chance: -2,
             turn: 0,
             energy: 0,
             rewards: Default::default(),
@@ -606,6 +608,18 @@ impl Game {
         let mut c = c.clone();
         c.id = self.new_card_id(c.class);
         Rc::new(RefCell::new(c))
+    }
+
+    pub fn roll_rarity(&mut self) -> CardRarity {
+        let roll = self.rng.random_range(0..100);
+        if roll < self.rare_card_chance {
+            return CardRarity::Rare;
+        }
+        // FIXME: 40 for elite rooms
+        if roll < self.rare_card_chance + 37 {
+            return CardRarity::Uncommon;
+        }
+        CardRarity::Common
     }
 
     pub fn get_creature(&self, r: CreatureRef) -> &Creature {
