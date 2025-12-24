@@ -1050,7 +1050,7 @@ pub fn random_rare_relic(rng: &mut Rand) -> RelicClass {
 }
 
 pub fn random_shop_relic(rng: &mut Rand) -> RelicClass {
-    rand_slice(rng, &ALL_RARE)
+    rand_slice(rng, &ALL_SHOP)
 }
 
 #[cfg(test)]

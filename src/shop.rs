@@ -185,7 +185,7 @@ impl Shop {
 
     fn base_relic_cost(game: &mut Game, relic: RelicClass, ascension_discount: bool) -> i32 {
         let mut price = match relic.rarity() {
-            RelicRarity::Common => 150,
+            RelicRarity::Common | RelicRarity::Shop => 150,
             RelicRarity::Uncommon => 250,
             RelicRarity::Rare => 300,
             _ => panic!(),
@@ -369,6 +369,7 @@ impl Step for ShopExitStep {
 #[cfg(test)]
 mod tests {
     use crate::{
+        assert_matches,
         cards::{CardClass, CardColor, CardRarity, CardType},
         game::{AscendStep, GameBuilder},
         map::RoomType,
@@ -438,6 +439,15 @@ mod tests {
                 assert!(price <= hi);
             }
             assert_eq!(g.shop.relics.len(), 3);
+            assert_matches!(
+                g.shop.relics[0].0.rarity(),
+                RelicRarity::Common | RelicRarity::Uncommon | RelicRarity::Rare
+            );
+            assert_matches!(
+                g.shop.relics[1].0.rarity(),
+                RelicRarity::Common | RelicRarity::Uncommon | RelicRarity::Rare
+            );
+            assert_matches!(g.shop.relics[2].0.rarity(), RelicRarity::Shop);
             for i in 0..3 {
                 let (relic, price) = g.shop.get_relic(i, &g);
                 let (lo, hi) = match relic.rarity() {
@@ -469,6 +479,10 @@ mod tests {
             for i in 0..3 {
                 g.step_test(ShopBuyRelicStep { shop_index: i });
             }
+            // we may end up buying membership card
+            g.relics.clear();
+            g.add_relic(RelicClass::TheCourier);
+
             assert_eq!(g.shop.cards.len(), 7);
             let discounted = |p: i32| (p as f32 * 0.8).round() as i32;
             for i in 0..5 {
@@ -514,6 +528,10 @@ mod tests {
             assert_eq!(g.shop.relics.len(), 3);
             for i in 0..3 {
                 let (relic, price) = g.shop.get_relic(i, &g);
+                assert_matches!(
+                    relic.rarity(),
+                    RelicRarity::Common | RelicRarity::Uncommon | RelicRarity::Rare
+                );
                 let (lo, hi) = match relic.rarity() {
                     RelicRarity::Common => (143, 158),
                     RelicRarity::Uncommon => (238, 263),
