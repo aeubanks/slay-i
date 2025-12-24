@@ -30,6 +30,7 @@ use crate::monsters::test::NoopMonster;
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{Relic, RelicClass};
+use crate::rewards::Rewards;
 use crate::rng::rand_slice;
 use crate::shop::{Shop, ShopGameState};
 use crate::state::{GameState, GameStateManager, Steps};
@@ -470,6 +471,8 @@ pub struct Game {
 
     pub event_pool: Vec<Box<dyn GameState>>,
 
+    pub rewards: Rewards,
+
     pub shop: Shop,
     pub shop_remove_count: i32,
 
@@ -511,6 +514,7 @@ impl Game {
             shop_remove_count: 0,
             turn: 0,
             energy: 0,
+            rewards: Default::default(),
             draw_per_turn: 5,
             draw_pile: Default::default(),
             hand: Default::default(),
@@ -1212,6 +1216,7 @@ mod tests {
         game::{AscendStep, GameBuilder},
         map::{Map, RoomType},
         master_deck::ChooseUpgradeMasterStep,
+        rewards::RewardExitStep,
         state::ContinueStep,
     };
 
@@ -1234,6 +1239,7 @@ mod tests {
             hand_index: 0,
             target: Some(0),
         });
+        g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         g.step_test(CampfireRestStep);
         g.step_test(AscendStep { x: 0, y: 2 });
@@ -1241,6 +1247,7 @@ mod tests {
             hand_index: 0,
             target: Some(0),
         });
+        g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 3 });
         g.step_test(CampfireUpgradeStep);
         g.step_test(ChooseUpgradeMasterStep { master_index: 0 });

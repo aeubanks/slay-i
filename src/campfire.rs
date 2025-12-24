@@ -3,7 +3,7 @@ use crate::{
     game::{CreatureRef, Game, RunActionsGameState},
     master_deck::{ChooseRemoveFromMasterGameState, ChooseUpgradeMasterGameState},
     relic::RelicClass,
-    state::{GameState, ContinueStep, Steps},
+    state::{ContinueStep, GameState, Steps},
     step::Step,
 };
 
@@ -134,6 +134,7 @@ mod tests {
         master_deck::{ChooseRemoveFromMasterStep, ChooseUpgradeMasterStep},
         potion::Potion,
         relic::RelicClass,
+        rewards::RewardExitStep,
         state::ContinueStep,
         status::Status,
         step::Step,
@@ -160,7 +161,10 @@ mod tests {
             .add_relic(RelicClass::FusionHammer)
             .add_relic(RelicClass::CoffeeDripper)
             .build_campfire();
-        assert_eq!(g.valid_steps(), vec![Box::new(ContinueStep) as Box<dyn Step>,]);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(ContinueStep) as Box<dyn Step>,]
+        );
     }
 
     #[test]
@@ -212,11 +216,13 @@ mod tests {
         g.step_test(AscendStep { x: 0, y: 0 });
         assert_eq!(g.player.get_status(Status::Strength), None);
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         g.step_test(CampfireLiftStep);
         g.step_test(AscendStep { x: 0, y: 2 });
         assert_eq!(g.player.get_status(Status::Strength), Some(1));
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 3 });
         g.step_test(CampfireLiftStep);
         g.step_test(AscendStep { x: 0, y: 4 });

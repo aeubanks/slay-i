@@ -384,7 +384,7 @@ lazy_static! {
         .collect();
 }
 
-fn random_red(rng: &mut Rand) -> CardClass {
+pub fn random_red(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_NON_BASIC_RED)
 }
 

@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::{
     actions::{
         discard_card::DiscardCardAction, draw::DrawAction,
@@ -9,6 +11,7 @@ use crate::{
     monster::{Monster, MonsterInfo},
     monsters::test::{ApplyStatusMonster, NoopMonster},
     relic::RelicClass,
+    rewards::{Rewards, RewardsGameState},
     state::{GameState, Steps},
     status::Status,
     step::Step,
@@ -165,7 +168,24 @@ impl GameState for ResetCombatGameState {
 
         if !game.combat_monsters_queue.is_empty() {
             game.state.push_state(RollCombatGameState);
+        } else {
+            game.state.push_state(RollCombatRewardsGameState);
         }
+    }
+}
+
+#[derive(Debug)]
+struct RollCombatRewardsGameState;
+
+impl GameState for RollCombatRewardsGameState {
+    fn run(&self, game: &mut Game) {
+        let gold = game.rng.random_range(10..=20);
+        game.rewards.add_gold(gold);
+
+        let cards = Rewards::gen_card_reward(game);
+        game.rewards.add_cards(cards);
+
+        game.state.push_state(RewardsGameState);
     }
 }
 

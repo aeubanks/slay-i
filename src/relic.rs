@@ -1072,6 +1072,7 @@ mod tests {
         monster::Monster,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
+        rewards::RewardExitStep,
         state::ContinueStep,
         status::Status,
         step::Step,
@@ -1515,6 +1516,7 @@ mod tests {
         g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         g.step_test(CampfireRestStep);
         g.step_test(AscendStep { x: 0, y: 2 });
@@ -1522,6 +1524,7 @@ mod tests {
         g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 3 });
         assert_eq!(g.energy, 3);
     }

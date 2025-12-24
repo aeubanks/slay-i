@@ -21,6 +21,7 @@ use crate::{
     status::Status,
 };
 use lazy_static::lazy_static;
+use rand::Rng;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PotionRarity {
@@ -363,6 +364,14 @@ pub fn random_uncommon_potion(rng: &mut Rand) -> Potion {
 
 pub fn random_rare_potion(rng: &mut Rand) -> Potion {
     rand_slice(rng, &ALL_RARE)
+}
+
+pub fn random_potion_weighted(rng: &mut Rand) -> Potion {
+    match rng.random_range(0..100) {
+        0..65 => random_common_potion(rng),
+        65..90 => random_uncommon_potion(rng),
+        _ => random_rare_potion(rng),
+    }
 }
 
 #[cfg(test)]

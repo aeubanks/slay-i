@@ -17,6 +17,7 @@ mod move_history;
 mod potion;
 mod queue;
 mod relic;
+mod rewards;
 mod rng;
 mod shop;
 mod state;
