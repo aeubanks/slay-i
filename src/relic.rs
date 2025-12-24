@@ -138,7 +138,7 @@ r!(
     Sundial => Uncommon,
     TheCourier => Uncommon,
     ToxicEgg => Uncommon, // TODO
-    WhiteBeastStatue => Uncommon, // TODO
+    WhiteBeastStatue => Uncommon,
     PaperPhrog => Uncommon,
     SelfFormingClay => Uncommon,
 

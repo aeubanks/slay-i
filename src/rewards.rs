@@ -6,7 +6,7 @@ use crate::{
     card::CardRef,
     cards::random_red,
     game::{Game, RunActionsGameState},
-    potion::{Potion, random_potion_weighted},
+    potion::Potion,
     relic::RelicClass,
     state::{GameState, Steps},
     step::Step,
@@ -49,8 +49,8 @@ impl Rewards {
     pub fn add_gold(&mut self, amount: i32) {
         self.gold.push(amount);
     }
-    pub fn add_potion_weighted(&mut self, game: &mut Game) {
-        self.potions.push(random_potion_weighted(&mut game.rng));
+    pub fn add_potion(&mut self, potion: Potion) {
+        self.potions.push(potion);
     }
     pub fn add_cards(&mut self, cards: Vec<CardRef>) {
         self.cards.push(cards);
@@ -207,6 +207,7 @@ mod tests {
     #[test]
     fn test_combat_rewards() {
         let mut g = GameBuilder::default().build_combat();
+        g.potion_chance = 0;
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
         assert_eq!(g.rewards.gold.len(), 1);
         assert_eq!(g.rewards.cards.len(), 1);
@@ -245,5 +246,24 @@ mod tests {
             g.valid_steps(),
             vec![Box::new(RewardExitStep) as Box<dyn Step>]
         );
+    }
+
+    #[test]
+    fn test_potion_reward() {
+        let mut g = GameBuilder::default().build_combat();
+        g.potion_chance = 100;
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(PotionRewardStep { potion_index: 0 });
+        assert!(g.potions[0].is_some());
+    }
+
+    #[test]
+    fn test_white_beast_statue() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::WhiteBeastStatue)
+            .build_combat();
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(PotionRewardStep { potion_index: 0 });
+        assert!(g.potions[0].is_some());
     }
 }

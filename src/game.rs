@@ -472,6 +472,7 @@ pub struct Game {
     pub event_pool: Vec<Box<dyn GameState>>,
 
     pub rewards: Rewards,
+    pub potion_chance: i32,
 
     pub shop: Shop,
     pub shop_remove_count: i32,
@@ -512,6 +513,7 @@ impl Game {
             master_deck: Default::default(),
             shop: Default::default(),
             shop_remove_count: 0,
+            potion_chance: 40,
             turn: 0,
             energy: 0,
             rewards: Default::default(),

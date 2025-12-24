@@ -10,6 +10,7 @@ use crate::{
     game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::{Monster, MonsterInfo},
     monsters::test::{ApplyStatusMonster, NoopMonster},
+    potion::random_potion_weighted,
     relic::RelicClass,
     rewards::{Rewards, RewardsGameState},
     state::{GameState, Steps},
@@ -179,11 +180,22 @@ struct RollCombatRewardsGameState;
 
 impl GameState for RollCombatRewardsGameState {
     fn run(&self, game: &mut Game) {
+        // FIXME: no rewards when all monsters escape
         let gold = game.rng.random_range(10..=20);
         game.rewards.add_gold(gold);
 
         let cards = Rewards::gen_card_reward(game);
         game.rewards.add_cards(cards);
+
+        if game.rng.random_range(0..100) < game.potion_chance
+            || game.has_relic(RelicClass::WhiteBeastStatue)
+        {
+            game.potion_chance -= 10;
+            let p = random_potion_weighted(&mut game.rng);
+            game.rewards.add_potion(p);
+        } else {
+            game.potion_chance += 10;
+        }
 
         game.state.push_state(RewardsGameState);
     }
