@@ -107,7 +107,7 @@ impl GameState for RunActionsGameState {
     fn run(&self, game: &mut Game) {
         if !game.action_queue.is_empty()
             || !game.card_queue.is_empty()
-            || !game.monster_queue.is_empty()
+            || !game.monster_turn_queue.is_empty()
         {
             game.state.push_state(RunActionsGameState);
         }
@@ -123,8 +123,8 @@ impl GameState for RunActionsGameState {
             } else if !play.is_duplicated {
                 game.action_queue.push_bot(DiscardCardAction(play.card));
             }
-        } else if !game.monster_queue.is_empty() {
-            let monster = game.monster_queue.remove(0);
+        } else if !game.monster_turn_queue.is_empty() {
+            let monster = game.monster_turn_queue.remove(0);
             if !game.get_creature(monster).is_alive() {
                 return;
             }
@@ -487,7 +487,7 @@ pub struct Game {
     pub exhaust_pile: CardPile,
     pub cur_card: Option<CardRef>,
     pub card_queue: Vec<PlayCardAction>,
-    pub monster_queue: Vec<CreatureRef>,
+    pub monster_turn_queue: Vec<CreatureRef>,
     pub should_add_extra_decay_status: bool,
     pub num_cards_played_this_turn: i32,
     pub num_times_took_damage: i32,
@@ -527,7 +527,7 @@ impl Game {
             cur_card: None,
             action_queue: Default::default(),
             card_queue: Default::default(),
-            monster_queue: Default::default(),
+            monster_turn_queue: Default::default(),
             should_add_extra_decay_status: false,
             num_cards_played_this_turn: 0,
             num_times_took_damage: 0,
@@ -990,7 +990,7 @@ impl Game {
     pub fn assert_no_actions(&self) {
         assert!(self.action_queue.is_empty());
         assert!(self.card_queue.is_empty());
-        assert!(self.monster_queue.is_empty());
+        assert!(self.monster_turn_queue.is_empty());
     }
 
     pub fn run_all_actions(&mut self) {

@@ -104,7 +104,7 @@ impl GameState for MonsterTurnGameState {
                 .trigger_statuses_turn_begin(CreatureRef::monster(i), &mut game.action_queue);
         }
         for m in game.get_alive_monsters() {
-            game.monster_queue.push(m);
+            game.monster_turn_queue.push(m);
         }
 
         game.state.push_state(EndOfRoundGameState);
