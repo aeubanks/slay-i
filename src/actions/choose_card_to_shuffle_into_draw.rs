@@ -3,7 +3,7 @@ use crate::{
     actions::shuffle_card_into_draw::ShuffleCardIntoDrawAction,
     cards::{CardClass, random_red_in_combat},
     game::Game,
-    state::{GameState, ContinueStep, Steps},
+    state::{ContinueStep, GameState, Steps},
     step::Step,
 };
 

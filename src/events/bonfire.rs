@@ -6,7 +6,7 @@ use crate::{
     cards::CardRarity,
     game::{CreatureRef, Game, RunActionsGameState},
     relic::RelicClass,
-    state::{GameState, ContinueStep, Steps},
+    state::{ContinueStep, GameState, Steps},
     step::Step,
 };
 
@@ -132,6 +132,9 @@ mod tests {
         let g = GameBuilder::default()
             .add_cards(CardClass::AscendersBane, 2)
             .build_with_game_state(BonfireGameState);
-        assert_eq!(g.valid_steps(), vec![Box::new(ContinueStep) as Box<dyn Step>]);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(ContinueStep) as Box<dyn Step>]
+        );
     }
 }
