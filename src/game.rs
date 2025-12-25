@@ -1243,6 +1243,18 @@ impl Game {
         };
         pool.pop().unwrap()
     }
+    pub fn next_relic_weighted(&mut self) -> RelicClass {
+        // 50% common
+        // 33% uncommon
+        // 17% rare
+        let rarity = match self.rng.random_range(0..100) {
+            0..50 => RelicRarity::Common,
+            50..83 => RelicRarity::Uncommon,
+            _ => RelicRarity::Rare,
+        };
+        self.next_relic(rarity)
+    }
+
     #[cfg(test)]
     pub fn add_relic(&mut self, class: RelicClass) {
         self.run_action(GainRelicAction(class));

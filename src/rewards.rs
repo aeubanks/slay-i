@@ -12,6 +12,12 @@ use crate::{
     step::Step,
 };
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum RewardType {
+    Monster,
+    Elite,
+}
+
 #[derive(Default)]
 pub struct Rewards {
     gold: Vec<i32>,
@@ -210,9 +216,11 @@ impl Step for RewardExitStep {
 #[cfg(test)]
 mod tests {
     use crate::{
+        assert_matches,
         cards::CardClass,
         game::{AscendStep, CreatureRef, GameBuilder},
         map::RoomType,
+        relic::RelicRarity,
     };
 
     use super::*;
@@ -259,6 +267,51 @@ mod tests {
             g.valid_steps(),
             vec![Box::new(RewardExitStep) as Box<dyn Step>]
         );
+    }
+
+    #[test]
+    fn test_elite_rewards() {
+        for _ in 0..10 {
+            let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Elite]);
+            g.potion_chance = 0;
+            g.step_test(AscendStep { x: 0, y: 0 });
+            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            assert_eq!(g.rewards.gold.len(), 1);
+            assert_eq!(g.rewards.cards.len(), 1);
+            assert_eq!(g.rewards.cards[0].len(), 3);
+            assert_eq!(g.rewards.relics.len(), 1);
+            assert_eq!(
+                g.valid_steps(),
+                vec![
+                    Box::new(GoldRewardStep { gold_index: 0 }) as Box<dyn Step>,
+                    Box::new(CardRewardStep {
+                        pack_index: 0,
+                        card_index: 0
+                    }),
+                    Box::new(CardRewardStep {
+                        pack_index: 0,
+                        card_index: 1
+                    }),
+                    Box::new(CardRewardStep {
+                        pack_index: 0,
+                        card_index: 2
+                    }),
+                    Box::new(RelicRewardStep { relic_index: 0 }),
+                    Box::new(RewardExitStep),
+                ]
+            );
+            let gold = g.rewards.gold[0];
+            g.step_test(GoldRewardStep { gold_index: 0 });
+            assert_eq!(g.gold, gold);
+            assert!(gold >= 25);
+            assert!(gold <= 35);
+            g.step_test(RelicRewardStep { relic_index: 0 });
+            assert_eq!(g.relics.len(), 1);
+            assert_matches!(
+                g.relics[0].get_class().rarity(),
+                RelicRarity::Common | RelicRarity::Uncommon | RelicRarity::Rare
+            );
+        }
     }
 
     #[test]

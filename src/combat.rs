@@ -15,7 +15,7 @@ use crate::{
     },
     potion::random_potion_weighted,
     relic::RelicClass,
-    rewards::{Rewards, RewardsGameState},
+    rewards::{RewardType, Rewards, RewardsGameState},
     state::{GameState, Steps},
     status::Status,
     step::Step,
@@ -33,6 +33,8 @@ impl GameState for RollCombatGameState {
         } else {
             game.monsters = vec![Monster::new(JawWorm::new(), &mut game.rng)];
         }
+        game.state
+            .push_state(RollCombatRewardsGameState(RewardType::Monster));
         game.state.push_state(CombatBeginGameState);
     }
 }
@@ -49,6 +51,8 @@ impl GameState for RollEliteCombatGameState {
             },
             &mut game.rng,
         )];
+        game.state
+            .push_state(RollCombatRewardsGameState(RewardType::Elite));
         game.state.push_state(CombatBeginGameState);
     }
 }
@@ -171,22 +175,34 @@ impl GameState for ResetCombatGameState {
         game.energy = 0;
         game.turn = 0;
         game.clear_all_piles();
-
-        game.state.push_state(RollCombatRewardsGameState);
     }
 }
 
 #[derive(Debug)]
-struct RollCombatRewardsGameState;
+struct RollCombatRewardsGameState(RewardType);
 
 impl GameState for RollCombatRewardsGameState {
     fn run(&self, game: &mut Game) {
         // FIXME: no rewards when all monsters escape
-        let gold = game.rng.random_range(10..=20);
-        game.rewards.add_gold(gold);
+        match self.0 {
+            RewardType::Monster => {
+                let gold = game.rng.random_range(10..=20);
+                game.rewards.add_gold(gold);
 
-        let cards = Rewards::gen_card_reward(game);
-        game.rewards.add_cards(cards);
+                let cards = Rewards::gen_card_reward(game);
+                game.rewards.add_cards(cards);
+            }
+            RewardType::Elite => {
+                let gold = game.rng.random_range(25..=35);
+                game.rewards.add_gold(gold);
+
+                let cards = Rewards::gen_card_reward(game);
+                game.rewards.add_cards(cards);
+
+                let r = game.next_relic_weighted();
+                game.rewards.add_relic(r);
+            }
+        }
 
         if game.rng.random_range(0..100) < game.potion_chance
             || game.has_relic(RelicClass::WhiteBeastStatue)
