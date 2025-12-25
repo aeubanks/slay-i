@@ -30,7 +30,6 @@ use game::Game;
 use crate::{
     cards::CardClass,
     game::{GameBuilder, GameStatus},
-    monsters::jawworm::JawWorm,
     relic::RelicClass,
 };
 
@@ -106,7 +105,6 @@ fn main() {
         .add_card(CardClass::Purity)
         .add_card_upgraded(CardClass::Inflame)
         .add_relic(RelicClass::BurningBlood)
-        .add_monster(JawWorm::new())
         .build();
     game.map.print();
     loop {

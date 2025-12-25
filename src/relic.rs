@@ -1076,7 +1076,6 @@ mod tests {
         combat::{EndTurnStep, PlayCardStep},
         game::{AscendStep, GameBuilder, GameStatus},
         map::RoomType,
-        monster::Monster,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
         rewards::RewardExitStep,
@@ -1320,9 +1319,7 @@ mod tests {
     fn test_letter_opener() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::LetterOpener)
-            .add_monster(NoopMonster::with_hp(50))
-            .add_monster(NoopMonster::with_hp(50))
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::with_hp(50), NoopMonster::with_hp(50));
         g.energy = 99;
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
         g.play_card(CardClass::Defend, None);
@@ -1419,9 +1416,8 @@ mod tests {
         {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::Sundial)
-                .add_monster(NoopMonster::with_hp(10000))
                 .add_cards_upgraded(CardClass::PommelStrike, 2)
-                .build_combat();
+                .build_combat_with_monster(NoopMonster::with_hp(10000));
             for _ in 0..100 {
                 g.step_test(PlayCardStep {
                     hand_index: 0,
@@ -1433,10 +1429,9 @@ mod tests {
         {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::Sundial)
-                .add_monster(NoopMonster::with_hp(10000))
                 .add_card(CardClass::PommelStrike)
                 .add_card_upgraded(CardClass::PommelStrike)
-                .build_combat();
+                .build_combat_with_monster(NoopMonster::with_hp(10000));
             for _ in 0..100 {
                 g.step_test(PlayCardStep {
                     hand_index: 0,
@@ -1558,10 +1553,11 @@ mod tests {
     fn test_incense_burner() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::IncenseBurner)
-            .build_combat();
+            .build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
 
-        g.combat_monsters_queue
-            .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
+        g.roll_noop_monsters = true;
+
+        g.step_test(AscendStep { x: 0, y: 0 });
 
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(1));
         assert_eq!(g.player.get_status(Status::Intangible), None);
@@ -1584,6 +1580,8 @@ mod tests {
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(1));
         assert_eq!(g.player.get_status(Status::Intangible), None);
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 1 });
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(2));
     }
 
@@ -1591,8 +1589,7 @@ mod tests {
     fn test_ectoplasm() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Ectoplasm)
-            .add_monster(NoopMonster::with_hp(1))
-            .build_combat();
+            .build_combat_with_monster(NoopMonster::with_hp(1));
         assert_eq!(g.energy, 4);
         g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
         assert_eq!(g.gold, 0);
@@ -1805,8 +1802,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::OddMushroom)
             .add_player_status(Status::Vulnerable, 5)
-            .add_monster(AttackMonster::new(10))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(10));
         let hp = g.player.cur_hp;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 12);
@@ -2002,11 +1998,12 @@ mod tests {
     fn test_gremlin_horn() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::GremlinHorn)
-            .add_monster(NoopMonster::new())
-            .add_monster(AttackMonster::new(1))
-            .add_monster(NoopMonster::new())
             .add_player_status(Status::Thorns, 999)
-            .build_combat();
+            .build_combat_with_monsters_3(
+                NoopMonster::new(),
+                AttackMonster::new(1),
+                NoopMonster::new(),
+            );
         g.add_cards_to_draw_pile(CardClass::Strike, 10);
 
         assert_eq!(g.energy, 3);
@@ -2042,21 +2039,23 @@ mod tests {
         {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::PenNib)
-                .build_combat();
-            for _ in 0..3 {
-                g.combat_monsters_queue
-                    .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
-            }
+                .build_with_rooms(&[RoomType::Monster, RoomType::Monster, RoomType::Monster]);
+            g.roll_noop_monsters = true;
+            g.step_test(AscendStep { x: 0, y: 0 });
             for _ in 0..8 {
                 g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
             }
             assert_eq!(g.player.get_status(Status::PenNib), None);
             g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            g.step_test(RewardExitStep);
+            g.step_test(AscendStep { x: 0, y: 1 });
 
             assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
             assert_eq!(g.player.get_status(Status::PenNib), Some(1));
             assert_eq!(g.get_relic_value(RelicClass::PenNib), Some(9));
             g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            g.step_test(RewardExitStep);
+            g.step_test(AscendStep { x: 0, y: 2 });
 
             assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
             assert_eq!(g.get_relic_value(RelicClass::PenNib), Some(0));
@@ -2068,8 +2067,7 @@ mod tests {
     fn test_tungsten_rod() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::TungstenRod)
-            .add_monster(AttackMonster::with_attack_count(4, 2))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::with_attack_count(4, 2));
         let hp = g.player.cur_hp;
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.player.cur_hp, hp - 2);
@@ -2108,8 +2106,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::TungstenRod)
             .add_player_status(Status::Buffer, 1)
-            .add_monster(AttackMonster::new(1))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(1));
         let hp = g.player.cur_hp;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp);
@@ -2168,15 +2165,16 @@ mod tests {
     fn test_turnip() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Turnip)
-            .add_monster(ApplyStatusMonster {
-                status: Status::Weak,
-                amount: 2,
-            })
-            .add_monster(ApplyStatusMonster {
-                status: Status::Frail,
-                amount: 2,
-            })
-            .build_combat();
+            .build_combat_with_monsters(
+                ApplyStatusMonster {
+                    status: Status::Weak,
+                    amount: 2,
+                },
+                ApplyStatusMonster {
+                    status: Status::Frail,
+                    amount: 2,
+                },
+            );
         g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Weak), Some(2));
         assert_eq!(g.player.get_status(Status::Frail), None);
@@ -2191,15 +2189,16 @@ mod tests {
     fn test_ginger() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Ginger)
-            .add_monster(ApplyStatusMonster {
-                status: Status::Weak,
-                amount: 2,
-            })
-            .add_monster(ApplyStatusMonster {
-                status: Status::Frail,
-                amount: 2,
-            })
-            .build_combat();
+            .build_combat_with_monsters(
+                ApplyStatusMonster {
+                    status: Status::Weak,
+                    amount: 2,
+                },
+                ApplyStatusMonster {
+                    status: Status::Frail,
+                    amount: 2,
+                },
+            );
         g.step_test(EndTurnStep);
         assert_eq!(g.player.get_status(Status::Frail), Some(2));
         assert_eq!(g.player.get_status(Status::Weak), None);
@@ -2414,9 +2413,7 @@ mod tests {
     fn test_mercury_hourglass() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::MercuryHourglass)
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
         assert_eq!(
             g.monsters[0].creature.cur_hp,
             g.monsters[0].creature.max_hp - 3
@@ -2440,9 +2437,7 @@ mod tests {
     fn test_stone_calendar() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::StoneCalendar)
-            .add_monster(NoopMonster::new())
-            .add_monster(AttackMonster::new(1))
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), AttackMonster::new(1));
         for _ in 0..6 {
             assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
             assert_eq!(g.monsters[1].creature.cur_hp, g.monsters[1].creature.max_hp);
@@ -2573,8 +2568,7 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_cards(CardClass::Strike, 10)
                 .add_relic(RelicClass::CentennialPuzzle)
-                .add_monster(AttackMonster::new(1))
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::new(1));
             g.play_card(CardClass::Thunderclap, None);
             g.step_test(EndTurnStep);
             assert_eq!(g.hand.len(), 8);
@@ -2587,8 +2581,7 @@ mod tests {
     fn test_self_forming_clay() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::SelfFormingClay)
-            .add_monster(AttackMonster::with_attack_count(1, 2))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::with_attack_count(1, 2));
         g.play_card(CardClass::Thunderclap, None);
         assert_eq!(
             g.monsters[0].creature.get_status(Status::NextTurnBlock),
@@ -2607,8 +2600,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::MarkOfTheBloom)
             .add_relic(RelicClass::LizardTail)
-            .add_monster(AttackMonster::new(999))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(999));
         g.add_potion(Potion::Fairy);
         g.player.cur_hp = 10;
         g.play_card(CardClass::Reaper, None);
@@ -2622,9 +2614,8 @@ mod tests {
     fn test_lizard_tail() {
         {
             let mut g = GameBuilder::default()
-                .add_monster(AttackMonster::new(1000))
                 .add_relic(RelicClass::LizardTail)
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::new(1000));
             assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(1));
 
             g.step_test(EndTurnStep);
@@ -2634,9 +2625,8 @@ mod tests {
         }
         {
             let mut g = GameBuilder::default()
-                .add_monster(AttackMonster::new(1000))
                 .add_relic(RelicClass::LizardTail)
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::new(1000));
 
             g.player.decrease_max_hp(g.player.max_hp - 1);
             g.step_test(EndTurnStep);
@@ -2644,18 +2634,16 @@ mod tests {
         }
         {
             let mut g = GameBuilder::default()
-                .add_monster(AttackMonster::with_attack_count(1000, 2))
                 .add_relic(RelicClass::LizardTail)
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::with_attack_count(1000, 2));
             g.step_test(EndTurnStep);
             assert!(!g.player.is_alive());
         }
         {
             // test that fairy is used before lizard tail
             let mut g = GameBuilder::default()
-                .add_monster(AttackMonster::new(1000))
                 .add_relic(RelicClass::LizardTail)
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::new(1000));
             g.add_potion(Potion::Fairy);
             g.step_test(EndTurnStep);
             assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(1));
@@ -2689,8 +2677,7 @@ mod tests {
     fn test_orichalcum() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Orichalcum)
-            .add_monster(AttackMonster::new(10))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(10));
         let hp = g.player.cur_hp;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 4);
@@ -2715,8 +2702,7 @@ mod tests {
         {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::Torii)
-                .add_monster(AttackMonster::new(5))
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::new(5));
 
             let hp = g.player.cur_hp;
             g.step_test(EndTurnStep);
@@ -2738,8 +2724,7 @@ mod tests {
         {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::Torii)
-                .add_monster(AttackMonster::with_attack_count(4, 2))
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::with_attack_count(4, 2));
             let hp = g.player.cur_hp;
             g.player.block = 3;
             g.step_test(EndTurnStep);
@@ -2752,8 +2737,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::Torii)
             .add_relic(RelicClass::TungstenRod)
-            .add_monster(AttackMonster::new(5))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(5));
         let hp = g.player.cur_hp;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp);
@@ -2788,9 +2772,9 @@ mod tests {
     fn test_red_skull() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::RedSkull)
-            .build_combat();
-        g.combat_monsters_queue
-            .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
+            .build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
+        g.roll_noop_monsters = true;
+        g.step_test(AscendStep { x: 0, y: 0 });
         g.player.cur_hp = g.player.max_hp / 2 + 1;
         assert_eq!(g.player.get_status(Status::Strength), None);
         g.play_card(CardClass::Bloodletting, None);
@@ -2802,6 +2786,8 @@ mod tests {
 
         // start new combat bloodied
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 1 });
         assert!(g.player.is_bloodied());
         assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
         assert_eq!(g.player.get_status(Status::Strength), Some(3));
@@ -2840,9 +2826,7 @@ mod tests {
     fn test_charons_ashes() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::CharonsAshes)
-            .add_monster(NoopMonster::with_hp(50))
-            .add_monster(NoopMonster::with_hp(50))
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::with_hp(50), NoopMonster::with_hp(50));
         g.add_cards_to_hand(CardClass::Dazed, 2);
         g.monsters[1].creature.block = 1;
         g.step_test(EndTurnStep);
@@ -2855,8 +2839,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::RunicCube)
             .add_cards(CardClass::Strike, 10)
-            .add_monster(AttackMonster::with_attack_count(1, 4))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::with_attack_count(1, 4));
         assert_eq!(g.hand.len(), 5);
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.hand.len(), 6);
@@ -2899,23 +2882,35 @@ mod tests {
     fn test_neows_lament() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::NeowsLament)
-            .build_combat();
-        for _ in 0..3 {
-            g.combat_monsters_queue
-                .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
-        }
+            .build_with_rooms(&[
+                RoomType::Monster,
+                RoomType::Monster,
+                RoomType::Monster,
+                RoomType::Monster,
+            ]);
+
+        g.step_test(AscendStep { x: 0, y: 0 });
 
         assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(2));
         assert_eq!(g.monsters[0].creature.cur_hp, 1);
         g.play_card(CardClass::Thunderclap, None);
 
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 1 });
+
         assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(1));
         assert_eq!(g.monsters[0].creature.cur_hp, 1);
         g.play_card(CardClass::Thunderclap, None);
 
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 2 });
+
         assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(0));
         assert_eq!(g.monsters[0].creature.cur_hp, 1);
         g.play_card(CardClass::Thunderclap, None);
+
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 3 });
 
         assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(0));
         assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);

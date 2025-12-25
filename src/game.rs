@@ -26,8 +26,9 @@ use crate::draw_pile::DrawPile;
 use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
 use crate::events::bonfire::BonfireGameState;
 use crate::map::{MAP_WIDTH, Map, RoomType};
-use crate::monster::{Monster, MonsterBehavior};
-use crate::monsters::test::NoopMonster;
+use crate::monster::Monster;
+#[cfg(test)]
+use crate::monster::MonsterBehavior;
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{
@@ -100,6 +101,7 @@ struct TestCombatStartGameState;
 #[cfg(test)]
 impl GameState for TestCombatStartGameState {
     fn run(&self, game: &mut Game) {
+        game.roll_noop_monsters = true;
         game.state.push_state(RollCombatGameState);
     }
 }
@@ -316,7 +318,7 @@ pub enum GameStatus {
 #[allow(unused)]
 pub struct GameBuilder {
     master_deck: Vec<(CardClass, bool)>,
-    monsters: Vec<Monster>,
+    force_monsters: Option<Vec<Monster>>,
     monster_statuses: HashMap<Status, i32>,
     player_statuses: HashMap<Status, i32>,
     relics: Vec<RelicClass>,
@@ -358,10 +360,6 @@ impl GameBuilder {
         }
         self
     }
-    pub fn add_monster<M: MonsterBehavior + 'static>(mut self, m: M) -> Self {
-        self.monsters.push(Monster::new(m, &mut self.rng));
-        self
-    }
 
     #[cfg(test)]
     pub fn add_monster_status(mut self, s: Status, amount: i32) -> Self {
@@ -382,6 +380,44 @@ impl GameBuilder {
     pub fn set_player_hp(mut self, amount: i32) -> Self {
         self.player_hp = Some(amount);
         self
+    }
+    #[cfg(test)]
+    pub fn build_combat_with_monster<M: MonsterBehavior + 'static>(mut self, m: M) -> Game {
+        self.force_monsters = Some(vec![Monster::new(m, &mut self.rng)]);
+        self.build_combat()
+    }
+    #[cfg(test)]
+    pub fn build_combat_with_monsters<
+        M1: MonsterBehavior + 'static,
+        M2: MonsterBehavior + 'static,
+    >(
+        mut self,
+        m1: M1,
+        m2: M2,
+    ) -> Game {
+        self.force_monsters = Some(vec![
+            Monster::new(m1, &mut self.rng),
+            Monster::new(m2, &mut self.rng),
+        ]);
+        self.build_combat()
+    }
+    #[cfg(test)]
+    pub fn build_combat_with_monsters_3<
+        M1: MonsterBehavior + 'static,
+        M2: MonsterBehavior + 'static,
+        M3: MonsterBehavior + 'static,
+    >(
+        mut self,
+        m1: M1,
+        m2: M2,
+        m3: M3,
+    ) -> Game {
+        self.force_monsters = Some(vec![
+            Monster::new(m1, &mut self.rng),
+            Monster::new(m2, &mut self.rng),
+            Monster::new(m3, &mut self.rng),
+        ]);
+        self.build_combat()
     }
     #[cfg(test)]
     pub fn build_combat(self) -> Game {
@@ -411,11 +447,9 @@ impl GameBuilder {
     pub fn build(self) -> Game {
         self.build_with_game_state(GameStartGameState)
     }
-    pub fn build_with_game_state<T: GameState + 'static>(mut self, start_state: T) -> Game {
-        if self.monsters.is_empty() {
-            self = self.add_monster(NoopMonster::new());
-        }
-        let mut g = Game::new(self.rng, &self.master_deck, self.monsters);
+    pub fn build_with_game_state<T: GameState + 'static>(self, start_state: T) -> Game {
+        let mut g = Game::new(self.rng, &self.master_deck);
+        g.force_monsters = self.force_monsters;
         for (&k, &v) in &self.player_statuses {
             g.player.set_status(k, v);
         }
@@ -470,7 +504,8 @@ pub struct Game {
     pub draw_per_turn: i32,
     pub master_deck: CardPile,
     next_id: u32,
-    pub combat_monsters_queue: Vec<Vec<Monster>>,
+    pub force_monsters: Option<Vec<Monster>>,
+    pub roll_noop_monsters: bool,
     pub event_queue: Vec<Box<dyn GameState>>,
 
     pub event_pool: Vec<Box<dyn GameState>>,
@@ -507,7 +542,7 @@ pub struct Game {
 impl Game {
     pub const MAX_HAND_SIZE: i32 = 10;
 
-    fn new(mut rng: Rand, master_deck: &[(CardClass, bool)], monsters: Vec<Monster>) -> Self {
+    fn new(mut rng: Rand, master_deck: &[(CardClass, bool)]) -> Self {
         let event_pool = vec![
             Box::new(BonfireGameState) as Box<dyn GameState>,
             Box::new(AccursedBlackSmithGameState),
@@ -556,7 +591,8 @@ impl Game {
             should_add_extra_decay_status: false,
             num_cards_played_this_turn: 0,
             num_times_took_damage: 0,
-            combat_monsters_queue: vec![monsters],
+            force_monsters: Default::default(),
+            roll_noop_monsters: false,
             event_queue: Default::default(),
             rng,
             state: Default::default(),

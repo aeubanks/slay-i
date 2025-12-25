@@ -38,9 +38,7 @@ mod tests {
     #[test]
     fn test_heal() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::with_hp(50))
-            .add_monster(NoopMonster::with_hp(50))
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::with_hp(50), NoopMonster::with_hp(50));
         g.run_action(DamageAction::thorns_no_rupture(
             100,
             CreatureRef::monster(0),

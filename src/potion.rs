@@ -407,9 +407,7 @@ mod tests {
     #[test]
     fn test_fire() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
         g.add_potion(Potion::Fire);
         let hp = g.monsters[0].creature.cur_hp;
         g.step_test(UsePotionStep {
@@ -428,9 +426,7 @@ mod tests {
     #[test]
     fn test_explosive() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
         g.add_potion(Potion::Explosive);
         let hp = g.monsters[0].creature.cur_hp;
         g.step_test(UsePotionStep {
@@ -807,9 +803,7 @@ mod tests {
     #[test]
     fn test_fairy() {
         {
-            let mut g = GameBuilder::default()
-                .add_monster(AttackMonster::new(1000))
-                .build_combat();
+            let mut g = GameBuilder::default().build_combat_with_monster(AttackMonster::new(1000));
             g.add_potion(Potion::Fairy);
             assert_eq!(
                 g.valid_steps(),
@@ -838,8 +832,7 @@ mod tests {
         }
         {
             let mut g = GameBuilder::default()
-                .add_monster(AttackMonster::with_attack_count(1000, 2))
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::with_attack_count(1000, 2));
 
             g.add_potion(Potion::Fairy);
             g.add_potion(Potion::Fairy);

@@ -9,7 +9,10 @@ use crate::{
     draw_pile::DrawPile,
     game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::{Monster, MonsterInfo},
-    monsters::test::{ApplyStatusMonster, NoopMonster},
+    monsters::{
+        jawworm::JawWorm,
+        test::{ApplyStatusMonster, NoopMonster},
+    },
     potion::random_potion_weighted,
     relic::RelicClass,
     rewards::{Rewards, RewardsGameState},
@@ -23,10 +26,12 @@ pub struct RollCombatGameState;
 
 impl GameState for RollCombatGameState {
     fn run(&self, game: &mut Game) {
-        if let Some(m) = game.combat_monsters_queue.pop() {
+        if let Some(m) = game.force_monsters.take() {
             game.monsters = m;
-        } else {
+        } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
+        } else {
+            game.monsters = vec![Monster::new(JawWorm::new(), &mut game.rng)];
         }
         game.state.push_state(CombatBeginGameState);
     }
@@ -167,11 +172,7 @@ impl GameState for ResetCombatGameState {
         game.turn = 0;
         game.clear_all_piles();
 
-        if !game.combat_monsters_queue.is_empty() {
-            game.state.push_state(RollCombatGameState);
-        } else {
-            game.state.push_state(RollCombatRewardsGameState);
-        }
+        game.state.push_state(RollCombatRewardsGameState);
     }
 }
 
@@ -437,9 +438,7 @@ mod tests {
     #[test]
     fn test_moves() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
         g.add_card_to_hand(CardClass::DebugKill);
         g.add_card_to_hand(CardClass::Defend);
         g.add_potion(Potion::Fire);
@@ -604,9 +603,8 @@ mod tests {
     #[test]
     fn test_multi_attack_die_to_thorns() {
         let mut g = GameBuilder::default()
-            .add_monster(AttackMonster::with_attack_count(10, 10))
             .add_player_status(Status::Thorns, 999)
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::with_attack_count(10, 10));
         g.player.cur_hp = 50;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, 40);
@@ -625,9 +623,7 @@ mod tests {
 
     #[test]
     fn test_defeat() {
-        let mut g = GameBuilder::default()
-            .add_monster(AttackMonster::new(999))
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat_with_monster(AttackMonster::new(999));
         g.step_test(EndTurnStep);
         assert_matches!(g.status, GameStatus::Defeat);
     }

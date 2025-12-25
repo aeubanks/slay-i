@@ -184,13 +184,14 @@ mod tests {
     #[test]
     fn test_vulnerable2() {
         let mut g = GameBuilder::default()
-            .add_monster(ApplyStatusMonster {
-                status: Status::Vulnerable,
-                amount: 2,
-            })
-            .add_monster(NoopMonster::new())
             .add_card(CardClass::DebugKill)
-            .build_combat();
+            .build_combat_with_monsters(
+                ApplyStatusMonster {
+                    status: Status::Vulnerable,
+                    amount: 2,
+                },
+                NoopMonster::new(),
+            );
 
         assert_eq!(g.player.get_status(Vulnerable), None);
 
@@ -221,16 +222,16 @@ mod tests {
 
     #[test]
     fn test_vulnerable3() {
-        let mut g = GameBuilder::default()
-            .add_monster(ApplyStatusMonster {
+        let mut g = GameBuilder::default().build_combat_with_monsters(
+            ApplyStatusMonster {
                 status: Status::Vulnerable,
                 amount: 2,
-            })
-            .add_monster(ApplyStatusMonster {
+            },
+            ApplyStatusMonster {
                 status: Status::Vulnerable,
                 amount: 2,
-            })
-            .build_combat();
+            },
+        );
 
         assert_eq!(g.player.get_status(Vulnerable), None);
 
@@ -381,8 +382,7 @@ mod tests {
     fn test_thorns3() {
         let mut g = GameBuilder::default()
             .add_player_status(Thorns, 2)
-            .add_monster(AttackMonster::new(2))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(2));
 
         g.monsters[0].creature.cur_hp = 10;
         g.run_action(BlockAction::player_flat_amount(5));
@@ -394,9 +394,8 @@ mod tests {
     #[test]
     fn test_flame_barrier() {
         let mut g = GameBuilder::default()
-            .add_monster(AttackMonster::with_hp(1, 50))
             .add_cards(CardClass::Strike, 5)
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::with_hp(1, 50));
 
         g.run_action(GainStatusAction {
             status: Status::FlameBarrier,
@@ -485,9 +484,8 @@ mod tests {
     fn test_rupture() {
         let mut g = GameBuilder::default()
             .add_player_status(Rupture, 1)
-            .add_monster(AttackMonster::new(1))
             .add_monster_status(Thorns, 1)
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(1));
 
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
         assert_eq!(g.player.get_status(Strength), None);
@@ -859,8 +857,7 @@ mod tests {
     fn test_intangible() {
         let mut g = GameBuilder::default()
             .add_player_status(Status::Intangible, 2)
-            .add_monster(AttackMonster::new(10))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(10));
         g.player.cur_hp = 50;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, 49);
@@ -876,8 +873,7 @@ mod tests {
     fn test_intangible_block() {
         let mut g = GameBuilder::default()
             .add_player_status(Status::Intangible, 2)
-            .add_monster(AttackMonster::new(10))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(10));
         g.player.cur_hp = 50;
         g.player.block = 2;
         g.add_card_to_hand(CardClass::Burn);
@@ -913,9 +909,7 @@ mod tests {
         }
         let mut g = GameBuilder::default()
             .add_player_status(Status::Juggernaut, 2)
-            .add_monster(NoopMonster::with_hp(200))
-            .add_monster(NoopMonster::with_hp(200))
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::with_hp(200), NoopMonster::with_hp(200));
         for _ in 0..50 {
             g.play_card(CardClass::GoodInstincts, None);
         }
@@ -1059,8 +1053,7 @@ mod tests {
     fn test_mayhem() {
         let mut g = GameBuilder::default()
             .add_player_status(Mayhem, 2)
-            .add_monster(NoopMonster::with_hp(50))
-            .build_combat();
+            .build_combat_with_monster(NoopMonster::with_hp(50));
         g.player.cur_hp = 50;
         g.add_card_to_draw_pile(CardClass::Bloodletting);
         g.add_card_to_draw_pile(CardClass::Rupture);
@@ -1078,17 +1071,18 @@ mod tests {
     #[test]
     fn test_sadistic_nature() {
         let mut g = GameBuilder::default()
-            .add_monster(ApplyStatusMonster {
-                status: Status::Vulnerable,
-                amount: 1,
-            })
-            .add_monster(ApplyStatusMonster {
-                status: Status::Vulnerable,
-                amount: 1,
-            })
             .add_player_status(Status::SadisticNature, 2)
             .add_player_status(Status::Strength, -99)
-            .build_combat();
+            .build_combat_with_monsters(
+                ApplyStatusMonster {
+                    status: Status::Vulnerable,
+                    amount: 1,
+                },
+                ApplyStatusMonster {
+                    status: Status::Vulnerable,
+                    amount: 1,
+                },
+            );
         g.energy = 99;
         g.player.cur_hp = 50;
         g.monsters[0].creature.cur_hp = 100;
@@ -1115,8 +1109,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_player_status(Status::Metallicize, 2)
             .add_player_status(Status::Dexterity, 22)
-            .add_monster(AttackMonster::new(5))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(5));
         let hp = g.player.cur_hp;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 3);
@@ -1130,8 +1123,7 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_player_status(Status::PlatedArmor, 2)
                 .add_player_status(Status::Dexterity, 22)
-                .add_monster(AttackMonster::new(5))
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::new(5));
             let hp = g.player.cur_hp;
             g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, hp - 3);
@@ -1144,8 +1136,7 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_player_status(Status::PlatedArmor, 6)
                 .add_player_status(Status::Dexterity, 22)
-                .add_monster(AttackMonster::with_attack_count(5, 3))
-                .build_combat();
+                .build_combat_with_monster(AttackMonster::with_attack_count(5, 3));
             let hp = g.player.cur_hp;
             g.step_test(EndTurnStep);
             assert_eq!(g.player.cur_hp, hp - 9);
@@ -1306,8 +1297,7 @@ mod tests {
     fn test_buffer() {
         let mut g = GameBuilder::default()
             .add_player_status(Buffer, 2)
-            .add_monster(AttackMonster::new(6))
-            .build_combat();
+            .build_combat_with_monster(AttackMonster::new(6));
 
         let hp = g.player.cur_hp;
         g.play_card(CardClass::Bloodletting, None);

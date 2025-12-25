@@ -361,9 +361,10 @@ mod tests {
         assert_matches,
         cards::{CardClass, CardCost},
         combat::{EndTurnStep, PlayCardStep},
-        game::{CreatureRef, Game, GameBuilder},
-        monster::Monster,
+        game::{AscendStep, CreatureRef, Game, GameBuilder},
+        map::RoomType,
         monsters::test::{AttackMonster, NoopMonster},
+        rewards::RewardExitStep,
         status::Status,
         step::Step,
     };
@@ -446,9 +447,7 @@ mod tests {
     fn test_cleave() {
         let mut g = GameBuilder::default()
             .add_cards(CardClass::Cleave, 2)
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
         let hp0 = g.monsters[0].creature.cur_hp;
         g.monsters[1].creature.cur_hp = 4;
         g.play_card(CardClass::Cleave, None);
@@ -462,9 +461,7 @@ mod tests {
     #[test]
     fn test_thunderclap() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
         let hp0 = g.monsters[0].creature.cur_hp;
         g.play_card(CardClass::Thunderclap, None);
         assert_eq!(g.monsters[0].creature.cur_hp, hp0 - 4);
@@ -544,11 +541,11 @@ mod tests {
         let mut found_1_2 = false;
         let mut found_0_3 = false;
         for _ in 0..500 {
-            let mut g = GameBuilder::default()
-                .add_monster(NoopMonster::with_hp(50))
-                .add_monster(NoopMonster::with_hp(50))
-                .add_monster(NoopMonster::with_hp(50))
-                .build_combat();
+            let mut g = GameBuilder::default().build_combat_with_monsters_3(
+                NoopMonster::with_hp(50),
+                NoopMonster::with_hp(50),
+                NoopMonster::with_hp(50),
+            );
             g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(1)));
             g.play_card(CardClass::SwordBoomerang, None);
             match (g.monsters[0].creature.cur_hp, g.monsters[2].creature.cur_hp) {
@@ -699,9 +696,7 @@ mod tests {
     fn test_whirlwind() {
         let mut g = GameBuilder::default()
             .add_cards(CardClass::Whirlwind, 2)
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
 
         let hp0 = g.monsters[0].creature.cur_hp;
         g.step_test(PlayCardStep {
@@ -898,9 +893,7 @@ mod tests {
 
     #[test]
     fn test_blood_for_blood() {
-        let mut g = GameBuilder::default()
-            .add_monster(AttackMonster::new(1))
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat_with_monster(AttackMonster::new(1));
         g.add_card_to_discard_pile(CardClass::BloodForBlood);
         g.add_card_to_hand(CardClass::BloodForBlood);
         g.add_card_to_exhaust_pile(CardClass::BloodForBlood);
@@ -935,14 +928,18 @@ mod tests {
 
     #[test]
     fn test_blood_for_blood_multiple_combats() {
-        let mut g = GameBuilder::default().build_combat();
-        g.combat_monsters_queue
-            .push(vec![Monster::new(NoopMonster::new(), &mut g.rng)]);
+        let mut g =
+            GameBuilder::default().build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
+        g.roll_noop_monsters = true;
+
+        g.step_test(AscendStep { x: 0, y: 0 });
         g.play_card(CardClass::Bloodletting, None);
         g.play_card(CardClass::Bloodletting, None);
         g.add_card_to_hand(CardClass::BloodForBlood);
         assert_eq!(g.hand[0].borrow().get_base_cost(), 2);
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 1 });
         g.add_card_to_hand(CardClass::BloodForBlood);
         assert_eq!(g.hand[0].borrow().get_base_cost(), 4);
     }
@@ -980,18 +977,14 @@ mod tests {
         }
         {
             let mut g = GameBuilder::default()
-                .add_monster(NoopMonster::new())
-                .add_monster(NoopMonster::new())
-                .build_combat();
+                .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
             g.player.cur_hp = 10;
             g.play_card(CardClass::Reaper, None);
             assert_eq!(g.player.cur_hp, 18);
         }
         {
             let mut g = GameBuilder::default()
-                .add_monster(NoopMonster::new())
-                .add_monster(NoopMonster::new())
-                .build_combat();
+                .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
             g.player.cur_hp = 10;
             g.monsters[0].creature.cur_hp = 1;
             g.monsters[1].creature.block = 1;
@@ -1000,9 +993,7 @@ mod tests {
         }
         {
             let mut g = GameBuilder::default()
-                .add_monster(NoopMonster::new())
-                .add_monster(NoopMonster::new())
-                .build_combat();
+                .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
             g.player.cur_hp = 10;
             g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
             g.play_card(CardClass::Reaper, None);
@@ -1090,10 +1081,8 @@ mod tests {
     #[test]
     fn test_ritual_dagger() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
             .add_cards(CardClass::RitualDagger, 2)
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
 
         g.energy = 10;
 
@@ -1153,9 +1142,7 @@ mod tests {
     #[test]
     fn test_hand_of_greed() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
         g.energy = 99;
 
         g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
@@ -1188,7 +1175,6 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_card(CardClass::Finesse)
             .add_card(CardClass::FlashOfSteel)
-            .add_monster(NoopMonster::new())
             .build_combat();
 
         for _ in 0..50 {

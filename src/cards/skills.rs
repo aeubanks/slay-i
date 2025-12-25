@@ -749,9 +749,7 @@ mod tests {
     #[test]
     fn test_havoc_multiple_monsters() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::new())
-            .add_monster(NoopMonster::new())
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
         let hp = g.monsters[0].creature.cur_hp;
 
         g.add_card_to_draw_pile(CardClass::Strike);
@@ -804,10 +802,10 @@ mod tests {
 
     #[test]
     fn test_spot_weakness() {
-        let mut g = GameBuilder::default()
-            .add_monster(IntentMonster::new(Intent::Buff))
-            .add_monster(IntentMonster::new(Intent::Attack(2, 2)))
-            .build_combat();
+        let mut g = GameBuilder::default().build_combat_with_monsters(
+            IntentMonster::new(Intent::Buff),
+            IntentMonster::new(Intent::Attack(2, 2)),
+        );
         g.play_card(CardClass::SpotWeakness, Some(CreatureRef::monster(0)));
         assert_eq!(g.player.get_status(Status::Strength), None);
         g.play_card(CardClass::SpotWeakness, Some(CreatureRef::monster(1)));
@@ -1263,9 +1261,7 @@ mod tests {
     #[test]
     fn test_bomb() {
         let mut g = GameBuilder::default()
-            .add_monster(NoopMonster::with_hp(1000))
-            .add_monster(AttackMonster::with_hp(2, 10))
-            .build_combat();
+            .build_combat_with_monsters(NoopMonster::with_hp(1000), AttackMonster::with_hp(2, 10));
         g.energy = 999;
 
         let hp = g.monsters[0].creature.cur_hp;
