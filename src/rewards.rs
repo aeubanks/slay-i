@@ -283,7 +283,7 @@ mod tests {
     #[test]
     fn test_rare() {
         let mut found_rare = false;
-        for _ in 0..100 {
+        for _ in 0..1000 {
             let mut g =
                 GameBuilder::default().build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
             g.step_test(AscendStep { x: 0, y: 0 });
