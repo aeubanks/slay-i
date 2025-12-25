@@ -10,6 +10,7 @@ use crate::{
     game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::{Monster, MonsterInfo},
     monsters::{
+        cultist::Cultist,
         jawworm::JawWorm,
         test::{ApplyStatusMonster, NoopMonster},
     },
@@ -31,7 +32,11 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            game.monsters = vec![Monster::new(JawWorm::new(), &mut game.rng)];
+            if game.rng.random() {
+                game.monsters = vec![Monster::new(JawWorm::new(), &mut game.rng)];
+            } else {
+                game.monsters = vec![Monster::new(Cultist::new(), &mut game.rng)];
+            }
         }
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Monster));
