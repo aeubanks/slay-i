@@ -339,6 +339,7 @@ mod tests {
         for _ in 0..1000 {
             let mut g =
                 GameBuilder::default().build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
+            g.roll_noop_monsters = true;
             g.step_test(AscendStep { x: 0, y: 0 });
             g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
             assert!(

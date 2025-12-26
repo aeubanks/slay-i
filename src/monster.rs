@@ -53,7 +53,7 @@ pub struct MonsterInfo {
 pub trait MonsterBehavior {
     fn name(&self) -> &'static str;
     fn hp_range(&self) -> (i32, i32);
-    fn pre_combat(&self, _queue: &mut ActionQueue, _this: CreatureRef) {}
+    fn pre_combat(&self, _queue: &mut ActionQueue, _this: CreatureRef, _rng: &mut Rand) {}
     fn roll_next_action(&mut self, r: &mut Rand, info: &MonsterInfo);
     fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue);
     fn get_intent(&self) -> Intent;
@@ -66,13 +66,16 @@ pub struct Monster {
 
 impl Monster {
     pub fn new<M: MonsterBehavior + 'static>(m: M, rng: &mut Rand) -> Self {
+        Self::new_boxed(Box::new(m), rng)
+    }
+    pub fn new_boxed(m: Box<dyn MonsterBehavior>, rng: &mut Rand) -> Self {
         let (lo, hi) = m.hp_range();
         let hp = rng.random_range(lo..=hi);
         let name = m.name();
 
         Monster {
             creature: Creature::new(name, hp),
-            behavior: Box::new(m),
+            behavior: m,
         }
     }
 }

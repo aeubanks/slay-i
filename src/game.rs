@@ -6,6 +6,7 @@ use rand::Rng;
 use rand::seq::SliceRandom;
 
 use crate::action::Action;
+use crate::actions::block::BlockAction;
 use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
@@ -14,6 +15,7 @@ use crate::actions::gain_relic::GainRelicAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
+use crate::actions::remove_status::RemoveStatusAction;
 use crate::actions::use_potion::UsePotionAction;
 use crate::blessings::ChooseBlessingGameState;
 use crate::campfire::CampfireGameState;
@@ -383,6 +385,15 @@ impl GameBuilder {
     }
     #[cfg(test)]
     pub fn build_combat_with_monster<M: MonsterBehavior + 'static>(mut self, m: M) -> Game {
+        self.force_monsters = Some(vec![Monster::new(m, &mut self.rng)]);
+        self.build_combat()
+    }
+    #[cfg(test)]
+    pub fn build_combat_with_monster_rng<M: MonsterBehavior + 'static, F: Fn(&mut Rand) -> M>(
+        mut self,
+        mf: F,
+    ) -> Game {
+        let m = mf(&mut self.rng);
         self.force_monsters = Some(vec![Monster::new(m, &mut self.rng)]);
         self.build_combat()
     }
@@ -845,6 +856,16 @@ impl Game {
                     status: Status::PlatedArmor,
                     amount: 1,
                     target,
+                });
+            }
+            if matches!(ty, DamageType::Attack { .. })
+                && let Some(v) = self.get_creature(target).get_status(Status::CurlUp)
+            {
+                self.action_queue.push_bot(BlockAction::monster(target, v));
+                // push_top so multiple attacks don't trigger this before removing the status
+                self.action_queue.push_top(RemoveStatusAction {
+                    status: Status::CurlUp,
+                    target: target,
                 });
             }
 
@@ -1325,6 +1346,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_card(CardClass::DebugKill)
             .build();
+        g.roll_noop_monsters = true;
         g.map = Map::straight_single_path(&[
             RoomType::Monster,
             RoomType::Campfire,

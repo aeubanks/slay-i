@@ -213,6 +213,8 @@ mod tests {
                 RoomType::Monster,
             ]);
 
+        g.roll_noop_monsters = true;
+
         g.step_test(AscendStep { x: 0, y: 0 });
         assert_eq!(g.player.get_status(Status::Strength), None);
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));

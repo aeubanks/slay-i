@@ -79,6 +79,7 @@ s!(
     Panache3 => Buff,
     Panache2 => Buff,
     Panache1 => Buff,
+    CurlUp => Buff,
 );
 
 impl Status {
@@ -124,6 +125,7 @@ mod tests {
         combat::{EndTurnStep, PlayCardStep},
         game::{CreatureRef, GameBuilder},
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
+        potion::Potion,
         status::Status,
         step::Step,
     };
@@ -1142,6 +1144,25 @@ mod tests {
             assert_eq!(g.player.cur_hp, hp - 9);
             assert_eq!(g.player.get_status(Status::PlatedArmor), Some(4));
         }
+    }
+
+    #[test]
+    fn test_curl_up() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Status::CurlUp, 5)
+            .build_combat();
+        g.step_test(EndTurnStep);
+        assert_eq!(g.monsters[0].creature.get_status(Status::CurlUp), Some(5));
+        assert_eq!(g.monsters[0].creature.block, 0);
+        let hp = g.monsters[0].creature.cur_hp;
+        g.throw_potion(Potion::Explosive, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 10);
+        assert_eq!(g.monsters[0].creature.block, 0);
+        assert_eq!(g.monsters[0].creature.get_status(Status::CurlUp), Some(5));
+        g.play_card(CardClass::TwinStrike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.cur_hp, hp - 10 - 10);
+        assert_eq!(g.monsters[0].creature.block, 5);
+        assert_eq!(g.monsters[0].creature.get_status(Status::CurlUp), None);
     }
 
     #[test]

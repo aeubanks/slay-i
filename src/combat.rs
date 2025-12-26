@@ -12,6 +12,7 @@ use crate::{
     monsters::{
         cultist::Cultist,
         jawworm::JawWorm,
+        louse::Louse,
         test::{ApplyStatusMonster, NoopMonster},
     },
     potion::random_potion_weighted,
@@ -32,11 +33,15 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            if game.rng.random() {
-                game.monsters = vec![Monster::new(JawWorm::new(), &mut game.rng)];
-            } else {
-                game.monsters = vec![Monster::new(Cultist::new(), &mut game.rng)];
-            }
+            let m = match game.rng.random_range(0..3) {
+                0 => vec![Monster::new(JawWorm::new(), &mut game.rng)],
+                1 => vec![Monster::new(Cultist::new(), &mut game.rng)],
+                _ => vec![
+                    Monster::new(Louse::green(&mut game.rng), &mut game.rng),
+                    Monster::new(Louse::red(&mut game.rng), &mut game.rng),
+                ],
+            };
+            game.monsters = m;
         }
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Monster));
@@ -260,9 +265,11 @@ impl GameState for CombatBeginGameState {
             if !game.monsters[i].creature.is_alive() {
                 continue;
             }
-            game.monsters[i]
-                .behavior
-                .pre_combat(&mut game.action_queue, CreatureRef::monster(i));
+            game.monsters[i].behavior.pre_combat(
+                &mut game.action_queue,
+                CreatureRef::monster(i),
+                &mut game.rng,
+            );
         }
 
         game.state.push_state(PlayerTurnBeginGameState);
