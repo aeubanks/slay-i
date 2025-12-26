@@ -19,7 +19,7 @@ impl DamageAllMonstersAction {
     pub fn thorns(amount: i32) -> Self {
         Self {
             amount,
-            thorns: false,
+            thorns: true,
         }
     }
 }
