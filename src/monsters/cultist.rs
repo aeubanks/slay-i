@@ -1,5 +1,3 @@
-use rand::Rng;
-
 use crate::{
     actions::{damage::DamageAction, gain_status::GainStatusAction},
     game::{CreatureRef, Rand},
@@ -31,8 +29,8 @@ impl MonsterBehavior for Cultist {
     fn name(&self) -> &'static str {
         "cultist"
     }
-    fn roll_hp(&self, r: &mut Rand) -> i32 {
-        r.random_range(50..=56)
+    fn hp_range(&self) -> (i32, i32) {
+        (50, 56)
     }
 
     fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {

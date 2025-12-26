@@ -36,8 +36,8 @@ impl MonsterBehavior for JawWorm {
     fn name(&self) -> &'static str {
         "jawworm"
     }
-    fn roll_hp(&self, r: &mut Rand) -> i32 {
-        r.random_range(42..=46)
+    fn hp_range(&self) -> (i32, i32) {
+        (42, 46)
     }
 
     fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {

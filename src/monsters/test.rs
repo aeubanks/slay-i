@@ -24,8 +24,8 @@ impl MonsterBehavior for NoopMonster {
     fn name(&self) -> &'static str {
         "noop"
     }
-    fn roll_hp(&self, _r: &mut Rand) -> i32 {
-        self.max_hp
+    fn hp_range(&self) -> (i32, i32) {
+        (self.max_hp, self.max_hp)
     }
     fn roll_next_action(&mut self, _r: &mut Rand, _info: &MonsterInfo) {}
     fn get_intent(&self) -> Intent {
@@ -69,8 +69,8 @@ impl MonsterBehavior for AttackMonster {
     fn name(&self) -> &'static str {
         "attack"
     }
-    fn roll_hp(&self, _r: &mut Rand) -> i32 {
-        self.max_hp
+    fn hp_range(&self) -> (i32, i32) {
+        (self.max_hp, self.max_hp)
     }
     fn roll_next_action(&mut self, _r: &mut Rand, _info: &MonsterInfo) {}
     fn get_intent(&self) -> Intent {
@@ -98,8 +98,8 @@ impl MonsterBehavior for IntentMonster {
     fn name(&self) -> &'static str {
         "intent"
     }
-    fn roll_hp(&self, _r: &mut Rand) -> i32 {
-        50
+    fn hp_range(&self) -> (i32, i32) {
+        (50, 50)
     }
     fn roll_next_action(&mut self, _r: &mut Rand, _info: &MonsterInfo) {}
     fn get_intent(&self) -> Intent {
@@ -118,8 +118,8 @@ impl MonsterBehavior for ApplyStatusMonster {
     fn name(&self) -> &'static str {
         "apply-vuln"
     }
-    fn roll_hp(&self, _r: &mut Rand) -> i32 {
-        100
+    fn hp_range(&self) -> (i32, i32) {
+        (100, 100)
     }
     fn roll_next_action(&mut self, _r: &mut Rand, _info: &MonsterInfo) {}
     fn get_intent(&self) -> Intent {

@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::creature::Creature;
 use crate::game::{CreatureRef, Game, Rand};
 use crate::queue::ActionQueue;
@@ -50,7 +52,7 @@ pub struct MonsterInfo {
 
 pub trait MonsterBehavior {
     fn name(&self) -> &'static str;
-    fn roll_hp(&self, r: &mut Rand) -> i32;
+    fn hp_range(&self) -> (i32, i32);
     fn pre_combat(&self, _queue: &mut ActionQueue, _this: CreatureRef) {}
     fn roll_next_action(&mut self, r: &mut Rand, info: &MonsterInfo);
     fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue);
@@ -64,7 +66,8 @@ pub struct Monster {
 
 impl Monster {
     pub fn new<M: MonsterBehavior + 'static>(m: M, rng: &mut Rand) -> Self {
-        let hp = m.roll_hp(rng);
+        let (lo, hi) = m.hp_range();
+        let hp = rng.random_range(lo..=hi);
         let name = m.name();
 
         Monster {
