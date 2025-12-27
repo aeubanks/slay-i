@@ -16,6 +16,7 @@ pub mod choose_forethought_one;
 pub mod choose_gamble;
 pub mod choose_memories;
 pub mod clear_cur_card;
+pub mod create_card_in_discard;
 pub mod damage;
 pub mod damage_all_monsters;
 pub mod damage_random_monster;

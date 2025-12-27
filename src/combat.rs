@@ -9,7 +9,10 @@ use crate::{
     draw_pile::DrawPile,
     game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::{Monster, MonsterInfo},
-    monsters::{cultist::Cultist, jawworm::JawWorm, louse::Louse, test::NoopMonster},
+    monsters::{
+        cultist::Cultist, jawworm::JawWorm, louse::Louse, slime_acid_m::SlimeAcidM,
+        test::NoopMonster,
+    },
     potion::random_potion_weighted,
     relic::RelicClass,
     rewards::{RewardType, Rewards, RewardsGameState},
@@ -27,13 +30,14 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            let m = match game.rng.random_range(0..3) {
+            let m = match game.rng.random_range(0..4) {
                 0 => vec![Monster::new(JawWorm::new(), &mut game.rng)],
                 1 => vec![Monster::new(Cultist::new(), &mut game.rng)],
-                _ => vec![
+                2 => vec![
                     Monster::new(Louse::green(&mut game.rng), &mut game.rng),
                     Monster::new(Louse::red(&mut game.rng), &mut game.rng),
                 ],
+                _ => vec![Monster::new(SlimeAcidM::new(), &mut game.rng)],
             };
             game.monsters = m;
         }
