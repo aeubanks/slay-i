@@ -171,4 +171,14 @@ mod tests {
         g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
         assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(0));
     }
+
+    #[test]
+    fn test_draw_hand_full() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_discard_pile(CardClass::Defend);
+        g.add_cards_to_hand(CardClass::Strike, 10);
+        g.run_action(DrawAction(1));
+        assert_eq!(g.discard_pile.len(), 1);
+        assert_eq!(g.draw_pile.len(), 0);
+    }
 }
