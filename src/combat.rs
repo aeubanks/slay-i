@@ -9,17 +9,11 @@ use crate::{
     draw_pile::DrawPile,
     game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::{Monster, MonsterInfo},
-    monsters::{
-        cultist::Cultist,
-        jawworm::JawWorm,
-        louse::Louse,
-        test::{ApplyStatusMonster, NoopMonster},
-    },
+    monsters::{cultist::Cultist, jawworm::JawWorm, louse::Louse, test::NoopMonster},
     potion::random_potion_weighted,
     relic::RelicClass,
     rewards::{RewardType, Rewards, RewardsGameState},
     state::{GameState, Steps},
-    status::Status,
     step::Step,
 };
 
@@ -54,13 +48,7 @@ pub struct RollEliteCombatGameState;
 
 impl GameState for RollEliteCombatGameState {
     fn run(&self, game: &mut Game) {
-        game.monsters = vec![Monster::new(
-            ApplyStatusMonster {
-                status: Status::Vulnerable,
-                amount: 1,
-            },
-            &mut game.rng,
-        )];
+        game.monsters = vec![Monster::new(JawWorm::new(), &mut game.rng)];
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Elite));
         game.state.push_state(CombatBeginGameState);

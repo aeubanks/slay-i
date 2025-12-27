@@ -1,7 +1,3 @@
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::hash::Hash;
-
 #[macro_export]
 macro_rules! assert_matches {
     ($e1:expr, $e2:pat) => {
@@ -16,24 +12,33 @@ macro_rules! assert_not_matches {
     };
 }
 
-fn iter_to_count_map<T: Hash + Eq, I>(i: I) -> HashMap<T, i32>
-where
-    I: IntoIterator<Item = T>,
-{
-    i.into_iter().fold(HashMap::new(), |mut m, v| {
-        *m.entry(v).or_default() += 1;
-        m
-    })
+#[cfg(test)]
+mod test_impl {
+    use std::collections::HashMap;
+    use std::fmt::Debug;
+    use std::hash::Hash;
+
+    fn iter_to_count_map<T: Hash + Eq, I>(i: I) -> HashMap<T, i32>
+    where
+        I: IntoIterator<Item = T>,
+    {
+        i.into_iter().fold(HashMap::new(), |mut m, v| {
+            *m.entry(v).or_default() += 1;
+            m
+        })
+    }
+
+    pub fn assert_set_eq<T: Hash + Eq + Debug, A, B>(a: A, b: B)
+    where
+        A: IntoIterator<Item = T>,
+        B: IntoIterator<Item = T>,
+    {
+        assert_eq!(iter_to_count_map(a), iter_to_count_map(b));
+    }
 }
 
-#[allow(dead_code)]
-pub fn assert_set_eq<T: Hash + Eq + Debug, A, B>(a: A, b: B)
-where
-    A: IntoIterator<Item = T>,
-    B: IntoIterator<Item = T>,
-{
-    assert_eq!(iter_to_count_map(a), iter_to_count_map(b));
-}
+#[cfg(test)]
+pub use test_impl::assert_set_eq;
 
 #[cfg(test)]
 mod tests {

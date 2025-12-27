@@ -38,7 +38,6 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[allow(dead_code)]
 pub enum RelicRarity {
     Starter,
     Common,

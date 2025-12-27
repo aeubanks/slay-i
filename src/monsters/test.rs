@@ -14,7 +14,7 @@ impl NoopMonster {
     pub fn new() -> Self {
         Self { max_hp: 500 }
     }
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn with_hp(hp: i32) -> Self {
         Self { max_hp: hp }
     }

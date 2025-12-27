@@ -349,11 +349,6 @@ lazy_static! {
         .collect();
 }
 
-#[allow(dead_code)]
-pub fn random_potion(rng: &mut Rand) -> Potion {
-    rand_slice(rng, &ALL)
-}
-
 pub fn random_common_potion(rng: &mut Rand) -> Potion {
     rand_slice(rng, &ALL_COMMON)
 }

@@ -5,7 +5,6 @@ use crate::game::{CreatureRef, Game, Rand};
 use crate::queue::ActionQueue;
 
 #[derive(Debug, Clone, Copy)]
-#[allow(dead_code)]
 pub enum Intent {
     Attack(i32, i32),
     AttackBuff(i32, i32),
@@ -45,7 +44,6 @@ impl Intent {
     }
 }
 
-#[allow(dead_code)]
 pub struct MonsterInfo {
     pub num_monsters: usize,
 }

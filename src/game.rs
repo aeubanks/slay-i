@@ -627,7 +627,6 @@ impl Game {
         g
     }
 
-    #[allow(dead_code)]
     pub fn set_debug(&mut self) {
         self.action_queue.set_debug();
         self.state.set_debug();
@@ -865,7 +864,7 @@ impl Game {
                 // push_top so multiple attacks don't trigger this before removing the status
                 self.action_queue.push_top(RemoveStatusAction {
                     status: Status::CurlUp,
-                    target: target,
+                    target,
                 });
             }
 

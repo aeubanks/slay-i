@@ -23,7 +23,6 @@ pub struct JawWorm {
 }
 
 impl JawWorm {
-    #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
             action: Action::None,
