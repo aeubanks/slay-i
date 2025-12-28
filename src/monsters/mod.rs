@@ -2,6 +2,7 @@ pub mod cultist;
 pub mod fungi_beast;
 pub mod jawworm;
 pub mod louse;
+pub mod red_slaver;
 pub mod slime_acid_m;
 pub mod slime_acid_s;
 pub mod slime_spike_m;
