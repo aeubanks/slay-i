@@ -80,6 +80,7 @@ s!(
     Panache2 => Buff,
     Panache1 => Buff,
     CurlUp => Buff,
+    SporeCloud => Buff,
 );
 
 impl Status {
@@ -1330,5 +1331,26 @@ mod tests {
         assert_eq!(g.player.cur_hp, hp);
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 6);
+    }
+
+    #[test]
+    fn test_spore_cloud() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(SporeCloud, 3)
+            .build_combat_with_monsters(NoopMonster::new(), NoopMonster::new());
+        assert_eq!(g.player.get_status(Status::Vulnerable), None);
+        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.get_status(Status::Vulnerable), Some(3));
+    }
+
+    #[test]
+    fn test_spore_cloud_2() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Thorns, 999)
+            .add_monster_status(SporeCloud, 3)
+            .build_combat_with_monsters(AttackMonster::new(10), AttackMonster::new(10));
+        let hp = g.player.cur_hp;
+        g.step_test(EndTurnStep);
+        assert_eq!(g.player.cur_hp, hp - 10 - 15);
     }
 }

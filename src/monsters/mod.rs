@@ -1,4 +1,5 @@
 pub mod cultist;
+pub mod fungi_beast;
 pub mod jawworm;
 pub mod louse;
 pub mod slime_acid_m;

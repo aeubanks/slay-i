@@ -891,6 +891,13 @@ impl Game {
 
         if !self.get_creature(target).is_alive() {
             if !target.is_player() {
+                if let Some(v) = self.get_creature(target).get_status(Status::SporeCloud) {
+                    self.action_queue.push_top(GainStatusAction {
+                        status: Status::Vulnerable,
+                        amount: v,
+                        target: CreatureRef::player(),
+                    });
+                }
                 if self.has_relic(RelicClass::GremlinHorn) {
                     self.action_queue.push_bot(GainEnergyAction(1));
                     self.action_queue.push_bot(DrawAction(1));
