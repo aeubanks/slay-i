@@ -10,8 +10,8 @@ use crate::{
     game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::{Monster, MonsterInfo},
     monsters::{
-        cultist::Cultist, fungi_beast::FungiBeast, jawworm::JawWorm, louse::Louse,
-        red_slaver::RedSlaver, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
+        blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast, jawworm::JawWorm,
+        louse::Louse, red_slaver::RedSlaver, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
         slime_spike_m::SlimeSpikeM, slime_spike_s::SlimeSpikeS, test::NoopMonster,
     },
     potion::random_potion_weighted,
@@ -31,7 +31,7 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            let m = match game.rng.random_range(0..7) {
+            let m = match game.rng.random_range(0..8) {
                 0 => vec![Monster::new(JawWorm::new(), &mut game.rng)],
                 1 => vec![Monster::new(Cultist::new(), &mut game.rng)],
                 2 => vec![
@@ -45,7 +45,8 @@ impl GameState for RollCombatGameState {
                     Monster::new(SlimeSpikeS::new(), &mut game.rng),
                     Monster::new(SlimeAcidS::new(), &mut game.rng),
                 ],
-                _ => vec![Monster::new(RedSlaver::new(), &mut game.rng)],
+                7 => vec![Monster::new(RedSlaver::new(), &mut game.rng)],
+                _ => vec![Monster::new(BlueSlaver::new(), &mut game.rng)],
             };
             game.monsters = m;
         }

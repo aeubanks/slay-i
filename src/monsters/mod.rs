@@ -1,3 +1,4 @@
+pub mod blue_slaver;
 pub mod cultist;
 pub mod fungi_beast;
 pub mod jawworm;
