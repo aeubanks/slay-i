@@ -1117,7 +1117,7 @@ mod tests {
             .add_relic(RelicClass::FaceOfCleric)
             .build_combat();
         let hp = g.player.max_hp;
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         assert_eq!(g.player.max_hp, hp + 1);
     }
 
@@ -1517,7 +1517,7 @@ mod tests {
         assert_eq!(g.energy, 3);
         g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         g.step_test(CampfireRestStep);
@@ -1525,7 +1525,7 @@ mod tests {
         assert_eq!(g.energy, 5);
         g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 3 });
         assert_eq!(g.energy, 3);
@@ -1579,7 +1579,7 @@ mod tests {
         g.step_test(EndTurnStep);
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(1));
         assert_eq!(g.player.get_status(Status::Intangible), None);
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(2));
@@ -2751,7 +2751,7 @@ mod tests {
                 .build_combat();
             g.player.cur_hp = cur;
             g.player.max_hp = max;
-            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            g.play_card(CardClass::DebugKillAll, None);
             assert_eq!(g.player.cur_hp, expected);
         }
     }
@@ -2764,7 +2764,7 @@ mod tests {
             .build_combat();
         g.player.cur_hp = 49;
         g.player.max_hp = 100;
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         assert_eq!(g.player.cur_hp, 49 + 12 + 6);
     }
 
@@ -2785,7 +2785,7 @@ mod tests {
         assert_eq!(g.player.get_status(Status::Strength), Some(3));
 
         // start new combat bloodied
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         assert!(g.player.is_bloodied());

@@ -250,6 +250,7 @@ c!(
     Necronomicurse => (Curse, Curse, Curse, Zero, noop_behavior, true),
     // Other
     DebugKill => (Special, Attack, Special, cost(0), attacks::debug_kill_behavior, false),
+    DebugKillAll => (Special, Attack, Special, cost(0), attacks::debug_kill_all_behavior, false),
     TestAttack => (Special, Attack, Special, cost(0), noop_behavior, false),
     TestSkill => (Special, Skill, Special, cost(0), noop_behavior, false),
     TestPower => (Special, Power, Special, cost(0), noop_behavior, false),

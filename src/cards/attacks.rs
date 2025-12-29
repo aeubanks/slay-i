@@ -351,6 +351,10 @@ pub fn debug_kill_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_damage(game, info, 9999, 9999);
 }
 
+pub fn debug_kill_all_behavior(game: &mut Game, info: &CardPlayInfo) {
+    push_aoe_damage(game, info, 9999, 9999);
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -937,7 +941,7 @@ mod tests {
         g.play_card(CardClass::Bloodletting, None);
         g.add_card_to_hand(CardClass::BloodForBlood);
         assert_eq!(g.hand[0].borrow().get_base_cost(), 2);
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         g.add_card_to_hand(CardClass::BloodForBlood);

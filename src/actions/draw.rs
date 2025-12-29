@@ -80,10 +80,7 @@ impl std::fmt::Debug for DrawAction {
 #[cfg(test)]
 mod tests {
     use crate::{
-        actions::draw::DrawAction,
-        cards::CardClass,
-        game::{CreatureRef, GameBuilder},
-        relic::RelicClass,
+        actions::draw::DrawAction, cards::CardClass, game::GameBuilder, relic::RelicClass,
     };
 
     #[test]
@@ -168,7 +165,7 @@ mod tests {
             .build_combat();
         g.add_card_to_discard_pile(CardClass::Strike);
         assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(0));
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         assert_eq!(g.get_relic_value(RelicClass::Sundial), Some(0));
     }
 

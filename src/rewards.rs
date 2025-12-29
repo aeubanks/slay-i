@@ -218,7 +218,7 @@ mod tests {
     use crate::{
         assert_matches,
         cards::CardClass,
-        game::{AscendStep, CreatureRef, GameBuilder},
+        game::{AscendStep, GameBuilder},
         map::RoomType,
         relic::RelicRarity,
     };
@@ -229,7 +229,7 @@ mod tests {
     fn test_combat_rewards() {
         let mut g = GameBuilder::default().build_combat();
         g.potion_chance = 0;
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         assert_eq!(g.rewards.gold.len(), 1);
         assert_eq!(g.rewards.cards.len(), 1);
         assert_eq!(g.rewards.cards[0].len(), 3);
@@ -275,7 +275,7 @@ mod tests {
             let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Elite]);
             g.potion_chance = 0;
             g.step_test(AscendStep { x: 0, y: 0 });
-            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            g.play_card(CardClass::DebugKillAll, None);
             assert_eq!(g.rewards.gold.len(), 1);
             assert_eq!(g.rewards.cards.len(), 1);
             assert_eq!(g.rewards.cards[0].len(), 3);
@@ -318,7 +318,7 @@ mod tests {
     fn test_potion_reward() {
         let mut g = GameBuilder::default().build_combat();
         g.potion_chance = 100;
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(PotionRewardStep { potion_index: 0 });
         assert!(g.potions[0].is_some());
     }
@@ -328,7 +328,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::WhiteBeastStatue)
             .build_combat();
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(PotionRewardStep { potion_index: 0 });
         assert!(g.potions[0].is_some());
     }
@@ -341,7 +341,7 @@ mod tests {
                 GameBuilder::default().build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
             g.roll_noop_monsters = true;
             g.step_test(AscendStep { x: 0, y: 0 });
-            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            g.play_card(CardClass::DebugKillAll, None);
             assert!(
                 g.rewards
                     .cards
@@ -351,7 +351,7 @@ mod tests {
             );
             g.step_test(RewardExitStep);
             g.step_test(AscendStep { x: 0, y: 1 });
-            g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+            g.play_card(CardClass::DebugKillAll, None);
             found_rare = g
                 .rewards
                 .cards

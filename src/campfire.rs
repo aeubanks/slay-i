@@ -129,7 +129,7 @@ mod tests {
     use crate::{
         campfire::{CampfireLiftStep, CampfireRestStep, CampfireTokeStep, CampfireUpgradeStep},
         cards::CardClass,
-        game::{AscendStep, CreatureRef, DiscardPotionStep, GameBuilder, UsePotionStep},
+        game::{AscendStep, DiscardPotionStep, GameBuilder, UsePotionStep},
         map::RoomType,
         master_deck::{ChooseRemoveFromMasterStep, ChooseUpgradeMasterStep},
         potion::Potion,
@@ -217,13 +217,13 @@ mod tests {
 
         g.step_test(AscendStep { x: 0, y: 0 });
         assert_eq!(g.player.get_status(Status::Strength), None);
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         g.step_test(CampfireLiftStep);
         g.step_test(AscendStep { x: 0, y: 2 });
         assert_eq!(g.player.get_status(Status::Strength), Some(1));
-        g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
+        g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 3 });
         g.step_test(CampfireLiftStep);
