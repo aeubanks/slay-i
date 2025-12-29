@@ -44,8 +44,10 @@ impl Intent {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct MonsterInfo {
     pub num_monsters: usize,
+    pub num_alive_monsters: usize,
 }
 
 pub trait MonsterBehavior {
