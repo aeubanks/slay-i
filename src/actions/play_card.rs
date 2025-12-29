@@ -4,6 +4,7 @@ use crate::{
     action::Action,
     actions::{
         clear_cur_card::ClearCurCardAction, damage::DamageAction, exhaust_card::ExhaustCardAction,
+        gain_status::GainStatusAction,
     },
     card::{Card, CardPlayInfo, CardRef},
     cards::{CardClass, CardCost, CardType},
@@ -139,6 +140,15 @@ impl Action for PlayCardAction {
             self,
         );
         game.trigger_relics_on_card_played(self);
+        for m in game.get_alive_monsters() {
+            if let Some(amount) = game.get_creature(m).get_status(Status::Enrage) {
+                game.action_queue.push_top(GainStatusAction {
+                    status: Status::Strength,
+                    amount,
+                    target: m,
+                });
+            }
+        }
         if !self.free {
             game.energy -= self.cost;
         }

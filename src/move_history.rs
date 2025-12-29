@@ -18,7 +18,6 @@ impl<T: Eq + Copy> MoveHistory<T> {
     pub fn last(&self, t: T) -> bool {
         self.last_move == Some(t)
     }
-    #[cfg(test)]
     pub fn last_last(&self, t: T) -> bool {
         self.last_last_move == Some(t)
     }

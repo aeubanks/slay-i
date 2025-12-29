@@ -11,10 +11,11 @@ use crate::{
     monster::{Monster, MonsterInfo},
     monsters::{
         blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast,
-        gremlin_fat::GremlinFat, gremlin_mad::GremlinMad, gremlin_shield::GremlinShield,
-        gremlin_sneaky::GremlinSneaky, gremlin_wizard::GremlinWizard, jawworm::JawWorm,
-        louse::Louse, red_slaver::RedSlaver, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
-        slime_spike_m::SlimeSpikeM, slime_spike_s::SlimeSpikeS, test::NoopMonster,
+        gremlin_fat::GremlinFat, gremlin_mad::GremlinMad, gremlin_nob::GremlinNob,
+        gremlin_shield::GremlinShield, gremlin_sneaky::GremlinSneaky,
+        gremlin_wizard::GremlinWizard, jawworm::JawWorm, louse::Louse, red_slaver::RedSlaver,
+        slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS, slime_spike_m::SlimeSpikeM,
+        slime_spike_s::SlimeSpikeS, test::NoopMonster,
     },
     potion::random_potion_weighted,
     relic::RelicClass,
@@ -70,7 +71,7 @@ pub struct RollEliteCombatGameState;
 
 impl GameState for RollEliteCombatGameState {
     fn run(&self, game: &mut Game) {
-        game.monsters = vec![Monster::new(JawWorm::new(), &mut game.rng)];
+        game.monsters = vec![Monster::new(GremlinNob::new(), &mut game.rng)];
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Elite));
         game.state.push_state(CombatBeginGameState);

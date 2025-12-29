@@ -82,6 +82,7 @@ s!(
     CurlUp => Buff,
     SporeCloud => Buff,
     Angry => Buff,
+    Enrage => Buff,
 );
 
 impl Status {
