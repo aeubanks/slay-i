@@ -831,6 +831,15 @@ impl Game {
                 self.trigger_relics_on_lose_hp();
                 self.num_times_took_damage += 1;
             }
+            if let Some(amount) = self.get_creature(target).get_status(Status::Angry)
+                && matches!(ty, DamageType::Attack { .. })
+            {
+                self.action_queue.push_top(GainStatusAction {
+                    status: Status::Strength,
+                    amount,
+                    target,
+                });
+            }
             // attack damage never procs rupture
             // hp loss always procs rupture
             // thorns proc rupture if source is player

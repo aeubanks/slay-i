@@ -81,6 +81,7 @@ s!(
     Panache1 => Buff,
     CurlUp => Buff,
     SporeCloud => Buff,
+    Angry => Buff,
 );
 
 impl Status {
@@ -1352,5 +1353,23 @@ mod tests {
         let hp = g.player.cur_hp;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 10 - 15);
+    }
+
+    #[test]
+    fn test_angry() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Status::Angry, 2)
+            .build_combat();
+
+        g.throw_potion(Potion::Explosive, None);
+        assert_eq!(g.monsters[0].creature.get_status(Status::Strength), None);
+
+        g.monsters[0].creature.block = 6;
+
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.get_status(Status::Strength), None);
+
+        g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
+        assert_eq!(g.monsters[0].creature.get_status(Status::Strength), Some(2));
     }
 }
