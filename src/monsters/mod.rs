@@ -4,6 +4,7 @@ pub mod fungi_beast;
 pub mod gremlin_fat;
 pub mod gremlin_mad;
 pub mod gremlin_shield;
+pub mod gremlin_sneaky;
 pub mod gremlin_wizard;
 pub mod jawworm;
 pub mod louse;
