@@ -13,9 +13,9 @@ use crate::{
         blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast,
         gremlin_fat::GremlinFat, gremlin_mad::GremlinMad, gremlin_nob::GremlinNob,
         gremlin_shield::GremlinShield, gremlin_sneaky::GremlinSneaky,
-        gremlin_wizard::GremlinWizard, jawworm::JawWorm, louse::Louse, red_slaver::RedSlaver,
-        slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS, slime_spike_m::SlimeSpikeM,
-        slime_spike_s::SlimeSpikeS, test::NoopMonster,
+        gremlin_wizard::GremlinWizard, jawworm::JawWorm, lagavulin::Lagavulin, louse::Louse,
+        red_slaver::RedSlaver, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
+        slime_spike_m::SlimeSpikeM, slime_spike_s::SlimeSpikeS, test::NoopMonster,
     },
     potion::random_potion_weighted,
     relic::RelicClass,
@@ -34,7 +34,7 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            let m = match game.rng.random_range(0..9) {
+            game.monsters = match game.rng.random_range(0..9) {
                 0 => vec![Monster::new(JawWorm::new(), &mut game.rng)],
                 1 => vec![Monster::new(Cultist::new(), &mut game.rng)],
                 2 => vec![
@@ -58,7 +58,6 @@ impl GameState for RollCombatGameState {
                     Monster::new(GremlinWizard::new(), &mut game.rng),
                 ],
             };
-            game.monsters = m;
         }
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Monster));
@@ -71,7 +70,11 @@ pub struct RollEliteCombatGameState;
 
 impl GameState for RollEliteCombatGameState {
     fn run(&self, game: &mut Game) {
-        game.monsters = vec![Monster::new(GremlinNob::new(), &mut game.rng)];
+        game.monsters = match game.rng.random_range(0..3) {
+            0 => vec![Monster::new(GremlinNob::new(), &mut game.rng)],
+            1 => vec![Monster::new(Lagavulin::new(), &mut game.rng)],
+            _ => vec![Monster::new(Lagavulin::new_event(), &mut game.rng)],
+        };
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Elite));
         game.state.push_state(CombatBeginGameState);

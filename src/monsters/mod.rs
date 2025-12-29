@@ -8,6 +8,7 @@ pub mod gremlin_shield;
 pub mod gremlin_sneaky;
 pub mod gremlin_wizard;
 pub mod jawworm;
+pub mod lagavulin;
 pub mod louse;
 pub mod red_slaver;
 pub mod slime_acid_m;

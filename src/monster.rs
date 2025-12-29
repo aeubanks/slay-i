@@ -1,5 +1,6 @@
 use rand::Rng;
 
+use crate::actions::damage::DamageType;
 use crate::creature::Creature;
 use crate::game::{CreatureRef, Game, Rand};
 use crate::queue::ActionQueue;
@@ -54,6 +55,7 @@ pub trait MonsterBehavior {
     fn name(&self) -> &'static str;
     fn hp_range(&self) -> (i32, i32);
     fn pre_combat(&self, _queue: &mut ActionQueue, _this: CreatureRef, _rng: &mut Rand) {}
+    fn on_take_damage(&mut self, _ty: DamageType, _this: CreatureRef, _this_creature: &Creature) {}
     fn roll_next_action(&mut self, r: &mut Rand, info: &MonsterInfo);
     fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue);
     fn get_intent(&self) -> Intent;

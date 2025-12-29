@@ -896,6 +896,10 @@ impl Game {
             for c in self.draw_pile.get_all() {
                 update_blood_for_blood_cost(c);
             }
+            if !target.is_player() {
+                let m = &mut self.monsters[target.monster_index()];
+                m.behavior.on_take_damage(ty, target, &m.creature);
+            }
         }
 
         if !self.get_creature(target).is_alive() {
