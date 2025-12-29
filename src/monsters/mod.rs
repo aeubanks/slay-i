@@ -11,6 +11,7 @@ pub mod jawworm;
 pub mod lagavulin;
 pub mod louse;
 pub mod red_slaver;
+pub mod sentry;
 pub mod slime_acid_m;
 pub mod slime_acid_s;
 pub mod slime_spike_m;
