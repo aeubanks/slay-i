@@ -2,6 +2,7 @@ pub mod blue_slaver;
 pub mod cultist;
 pub mod fungi_beast;
 pub mod gremlin_fat;
+pub mod gremlin_wizard;
 pub mod jawworm;
 pub mod louse;
 pub mod red_slaver;

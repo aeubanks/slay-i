@@ -11,9 +11,9 @@ use crate::{
     monster::{Monster, MonsterInfo},
     monsters::{
         blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast,
-        gremlin_fat::GremlinFat, jawworm::JawWorm, louse::Louse, red_slaver::RedSlaver,
-        slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS, slime_spike_m::SlimeSpikeM,
-        slime_spike_s::SlimeSpikeS, test::NoopMonster,
+        gremlin_fat::GremlinFat, gremlin_wizard::GremlinWizard, jawworm::JawWorm, louse::Louse,
+        red_slaver::RedSlaver, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
+        slime_spike_m::SlimeSpikeM, slime_spike_s::SlimeSpikeS, test::NoopMonster,
     },
     potion::random_potion_weighted,
     relic::RelicClass,
@@ -48,7 +48,10 @@ impl GameState for RollCombatGameState {
                 ],
                 7 => vec![Monster::new(RedSlaver::new(), &mut game.rng)],
                 8 => vec![Monster::new(BlueSlaver::new(), &mut game.rng)],
-                _ => vec![Monster::new(GremlinFat::new(), &mut game.rng)],
+                _ => vec![
+                    Monster::new(GremlinFat::new(), &mut game.rng),
+                    Monster::new(GremlinWizard::new(), &mut game.rng),
+                ],
             };
             game.monsters = m;
         }
