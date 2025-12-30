@@ -896,9 +896,15 @@ impl Game {
             for c in self.draw_pile.get_all() {
                 update_blood_for_blood_cost(c);
             }
+            {
+                let c = self.get_creature_mut(target);
+                if let Some(v) = c.get_status(Status::ModeShift) {
+                    c.set_status(Status::ModeShift, v - amount);
+                }
+            }
             if !target.is_player() {
                 let m = &mut self.monsters[target.monster_index()];
-                m.behavior.on_take_damage(target, &m.creature);
+                m.behavior.on_take_damage(target, &mut m.creature);
             }
         }
 

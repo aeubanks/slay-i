@@ -58,7 +58,7 @@ impl MonsterBehavior for Lagavulin {
         });
     }
 
-    fn on_take_damage(&mut self, _this: CreatureRef, _this_creature: &Creature) {
+    fn on_take_damage(&mut self, _this: CreatureRef, _this_creature: &mut Creature) {
         if matches!(
             self.action,
             Action::Sleep1 | Action::Sleep2 | Action::Sleep3

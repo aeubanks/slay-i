@@ -83,6 +83,8 @@ s!(
     SporeCloud => Buff,
     Angry => Buff,
     Enrage => Buff,
+    ModeShift => Buff,
+    SharpHide => Buff,
 );
 
 impl Status {

@@ -148,6 +148,12 @@ impl Action for PlayCardAction {
                     target: m,
                 });
             }
+            if let Some(amount) = game.get_creature(m).get_status(Status::SharpHide) {
+                game.action_queue.push_top(DamageAction::thorns_no_rupture(
+                    amount,
+                    CreatureRef::player(),
+                ));
+            }
         }
         if !self.free {
             game.energy -= self.cost;
