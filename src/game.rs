@@ -898,7 +898,7 @@ impl Game {
             }
             if !target.is_player() {
                 let m = &mut self.monsters[target.monster_index()];
-                m.behavior.on_take_damage(ty, target, &m.creature);
+                m.behavior.on_take_damage(target, &m.creature);
             }
         }
 

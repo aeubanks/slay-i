@@ -1,9 +1,5 @@
 use crate::{
-    actions::{
-        block::BlockAction,
-        damage::{DamageAction, DamageType},
-        gain_status::GainStatusAction,
-    },
+    actions::{block::BlockAction, damage::DamageAction, gain_status::GainStatusAction},
     creature::Creature,
     game::{CreatureRef, Rand},
     monster::{Intent, MonsterBehavior, MonsterInfo},
@@ -62,7 +58,7 @@ impl MonsterBehavior for Lagavulin {
         });
     }
 
-    fn on_take_damage(&mut self, _ty: DamageType, _this: CreatureRef, _this_creature: &Creature) {
+    fn on_take_damage(&mut self, _this: CreatureRef, _this_creature: &Creature) {
         if matches!(
             self.action,
             Action::Sleep1 | Action::Sleep2 | Action::Sleep3
