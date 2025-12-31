@@ -8,7 +8,7 @@ use crate::{
     },
     draw_pile::DrawPile,
     game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
-    monster::{Monster, MonsterInfo},
+    monster::Monster,
     monsters::{
         blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast,
         gremlin_fat::GremlinFat, gremlin_mad::GremlinMad, gremlin_nob::GremlinNob,
@@ -298,13 +298,6 @@ impl GameState for CombatBeginGameState {
     }
 }
 
-fn calculate_monster_info(game: &Game) -> MonsterInfo {
-    MonsterInfo {
-        num_monsters: game.monsters.len(),
-        num_alive_monsters: game.get_alive_monsters().len(),
-    }
-}
-
 #[derive(Debug)]
 struct PlayerTurnBeginGameState;
 
@@ -315,7 +308,7 @@ impl GameState for PlayerTurnBeginGameState {
             return;
         }
 
-        let info = calculate_monster_info(game);
+        let info = game.calculate_monster_info();
         for i in 0..game.monsters.len() {
             if !game.monsters[i].creature.is_alive() {
                 continue;

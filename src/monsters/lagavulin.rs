@@ -67,7 +67,7 @@ impl MonsterBehavior for Lagavulin {
         }
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::Sleep1 | Action::Sleep2 | Action::Sleep3 | Action::Stunned => {}
             Action::Attack => {

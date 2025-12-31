@@ -38,7 +38,7 @@ impl MonsterBehavior for GremlinNob {
         (85, 90)
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::None => unreachable!(),
             Action::Bellow => {

@@ -31,7 +31,7 @@ impl MonsterBehavior for NoopMonster {
     fn get_intent(&self) -> Intent {
         Intent::Sleep
     }
-    fn take_turn(&mut self, _: CreatureRef, _: &mut ActionQueue) {}
+    fn take_turn(&mut self, _: CreatureRef, _: &mut ActionQueue, _: &MonsterInfo) {}
 }
 
 pub struct AttackMonster {
@@ -76,7 +76,7 @@ impl MonsterBehavior for AttackMonster {
     fn get_intent(&self) -> Intent {
         Intent::Attack(self.attack, 1)
     }
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         for _ in 0..self.attack_count {
             queue.push_bot(DamageAction::from_monster(self.attack, this));
         }
@@ -105,7 +105,7 @@ impl MonsterBehavior for IntentMonster {
     fn get_intent(&self) -> Intent {
         self.intent
     }
-    fn take_turn(&mut self, _: CreatureRef, _: &mut ActionQueue) {}
+    fn take_turn(&mut self, _: CreatureRef, _: &mut ActionQueue, _: &MonsterInfo) {}
 }
 
 #[allow(dead_code)]
@@ -125,7 +125,7 @@ impl MonsterBehavior for ApplyStatusMonster {
     fn get_intent(&self) -> Intent {
         Intent::Debuff
     }
-    fn take_turn(&mut self, _: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, _: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         queue.push_bot(GainStatusAction {
             status: self.status,
             amount: self.amount,

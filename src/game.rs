@@ -28,9 +28,9 @@ use crate::draw_pile::DrawPile;
 use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
 use crate::events::bonfire::BonfireGameState;
 use crate::map::{MAP_WIDTH, Map, RoomType};
-use crate::monster::Monster;
 #[cfg(test)]
 use crate::monster::MonsterBehavior;
+use crate::monster::{Monster, MonsterInfo};
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{
@@ -136,9 +136,12 @@ impl GameState for RunActionsGameState {
             if !game.get_creature(monster).is_alive() {
                 return;
             }
-            game.monsters[monster.monster_index()]
-                .behavior
-                .take_turn(monster, &mut game.action_queue);
+            let mi = game.calculate_monster_info();
+            game.monsters[monster.monster_index()].behavior.take_turn(
+                monster,
+                &mut game.action_queue,
+                &mi,
+            );
         }
     }
 }
@@ -721,6 +724,12 @@ impl Game {
     pub fn get_random_alive_monster(&mut self) -> CreatureRef {
         let alive = self.get_alive_monsters();
         rand_slice(&mut self.rng, &alive)
+    }
+
+    pub fn calculate_monster_info(&self) -> MonsterInfo {
+        MonsterInfo {
+            num_alive_monsters: self.get_alive_monsters().len(),
+        }
     }
 
     pub fn calculate_damage(

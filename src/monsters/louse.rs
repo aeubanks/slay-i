@@ -63,7 +63,7 @@ impl MonsterBehavior for Louse {
         });
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::Start => panic!(),
             Action::BuffOrDebuff => queue.push_bot(if self.is_red {

@@ -46,7 +46,6 @@ impl Intent {
 
 #[derive(Debug, Clone)]
 pub struct MonsterInfo {
-    pub num_monsters: usize,
     pub num_alive_monsters: usize,
 }
 
@@ -56,7 +55,7 @@ pub trait MonsterBehavior {
     fn pre_combat(&self, _queue: &mut ActionQueue, _this: CreatureRef, _rng: &mut Rand) {}
     fn on_take_damage(&mut self, _this: CreatureRef, _this_creature: &mut Creature) {}
     fn roll_next_action(&mut self, r: &mut Rand, info: &MonsterInfo);
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue);
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, info: &MonsterInfo);
     fn get_intent(&self) -> Intent;
 }
 

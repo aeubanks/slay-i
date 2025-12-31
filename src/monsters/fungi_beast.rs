@@ -45,7 +45,7 @@ impl MonsterBehavior for FungiBeast {
             target: this,
         });
     }
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::Attack => {
                 queue.push_bot(DamageAction::from_monster(6, this));

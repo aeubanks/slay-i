@@ -65,7 +65,7 @@ impl MonsterBehavior for Guardian {
         }
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         self.action = match self.action {
             Action::ChargingUp => {
                 queue.push_bot(BlockAction::monster(this, 9));

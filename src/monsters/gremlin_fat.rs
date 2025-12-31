@@ -23,7 +23,7 @@ impl MonsterBehavior for GremlinFat {
         (14, 18)
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         queue.push_bot(DamageAction::from_monster(5, this));
         queue.push_bot(GainStatusAction {
             status: Status::Weak,

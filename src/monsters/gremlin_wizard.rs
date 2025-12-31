@@ -34,7 +34,7 @@ impl MonsterBehavior for GremlinWizard {
         (22, 26)
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::Charge => {
                 self.current_charge += 1;

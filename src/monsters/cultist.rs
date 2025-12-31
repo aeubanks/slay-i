@@ -33,7 +33,7 @@ impl MonsterBehavior for Cultist {
         (50, 56)
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::Start => panic!(),
             Action::Buff => queue.push_bot(GainStatusAction {

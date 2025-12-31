@@ -21,7 +21,7 @@ impl MonsterBehavior for SlimeSpikeS {
         (11, 15)
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         queue.push_bot(DamageAction::from_monster(6, this));
     }
     fn roll_next_action(&mut self, _: &mut Rand, _info: &MonsterInfo) {}

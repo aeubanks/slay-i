@@ -42,7 +42,7 @@ impl MonsterBehavior for SlimeSpikeM {
         (29, 34)
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::Slime => {
                 queue.push_bot(DamageAction::from_monster(10, this));

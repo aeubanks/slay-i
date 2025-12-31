@@ -39,7 +39,7 @@ impl MonsterBehavior for JawWorm {
         (42, 46)
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::Chomp => {
                 queue.push_bot(DamageAction::from_monster(12, this));

@@ -24,7 +24,7 @@ impl MonsterBehavior for GremlinShield {
         (13, 17)
     }
 
-    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue) {
+    fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         if self.is_bashing {
             queue.push_bot(DamageAction::from_monster(8, this));
         } else {
