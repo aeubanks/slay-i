@@ -729,6 +729,7 @@ impl Game {
     pub fn calculate_monster_info(&self) -> MonsterInfo {
         MonsterInfo {
             num_alive_monsters: self.get_alive_monsters().len(),
+            player_hp: self.player.cur_hp,
         }
     }
 

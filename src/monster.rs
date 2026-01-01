@@ -19,6 +19,7 @@ pub enum Intent {
     Escape,
     Sleep,
     Stun,
+    Unknown,
 }
 
 impl Intent {
@@ -47,6 +48,7 @@ impl Intent {
 #[derive(Debug, Clone)]
 pub struct MonsterInfo {
     pub num_alive_monsters: usize,
+    pub player_hp: i32,
 }
 
 pub trait MonsterBehavior {

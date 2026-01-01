@@ -82,6 +82,7 @@ pub mod try_remove_card_from_master_deck;
 pub mod upgrade;
 pub mod upgrade_all;
 pub mod upgrade_all_cards_in_hand;
+pub mod upgrade_burns;
 pub mod upgrade_random_in_hand;
 pub mod upgrade_random_in_master;
 pub mod use_potion;
