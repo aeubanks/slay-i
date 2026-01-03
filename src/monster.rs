@@ -80,4 +80,11 @@ impl Monster {
             behavior: m,
         }
     }
+    pub fn new_with_hp<M: MonsterBehavior + 'static>(m: M, hp: i32) -> Self {
+        let name = m.name();
+        Monster {
+            creature: Creature::new(name, hp),
+            behavior: Box::new(m),
+        }
+    }
 }

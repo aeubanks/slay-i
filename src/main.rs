@@ -48,7 +48,7 @@ fn print_state(g: &Game) {
     }
     println!("energy: {}", g.energy);
     println!("monsters:");
-    for m in g.get_alive_monsters() {
+    for m in g.get_actionable_monsters_in_order() {
         println!(" {}", g.monster_str(m));
     }
     println!("hand:");

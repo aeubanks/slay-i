@@ -15,8 +15,8 @@ use crate::{
         gremlin_shield::GremlinShield, gremlin_sneaky::GremlinSneaky,
         gremlin_wizard::GremlinWizard, guardian::Guardian, hexaghost::Hexaghost, jawworm::JawWorm,
         lagavulin::Lagavulin, louse::Louse, red_slaver::RedSlaver, sentry::Sentry,
-        slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS, slime_spike_m::SlimeSpikeM,
-        slime_spike_s::SlimeSpikeS, test::NoopMonster,
+        slime_acid_l::SlimeAcidL, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
+        slime_spike_m::SlimeSpikeM, slime_spike_s::SlimeSpikeS, test::NoopMonster,
     },
     potion::random_potion_weighted,
     relic::RelicClass,
@@ -51,13 +51,14 @@ impl GameState for RollCombatGameState {
                 ],
                 7 => vec![Monster::new(RedSlaver::new(), &mut game.rng)],
                 8 => vec![Monster::new(BlueSlaver::new(), &mut game.rng)],
-                _ => vec![
+                9 => vec![
                     Monster::new(GremlinFat::new(), &mut game.rng),
                     Monster::new(GremlinMad::new(), &mut game.rng),
                     Monster::new(GremlinShield::new(), &mut game.rng),
                     Monster::new(GremlinSneaky::new(), &mut game.rng),
                     Monster::new(GremlinWizard::new(), &mut game.rng),
                 ],
+                _ => vec![Monster::new(SlimeAcidL::new(), &mut game.rng)],
             };
         }
         game.state
@@ -131,6 +132,7 @@ struct MonsterTurnGameState;
 
 impl GameState for MonsterTurnGameState {
     fn run(&self, game: &mut Game) {
+        assert!(game.monster_turn_queue_active.is_empty());
         if game.all_monsters_dead() {
             game.state.push_state(CombatEndGameState);
             return;
@@ -144,9 +146,8 @@ impl GameState for MonsterTurnGameState {
                 .creature
                 .trigger_statuses_turn_begin(CreatureRef::monster(i), &mut game.action_queue);
         }
-        for m in game.get_alive_monsters() {
-            game.monster_turn_queue.push(m);
-        }
+
+        game.monster_turn_queue_active = game.monster_turn_queue_all.clone();
 
         game.state.push_state(EndOfRoundGameState);
         game.state.push_state(RunActionsGameState);
@@ -203,6 +204,10 @@ impl GameState for ResetCombatGameState {
         game.monsters.clear();
         game.player.clear_all_status();
         game.num_cards_played_this_turn = 0;
+        game.monster_turn_queue_all.clear();
+        game.should_add_extra_decay_status = false;
+        game.chosen_cards.clear();
+        game.cur_card.take();
         game.num_times_took_damage = 0;
         game.energy = 0;
         game.turn = 0;
@@ -276,6 +281,7 @@ impl GameState for CombatBeginGameState {
     fn run(&self, game: &mut Game) {
         game.turn = 0;
         game.should_add_extra_decay_status = false;
+        game.monster_turn_queue_all = game.get_alive_monsters();
 
         setup_combat_draw_pile(game);
 
