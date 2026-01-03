@@ -85,7 +85,7 @@ r!(
     BronzeScales => Common,
     CentennialPuzzle => Common,
     CeramicFish => Common,
-    DreamCatcher => Common, // TODO
+    DreamCatcher => Common,
     HappyFlower => Common,
     JuzuBracelet => Common, // TODO
     Lantern => Common,

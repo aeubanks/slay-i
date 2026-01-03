@@ -241,6 +241,7 @@ impl Step for RewardExitStep {
 mod tests {
     use crate::{
         assert_matches,
+        campfire::CampfireRestStep,
         cards::CardClass,
         combat::EndTurnStep,
         game::{AscendStep, GameBuilder},
@@ -426,6 +427,32 @@ mod tests {
         assert_eq!(
             g.valid_steps(),
             vec![Box::new(RewardExitStep) as Box<dyn Step>]
+        );
+    }
+
+    #[test]
+    fn test_campfire_dreamcatcher() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::DreamCatcher)
+            .build_campfire();
+        g.step_test(CampfireRestStep);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(CardRewardStep {
+                    pack_index: 0,
+                    card_index: 0
+                }) as Box<dyn Step>,
+                Box::new(CardRewardStep {
+                    pack_index: 0,
+                    card_index: 1
+                }),
+                Box::new(CardRewardStep {
+                    pack_index: 0,
+                    card_index: 2
+                }),
+                Box::new(RewardExitStep)
+            ]
         );
     }
 }
