@@ -36,6 +36,7 @@ pub mod enchiridion;
 pub mod end_of_turn_discard;
 pub mod enlightenment;
 pub mod escape_monster;
+pub mod escape_player;
 pub mod exhaust_card;
 pub mod exhaust_hand;
 pub mod exhaust_non_attack_in_hand;

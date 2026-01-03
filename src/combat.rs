@@ -100,7 +100,7 @@ struct PlayerTurnEndGameState;
 
 impl GameState for PlayerTurnEndGameState {
     fn run(&self, game: &mut Game) {
-        if game.all_monsters_dead() {
+        if game.combat_finished() {
             game.state.push_state(CombatEndGameState);
             return;
         }
@@ -138,7 +138,7 @@ struct MonsterTurnGameState;
 impl GameState for MonsterTurnGameState {
     fn run(&self, game: &mut Game) {
         assert!(game.monster_turn_queue_active.is_empty());
-        if game.all_monsters_dead() {
+        if game.combat_finished() {
             game.state.push_state(CombatEndGameState);
             return;
         }
@@ -164,7 +164,7 @@ struct EndOfRoundGameState;
 
 impl GameState for EndOfRoundGameState {
     fn run(&self, game: &mut Game) {
-        if game.all_monsters_dead() {
+        if game.combat_finished() {
             game.state.push_state(CombatEndGameState);
             return;
         }
@@ -215,6 +215,7 @@ impl GameState for ResetCombatGameState {
         game.energy = 0;
         game.turn = 0;
         game.in_combat = false;
+        game.smoke_bombed = false;
         game.clear_all_piles();
     }
 }
@@ -224,41 +225,43 @@ struct RollCombatRewardsGameState(RewardType);
 
 impl GameState for RollCombatRewardsGameState {
     fn run(&self, game: &mut Game) {
-        let all_escaped = game
-            .monsters
-            .iter()
-            .all(|c| matches!(c.creature.state, CreatureState::Escaped));
-        match self.0 {
-            RewardType::Monster => {
-                if !all_escaped {
-                    let gold = game.rng.random_range(10..=20);
-                    game.rewards.add_gold(gold);
+        if !game.smoke_bombed {
+            let all_escaped = game
+                .monsters
+                .iter()
+                .all(|c| matches!(c.creature.state, CreatureState::Escaped));
+            match self.0 {
+                RewardType::Monster => {
+                    if !all_escaped {
+                        let gold = game.rng.random_range(10..=20);
+                        game.rewards.add_gold(gold);
+                    }
+
+                    let cards = Rewards::gen_card_reward(game);
+                    game.rewards.add_cards(cards);
                 }
+                RewardType::Elite => {
+                    let gold = game.rng.random_range(25..=35);
+                    game.rewards.add_gold(gold);
 
-                let cards = Rewards::gen_card_reward(game);
-                game.rewards.add_cards(cards);
+                    let cards = Rewards::gen_card_reward(game);
+                    game.rewards.add_cards(cards);
+
+                    let r = game.next_relic_weighted();
+                    game.rewards.add_relic(r);
+                }
             }
-            RewardType::Elite => {
-                let gold = game.rng.random_range(25..=35);
-                game.rewards.add_gold(gold);
 
-                let cards = Rewards::gen_card_reward(game);
-                game.rewards.add_cards(cards);
-
-                let r = game.next_relic_weighted();
-                game.rewards.add_relic(r);
-            }
-        }
-
-        if !all_escaped {
-            if game.rng.random_range(0..100) < game.potion_chance
-                || game.has_relic(RelicClass::WhiteBeastStatue)
-            {
-                game.potion_chance -= 10;
-                let p = random_potion_weighted(&mut game.rng);
-                game.rewards.add_potion(p);
-            } else {
-                game.potion_chance += 10;
+            if !all_escaped {
+                if game.rng.random_range(0..100) < game.potion_chance
+                    || game.has_relic(RelicClass::WhiteBeastStatue)
+                {
+                    game.potion_chance -= 10;
+                    let p = random_potion_weighted(&mut game.rng);
+                    game.rewards.add_potion(p);
+                } else {
+                    game.potion_chance += 10;
+                }
             }
         }
 
@@ -323,7 +326,7 @@ struct PlayerTurnBeginGameState;
 
 impl GameState for PlayerTurnBeginGameState {
     fn run(&self, game: &mut Game) {
-        if game.all_monsters_dead() {
+        if game.combat_finished() {
             game.state.push_state(CombatEndGameState);
             return;
         }
@@ -372,12 +375,12 @@ struct PlayerTurnGameState;
 
 impl GameState for PlayerTurnGameState {
     fn run(&self, game: &mut Game) {
-        if game.all_monsters_dead() {
+        if game.combat_finished() {
             game.state.push_state(CombatEndGameState);
         }
     }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
-        if game.all_monsters_dead() {
+        if game.combat_finished() {
             return None;
         }
         let mut moves = Steps::default();

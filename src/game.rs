@@ -123,7 +123,7 @@ impl GameState for RunActionsGameState {
             a.run(game);
         } else if !game.card_queue.is_empty() {
             let play = game.card_queue.remove(0);
-            if game.all_monsters_dead() {
+            if game.combat_finished() {
                 return;
             }
             if game.can_play_card(&play) {
@@ -540,6 +540,7 @@ pub struct Game {
     pub in_combat: bool,
     pub turn: i32,
     pub monsters: Vec<Monster>,
+    pub smoke_bombed: bool,
     pub energy: i32,
     pub draw_pile: DrawPile<CardRef>,
     pub hand: CardPile,
@@ -594,6 +595,7 @@ impl Game {
             rare_card_chance: -2,
             turn: 0,
             in_combat: false,
+            smoke_bombed: false,
             energy: 0,
             rewards: Default::default(),
             draw_per_turn: 5,
@@ -1267,8 +1269,8 @@ impl Game {
         self.hand.len() as i32 == Game::MAX_HAND_SIZE
     }
 
-    pub fn all_monsters_dead(&self) -> bool {
-        self.monsters.iter().all(|m| !m.creature.is_actionable())
+    pub fn combat_finished(&self) -> bool {
+        self.monsters.iter().all(|m| !m.creature.is_actionable()) || self.smoke_bombed
     }
 
     pub fn monster_str(&self, c: CreatureRef) -> String {

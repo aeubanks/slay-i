@@ -8,6 +8,7 @@ use crate::{
         damage::DamageAction,
         damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction,
+        escape_player::EscapePlayerAction,
         fill_potions::FillPotionsAction,
         gain_energy::GainEnergyAction,
         gain_status::GainStatusAction,
@@ -328,7 +329,9 @@ fn snecko(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
     game.action_queue.push_bot(RandomizeHandCostAction());
 }
 fn fairy(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
-fn smoke(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn smoke(_: bool, _: Option<CreatureRef>, game: &mut Game) {
+    game.action_queue.push_bot(EscapePlayerAction());
+}
 fn entropic(_: bool, _: Option<CreatureRef>, game: &mut Game) {
     game.action_queue.push_bot(FillPotionsAction());
 }

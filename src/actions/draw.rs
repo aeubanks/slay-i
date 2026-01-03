@@ -15,7 +15,7 @@ pub struct DrawAction(pub i32);
 
 impl Action for DrawAction {
     fn run(&self, game: &mut Game) {
-        if game.player.has_status(Status::NoDraw) || game.all_monsters_dead() {
+        if game.player.has_status(Status::NoDraw) || game.combat_finished() {
             return;
         }
         let discard_size = game.discard_pile.len() as i32;

@@ -418,4 +418,14 @@ mod tests {
         assert!(!g.rewards.cards.is_empty());
         assert!(g.rewards.potions.is_empty());
     }
+
+    #[test]
+    fn test_smoke_bomb_rewards() {
+        let mut g = GameBuilder::default().build_combat();
+        g.throw_potion(Potion::Smoke, None);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(RewardExitStep) as Box<dyn Step>]
+        );
+    }
 }
