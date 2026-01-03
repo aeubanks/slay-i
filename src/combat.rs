@@ -8,7 +8,7 @@ use crate::{
     },
     creature::CreatureState,
     draw_pile::DrawPile,
-    game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
+    game::{CombatType, CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::Monster,
     monsters::{
         blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast,
@@ -67,7 +67,8 @@ impl GameState for RollCombatGameState {
         }
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Monster));
-        game.state.push_state(CombatBeginGameState);
+        game.state
+            .push_state(CombatBeginGameState(CombatType::Normal));
     }
 }
 
@@ -91,7 +92,8 @@ impl GameState for RollEliteCombatGameState {
         };
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Elite));
-        game.state.push_state(CombatBeginGameState);
+        game.state
+            .push_state(CombatBeginGameState(CombatType::Elite));
     }
 }
 
@@ -214,7 +216,7 @@ impl GameState for ResetCombatGameState {
         game.num_times_took_damage = 0;
         game.energy = 0;
         game.turn = 0;
-        game.in_combat = false;
+        game.in_combat = CombatType::None;
         game.smoke_bombed = false;
         game.clear_all_piles();
     }
@@ -290,11 +292,11 @@ fn setup_combat_draw_pile(game: &mut Game) {
 }
 
 #[derive(Debug)]
-pub struct CombatBeginGameState;
+pub struct CombatBeginGameState(pub CombatType);
 
 impl GameState for CombatBeginGameState {
     fn run(&self, game: &mut Game) {
-        game.in_combat = true;
+        game.in_combat = self.0;
         game.turn = 0;
         game.should_add_extra_decay_status = false;
         game.monster_turn_queue_all = game.get_alive_monsters();

@@ -1,6 +1,6 @@
 use crate::{
     action::Action,
-    game::Game,
+    game::{CombatType, Game},
     potion::{Potion, random_potion_weighted},
 };
 
@@ -13,7 +13,7 @@ impl Action for FillPotionsAction {
                 let mut roll;
                 loop {
                     roll = random_potion_weighted(&mut game.rng);
-                    if !game.in_combat || roll != Potion::Fruit {
+                    if matches!(game.in_combat, CombatType::None) || roll != Potion::Fruit {
                         break;
                     }
                 }

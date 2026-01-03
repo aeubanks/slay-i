@@ -24,6 +24,7 @@ use crate::{
         meat_on_the_bone::MeatOnTheBoneAction,
         orichalcum::OrichalcumAction,
         play_card::PlayCardAction,
+        preserved_insect::PreservedInsectAction,
         red_skull::RedSkullAction,
         set_hp_all_monsters::SetHPAllMonstersAction,
         shuffle_card_into_draw::ShuffleCardIntoDrawAction,
@@ -97,7 +98,7 @@ r!(
     Orichalcum => Common,
     PenNib => Common,
     PotionBelt => Common,
-    PreservedInsect => Common, // TODO
+    PreservedInsect => Common,
     RegalPillow => Common,
     SmilingMask => Common,
     Strawberry => Common,
@@ -306,6 +307,7 @@ impl RelicClass {
             Vajra => Some(vajra),
             Girya => Some(girya),
             OddlySmoothStone => Some(oddly_smooth_stone),
+            PreservedInsect => Some(preserved_insect),
             DuVuDoll => Some(du_vu_doll),
             Akabeko => Some(akabeko),
             PenNib => Some(pen_nib_start),
@@ -777,6 +779,10 @@ fn mutagenic_strength(_: &mut i32, queue: &mut ActionQueue) {
         amount: 3,
         target: CreatureRef::player(),
     });
+}
+
+fn preserved_insect(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(PreservedInsectAction());
 }
 
 fn mark_of_pain(_: &mut i32, queue: &mut ActionQueue) {
@@ -3067,5 +3073,29 @@ mod tests {
         g.player.cur_hp = 10;
         g.step_test(AscendStep { x: 0, y: 0 });
         assert_eq!(g.player.cur_hp, 25);
+    }
+
+    #[test]
+    fn test_preserved_insect() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::PreservedInsect)
+                .build_with_rooms(&[RoomType::Monster]);
+            g.step_test(AscendStep { x: 0, y: 0 });
+            assert!(!g.monsters.is_empty());
+            for m in &g.monsters {
+                assert_eq!(m.creature.cur_hp, m.creature.max_hp);
+            }
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::PreservedInsect)
+                .build_with_rooms(&[RoomType::Elite]);
+            g.step_test(AscendStep { x: 0, y: 0 });
+            assert!(!g.monsters.is_empty());
+            for m in &g.monsters {
+                assert_eq!(m.creature.cur_hp, (m.creature.max_hp as f32 * 0.75) as i32);
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
     action::Action,
     actions::heal::HealAction,
-    game::{CreatureRef, Game},
+    game::{CombatType, CreatureRef, Game},
     potion::Potion,
     relic::RelicClass,
 };
@@ -13,7 +13,7 @@ pub struct UsePotionAction {
 
 impl Action for UsePotionAction {
     fn run(&self, game: &mut Game) {
-        if !game.in_combat {
+        if matches!(game.in_combat, CombatType::None) {
             assert!(self.potion.can_use_outside_combat());
         }
         let is_sacred = game.has_relic(RelicClass::SacredBark);

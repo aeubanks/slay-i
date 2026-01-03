@@ -509,6 +509,14 @@ macro_rules! trigger_card {
     };
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum CombatType {
+    None,
+    Normal,
+    Elite,
+    Boss,
+}
+
 pub struct Game {
     pub rng: Rand,
 
@@ -545,7 +553,7 @@ pub struct Game {
     pub shop: Shop,
     pub shop_remove_count: i32,
 
-    pub in_combat: bool,
+    pub in_combat: CombatType,
     pub turn: i32,
     pub monsters: Vec<Monster>,
     pub smoke_bombed: bool,
@@ -602,7 +610,7 @@ impl Game {
             potion_chance: 40,
             rare_card_chance: -2,
             turn: 0,
-            in_combat: false,
+            in_combat: CombatType::None,
             smoke_bombed: false,
             energy: 0,
             rewards: Default::default(),
