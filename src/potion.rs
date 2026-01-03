@@ -8,6 +8,7 @@ use crate::{
         damage::DamageAction,
         damage_all_monsters::DamageAllMonstersAction,
         draw::DrawAction,
+        fill_potions::FillPotionsAction,
         gain_energy::GainEnergyAction,
         gain_status::GainStatusAction,
         heal::HealAction,
@@ -328,7 +329,9 @@ fn snecko(is_sacred: bool, _: Option<CreatureRef>, game: &mut Game) {
 }
 fn fairy(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
 fn smoke(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
-fn entropic(_: bool, _: Option<CreatureRef>, _: &mut Game) {}
+fn entropic(_: bool, _: Option<CreatureRef>, game: &mut Game) {
+    game.action_queue.push_bot(FillPotionsAction());
+}
 
 lazy_static! {
     static ref ALL: Vec<Potion> = Potion::all();
@@ -839,6 +842,39 @@ mod tests {
             g.step_test(EndTurnStep);
             assert!(!g.player.is_actionable());
             assert!(g.potions.iter().all(|p| p.is_none()));
+        }
+    }
+
+    #[test]
+    fn test_entropic_brew() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::PotionBelt)
+                .build_combat();
+            for _ in 0..20 {
+                g.throw_potion(Potion::Entropic, None);
+                for p in &mut g.potions {
+                    assert!(p.is_some());
+                    assert_ne!(*p, Some(Potion::Fruit));
+                    *p = None;
+                }
+            }
+        }
+        {
+            let mut found_fruit = false;
+            let mut g = GameBuilder::default().build_campfire();
+            for _ in 0..100 {
+                g.throw_potion(Potion::Entropic, None);
+                for p in &mut g.potions {
+                    assert!(p.is_some());
+                    if *p == Some(Potion::Fruit) {
+                        found_fruit = true;
+                        break;
+                    }
+                    *p = None;
+                }
+            }
+            assert!(found_fruit);
         }
     }
 }

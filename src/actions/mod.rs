@@ -42,6 +42,7 @@ pub mod exhaust_non_attack_in_hand;
 pub mod exhaust_random_card_in_hand;
 pub mod exhume;
 pub mod fiend_fire;
+pub mod fill_potions;
 pub mod forethought;
 pub mod gain_energy;
 pub mod gain_gold;

@@ -537,6 +537,7 @@ pub struct Game {
     pub shop: Shop,
     pub shop_remove_count: i32,
 
+    pub in_combat: bool,
     pub turn: i32,
     pub monsters: Vec<Monster>,
     pub energy: i32,
@@ -592,6 +593,7 @@ impl Game {
             potion_chance: 40,
             rare_card_chance: -2,
             turn: 0,
+            in_combat: false,
             energy: 0,
             rewards: Default::default(),
             draw_per_turn: 5,

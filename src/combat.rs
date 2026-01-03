@@ -214,6 +214,7 @@ impl GameState for ResetCombatGameState {
         game.num_times_took_damage = 0;
         game.energy = 0;
         game.turn = 0;
+        game.in_combat = false;
         game.clear_all_piles();
     }
 }
@@ -290,6 +291,7 @@ pub struct CombatBeginGameState;
 
 impl GameState for CombatBeginGameState {
     fn run(&self, game: &mut Game) {
+        game.in_combat = true;
         game.turn = 0;
         game.should_add_extra_decay_status = false;
         game.monster_turn_queue_all = game.get_alive_monsters();
