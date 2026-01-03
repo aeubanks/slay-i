@@ -136,7 +136,7 @@ impl Step for GoldRewardStep {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct StolenGoldRewardStep;
+pub struct StolenGoldRewardStep;
 
 impl Step for StolenGoldRewardStep {
     fn should_pop_state(&self) -> bool {
@@ -242,8 +242,11 @@ mod tests {
     use crate::{
         assert_matches,
         cards::CardClass,
+        combat::EndTurnStep,
         game::{AscendStep, GameBuilder},
         map::RoomType,
+        monster::Intent,
+        monsters::looter::Looter,
         relic::RelicRarity,
     };
 
@@ -398,5 +401,21 @@ mod tests {
             }
         }
         assert!(found_rare);
+    }
+
+    #[test]
+    fn test_escape_rewards() {
+        let mut g = GameBuilder::default().build_combat_with_monster(Looter::new());
+        g.potion_chance = 100;
+        loop {
+            let done = matches!(g.monsters[0].behavior.get_intent(), Intent::Escape);
+            g.step_test(EndTurnStep);
+            if done {
+                break;
+            }
+        }
+        assert_eq!(g.rewards.gold, 0);
+        assert!(!g.rewards.cards.is_empty());
+        assert!(g.rewards.potions.is_empty());
     }
 }

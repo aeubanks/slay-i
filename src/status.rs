@@ -85,6 +85,7 @@ s!(
     Enrage => Buff,
     ModeShift => Buff,
     SharpHide => Buff,
+    StolenGold => Buff,
 );
 
 impl Status {

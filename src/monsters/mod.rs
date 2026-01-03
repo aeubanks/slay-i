@@ -11,6 +11,7 @@ pub mod guardian;
 pub mod hexaghost;
 pub mod jawworm;
 pub mod lagavulin;
+pub mod looter;
 pub mod louse;
 pub mod red_slaver;
 pub mod sentry;

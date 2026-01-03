@@ -6,6 +6,7 @@ use crate::{
         end_of_turn_discard::EndOfTurnDiscardAction, play_card::PlayCardAction,
         start_of_turn_energy::StartOfTurnEnergyAction,
     },
+    creature::CreatureState,
     draw_pile::DrawPile,
     game::{CreatureRef, Game, RunActionsGameState, UsePotionStep},
     monster::Monster,
@@ -14,7 +15,7 @@ use crate::{
         gremlin_fat::GremlinFat, gremlin_mad::GremlinMad, gremlin_nob::GremlinNob,
         gremlin_shield::GremlinShield, gremlin_sneaky::GremlinSneaky,
         gremlin_wizard::GremlinWizard, guardian::Guardian, hexaghost::Hexaghost, jawworm::JawWorm,
-        lagavulin::Lagavulin, louse::Louse, red_slaver::RedSlaver, sentry::Sentry,
+        lagavulin::Lagavulin, looter::Looter, louse::Louse, red_slaver::RedSlaver, sentry::Sentry,
         slime_acid_l::SlimeAcidL, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
         slime_boss::SlimeBoss, slime_spike_l::SlimeSpikeL, slime_spike_m::SlimeSpikeM,
         slime_spike_s::SlimeSpikeS, test::NoopMonster,
@@ -36,7 +37,7 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            game.monsters = match game.rng.random_range(0..10) {
+            game.monsters = match game.rng.random_range(0..11) {
                 0 => vec![Monster::new(JawWorm::new(), &mut game.rng)],
                 1 => vec![Monster::new(Cultist::new(), &mut game.rng)],
                 2 => vec![
@@ -60,7 +61,8 @@ impl GameState for RollCombatGameState {
                     Monster::new(GremlinWizard::new(), &mut game.rng),
                 ],
                 10 => vec![Monster::new(SlimeAcidL::new(), &mut game.rng)],
-                _ => vec![Monster::new(SlimeSpikeL::new(), &mut game.rng)],
+                11 => vec![Monster::new(SlimeSpikeL::new(), &mut game.rng)],
+                _ => vec![Monster::new(Looter::new(), &mut game.rng)],
             };
         }
         game.state
@@ -192,8 +194,6 @@ struct CombatEndGameState;
 
 impl GameState for CombatEndGameState {
     fn run(&self, game: &mut Game) {
-        game.state.push_state(ResetCombatGameState);
-
         game.trigger_relics_at_combat_finish();
         game.state.push_state(RunActionsGameState);
     }
@@ -223,11 +223,16 @@ struct RollCombatRewardsGameState(RewardType);
 
 impl GameState for RollCombatRewardsGameState {
     fn run(&self, game: &mut Game) {
-        // FIXME: no rewards when all monsters escape
+        let all_escaped = game
+            .monsters
+            .iter()
+            .all(|c| matches!(c.creature.state, CreatureState::Escaped));
         match self.0 {
             RewardType::Monster => {
-                let gold = game.rng.random_range(10..=20);
-                game.rewards.add_gold(gold);
+                if !all_escaped {
+                    let gold = game.rng.random_range(10..=20);
+                    game.rewards.add_gold(gold);
+                }
 
                 let cards = Rewards::gen_card_reward(game);
                 game.rewards.add_cards(cards);
@@ -244,17 +249,20 @@ impl GameState for RollCombatRewardsGameState {
             }
         }
 
-        if game.rng.random_range(0..100) < game.potion_chance
-            || game.has_relic(RelicClass::WhiteBeastStatue)
-        {
-            game.potion_chance -= 10;
-            let p = random_potion_weighted(&mut game.rng);
-            game.rewards.add_potion(p);
-        } else {
-            game.potion_chance += 10;
+        if !all_escaped {
+            if game.rng.random_range(0..100) < game.potion_chance
+                || game.has_relic(RelicClass::WhiteBeastStatue)
+            {
+                game.potion_chance -= 10;
+                let p = random_potion_weighted(&mut game.rng);
+                game.rewards.add_potion(p);
+            } else {
+                game.potion_chance += 10;
+            }
         }
 
         game.state.push_state(RewardsGameState);
+        game.state.push_state(ResetCombatGameState);
     }
 }
 
@@ -690,5 +698,20 @@ mod tests {
         g.play_card(CardClass::Thunderclap, None);
         g.play_card(CardClass::Thunderclap, None);
         assert_eq!(g.discard_pile.len(), 2);
+    }
+
+    #[test]
+    fn test_escaped_not_targetable() {
+        let mut g =
+            GameBuilder::default().build_combat_with_monsters(Looter::new(), NoopMonster::new());
+        for _ in 0..5 {
+            g.step_test(EndTurnStep);
+        }
+        g.play_card(CardClass::Thunderclap, None);
+        assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
+        assert_eq!(
+            g.monsters[1].creature.cur_hp,
+            g.monsters[1].creature.max_hp - 4
+        );
     }
 }

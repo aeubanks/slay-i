@@ -940,6 +940,9 @@ impl Game {
                         target: CreatureRef::player(),
                     });
                 }
+                if let Some(v) = self.get_creature(target).get_status(Status::StolenGold) {
+                    self.rewards.add_stolen_gold(v);
+                }
                 if self.has_relic(RelicClass::GremlinHorn) {
                     self.action_queue.push_bot(GainEnergyAction(1));
                     self.action_queue.push_bot(DrawAction(1));
