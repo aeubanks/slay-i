@@ -2,14 +2,19 @@ use crate::{
     action::Action,
     game::{CreatureRef, Game},
     monster::Monster,
-    monsters::{slime_acid_m::SlimeAcidM, slime_spike_m::SlimeSpikeM, test::AttackMonster},
+    monsters::{
+        slime_acid_l::SlimeAcidL, slime_acid_m::SlimeAcidM, slime_spike_l::SlimeSpikeL,
+        slime_spike_m::SlimeSpikeM, test::AttackMonster,
+    },
 };
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub enum SplitMonsterType {
     TestAttack,
     SlimeAcidL,
     SlimeSpikeL,
+    SlimeBoss,
 }
 
 pub struct SplitMonsterAction {
@@ -26,12 +31,25 @@ impl Action for SplitMonsterAction {
             .iter()
             .position(|&c| c == self.monster)
             .unwrap();
-        for _ in 0..2 {
-            let m = match self.ty {
-                SplitMonsterType::SlimeAcidL => Monster::new_with_hp(SlimeAcidM::new(), hp),
-                SplitMonsterType::SlimeSpikeL => Monster::new_with_hp(SlimeSpikeM::new(), hp),
-                SplitMonsterType::TestAttack => Monster::new_with_hp(AttackMonster::new(10), hp),
-            };
+        let new_monsters = match self.ty {
+            SplitMonsterType::SlimeAcidL => [
+                Monster::new_with_hp(SlimeAcidM::new(), hp),
+                Monster::new_with_hp(SlimeAcidM::new(), hp),
+            ],
+            SplitMonsterType::SlimeSpikeL => [
+                Monster::new_with_hp(SlimeSpikeM::new(), hp),
+                Monster::new_with_hp(SlimeSpikeM::new(), hp),
+            ],
+            SplitMonsterType::SlimeBoss => [
+                Monster::new_with_hp(SlimeAcidL::new(), hp),
+                Monster::new_with_hp(SlimeSpikeL::new(), hp),
+            ],
+            SplitMonsterType::TestAttack => [
+                Monster::new_with_hp(AttackMonster::new(10), hp),
+                Monster::new_with_hp(AttackMonster::new(10), hp),
+            ],
+        };
+        for m in new_monsters {
             game.monsters.push(m);
             game.monster_turn_queue_all
                 .insert(turn_pos, CreatureRef::monster(game.monsters.len() - 1));

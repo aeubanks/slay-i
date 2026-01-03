@@ -41,7 +41,7 @@ impl SlimeAcidL {
 
 impl MonsterBehavior for SlimeAcidL {
     fn name(&self) -> &'static str {
-        "spike slime L"
+        "acid slime L"
     }
     fn hp_range(&self) -> (i32, i32) {
         (68, 72)

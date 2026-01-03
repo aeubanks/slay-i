@@ -17,6 +17,7 @@ pub mod sentry;
 pub mod slime_acid_l;
 pub mod slime_acid_m;
 pub mod slime_acid_s;
+pub mod slime_boss;
 pub mod slime_spike_l;
 pub mod slime_spike_m;
 pub mod slime_spike_s;
