@@ -19,18 +19,17 @@ use crate::{
 #[derive(PartialEq, Eq, Clone, Copy)]
 enum Action {
     Start,
-    CorrisiveSpit,
     Lick,
     Tackle,
     Split,
 }
 
-pub struct SlimeAcidL {
+pub struct SlimeSpikeL {
     action: Action,
     history: MoveHistory<Action>,
 }
 
-impl SlimeAcidL {
+impl SlimeSpikeL {
     pub fn new() -> Self {
         Self {
             action: Action::Start,
@@ -39,12 +38,12 @@ impl SlimeAcidL {
     }
 }
 
-impl MonsterBehavior for SlimeAcidL {
+impl MonsterBehavior for SlimeSpikeL {
     fn name(&self) -> &'static str {
         "spike slime L"
     }
     fn hp_range(&self) -> (i32, i32) {
-        (68, 72)
+        (67, 73)
     }
 
     fn on_take_damage(&mut self, _: CreatureRef, this_creature: &mut Creature) {
@@ -56,61 +55,37 @@ impl MonsterBehavior for SlimeAcidL {
     fn take_turn(&mut self, this: CreatureRef, queue: &mut ActionQueue, _: &MonsterInfo) {
         match self.action {
             Action::Start => panic!(),
-            Action::CorrisiveSpit => {
-                queue.push_bot(DamageAction::from_monster(12, this));
+            Action::Lick => queue.push_bot(GainStatusAction {
+                status: Status::Frail,
+                amount: 3,
+                target: CreatureRef::player(),
+            }),
+            Action::Tackle => {
+                queue.push_bot(DamageAction::from_monster(18, this));
+
                 for _ in 0..2 {
                     queue.push_bot(CreateCardInDiscardAction(CardClass::Slimed));
                 }
             }
-            Action::Lick => queue.push_bot(GainStatusAction {
-                status: Status::Weak,
-                amount: 2,
-                target: CreatureRef::player(),
-            }),
-            Action::Tackle => queue.push_bot(DamageAction::from_monster(18, this)),
             Action::Split => {
                 queue.push_bot(SplitMonsterAction {
                     monster: this,
-                    ty: SplitMonsterType::SlimeAcidL,
+                    ty: SplitMonsterType::SlimeSpikeL,
                 });
             }
         }
     }
     fn roll_next_action(&mut self, rng: &mut Rand, _info: &MonsterInfo) {
-        let next = match rng.random_range(0..10) {
-            0..4 => {
-                if self.history.last_two(Action::CorrisiveSpit) {
-                    if rng.random_range(0..10) < 6 {
-                        Action::Tackle
-                    } else {
-                        Action::Lick
-                    }
-                } else {
-                    Action::CorrisiveSpit
-                }
+        let next = if rng.random_range(0..10) < 3 {
+            if self.history.last_two(Action::Tackle) {
+                Action::Lick
+            } else {
+                Action::Tackle
             }
-            4..7 => {
-                if self.history.last_two(Action::Tackle) {
-                    if rng.random_range(0..10) < 6 {
-                        Action::CorrisiveSpit
-                    } else {
-                        Action::Lick
-                    }
-                } else {
-                    Action::Tackle
-                }
-            }
-            _ => {
-                if self.history.last(Action::Lick) {
-                    if rng.random_range(0..10) < 4 {
-                        Action::CorrisiveSpit
-                    } else {
-                        Action::Tackle
-                    }
-                } else {
-                    Action::Lick
-                }
-            }
+        } else if self.history.last(Action::Lick) {
+            Action::Tackle
+        } else {
+            Action::Lick
         };
         self.action = next;
         self.history.add(next);
@@ -119,9 +94,8 @@ impl MonsterBehavior for SlimeAcidL {
     fn get_intent(&self) -> Intent {
         match self.action {
             Action::Start => panic!(),
-            Action::CorrisiveSpit => Intent::AttackDebuff(12, 1),
             Action::Lick => Intent::Debuff,
-            Action::Tackle => Intent::Attack(18, 1),
+            Action::Tackle => Intent::AttackDebuff(18, 1),
             Action::Split => Intent::Unknown,
         }
     }
@@ -134,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_split() {
-        let mut g = GameBuilder::default().build_combat_with_monster(SlimeAcidL::new());
+        let mut g = GameBuilder::default().build_combat_with_monster(SlimeSpikeL::new());
         let player_hp = g.player.cur_hp;
         g.monsters[0].creature.max_hp = 50;
         g.monsters[0].creature.cur_hp = 50;
@@ -151,7 +125,7 @@ mod tests {
         assert!(g.monsters[2].creature.is_alive());
         assert_eq!(g.monsters[1].creature.cur_hp, 25);
         assert_eq!(g.monsters[2].creature.cur_hp, 25);
-        assert_eq!(g.monsters[1].creature.name, "acid slime M");
-        assert_eq!(g.monsters[2].creature.name, "acid slime M");
+        assert_eq!(g.monsters[1].creature.name, "spike slime M");
+        assert_eq!(g.monsters[2].creature.name, "spike slime M");
     }
 }

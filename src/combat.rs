@@ -16,7 +16,8 @@ use crate::{
         gremlin_wizard::GremlinWizard, guardian::Guardian, hexaghost::Hexaghost, jawworm::JawWorm,
         lagavulin::Lagavulin, louse::Louse, red_slaver::RedSlaver, sentry::Sentry,
         slime_acid_l::SlimeAcidL, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
-        slime_spike_m::SlimeSpikeM, slime_spike_s::SlimeSpikeS, test::NoopMonster,
+        slime_spike_l::SlimeSpikeL, slime_spike_m::SlimeSpikeM, slime_spike_s::SlimeSpikeS,
+        test::NoopMonster,
     },
     potion::random_potion_weighted,
     relic::RelicClass,
@@ -35,7 +36,7 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            game.monsters = match game.rng.random_range(0..9) {
+            game.monsters = match game.rng.random_range(0..10) {
                 0 => vec![Monster::new(JawWorm::new(), &mut game.rng)],
                 1 => vec![Monster::new(Cultist::new(), &mut game.rng)],
                 2 => vec![
@@ -58,7 +59,8 @@ impl GameState for RollCombatGameState {
                     Monster::new(GremlinSneaky::new(), &mut game.rng),
                     Monster::new(GremlinWizard::new(), &mut game.rng),
                 ],
-                _ => vec![Monster::new(SlimeAcidL::new(), &mut game.rng)],
+                10 => vec![Monster::new(SlimeAcidL::new(), &mut game.rng)],
+                _ => vec![Monster::new(SlimeSpikeL::new(), &mut game.rng)],
             };
         }
         game.state

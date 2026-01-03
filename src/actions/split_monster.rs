@@ -2,13 +2,14 @@ use crate::{
     action::Action,
     game::{CreatureRef, Game},
     monster::Monster,
-    monsters::{slime_acid_m::SlimeAcidM, test::AttackMonster},
+    monsters::{slime_acid_m::SlimeAcidM, slime_spike_m::SlimeSpikeM, test::AttackMonster},
 };
 
 #[allow(dead_code)]
 pub enum SplitMonsterType {
     TestAttack,
     SlimeAcidL,
+    SlimeSpikeL,
 }
 
 pub struct SplitMonsterAction {
@@ -28,6 +29,7 @@ impl Action for SplitMonsterAction {
         for _ in 0..2 {
             let m = match self.ty {
                 SplitMonsterType::SlimeAcidL => Monster::new_with_hp(SlimeAcidM::new(), hp),
+                SplitMonsterType::SlimeSpikeL => Monster::new_with_hp(SlimeSpikeM::new(), hp),
                 SplitMonsterType::TestAttack => Monster::new_with_hp(AttackMonster::new(10), hp),
             };
             game.monsters.push(m);
