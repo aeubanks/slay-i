@@ -13,6 +13,7 @@ use crate::actions::draw::DrawAction;
 use crate::actions::gain_energy::GainEnergyAction;
 use crate::actions::gain_relic::GainRelicAction;
 use crate::actions::gain_status::GainStatusAction;
+use crate::actions::heal::HealAction;
 use crate::actions::play_card::PlayCardAction;
 use crate::actions::reduce_status::ReduceStatusAction;
 use crate::actions::remove_status::RemoveStatusAction;
@@ -221,6 +222,13 @@ impl GameState for RollShopGameState {
     fn run(&self, game: &mut Game) {
         game.shop = Shop::new(game);
         game.state.push_state(ShopGameState);
+        if game.has_relic(RelicClass::MealTicket) {
+            game.action_queue.push_bot(HealAction {
+                target: CreatureRef::player(),
+                amount: 15,
+            });
+            game.state.push_state(RunActionsGameState);
+        }
     }
 }
 

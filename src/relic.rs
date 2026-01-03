@@ -90,7 +90,7 @@ r!(
     JuzuBracelet => Common, // TODO
     Lantern => Common,
     MawBank => Common, // TODO
-    MealTicket => Common, // TODO
+    MealTicket => Common,
     Nunchaku => Common,
     OddlySmoothStone => Common,
     Omamori => Common,
@@ -3057,5 +3057,15 @@ mod tests {
         g.player.max_hp = 100;
         g.step_test(CampfireRestStep);
         assert_eq!(g.player.cur_hp, 10 + 30 + 15)
+    }
+
+    #[test]
+    fn test_meal_ticket() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::MealTicket)
+            .build_with_rooms(&[RoomType::Shop, RoomType::Campfire]);
+        g.player.cur_hp = 10;
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.player.cur_hp, 25);
     }
 }
