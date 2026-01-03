@@ -72,7 +72,9 @@ mod tests {
         combat::EndTurnStep,
         game::{GameBuilder, Rand},
         monster::{Intent, MonsterBehavior, MonsterInfo},
+        monsters::test::ApplyStatusMonster,
         queue::ActionQueue,
+        status::Status,
     };
 
     struct TestSplitMonster;
@@ -116,5 +118,25 @@ mod tests {
         g.step_test(EndTurnStep);
         assert_eq!(g.monsters.len(), 3);
         assert_eq!(g.player.cur_hp, 8);
+    }
+
+    #[test]
+    fn test_monster_order() {
+        let mut g = GameBuilder::default()
+            .add_player_status(Status::Artifact, 1)
+            .build_combat_with_monsters(
+                TestSplitMonster,
+                ApplyStatusMonster {
+                    status: Status::Vulnerable,
+                    amount: 1,
+                },
+            );
+        g.player.cur_hp = 50;
+        g.step_test(EndTurnStep);
+        assert_eq!(g.player.cur_hp, 48);
+        assert!(!g.player.has_status(Status::Vulnerable));
+        g.step_test(EndTurnStep);
+        assert_eq!(g.player.cur_hp, 28);
+        assert!(g.player.has_status(Status::Vulnerable));
     }
 }
