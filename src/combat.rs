@@ -141,7 +141,7 @@ impl GameState for MonsterTurnGameState {
             return;
         }
         for i in 0..game.monsters.len() {
-            if !game.monsters[i].creature.is_alive() {
+            if !game.monsters[i].creature.is_actionable() {
                 continue;
             }
             game.monsters[i].creature.start_of_turn_lose_block(false);
@@ -168,7 +168,7 @@ impl GameState for EndOfRoundGameState {
         }
         game.should_add_extra_decay_status = false;
         for i in 0..game.monsters.len() {
-            if !game.monsters[i].creature.is_alive() {
+            if !game.monsters[i].creature.is_actionable() {
                 continue;
             }
             game.monsters[i]
@@ -293,7 +293,7 @@ impl GameState for CombatBeginGameState {
 
         // monster pre-combat setup
         for i in 0..game.monsters.len() {
-            if !game.monsters[i].creature.is_alive() {
+            if !game.monsters[i].creature.is_actionable() {
                 continue;
             }
             game.monsters[i].behavior.pre_combat(
@@ -320,7 +320,7 @@ impl GameState for PlayerTurnBeginGameState {
 
         let info = game.calculate_monster_info();
         for i in 0..game.monsters.len() {
-            if !game.monsters[i].creature.is_alive() {
+            if !game.monsters[i].creature.is_actionable() {
                 continue;
             }
             game.monsters[i]
@@ -379,7 +379,7 @@ impl GameState for PlayerTurnGameState {
             let c = c.borrow();
             if c.has_target() {
                 for (mi, m) in game.monsters.iter().enumerate() {
-                    if !m.creature.is_alive() {
+                    if !m.creature.is_actionable() {
                         continue;
                     }
                     moves.push(PlayCardStep {
@@ -401,7 +401,7 @@ impl GameState for PlayerTurnGameState {
             {
                 if p.has_target() {
                     for (mi, m) in game.monsters.iter().enumerate() {
-                        if !m.creature.is_alive() {
+                        if !m.creature.is_actionable() {
                             continue;
                         }
                         moves.push(UsePotionStep {

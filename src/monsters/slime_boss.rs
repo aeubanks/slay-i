@@ -97,9 +97,9 @@ mod tests {
         g.step_test(EndTurnStep);
         assert_eq!(player_hp, g.player.cur_hp);
         assert_eq!(g.monsters.len(), 3);
-        assert!(!g.monsters[0].creature.is_alive());
-        assert!(g.monsters[1].creature.is_alive());
-        assert!(g.monsters[2].creature.is_alive());
+        assert!(!g.monsters[0].creature.is_actionable());
+        assert!(g.monsters[1].creature.is_actionable());
+        assert!(g.monsters[2].creature.is_actionable());
         assert_eq!(g.monsters[1].creature.cur_hp, 75);
         assert_eq!(g.monsters[2].creature.cur_hp, 75);
         assert_eq!(

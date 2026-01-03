@@ -1,5 +1,6 @@
 use crate::{
     action::Action,
+    creature::CreatureState,
     game::{CreatureRef, Game},
     monster::Monster,
     monsters::{
@@ -25,7 +26,7 @@ pub struct SplitMonsterAction {
 impl Action for SplitMonsterAction {
     fn run(&self, game: &mut Game) {
         let hp = game.get_creature(self.monster).cur_hp;
-        game.get_creature_mut(self.monster).cur_hp = 0;
+        game.get_creature_mut(self.monster).state = CreatureState::Dead;
         let turn_pos = game
             .monster_turn_queue_all
             .iter()
@@ -109,9 +110,8 @@ mod tests {
         g.player.cur_hp = 50;
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, 48);
-        g.set_debug();
         g.step_test(EndTurnStep);
-        assert_eq!(g.monsters[0].creature.cur_hp, 0);
+        assert!(!g.monsters[0].creature.is_actionable());
         assert_eq!(g.monsters[1].creature.cur_hp, 12);
         assert_eq!(g.monsters[2].creature.cur_hp, 12);
         assert_eq!(g.player.cur_hp, 28);

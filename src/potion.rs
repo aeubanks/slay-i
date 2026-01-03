@@ -809,7 +809,7 @@ mod tests {
             );
 
             g.step_test(EndTurnStep);
-            assert!(g.player.is_alive());
+            assert!(g.player.is_actionable());
             assert_eq!(g.player.cur_hp, (g.player.max_hp as f32 * 0.3) as i32);
             assert!(g.potions.iter().all(|p| p.is_none()));
 
@@ -832,12 +832,12 @@ mod tests {
             g.add_potion(Potion::Fairy);
             g.add_potion(Potion::Fairy);
             g.step_test(EndTurnStep);
-            assert!(g.player.is_alive());
+            assert!(g.player.is_actionable());
             assert!(g.potions.iter().all(|p| p.is_none()));
 
             g.add_potion(Potion::Fairy);
             g.step_test(EndTurnStep);
-            assert!(!g.player.is_alive());
+            assert!(!g.player.is_actionable());
             assert!(g.potions.iter().all(|p| p.is_none()));
         }
     }

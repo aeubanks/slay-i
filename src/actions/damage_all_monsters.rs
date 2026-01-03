@@ -27,7 +27,7 @@ impl DamageAllMonstersAction {
 impl Action for DamageAllMonstersAction {
     fn run(&self, game: &mut Game) {
         for (mi, m) in game.monsters.iter().enumerate() {
-            if !m.creature.is_alive() {
+            if !m.creature.is_actionable() {
                 continue;
             }
             let target = CreatureRef::monster(mi);

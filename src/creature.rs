@@ -14,6 +14,14 @@ use crate::{
     status::Status,
 };
 
+#[derive(Debug, Default)]
+pub enum CreatureState {
+    #[default]
+    Alive,
+    Dead,
+    Escaped,
+}
+
 #[derive(Default)]
 pub struct Creature {
     pub name: &'static str,
@@ -21,6 +29,7 @@ pub struct Creature {
     pub cur_hp: i32,
     pub block: i32,
     pub last_damage_taken: i32,
+    pub state: CreatureState,
     statuses: HashMap<Status, i32>,
 }
 
@@ -32,12 +41,13 @@ impl Creature {
             cur_hp: max_hp,
             block: 0,
             statuses: Default::default(),
+            state: Default::default(),
             last_damage_taken: 0,
         }
     }
 
-    pub fn is_alive(&self) -> bool {
-        self.cur_hp > 0
+    pub fn is_actionable(&self) -> bool {
+        matches!(self.state, CreatureState::Alive)
     }
 
     pub fn is_bloodied(&self) -> bool {

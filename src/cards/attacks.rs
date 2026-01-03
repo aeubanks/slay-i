@@ -257,7 +257,7 @@ pub fn reaper_behavior(game: &mut Game, info: &CardPlayInfo) {
         .monsters
         .iter()
         .enumerate()
-        .filter(|(_, m)| m.creature.is_alive())
+        .filter(|(_, m)| m.creature.is_actionable())
         .map(|(i, _)| CreatureRef::monster(i))
         .collect::<Vec<_>>();
     push_aoe_damage(game, info, 4, 5);

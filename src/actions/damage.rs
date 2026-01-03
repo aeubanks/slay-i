@@ -121,11 +121,11 @@ impl DamageAction {
 
 impl Action for DamageAction {
     fn run(&self, game: &mut Game) {
-        if !game.get_creature(self.target).is_alive() {
+        if !game.get_creature(self.target).is_actionable() {
             return;
         }
         game.damage(self.target, self.amount, self.ty);
-        if !game.get_creature(self.target).is_alive()
+        if !game.get_creature(self.target).is_actionable()
             && let DamageType::Attack {
                 source: _,
                 on_fatal,

@@ -23,7 +23,7 @@ use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardRarity, CardType};
 use crate::combat::RollCombatGameState;
 use crate::combat::RollEliteCombatGameState;
-use crate::creature::Creature;
+use crate::creature::{Creature, CreatureState};
 use crate::draw_pile::DrawPile;
 use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
 use crate::events::bonfire::BonfireGameState;
@@ -133,7 +133,7 @@ impl GameState for RunActionsGameState {
             }
         } else if !game.monster_turn_queue_active.is_empty() {
             let monster = game.monster_turn_queue_active.remove(0);
-            if !game.get_creature(monster).is_alive() {
+            if !game.get_creature(monster).is_actionable() {
                 return;
             }
             let mi = game.calculate_monster_info();
@@ -715,7 +715,7 @@ impl Game {
     pub fn get_alive_monsters(&self) -> Vec<CreatureRef> {
         let mut alive = vec![];
         for (i, m) in self.monsters.iter().enumerate() {
-            if !m.creature.is_alive() {
+            if !m.creature.is_actionable() {
                 continue;
             }
             alive.push(CreatureRef::monster(i));
@@ -726,7 +726,7 @@ impl Game {
     pub fn get_actionable_monsters_in_order(&self) -> Vec<CreatureRef> {
         let mut actionable = vec![];
         for &c in &self.monster_turn_queue_all {
-            if !self.get_creature(c).is_alive() {
+            if !self.get_creature(c).is_actionable() {
                 continue;
             }
             actionable.push(c);
@@ -780,14 +780,14 @@ impl Game {
     }
 
     pub fn damage(&mut self, target: CreatureRef, mut amount: i32, ty: DamageType) {
-        assert!(self.get_creature(target).is_alive());
+        assert!(self.get_creature(target).is_actionable());
         assert!(amount >= 0);
         if let DamageType::Attack {
             source,
             on_fatal: _,
         } = ty
         {
-            if !self.get_creature(source).is_alive() {
+            if !self.get_creature(source).is_actionable() {
                 return;
             }
             amount = self.calculate_damage(amount, source, target);
@@ -807,7 +807,7 @@ impl Game {
             }
         }
         let c = self.get_creature_mut(target);
-        if !c.is_alive() {
+        if !c.is_actionable() {
             return;
         }
         let was_bloodied = c.is_bloodied();
@@ -931,7 +931,7 @@ impl Game {
             }
         }
 
-        if !self.get_creature(target).is_alive() {
+        if self.get_creature(target).cur_hp <= 0 {
             if !target.is_player() {
                 if let Some(v) = self.get_creature(target).get_status(Status::SporeCloud) {
                     self.action_queue.push_top(GainStatusAction {
@@ -961,6 +961,12 @@ impl Game {
                     self.player.heal(amount);
                 }
             }
+            {
+                let c = self.get_creature_mut(target);
+                if c.cur_hp <= 0 {
+                    c.state = CreatureState::Dead;
+                }
+            }
         }
 
         if !was_bloodied
@@ -986,7 +992,7 @@ impl Game {
             });
         }
 
-        if !self.get_creature(target).is_alive() && target.is_player() {
+        if !self.get_creature(target).is_actionable() && target.is_player() {
             self.state.push_state(DefeatGameState);
         }
     }
@@ -1257,7 +1263,7 @@ impl Game {
     }
 
     pub fn all_monsters_dead(&self) -> bool {
-        self.monsters.iter().all(|m| !m.creature.is_alive())
+        self.monsters.iter().all(|m| !m.creature.is_actionable())
     }
 
     pub fn monster_str(&self, c: CreatureRef) -> String {

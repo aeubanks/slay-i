@@ -2619,7 +2619,7 @@ mod tests {
             assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(1));
 
             g.step_test(EndTurnStep);
-            assert!(g.player.is_alive());
+            assert!(g.player.is_actionable());
             assert_eq!(g.player.cur_hp, (g.player.max_hp as f32 * 0.5) as i32);
             assert_eq!(g.get_relic_value(RelicClass::LizardTail), Some(0));
         }
@@ -2637,7 +2637,7 @@ mod tests {
                 .add_relic(RelicClass::LizardTail)
                 .build_combat_with_monster(AttackMonster::with_attack_count(1000, 2));
             g.step_test(EndTurnStep);
-            assert!(!g.player.is_alive());
+            assert!(!g.player.is_actionable());
         }
         {
             // test that fairy is used before lizard tail

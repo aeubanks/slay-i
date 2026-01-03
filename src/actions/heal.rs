@@ -11,7 +11,7 @@ pub struct HealAction {
 
 impl Action for HealAction {
     fn run(&self, game: &mut Game) {
-        if !game.get_creature(self.target).is_alive() {
+        if !game.get_creature(self.target).is_actionable() {
             return;
         }
         if self.target.is_player() && game.has_relic(RelicClass::MarkOfTheBloom) {
@@ -53,8 +53,8 @@ mod tests {
             amount: 5,
         });
         assert_eq!(g.monsters[0].creature.cur_hp, 0);
-        assert!(!g.monsters[0].creature.is_alive());
+        assert!(!g.monsters[0].creature.is_actionable());
         assert_eq!(g.monsters[1].creature.cur_hp, 15);
-        assert!(g.monsters[1].creature.is_alive());
+        assert!(g.monsters[1].creature.is_actionable());
     }
 }
