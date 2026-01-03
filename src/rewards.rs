@@ -20,7 +20,8 @@ pub enum RewardType {
 
 #[derive(Default)]
 pub struct Rewards {
-    gold: Vec<i32>,
+    gold: i32,
+    stolen_gold: i32,
     potions: Vec<Potion>,
     cards: Vec<Vec<CardRef>>,
     relics: Vec<RelicClass>,
@@ -65,7 +66,10 @@ impl Rewards {
 
 impl Rewards {
     pub fn add_gold(&mut self, amount: i32) {
-        self.gold.push(amount);
+        self.gold += amount;
+    }
+    pub fn add_stolen_gold(&mut self, amount: i32) {
+        self.stolen_gold += amount;
     }
     pub fn add_potion(&mut self, potion: Potion) {
         self.potions.push(potion);
@@ -85,8 +89,11 @@ impl GameState for RewardsGameState {
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut steps = Steps::default();
         if !game.has_relic(RelicClass::Ectoplasm) {
-            for i in 0..game.rewards.gold.len() {
-                steps.push(GoldRewardStep { gold_index: i });
+            if game.rewards.gold != 0 {
+                steps.push(GoldRewardStep);
+            }
+            if game.rewards.stolen_gold != 0 {
+                steps.push(StolenGoldRewardStep);
             }
         }
         if !game.has_relic(RelicClass::Sozu) {
@@ -111,21 +118,38 @@ impl GameState for RewardsGameState {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct GoldRewardStep {
-    gold_index: usize,
-}
+struct GoldRewardStep;
 
 impl Step for GoldRewardStep {
     fn should_pop_state(&self) -> bool {
         false
     }
     fn run(&self, game: &mut Game) {
-        let amount = game.rewards.gold.remove(self.gold_index);
-        game.action_queue.push_bot(GainGoldAction(amount));
+        game.action_queue
+            .push_bot(GainGoldAction(game.rewards.gold));
+        game.rewards.gold = 0;
         game.state.push_state(RunActionsGameState);
     }
     fn description(&self, game: &Game) -> String {
-        format!("gain {} gold", game.rewards.gold[self.gold_index])
+        format!("gain {} gold", game.rewards.gold)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct StolenGoldRewardStep;
+
+impl Step for StolenGoldRewardStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+    fn run(&self, game: &mut Game) {
+        game.action_queue
+            .push_bot(GainGoldAction(game.rewards.stolen_gold));
+        game.rewards.stolen_gold = 0;
+        game.state.push_state(RunActionsGameState);
+    }
+    fn description(&self, game: &Game) -> String {
+        format!("gain {} gold", game.rewards.stolen_gold)
     }
 }
 
@@ -230,13 +254,14 @@ mod tests {
         let mut g = GameBuilder::default().build_combat();
         g.potion_chance = 0;
         g.play_card(CardClass::DebugKillAll, None);
-        assert_eq!(g.rewards.gold.len(), 1);
+        assert_ne!(g.rewards.gold, 0);
+        assert_eq!(g.rewards.stolen_gold, 0);
         assert_eq!(g.rewards.cards.len(), 1);
         assert_eq!(g.rewards.cards[0].len(), 3);
         assert_eq!(
             g.valid_steps(),
             vec![
-                Box::new(GoldRewardStep { gold_index: 0 }) as Box<dyn Step>,
+                Box::new(GoldRewardStep) as Box<dyn Step>,
                 Box::new(CardRewardStep {
                     pack_index: 0,
                     card_index: 0
@@ -252,8 +277,8 @@ mod tests {
                 Box::new(RewardExitStep),
             ]
         );
-        let gold = g.rewards.gold[0];
-        g.step_test(GoldRewardStep { gold_index: 0 });
+        let gold = g.rewards.gold;
+        g.step_test(GoldRewardStep);
         assert_eq!(g.gold, gold);
         assert!(gold >= 10);
         assert!(gold <= 20);
@@ -276,14 +301,15 @@ mod tests {
             g.potion_chance = 0;
             g.step_test(AscendStep { x: 0, y: 0 });
             g.play_card(CardClass::DebugKillAll, None);
-            assert_eq!(g.rewards.gold.len(), 1);
+            assert_ne!(g.rewards.gold, 0);
+            assert_eq!(g.rewards.stolen_gold, 0);
             assert_eq!(g.rewards.cards.len(), 1);
             assert_eq!(g.rewards.cards[0].len(), 3);
             assert_eq!(g.rewards.relics.len(), 1);
             assert_eq!(
                 g.valid_steps(),
                 vec![
-                    Box::new(GoldRewardStep { gold_index: 0 }) as Box<dyn Step>,
+                    Box::new(GoldRewardStep) as Box<dyn Step>,
                     Box::new(CardRewardStep {
                         pack_index: 0,
                         card_index: 0
@@ -300,8 +326,8 @@ mod tests {
                     Box::new(RewardExitStep),
                 ]
             );
-            let gold = g.rewards.gold[0];
-            g.step_test(GoldRewardStep { gold_index: 0 });
+            let gold = g.rewards.gold;
+            g.step_test(GoldRewardStep);
             assert_eq!(g.gold, gold);
             assert!(gold >= 25);
             assert!(gold <= 35);
@@ -321,6 +347,15 @@ mod tests {
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(PotionRewardStep { potion_index: 0 });
         assert!(g.potions[0].is_some());
+    }
+
+    #[test]
+    fn test_stolen_gold() {
+        let mut g = GameBuilder::default().build_combat();
+        g.rewards.stolen_gold = 100;
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(StolenGoldRewardStep);
+        assert_eq!(g.gold, 100);
     }
 
     #[test]
