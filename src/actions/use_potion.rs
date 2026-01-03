@@ -13,6 +13,9 @@ pub struct UsePotionAction {
 
 impl Action for UsePotionAction {
     fn run(&self, game: &mut Game) {
+        if !game.in_combat {
+            assert!(self.potion.can_use_outside_combat());
+        }
         let is_sacred = game.has_relic(RelicClass::SacredBark);
         self.potion.behavior()(is_sacred, self.target, game);
         if game.has_relic(RelicClass::ToyOrnithopter) {
