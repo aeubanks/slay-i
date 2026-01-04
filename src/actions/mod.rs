@@ -81,6 +81,7 @@ pub mod set_energy;
 pub mod set_hp_all_monsters;
 pub mod shuffle_card_into_draw;
 pub mod shuffle_discard_into_draw;
+pub mod sling_of_courage;
 pub mod split_monster;
 pub mod spot_weakness;
 pub mod start_of_turn_energy;

@@ -28,6 +28,7 @@ use crate::{
         red_skull::RedSkullAction,
         set_hp_all_monsters::SetHPAllMonstersAction,
         shuffle_card_into_draw::ShuffleCardIntoDrawAction,
+        sling_of_courage::SlingOfCourageAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
         upgrade_random_in_master::UpgradeRandomInMasterAction,
@@ -182,7 +183,7 @@ r!(
     OrangePellets => Shop, // TODO
     Orrery => Shop, // TODO
     // PrismaticShard => Shop, // not supported
-    SlingOfCourage => Shop, // TODO
+    SlingOfCourage => Shop,
     StrangeSpoon => Shop,
     TheAbacus => Shop,
     Toolbox => Shop,
@@ -308,6 +309,7 @@ impl RelicClass {
             Girya => Some(girya),
             OddlySmoothStone => Some(oddly_smooth_stone),
             PreservedInsect => Some(preserved_insect),
+            SlingOfCourage => Some(sling_of_courage),
             DuVuDoll => Some(du_vu_doll),
             Akabeko => Some(akabeko),
             PenNib => Some(pen_nib_start),
@@ -783,6 +785,10 @@ fn mutagenic_strength(_: &mut i32, queue: &mut ActionQueue) {
 
 fn preserved_insect(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(PreservedInsectAction());
+}
+
+fn sling_of_courage(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(SlingOfCourageAction());
 }
 
 fn mark_of_pain(_: &mut i32, queue: &mut ActionQueue) {
@@ -3096,6 +3102,24 @@ mod tests {
             for m in &g.monsters {
                 assert_eq!(m.creature.cur_hp, (m.creature.max_hp as f32 * 0.75) as i32);
             }
+        }
+    }
+
+    #[test]
+    fn test_sling_of_courage() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::SlingOfCourage)
+                .build_with_rooms(&[RoomType::Monster]);
+            g.step_test(AscendStep { x: 0, y: 0 });
+            assert_eq!(g.player.get_status(Status::Strength), None);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::SlingOfCourage)
+                .build_with_rooms(&[RoomType::Elite]);
+            g.step_test(AscendStep { x: 0, y: 0 });
+            assert_eq!(g.player.get_status(Status::Strength), Some(2));
         }
     }
 }
