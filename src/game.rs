@@ -109,6 +109,14 @@ impl GameState for TestCombatStartGameState {
     }
 }
 
+fn unceasing_top_should_trigger(game: &Game) -> bool {
+    game.in_combat != CombatType::None
+        && game.hand.is_empty()
+        && game.has_relic(RelicClass::UnceasingTop)
+        && !game.player.has_status(Status::NoDraw)
+        && (!game.draw_pile.is_empty() || !game.discard_pile.is_empty())
+}
+
 #[derive(Debug)]
 pub struct RunActionsGameState;
 
@@ -117,6 +125,7 @@ impl GameState for RunActionsGameState {
         if !game.action_queue.is_empty()
             || !game.card_queue.is_empty()
             || !game.monster_turn_queue_active.is_empty()
+            || unceasing_top_should_trigger(game)
         {
             game.state.push_state(RunActionsGameState);
         }
@@ -143,6 +152,8 @@ impl GameState for RunActionsGameState {
                 &mut game.action_queue,
                 &mi,
             );
+        } else if unceasing_top_should_trigger(game) {
+            game.action_queue.push_bot(DrawAction(1));
         }
     }
 }
@@ -509,7 +520,7 @@ macro_rules! trigger_card {
     };
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CombatType {
     None,
     Normal,

@@ -165,7 +165,7 @@ r!(
     Torii => Rare,
     TungstenRod => Rare,
     Turnip => Rare,
-    UnceasingTop => Rare, // TODO
+    UnceasingTop => Rare,
     WingBoots => Rare, // TODO
     ChampionBelt => Rare,
     CharonsAshes => Rare,
@@ -3120,6 +3120,49 @@ mod tests {
                 .build_with_rooms(&[RoomType::Elite]);
             g.step_test(AscendStep { x: 0, y: 0 });
             assert_eq!(g.player.get_status(Status::Strength), Some(2));
+        }
+    }
+
+    #[test]
+    fn test_unceasing_top() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::UnceasingTop)
+                .add_card(CardClass::GoodInstincts)
+                .build_combat();
+            g.step_test(PlayCardStep {
+                hand_index: 0,
+                target: None,
+            });
+            assert_eq!(g.hand.len(), 1);
+            assert!(g.draw_pile.is_empty());
+            assert!(g.discard_pile.is_empty());
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::UnceasingTop)
+                .add_card(CardClass::BattleTrance)
+                .build_combat();
+            g.step_test(PlayCardStep {
+                hand_index: 0,
+                target: None,
+            });
+            assert!(g.hand.is_empty());
+            assert!(g.draw_pile.is_empty());
+            assert!(!g.discard_pile.is_empty());
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::UnceasingTop)
+                .add_card(CardClass::Exhume)
+                .build_combat();
+            g.step_test(PlayCardStep {
+                hand_index: 0,
+                target: None,
+            });
+            assert!(g.hand.is_empty());
+            assert!(g.draw_pile.is_empty());
+            assert!(g.discard_pile.is_empty());
         }
     }
 }
