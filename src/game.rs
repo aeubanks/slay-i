@@ -11,6 +11,7 @@ use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
 use crate::actions::gain_energy::GainEnergyAction;
+use crate::actions::gain_gold::GainGoldAction;
 use crate::actions::gain_relic::GainRelicAction;
 use crate::actions::gain_status::GainStatusAction;
 use crate::actions::heal::HealAction;
@@ -222,6 +223,10 @@ impl GameState for RollEventGameState {
             let i = game.rng.random_range(0..game.event_pool.len());
             let e = game.event_pool.remove(i);
             game.state.push_boxed_state(e);
+        }
+        if game.has_relic(RelicClass::SsserpentHead) {
+            game.action_queue.push_bot(GainGoldAction(50));
+            game.state.push_state(RunActionsGameState);
         }
     }
 }

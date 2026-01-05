@@ -228,7 +228,7 @@ r!(
     OddMushroom => Event,
     RedMask => Event,
     SpiritPoop => Event,
-    SsserpentHead => Event, // TODO
+    SsserpentHead => Event,
     WarpedTongs => Event,
 );
 
@@ -3164,5 +3164,18 @@ mod tests {
             assert!(g.draw_pile.is_empty());
             assert!(g.discard_pile.is_empty());
         }
+    }
+
+    #[test]
+    fn test_ssserpent_head() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::SsserpentHead)
+            .build_with_rooms(&[RoomType::Monster, RoomType::Event]);
+        g.step_test(AscendStep { x: 0, y: 0 });
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        assert_eq!(g.gold, 0);
+        g.step_test(AscendStep { x: 0, y: 1 });
+        assert_eq!(g.gold, 50);
     }
 }
