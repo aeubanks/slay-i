@@ -232,11 +232,12 @@ impl GameState for RollCombatRewardsGameState {
                 .monsters
                 .iter()
                 .all(|c| matches!(c.creature.state, CreatureState::Escaped));
+            let has_golden_idol = game.has_relic(RelicClass::GoldenIdol);
             match self.0 {
                 RewardType::Monster => {
                     if !all_escaped {
                         let gold = game.rng.random_range(10..=20);
-                        game.rewards.add_gold(gold);
+                        game.rewards.add_gold(gold, has_golden_idol);
                     }
 
                     let cards = Rewards::gen_card_reward(game);
@@ -244,7 +245,7 @@ impl GameState for RollCombatRewardsGameState {
                 }
                 RewardType::Elite => {
                     let gold = game.rng.random_range(25..=35);
-                    game.rewards.add_gold(gold);
+                    game.rewards.add_gold(gold, has_golden_idol);
 
                     let cards = Rewards::gen_card_reward(game);
                     game.rewards.add_cards(cards);

@@ -216,7 +216,7 @@ r!(
     CultistHeadpiece => Event,
     Enchiridion => Event,
     FaceOfCleric => Event,
-    GoldenIdol => Event, // TODO
+    GoldenIdol => Event,
     GremlinVisage => Event,
     MarkOfTheBloom => Event,
     MutagenicStrength => Event,

@@ -65,7 +65,10 @@ impl Rewards {
 }
 
 impl Rewards {
-    pub fn add_gold(&mut self, amount: i32) {
+    pub fn add_gold(&mut self, mut amount: i32, has_golden_idol: bool) {
+        if has_golden_idol {
+            amount += (amount as f32 * 0.25).round() as i32
+        }
         self.gold += amount;
     }
     pub fn add_stolen_gold(&mut self, amount: i32) {
@@ -454,5 +457,33 @@ mod tests {
                 Box::new(RewardExitStep)
             ]
         );
+    }
+
+    #[test]
+    fn test_golden_idol() {
+        for _ in 0..10 {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::GoldenIdol)
+                .build_with_rooms(&[RoomType::Monster, RoomType::Elite]);
+            g.step_test(AscendStep { x: 0, y: 0 });
+            g.play_card(CardClass::DebugKillAll, None);
+            assert!(g.rewards.gold >= 13);
+            assert!(g.rewards.gold <= 25);
+            g.step_test(RewardExitStep);
+
+            g.step_test(AscendStep { x: 0, y: 1 });
+            g.play_card(CardClass::DebugKillAll, None);
+            assert!(g.rewards.gold >= 31);
+            assert!(g.rewards.gold <= 44);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::GoldenIdol)
+                .build_combat_with_monster(Looter::new());
+            g.gold = 100;
+            g.step_test(EndTurnStep);
+            g.play_card(CardClass::DebugKillAll, None);
+            assert_eq!(g.rewards.stolen_gold, 20);
+        }
     }
 }
