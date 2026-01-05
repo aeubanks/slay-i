@@ -526,4 +526,26 @@ mod tests {
         assert_eq!(g.player.max_hp, max_hp + 2);
         assert!(g.rewards.cards.is_empty());
     }
+
+    #[test]
+    fn test_prayer_wheel() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::PrayerWheel)
+            .build_with_rooms(&[RoomType::Monster, RoomType::Elite]);
+        g.step_test(AscendStep { x: 0, y: 0 });
+        g.play_card(CardClass::DebugKillAll, None);
+        assert_eq!(g.rewards.cards.len(), 2);
+        g.step_test(CardRewardStep {
+            pack_index: 0,
+            card_index: 0,
+        });
+        g.step_test(CardRewardStep {
+            pack_index: 0,
+            card_index: 0,
+        });
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 1 });
+        g.play_card(CardClass::DebugKillAll, None);
+        assert_eq!(g.rewards.cards.len(), 1);
+    }
 }

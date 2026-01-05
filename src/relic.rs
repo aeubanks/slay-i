@@ -160,7 +160,7 @@ r!(
     OldCoin => Rare,
     PeacePipe => Rare,
     Pocketwatch => Rare,
-    PrayerWheel => Rare, // TODO
+    PrayerWheel => Rare,
     Shovel => Rare, // TODO
     StoneCalendar => Rare,
     ThreadAndNeedle => Rare,

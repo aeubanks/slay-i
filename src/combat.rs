@@ -240,8 +240,15 @@ impl GameState for RollCombatRewardsGameState {
                         game.rewards.add_gold(gold, has_golden_idol);
                     }
 
-                    let cards = Rewards::gen_card_reward(game);
-                    game.rewards.add_cards(cards);
+                    let count = if game.has_relic(RelicClass::PrayerWheel) {
+                        2
+                    } else {
+                        1
+                    };
+                    for _ in 0..count {
+                        let cards = Rewards::gen_card_reward(game);
+                        game.rewards.add_cards(cards);
+                    }
                 }
                 RewardType::Elite => {
                     let gold = game.rng.random_range(25..=35);
