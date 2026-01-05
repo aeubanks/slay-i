@@ -35,7 +35,9 @@ use crate::{
     },
     cards::{CardClass, CardType},
     game::CreatureRef,
+    master_deck::DuplicateCardInMasterGameState,
     queue::ActionQueue,
+    state::GameStateManager,
     status::Status,
 };
 
@@ -174,7 +176,7 @@ r!(
     Cauldron => Shop, // TODO
     ChemicalX => Shop,
     ClockworkSouvenir => Shop,
-    DollysMirror => Shop, // TODO
+    DollysMirror => Shop,
     FrozenEye => Shop, // TODO
     HandDrill => Shop,
     LeesWaffle => Shop,
@@ -233,15 +235,16 @@ r!(
 );
 
 type RelicCallback = fn(&mut i32, &mut ActionQueue);
+type RelicEquipCallback = fn(&mut i32, &mut ActionQueue, &mut GameStateManager);
 type RelicCardCallback = fn(&mut i32, &mut ActionQueue, &mut Vec<PlayCardAction>, &PlayCardAction);
 
 impl RelicClass {
-    pub fn on_equip(&self) -> Option<RelicCallback> {
+    pub fn on_equip(&self) -> Option<RelicEquipCallback> {
         use RelicClass::*;
         match self {
-            LizardTail => Some(set_value_one),
-            Omamori => Some(set_value_2),
-            NeowsLament => Some(set_value_3),
+            LizardTail => Some(equip_set_1),
+            Omamori => Some(equip_set_2),
+            NeowsLament => Some(equip_set_3),
             WarPaint => Some(war_paint),
             Whetstone => Some(whetstone),
             SneckoEye => Some(snecko_eye_equip),
@@ -252,6 +255,7 @@ impl RelicClass {
             Pear => Some(pear),
             Strawberry => Some(strawberry),
             Necronomicon => Some(necronomicon_equip),
+            DollysMirror => Some(dollys_mirror),
             _ => None,
         }
     }
@@ -274,8 +278,8 @@ impl RelicClass {
     pub fn at_pre_combat(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
-            HornCleat | CaptainsWheel | ArtOfWar | StoneCalendar => Some(set_value_zero),
-            CentennialPuzzle => Some(set_value_one),
+            HornCleat | CaptainsWheel | ArtOfWar | StoneCalendar => Some(set_value_0),
+            CentennialPuzzle => Some(set_value_1),
             Pocketwatch => Some(set_value_99),
             SneckoEye => Some(snecko_eye_confused),
             Enchiridion => Some(enchiridion),
@@ -351,8 +355,8 @@ impl RelicClass {
     pub fn at_turn_begin_pre_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
-            Kunai | Shruiken | LetterOpener | OrnamentalFan => Some(set_value_zero),
-            Necronomicon => Some(set_value_one),
+            Kunai | Shruiken | LetterOpener | OrnamentalFan => Some(set_value_0),
+            Necronomicon => Some(set_value_1),
             HornCleat => Some(horn_cleat),
             CaptainsWheel => Some(captains_wheel),
             HappyFlower => Some(happy_flower),
@@ -392,20 +396,24 @@ impl RelicClass {
     }
 }
 
-fn set_value_zero(v: &mut i32, _: &mut ActionQueue) {
-    *v = 0;
-}
-
-fn set_value_one(v: &mut i32, _: &mut ActionQueue) {
+fn equip_set_1(v: &mut i32, _: &mut ActionQueue, _: &mut GameStateManager) {
     *v = 1;
 }
 
-fn set_value_2(v: &mut i32, _: &mut ActionQueue) {
+fn equip_set_2(v: &mut i32, _: &mut ActionQueue, _: &mut GameStateManager) {
     *v = 2;
 }
 
-fn set_value_3(v: &mut i32, _: &mut ActionQueue) {
+fn equip_set_3(v: &mut i32, _: &mut ActionQueue, _: &mut GameStateManager) {
     *v = 3;
+}
+
+fn set_value_0(v: &mut i32, _: &mut ActionQueue) {
+    *v = 0;
+}
+
+fn set_value_1(v: &mut i32, _: &mut ActionQueue) {
+    *v = 1;
 }
 
 fn set_value_99(v: &mut i32, _: &mut ActionQueue) {
@@ -478,8 +486,12 @@ fn pen_nib_start(v: &mut i32, queue: &mut ActionQueue) {
     }
 }
 
-fn necronomicon_equip(_: &mut i32, queue: &mut ActionQueue) {
+fn necronomicon_equip(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(AddCardClassToMasterDeckAction(CardClass::Necronomicurse));
+}
+
+fn dollys_mirror(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(DuplicateCardInMasterGameState);
 }
 
 fn necronomicon_unequip(_: &mut i32, queue: &mut ActionQueue) {
@@ -912,15 +924,15 @@ fn sundial(v: &mut i32, queue: &mut ActionQueue) {
     }
 }
 
-fn potion_belt(_: &mut i32, queue: &mut ActionQueue) {
+fn potion_belt(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(IncreasePotionSlotsAction(2));
 }
 
-fn old_coin(_: &mut i32, queue: &mut ActionQueue) {
+fn old_coin(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(GainGoldAction(300));
 }
 
-fn lees_waffle(_: &mut i32, queue: &mut ActionQueue) {
+fn lees_waffle(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(IncreaseMaxHPAction(7));
     queue.push_bot(HealAction {
         target: CreatureRef::player(),
@@ -928,15 +940,15 @@ fn lees_waffle(_: &mut i32, queue: &mut ActionQueue) {
     });
 }
 
-fn mango(_: &mut i32, queue: &mut ActionQueue) {
+fn mango(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(IncreaseMaxHPAction(14));
 }
 
-fn pear(_: &mut i32, queue: &mut ActionQueue) {
+fn pear(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(IncreaseMaxHPAction(10));
 }
 
-fn strawberry(_: &mut i32, queue: &mut ActionQueue) {
+fn strawberry(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(IncreaseMaxHPAction(7));
 }
 
@@ -952,7 +964,7 @@ fn snecko_eye_confused(_: &mut i32, queue: &mut ActionQueue) {
     });
 }
 
-fn snecko_eye_equip(_: &mut i32, queue: &mut ActionQueue) {
+fn snecko_eye_equip(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(IncreaseDrawPerTurnAction(2));
 }
 
@@ -960,11 +972,11 @@ fn snecko_eye_unequip(_: &mut i32, queue: &mut ActionQueue) {
     queue.push_bot(IncreaseDrawPerTurnAction(-2));
 }
 
-fn war_paint(_: &mut i32, queue: &mut ActionQueue) {
+fn war_paint(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(UpgradeRandomInMasterAction(CardType::Skill));
 }
 
-fn whetstone(_: &mut i32, queue: &mut ActionQueue) {
+fn whetstone(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
     queue.push_bot(UpgradeRandomInMasterAction(CardType::Attack));
 }
 
@@ -994,6 +1006,15 @@ macro_rules! trigger {
         }
     };
 }
+macro_rules! trigger_equip {
+    ($name:ident) => {
+        pub fn $name(&mut self, queue: &mut ActionQueue, state: &mut GameStateManager) {
+            if let Some(f) = self.class.$name() {
+                f(&mut self.value, queue, state)
+            }
+        }
+    };
+}
 macro_rules! trigger_card {
     ($name:ident) => {
         pub fn $name(
@@ -1010,7 +1031,7 @@ macro_rules! trigger_card {
 }
 
 impl Relic {
-    trigger!(on_equip);
+    trigger_equip!(on_equip);
     trigger!(on_unequip);
     trigger!(on_shuffle);
     trigger!(at_pre_combat);
@@ -1080,6 +1101,7 @@ mod tests {
             block::BlockAction,
             choose_card_to_shuffle_into_draw::ChooseCardToShuffleIntoDrawStep,
             choose_gamble::{GambleEndStep, GambleStep},
+            gain_relic::GainRelicAction,
         },
         assert_matches,
         campfire::CampfireRestStep,
@@ -1087,6 +1109,7 @@ mod tests {
         combat::{EndTurnStep, PlayCardStep},
         game::{AscendStep, GameBuilder, GameStatus},
         map::RoomType,
+        master_deck::DuplicateCardInMasterStep,
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
         rewards::RewardExitStep,
@@ -3177,5 +3200,24 @@ mod tests {
         assert_eq!(g.gold, 0);
         g.step_test(AscendStep { x: 0, y: 1 });
         assert_eq!(g.gold, 50);
+    }
+
+    #[test]
+    fn test_dollys_mirror() {
+        {
+            let mut g = GameBuilder::default()
+                .add_card(CardClass::Strike)
+                .add_card_upgraded(CardClass::Defend)
+                .build();
+            g.run_action(GainRelicAction(RelicClass::DollysMirror));
+            g.step_test(DuplicateCardInMasterStep { master_index: 1 });
+            assert_eq!(g.master_deck.len(), 3);
+        }
+        {
+            let mut g = GameBuilder::default().add_card(CardClass::Rampage).build();
+            g.run_action(GainRelicAction(RelicClass::DollysMirror));
+            g.step_test(DuplicateCardInMasterStep { master_index: 0 });
+            assert_ne!(g.master_deck[0].borrow().id, g.master_deck[1].borrow().id);
+        }
     }
 }

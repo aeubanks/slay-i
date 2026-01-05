@@ -9,7 +9,7 @@ pub struct GainRelicAction(pub RelicClass);
 impl Action for GainRelicAction {
     fn run(&self, game: &mut Game) {
         let mut r = new_relic(self.0);
-        r.on_equip(&mut game.action_queue);
+        r.on_equip(&mut game.action_queue, &mut game.state);
         game.relics.push(r);
     }
 }
