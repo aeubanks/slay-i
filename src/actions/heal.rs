@@ -9,6 +9,15 @@ pub struct HealAction {
     pub amount: i32,
 }
 
+impl HealAction {
+    pub fn player(amount: i32) -> Self {
+        Self {
+            target: CreatureRef::player(),
+            amount,
+        }
+    }
+}
+
 impl Action for HealAction {
     fn run(&self, game: &mut Game) {
         if !game.get_creature(self.target).is_actionable() {

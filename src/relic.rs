@@ -118,7 +118,7 @@ r!(
     BottledLightning => Uncommon, // TODO
     BottledTornado => Uncommon, // TODO
     DarkstonePeriapt => Uncommon,
-    EternalFeather => Uncommon, // TODO
+    EternalFeather => Uncommon,
     FrozenEgg => Uncommon, // TODO
     GremlinHorn => Uncommon,
     HornCleat => Uncommon,
@@ -3218,6 +3218,19 @@ mod tests {
             g.run_action(GainRelicAction(RelicClass::DollysMirror));
             g.step_test(DuplicateCardInMasterStep { master_index: 0 });
             assert_ne!(g.master_deck[0].borrow().id, g.master_deck[1].borrow().id);
+        }
+    }
+
+    #[test]
+    fn test_eternal_feather() {
+        for (num_cards, heal) in [(4, 0), (5, 3), (24, 12)] {
+            let mut g = GameBuilder::default()
+                .add_cards(CardClass::Strike, num_cards)
+                .add_relic(RelicClass::EternalFeather)
+                .build_with_rooms(&[RoomType::Campfire]);
+            g.player.cur_hp = 20;
+            g.step_test(AscendStep { x: 0, y: 0 });
+            assert_eq!(g.player.cur_hp, 20 + heal);
         }
     }
 }

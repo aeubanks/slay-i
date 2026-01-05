@@ -12,11 +12,6 @@ use crate::{
 pub struct CampfireGameState;
 
 impl GameState for CampfireGameState {
-    fn run(&self, game: &mut Game) {
-        if game.has_relic(RelicClass::AncientTeaSet) {
-            game.set_relic_value(RelicClass::AncientTeaSet, 1);
-        }
-    }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut steps = Steps::default();
         if !game.has_relic(RelicClass::CoffeeDripper) {

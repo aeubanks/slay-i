@@ -175,7 +175,7 @@ impl Step for AscendStep {
             RoomType::Monster => game.state.push_state(RollCombatGameState),
             RoomType::Elite => game.state.push_state(RollEliteCombatGameState),
             RoomType::Event => game.state.push_state(RollEventGameState),
-            RoomType::Campfire => game.state.push_state(CampfireGameState),
+            RoomType::Campfire => game.state.push_state(RollCampfireGameState),
             RoomType::Shop => game.state.push_state(RollShopGameState),
             RoomType::Treasure => game.state.push_state(RollTreasureGameState),
         };
@@ -226,6 +226,23 @@ impl GameState for RollEventGameState {
         }
         if game.has_relic(RelicClass::SsserpentHead) {
             game.action_queue.push_bot(GainGoldAction(50));
+            game.state.push_state(RunActionsGameState);
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct RollCampfireGameState;
+
+impl GameState for RollCampfireGameState {
+    fn run(&self, game: &mut Game) {
+        game.state.push_state(CampfireGameState);
+        if game.has_relic(RelicClass::AncientTeaSet) {
+            game.set_relic_value(RelicClass::AncientTeaSet, 1);
+        }
+        if game.has_relic(RelicClass::EternalFeather) {
+            game.action_queue
+                .push_bot(HealAction::player((game.master_deck.len() / 5 * 3) as i32));
             game.state.push_state(RunActionsGameState);
         }
     }
