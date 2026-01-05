@@ -34,10 +34,11 @@ use crate::{
         upgrade_random_in_master::UpgradeRandomInMasterAction,
     },
     cards::{CardClass, CardType},
-    game::CreatureRef,
+    game::{CreatureRef, Game},
     master_deck::DuplicateCardInMasterGameState,
     queue::ActionQueue,
-    state::GameStateManager,
+    rewards::{Rewards, RewardsGameState},
+    state::{GameState, GameStateManager},
     status::Status,
 };
 
@@ -183,7 +184,7 @@ r!(
     MedicalKit => Shop,
     MembershipCard => Shop,
     OrangePellets => Shop, // TODO
-    Orrery => Shop, // TODO
+    Orrery => Shop,
     // PrismaticShard => Shop, // not supported
     SlingOfCourage => Shop,
     StrangeSpoon => Shop,
@@ -256,6 +257,7 @@ impl RelicClass {
             Strawberry => Some(strawberry),
             Necronomicon => Some(necronomicon_equip),
             DollysMirror => Some(dollys_mirror),
+            Orrery => Some(orrery),
             _ => None,
         }
     }
@@ -492,6 +494,23 @@ fn necronomicon_equip(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateMan
 
 fn dollys_mirror(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
     state.push_state(DuplicateCardInMasterGameState);
+}
+
+#[derive(Debug)]
+pub struct OrreryGameState;
+
+impl GameState for OrreryGameState {
+    fn run(&self, game: &mut Game) {
+        for _ in 0..5 {
+            let cards = Rewards::gen_card_reward(game);
+            game.rewards.add_cards(cards);
+        }
+        game.state.push_state(RewardsGameState);
+    }
+}
+
+fn orrery(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(OrreryGameState);
 }
 
 fn necronomicon_unequip(_: &mut i32, queue: &mut ActionQueue) {

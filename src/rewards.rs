@@ -548,4 +548,17 @@ mod tests {
         g.play_card(CardClass::DebugKillAll, None);
         assert_eq!(g.rewards.cards.len(), 1);
     }
+
+    #[test]
+    fn test_orrery() {
+        let mut g = GameBuilder::default().build_shop();
+        g.run_action(GainRelicAction(RelicClass::Orrery));
+        assert_eq!(g.rewards.cards.len(), 5);
+        for _ in 0..5 {
+            g.step_test(CardRewardStep {
+                pack_index: 0,
+                card_index: 1,
+            });
+        }
+    }
 }
