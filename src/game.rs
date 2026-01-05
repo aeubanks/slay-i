@@ -179,6 +179,10 @@ impl Step for AscendStep {
             RoomType::Shop => game.state.push_state(RollShopGameState),
             RoomType::Treasure => game.state.push_state(RollTreasureGameState),
         };
+        if game.get_relic_value(RelicClass::MawBank) == Some(1) {
+            game.action_queue.push_bot(GainGoldAction(12));
+            game.state.push_state(RunActionsGameState);
+        }
     }
     fn description(&self, _: &Game) -> String {
         format!("ascend to ({}, {})", self.x, self.y)

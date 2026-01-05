@@ -93,7 +93,7 @@ r!(
     HappyFlower => Common,
     JuzuBracelet => Common, // TODO
     Lantern => Common,
-    MawBank => Common, // TODO
+    MawBank => Common,
     MealTicket => Common,
     Nunchaku => Common,
     OddlySmoothStone => Common,
@@ -242,7 +242,7 @@ impl RelicClass {
     pub fn on_equip(&self) -> Option<RelicEquipCallback> {
         use RelicClass::*;
         match self {
-            LizardTail => Some(equip_set_1),
+            LizardTail | MawBank => Some(equip_set_1),
             Omamori => Some(equip_set_2),
             NeowsLament => Some(equip_set_3),
             WarPaint => Some(war_paint),

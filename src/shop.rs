@@ -19,6 +19,12 @@ use crate::{
     step::Step,
 };
 
+fn break_maw_bank(game: &mut Game) {
+    if game.has_relic(RelicClass::MawBank) {
+        game.set_relic_value(RelicClass::MawBank, 0);
+    }
+}
+
 #[derive(Default)]
 pub struct Shop {
     pub cards: Vec<(CardClass, i32)>,
@@ -252,6 +258,8 @@ impl Step for ShopBuyCardStep {
     }
 
     fn run(&self, game: &mut Game) {
+        break_maw_bank(game);
+
         let (class, price) = game.shop.get_card(self.shop_index, game);
         if game.has_relic(RelicClass::TheCourier) {
             let new_card = Shop::restock_card(class, game);
@@ -282,6 +290,8 @@ impl Step for ShopBuyPotionStep {
     }
 
     fn run(&self, game: &mut Game) {
+        break_maw_bank(game);
+
         let (potion, price) = game.shop.get_potion(self.shop_index, game);
         if game.has_relic(RelicClass::TheCourier) {
             let new_potion = Shop::random_potion(game);
@@ -311,6 +321,8 @@ impl Step for ShopBuyRelicStep {
     }
 
     fn run(&self, game: &mut Game) {
+        break_maw_bank(game);
+
         let (relic, price) = game.shop.get_relic(self.shop_index, game);
         if game.has_relic(RelicClass::TheCourier) {
             let new_relic = Shop::random_non_shop_relic(game);
@@ -338,6 +350,8 @@ impl Step for ShopRemoveCardStep {
     }
 
     fn run(&self, game: &mut Game) {
+        break_maw_bank(game);
+
         let price = Shop::remove_cost(game);
         game.gold -= price;
         game.shop_remove_count += 1;
@@ -374,6 +388,7 @@ mod tests {
         master_deck::ChooseRemoveFromMasterStep,
         potion::{Potion, PotionRarity},
         relic::{RelicClass, RelicRarity},
+        rewards::RewardExitStep,
         shop::{
             ShopBuyCardStep, ShopBuyPotionStep, ShopBuyRelicStep, ShopExitStep, ShopRemoveCardStep,
         },
@@ -710,5 +725,34 @@ mod tests {
             g.valid_steps(),
             vec![Box::new(ShopExitStep) as Box<dyn Step>,]
         );
+    }
+
+    #[test]
+    fn test_maw_bank() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::MawBank)
+            .build_with_rooms(&[
+                RoomType::Monster,
+                RoomType::Shop,
+                RoomType::Shop,
+                RoomType::Monster,
+            ]);
+        g.gold = 500;
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.gold, 512);
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 1 });
+        assert_eq!(g.gold, 524);
+        g.step_test(ShopExitStep);
+        g.step_test(AscendStep { x: 0, y: 2 });
+        assert_eq!(g.gold, 536);
+        assert_eq!(g.get_relic_value(RelicClass::MawBank), Some(1));
+        g.step_test(ShopBuyPotionStep { shop_index: 0 });
+        assert_eq!(g.get_relic_value(RelicClass::MawBank), Some(0));
+        g.gold = 500;
+        g.step_test(ShopExitStep);
+        g.step_test(AscendStep { x: 0, y: 3 });
+        assert_eq!(g.gold, 500);
     }
 }
