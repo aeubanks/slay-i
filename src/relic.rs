@@ -173,7 +173,7 @@ r!(
     WingBoots => Rare, // TODO
     ChampionBelt => Rare,
     CharonsAshes => Rare,
-    MagicFlower => Rare, // TODO
+    MagicFlower => Rare,
 
     Cauldron => Shop, // TODO
     ChemicalX => Shop,
@@ -3325,5 +3325,21 @@ mod tests {
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         assert_eq!(g.player.cur_hp, 35);
+    }
+
+    #[test]
+    fn test_magic_flower() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::MagicFlower)
+            .build_with_rooms(&[RoomType::Monster]);
+        g.player.cur_hp = 10;
+        g.player.max_hp = 100;
+        g.throw_potion(Potion::Blood, None);
+        assert_eq!(g.player.cur_hp, 30);
+        g.step_test(AscendStep { x: 0, y: 0 });
+        g.throw_potion(Potion::Blood, None);
+        assert_eq!(g.player.cur_hp, 60);
+        g.play_card_upgraded(CardClass::Bite, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.cur_hp, 65);
     }
 }

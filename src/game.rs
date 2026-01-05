@@ -1336,13 +1336,15 @@ impl Game {
         format!("{}, intent: {:?}", self.get_creature(c).str(), i)
     }
 
-    pub fn heal(&mut self, cref: CreatureRef, amount: i32) {
-        let c = self.get_creature_mut(cref);
-        let was_bloodied = c.cur_hp <= c.max_hp / 2;
+    pub fn heal(&mut self, cref: CreatureRef, mut amount: i32) {
         if amount == 0 {
             return;
         }
-        // check player healing relics
+        if self.in_combat != CombatType::None && self.has_relic(RelicClass::MagicFlower) {
+            amount = (amount as f32 * 1.5).round() as i32;
+        }
+        let c = self.get_creature_mut(cref);
+        let was_bloodied = c.cur_hp <= c.max_hp / 2;
         c.heal(amount);
         // trigger player on heal relics
         let is_bloodied = c.cur_hp <= c.max_hp / 2;
