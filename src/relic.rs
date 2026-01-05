@@ -23,6 +23,7 @@ use crate::{
         increase_potion_slots::IncreasePotionSlotsAction,
         meat_on_the_bone::MeatOnTheBoneAction,
         orichalcum::OrichalcumAction,
+        pantograph::PantographAction,
         play_card::PlayCardAction,
         preserved_insect::PreservedInsectAction,
         red_skull::RedSkullAction,
@@ -132,7 +133,7 @@ r!(
     MoltenEgg => Uncommon,
     MummifiedHand => Uncommon,
     OrnamentalFan => Uncommon,
-    Pantograph => Uncommon, // TODO
+    Pantograph => Uncommon,
     Pear => Uncommon,
     QuestionCard => Uncommon,
     Shruiken => Uncommon,
@@ -323,6 +324,7 @@ impl RelicClass {
             ThreadAndNeedle => Some(thread_and_needle),
             RedSkull => Some(red_skull),
             Toolbox => Some(toolbox),
+            Pantograph => Some(pantograph),
             _ => None,
         }
     }
@@ -757,6 +759,10 @@ fn toolbox(_: &mut i32, queue: &mut ActionQueue) {
         amount: 1,
         is_free: false,
     });
+}
+
+fn pantograph(_: &mut i32, queue: &mut ActionQueue) {
+    queue.push_bot(PantographAction());
 }
 
 fn vajra(_: &mut i32, queue: &mut ActionQueue) {
@@ -3305,5 +3311,19 @@ mod tests {
         g.step_test(RewardExitStep);
         g.step_test(AscendStep { x: 0, y: 2 });
         assert_eq!(g.energy, 4);
+    }
+
+    #[test]
+    fn test_pantograph() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Pantograph)
+            .build_with_rooms(&[RoomType::Elite, RoomType::Boss]);
+        g.player.cur_hp = 10;
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.player.cur_hp, 10);
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 1 });
+        assert_eq!(g.player.cur_hp, 35);
     }
 }

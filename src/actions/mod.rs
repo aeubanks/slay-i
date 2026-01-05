@@ -65,6 +65,7 @@ pub mod mayhem;
 pub mod meat_on_the_bone;
 pub mod memories;
 pub mod orichalcum;
+pub mod pantograph;
 pub mod place_card_in_hand;
 pub mod place_card_on_top_of_draw;
 pub mod play_card;
