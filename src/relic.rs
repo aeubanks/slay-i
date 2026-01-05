@@ -119,7 +119,7 @@ r!(
     BottledTornado => Uncommon, // TODO
     DarkstonePeriapt => Uncommon,
     EternalFeather => Uncommon,
-    FrozenEgg => Uncommon, // TODO
+    FrozenEgg => Uncommon,
     GremlinHorn => Uncommon,
     HornCleat => Uncommon,
     InkBottle => Uncommon,
@@ -128,7 +128,7 @@ r!(
     Matryoshka => Uncommon, // TODO
     MeatOnTheBone => Uncommon,
     MercuryHourglass => Uncommon,
-    MoltenEgg => Uncommon, // TODO
+    MoltenEgg => Uncommon,
     MummifiedHand => Uncommon,
     OrnamentalFan => Uncommon,
     Pantograph => Uncommon, // TODO
@@ -139,7 +139,7 @@ r!(
     StrikeDummy => Uncommon,
     Sundial => Uncommon,
     TheCourier => Uncommon,
-    ToxicEgg => Uncommon, // TODO
+    ToxicEgg => Uncommon,
     WhiteBeastStatue => Uncommon,
     PaperPhrog => Uncommon,
     SelfFormingClay => Uncommon,
@@ -1098,6 +1098,7 @@ mod tests {
     use crate::{
         actions::{
             add_card_class_to_master_deck::AddCardClassToMasterDeckAction,
+            add_card_to_master_deck::AddCardToMasterDeckAction,
             block::BlockAction,
             choose_card_to_shuffle_into_draw::ChooseCardToShuffleIntoDrawStep,
             choose_gamble::{GambleEndStep, GambleStep},
@@ -3232,5 +3233,41 @@ mod tests {
             g.step_test(AscendStep { x: 0, y: 0 });
             assert_eq!(g.player.cur_hp, 20 + heal);
         }
+    }
+
+    #[test]
+    fn test_molten_egg() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::MoltenEgg)
+            .build();
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::Anger));
+        assert_eq!(g.master_deck[0].borrow().upgrade_count, 1);
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::Defend));
+        assert_eq!(g.master_deck[1].borrow().upgrade_count, 0);
+        let c = g.new_card_upgraded(CardClass::SearingBlow);
+        g.run_action(AddCardToMasterDeckAction(c));
+        assert_eq!(g.master_deck[2].borrow().upgrade_count, 1);
+    }
+
+    #[test]
+    fn test_toxic_egg() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::ToxicEgg)
+            .build();
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::Defend));
+        assert_eq!(g.master_deck[0].borrow().upgrade_count, 1);
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::DemonForm));
+        assert_eq!(g.master_deck[1].borrow().upgrade_count, 0);
+    }
+
+    #[test]
+    fn test_frozen_egg() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::FrozenEgg)
+            .build();
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::Defend));
+        assert_eq!(g.master_deck[0].borrow().upgrade_count, 0);
+        g.run_action(AddCardClassToMasterDeckAction(CardClass::DemonForm));
+        assert_eq!(g.master_deck[1].borrow().upgrade_count, 1);
     }
 }
