@@ -16,6 +16,7 @@ pub enum RoomType {
     Campfire,
     Shop,
     Treasure,
+    Boss,
 }
 
 impl RoomType {
@@ -27,6 +28,7 @@ impl RoomType {
             RoomType::Campfire => '*',
             RoomType::Shop => '$',
             RoomType::Treasure => 'X',
+            RoomType::Boss => 'B',
         }
     }
 }

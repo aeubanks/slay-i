@@ -23,8 +23,8 @@ use crate::blessings::ChooseBlessingGameState;
 use crate::campfire::CampfireGameState;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardRarity, CardType};
-use crate::combat::RollCombatGameState;
 use crate::combat::RollEliteCombatGameState;
+use crate::combat::{RollBossCombatGameState, RollCombatGameState};
 use crate::creature::{Creature, CreatureState};
 use crate::draw_pile::DrawPile;
 use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
@@ -178,6 +178,7 @@ impl Step for AscendStep {
             RoomType::Campfire => game.state.push_state(RollCampfireGameState),
             RoomType::Shop => game.state.push_state(RollShopGameState),
             RoomType::Treasure => game.state.push_state(RollTreasureGameState),
+            RoomType::Boss => game.state.push_state(RollBossCombatGameState),
         };
         if game.get_relic_value(RelicClass::MawBank) == Some(1) {
             game.action_queue.push_bot(GainGoldAction(12));
@@ -587,6 +588,8 @@ pub struct Game {
     pub potion_chance: i32,
     pub rare_card_chance: i32,
 
+    pub boss_rewards: Vec<RelicClass>,
+
     pub shop: Shop,
     pub shop_remove_count: i32,
 
@@ -651,6 +654,7 @@ impl Game {
             smoke_bombed: false,
             energy: 0,
             rewards: Default::default(),
+            boss_rewards: Default::default(),
             draw_per_turn: 5,
             draw_pile: Default::default(),
             hand: Default::default(),

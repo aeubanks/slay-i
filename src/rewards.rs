@@ -8,7 +8,7 @@ use crate::{
     cards::{CardRarity, random_common_red, random_rare_red, random_uncommon_red},
     game::{Game, RunActionsGameState},
     potion::Potion,
-    relic::RelicClass,
+    relic::{RelicClass, RelicRarity},
     state::{GameState, Steps},
     step::Step,
 };
@@ -17,6 +17,7 @@ use crate::{
 pub enum RewardType {
     Monster,
     Elite,
+    Boss,
 }
 
 #[derive(Default)]
@@ -265,6 +266,63 @@ impl Step for RewardExitStep {
 
     fn description(&self, _: &Game) -> String {
         "exit".to_owned()
+    }
+}
+
+#[derive(Debug)]
+pub struct BossRewardGameState;
+
+impl GameState for BossRewardGameState {
+    fn run(&self, game: &mut Game) {
+        for _ in 0..3 {
+            let r = game.next_relic(RelicRarity::Boss);
+            game.boss_rewards.push(r);
+        }
+    }
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut steps = Steps::default();
+        for i in 0..game.boss_rewards.len() {
+            steps.push(BossRewardChooseStep {
+                boss_reward_index: i,
+            });
+        }
+        steps.push(BossRewardSkipStep);
+        Some(steps)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct BossRewardChooseStep {
+    boss_reward_index: usize,
+}
+
+impl Step for BossRewardChooseStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+    fn run(&self, game: &mut Game) {
+        let r = game.boss_rewards[self.boss_reward_index];
+        game.boss_rewards.clear();
+        game.action_queue.push_bot(GainRelicAction(r));
+        game.state.push_state(RunActionsGameState);
+    }
+    fn description(&self, game: &Game) -> String {
+        format!("choose {:?}", game.boss_rewards[self.boss_reward_index])
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct BossRewardSkipStep;
+
+impl Step for BossRewardSkipStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+    fn run(&self, game: &mut Game) {
+        game.boss_rewards.clear();
+    }
+    fn description(&self, _: &Game) -> String {
+        "skip".to_owned()
     }
 }
 
@@ -560,5 +618,33 @@ mod tests {
                 card_index: 1,
             });
         }
+    }
+
+    #[test]
+    fn test_boss_rewards() {
+        let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Boss]);
+        g.step_test(AscendStep { x: 0, y: 0 });
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(BossRewardChooseStep {
+                    boss_reward_index: 0
+                }) as Box<dyn Step>,
+                Box::new(BossRewardChooseStep {
+                    boss_reward_index: 1
+                }),
+                Box::new(BossRewardChooseStep {
+                    boss_reward_index: 2
+                }),
+                Box::new(BossRewardSkipStep),
+            ]
+        );
+        let r = g.boss_rewards[0];
+        g.step_test(BossRewardChooseStep {
+            boss_reward_index: 0,
+        });
+        assert!(g.has_relic(r));
     }
 }

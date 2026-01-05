@@ -22,7 +22,7 @@ use crate::{
     },
     potion::random_potion_weighted,
     relic::RelicClass,
-    rewards::{RewardType, Rewards, RewardsGameState},
+    rewards::{BossRewardGameState, RewardType, Rewards, RewardsGameState},
     state::{GameState, Steps},
     step::Step,
 };
@@ -77,23 +77,38 @@ pub struct RollEliteCombatGameState;
 
 impl GameState for RollEliteCombatGameState {
     fn run(&self, game: &mut Game) {
-        game.monsters = match game.rng.random_range(0..7) {
+        game.monsters = match game.rng.random_range(0..4) {
             0 => vec![Monster::new(GremlinNob::new(), &mut game.rng)],
             1 => vec![Monster::new(Lagavulin::new(), &mut game.rng)],
             2 => vec![Monster::new(Lagavulin::new_event(), &mut game.rng)],
-            3 => vec![
+            _ => vec![
                 Monster::new(Sentry::new_debuff_first(), &mut game.rng),
                 Monster::new(Sentry::new_attack_first(), &mut game.rng),
                 Monster::new(Sentry::new_debuff_first(), &mut game.rng),
             ],
-            4 => vec![Monster::new(Guardian::new(), &mut game.rng)],
-            5 => vec![Monster::new(Hexaghost::new(), &mut game.rng)],
-            _ => vec![Monster::new(SlimeBoss::new(), &mut game.rng)],
         };
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Elite));
         game.state
             .push_state(CombatBeginGameState(CombatType::Elite));
+    }
+}
+
+#[derive(Debug)]
+pub struct RollBossCombatGameState;
+
+impl GameState for RollBossCombatGameState {
+    fn run(&self, game: &mut Game) {
+        game.monsters = match game.rng.random_range(0..3) {
+            0 => vec![Monster::new(Guardian::new(), &mut game.rng)],
+            1 => vec![Monster::new(Hexaghost::new(), &mut game.rng)],
+            _ => vec![Monster::new(SlimeBoss::new(), &mut game.rng)],
+        };
+        game.state.push_state(BossRewardGameState);
+        game.state
+            .push_state(RollCombatRewardsGameState(RewardType::Boss));
+        game.state
+            .push_state(CombatBeginGameState(CombatType::Boss));
     }
 }
 
@@ -259,6 +274,13 @@ impl GameState for RollCombatRewardsGameState {
 
                     let r = game.next_relic_weighted();
                     game.rewards.add_relic(r);
+                }
+                RewardType::Boss => {
+                    let gold = game.rng.random_range(71..=79);
+                    game.rewards.add_gold(gold, has_golden_idol);
+
+                    let cards = Rewards::gen_card_reward(game);
+                    game.rewards.add_cards(cards);
                 }
             }
 
