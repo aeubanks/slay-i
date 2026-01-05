@@ -133,7 +133,7 @@ r!(
     OrnamentalFan => Uncommon,
     Pantograph => Uncommon, // TODO
     Pear => Uncommon,
-    QuestionCard => Uncommon, // TODO
+    QuestionCard => Uncommon,
     Shruiken => Uncommon,
     SingingBowl => Uncommon, // TODO
     StrikeDummy => Uncommon,
@@ -193,7 +193,7 @@ r!(
 
     Astrolabe => Boss, // TODO
     BlackStar => Boss, // TODO
-    BustedCrown => Boss, // TODO
+    BustedCrown => Boss,
     CallingBell => Boss, // TODO
     CoffeeDripper => Boss,
     CursedKey => Boss, // TODO
