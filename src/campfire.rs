@@ -36,6 +36,9 @@ impl GameState for CampfireGameState {
         {
             steps.push(CampfireTokeStep);
         }
+        if game.has_relic(RelicClass::Shovel) {
+            steps.push(CampfireDigStep);
+        }
         if steps.steps.is_empty() {
             steps.push(ContinueStep);
         }
@@ -125,17 +128,39 @@ impl Step for CampfireTokeStep {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct CampfireDigStep;
+
+impl Step for CampfireDigStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+
+    fn run(&self, game: &mut Game) {
+        let r = game.next_relic_weighted();
+        game.rewards.add_relic(r);
+        game.state.push_state(RewardsGameState);
+    }
+
+    fn description(&self, _: &Game) -> String {
+        "dig".to_owned()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
-        campfire::{CampfireLiftStep, CampfireRestStep, CampfireTokeStep, CampfireUpgradeStep},
+        campfire::{
+            CampfireDigStep, CampfireLiftStep, CampfireRestStep, CampfireTokeStep,
+            CampfireUpgradeStep,
+        },
         cards::CardClass,
         game::{AscendStep, DiscardPotionStep, GameBuilder, UsePotionStep},
         map::RoomType,
         master_deck::{ChooseRemoveFromMasterStep, ChooseUpgradeMasterStep},
         potion::Potion,
         relic::RelicClass,
-        rewards::RewardExitStep,
+        rewards::{RelicRewardStep, RewardExitStep},
         state::ContinueStep,
         status::Status,
         step::Step,
@@ -305,5 +330,14 @@ mod tests {
                 Box::new(DiscardPotionStep { potion_index: 0 }),
             ]
         );
+    }
+
+    #[test]
+    fn test_shovel() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::Shovel)
+            .build_campfire();
+        g.step_test(CampfireDigStep);
+        g.step_test(RelicRewardStep { relic_index: 0 });
     }
 }

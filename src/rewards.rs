@@ -234,8 +234,8 @@ impl Step for SingingBowlStep {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct RelicRewardStep {
-    relic_index: usize,
+pub struct RelicRewardStep {
+    pub relic_index: usize,
 }
 
 impl Step for RelicRewardStep {

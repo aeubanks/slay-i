@@ -161,7 +161,7 @@ r!(
     PeacePipe => Rare,
     Pocketwatch => Rare,
     PrayerWheel => Rare,
-    Shovel => Rare, // TODO
+    Shovel => Rare,
     StoneCalendar => Rare,
     ThreadAndNeedle => Rare,
     Torii => Rare,
