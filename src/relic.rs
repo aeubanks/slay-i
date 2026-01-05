@@ -135,7 +135,7 @@ r!(
     Pear => Uncommon,
     QuestionCard => Uncommon,
     Shruiken => Uncommon,
-    SingingBowl => Uncommon, // TODO
+    SingingBowl => Uncommon,
     StrikeDummy => Uncommon,
     Sundial => Uncommon,
     TheCourier => Uncommon,

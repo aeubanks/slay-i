@@ -2,6 +2,7 @@ use crate::{
     actions::{
         add_card_to_master_deck::AddCardToMasterDeckAction, gain_gold::GainGoldAction,
         gain_potion::GainPotionAction, gain_relic::GainRelicAction,
+        increase_max_hp::IncreaseMaxHPAction,
     },
     card::CardRef,
     cards::{CardRarity, random_common_red, random_rare_red, random_uncommon_red},
@@ -111,6 +112,9 @@ impl GameState for RewardsGameState {
                     card_index: ci,
                 });
             }
+            if game.has_relic(RelicClass::SingingBowl) {
+                steps.push(SingingBowlStep { pack_index: i });
+            }
         }
         for i in 0..game.rewards.relics.len() {
             steps.push(RelicRewardStep { relic_index: i });
@@ -202,6 +206,30 @@ impl Step for CardRewardStep {
             game.rewards.cards[self.pack_index][self.card_index].borrow(),
             all
         )
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct SingingBowlStep {
+    pack_index: usize,
+}
+
+impl Step for SingingBowlStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+    fn run(&self, game: &mut Game) {
+        game.rewards.cards.remove(self.pack_index);
+        game.action_queue.push_bot(IncreaseMaxHPAction(2));
+        game.state.push_state(RunActionsGameState);
+    }
+    fn description(&self, game: &Game) -> String {
+        let all = game.rewards.cards[self.pack_index]
+            .iter()
+            .map(|c| format!("{:?}", c.borrow()))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("skip for +2 max hp out of {}", all)
     }
 }
 
@@ -485,5 +513,17 @@ mod tests {
             g.play_card(CardClass::DebugKillAll, None);
             assert_eq!(g.rewards.stolen_gold, 20);
         }
+    }
+
+    #[test]
+    fn test_singing_bowl() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::SingingBowl)
+            .build_combat();
+        let max_hp = g.player.max_hp;
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(SingingBowlStep { pack_index: 0 });
+        assert_eq!(g.player.max_hp, max_hp + 2);
+        assert!(g.rewards.cards.is_empty());
     }
 }
