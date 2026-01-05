@@ -206,7 +206,7 @@ r!(
     // RunicDome => Boss, // not supported
     RunicPyramid => Boss,
     SacredBark => Boss,
-    SlaversCollar => Boss, // TODO
+    SlaversCollar => Boss,
     SneckoEye => Boss,
     Sozu => Boss,
     TinyHouse => Boss, // TODO
@@ -3288,5 +3288,22 @@ mod tests {
         assert_eq!(g.master_deck[0].borrow().upgrade_count, 0);
         g.run_action(AddCardClassToMasterDeckAction(CardClass::DemonForm));
         assert_eq!(g.master_deck[1].borrow().upgrade_count, 1);
+    }
+
+    #[test]
+    fn test_slavers_collar() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::SlaversCollar)
+            .build_with_rooms(&[RoomType::Monster, RoomType::Elite, RoomType::Boss]);
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.energy, 3);
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 1 });
+        assert_eq!(g.energy, 4);
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep { x: 0, y: 2 });
+        assert_eq!(g.energy, 4);
     }
 }
