@@ -865,7 +865,9 @@ mod tests {
         }
         {
             let mut found_fruit = false;
-            let mut g = GameBuilder::default().build_campfire();
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::PotionBelt)
+                .build_campfire();
             for _ in 0..100 {
                 g.throw_potion(Potion::Entropic, None);
                 for p in &mut g.potions {
