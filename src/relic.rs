@@ -37,6 +37,7 @@ use crate::{
     cards::{CardClass, CardType},
     game::{CreatureRef, Game},
     master_deck::DuplicateCardInMasterGameState,
+    potion::random_potion_weighted,
     queue::ActionQueue,
     rewards::{Rewards, RewardsGameState},
     state::{GameState, GameStateManager},
@@ -175,7 +176,7 @@ r!(
     CharonsAshes => Rare,
     MagicFlower => Rare,
 
-    Cauldron => Shop, // TODO
+    Cauldron => Shop,
     ChemicalX => Shop,
     ClockworkSouvenir => Shop,
     DollysMirror => Shop,
@@ -259,6 +260,7 @@ impl RelicClass {
             Necronomicon => Some(necronomicon_equip),
             DollysMirror => Some(dollys_mirror),
             Orrery => Some(orrery),
+            Cauldron => Some(cauldron),
             _ => None,
         }
     }
@@ -513,6 +515,25 @@ impl GameState for OrreryGameState {
 
 fn orrery(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
     state.push_state(OrreryGameState);
+}
+
+#[derive(Debug)]
+pub struct CauldronGameState;
+
+impl GameState for CauldronGameState {
+    fn run(&self, game: &mut Game) {
+        // the game creates and throws away a card reward
+        let _ = Rewards::gen_card_reward(game);
+        for _ in 0..5 {
+            game.rewards
+                .add_potion(random_potion_weighted(&mut game.rng));
+        }
+        game.state.push_state(RewardsGameState);
+    }
+}
+
+fn cauldron(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(CauldronGameState);
 }
 
 fn necronomicon_unequip(_: &mut i32, queue: &mut ActionQueue) {

@@ -333,7 +333,7 @@ mod tests {
         campfire::CampfireRestStep,
         cards::CardClass,
         combat::EndTurnStep,
-        game::{AscendStep, GameBuilder},
+        game::{AscendStep, DiscardPotionStep, GameBuilder},
         map::RoomType,
         monster::Intent,
         monsters::looter::Looter,
@@ -617,6 +617,19 @@ mod tests {
                 pack_index: 0,
                 card_index: 1,
             });
+        }
+    }
+
+    #[test]
+    fn test_cauldron() {
+        let mut g = GameBuilder::default().build_shop();
+        g.run_action(GainRelicAction(RelicClass::Cauldron));
+        assert_eq!(g.rewards.potions.len(), 5);
+        assert!(g.rewards.cards.is_empty());
+        assert!(g.rewards.relics.is_empty());
+        for _ in 0..5 {
+            g.step_test(PotionRewardStep { potion_index: 0 });
+            g.step_test(DiscardPotionStep { potion_index: 0 });
         }
     }
 
