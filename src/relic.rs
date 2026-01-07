@@ -36,7 +36,7 @@ use crate::{
         upgrade_random_in_master::UpgradeRandomInMasterAction,
     },
     cards::{CardClass, CardType},
-    game::{CreatureRef, Game},
+    game::{CreatureRef, Game, RunActionsGameState},
     master_deck::{ChooseRemoveFromMasterGameState, DuplicateCardInMasterGameState},
     potion::random_potion_weighted,
     queue::ActionQueue,
@@ -198,7 +198,7 @@ r!(
     Astrolabe => Boss, // TODO
     BlackStar => Boss, // TODO
     BustedCrown => Boss,
-    CallingBell => Boss, // TODO
+    CallingBell => Boss,
     CoffeeDripper => Boss,
     CursedKey => Boss, // TODO
     Ectoplasm => Boss,
@@ -263,6 +263,7 @@ impl RelicClass {
             Orrery => Some(orrery),
             Cauldron => Some(cauldron),
             EmptyCage => Some(empty_cage),
+            CallingBell => Some(calling_bell),
             _ => None,
         }
     }
@@ -537,6 +538,29 @@ impl GameState for CauldronGameState {
 
 fn cauldron(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
     state.push_state(CauldronGameState);
+}
+
+#[derive(Debug)]
+pub struct CallingBellGameState;
+
+impl GameState for CallingBellGameState {
+    fn run(&self, game: &mut Game) {
+        let r = game.next_relic(RelicRarity::Common);
+        game.rewards.add_relic(r);
+        let r = game.next_relic(RelicRarity::Uncommon);
+        game.rewards.add_relic(r);
+        let r = game.next_relic(RelicRarity::Rare);
+        game.rewards.add_relic(r);
+        game.state.push_state(RewardsGameState);
+
+        game.action_queue
+            .push_bot(AddCardClassToMasterDeckAction(CardClass::CurseOfTheBell));
+        game.state.push_state(RunActionsGameState);
+    }
+}
+
+fn calling_bell(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(CallingBellGameState);
 }
 
 fn empty_cage(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {

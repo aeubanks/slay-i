@@ -660,4 +660,21 @@ mod tests {
         });
         assert!(g.has_relic(r));
     }
+
+    #[test]
+    fn test_calling_bell() {
+        let mut g = GameBuilder::default().build_shop();
+        g.run_action(GainRelicAction(RelicClass::CallingBell));
+        assert_eq!(g.rewards.relics.len(), 3);
+        assert_eq!(g.rewards.potions.len(), 0);
+        assert_eq!(g.rewards.cards.len(), 0);
+        assert_eq!(g.master_deck.len(), 1);
+        assert_eq!(g.master_deck[0].borrow().class, CardClass::CurseOfTheBell);
+        for _ in 0..3 {
+            g.step_test(RelicRewardStep { relic_index: 0 });
+        }
+        assert_eq!(g.relics[1].get_class().rarity(), RelicRarity::Common);
+        assert_eq!(g.relics[2].get_class().rarity(), RelicRarity::Uncommon);
+        assert_eq!(g.relics[3].get_class().rarity(), RelicRarity::Rare);
+    }
 }
