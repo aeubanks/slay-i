@@ -120,7 +120,9 @@ impl Step for CampfireTokeStep {
     }
 
     fn run(&self, game: &mut Game) {
-        game.state.push_state(ChooseRemoveFromMasterGameState);
+        game.state.push_state(ChooseRemoveFromMasterGameState {
+            num_cards_remaining: 1,
+        });
     }
 
     fn description(&self, _: &Game) -> String {
@@ -277,9 +279,18 @@ mod tests {
         assert_eq!(
             g.valid_steps(),
             vec![
-                Box::new(ChooseRemoveFromMasterStep { master_index: 0 }) as Box<dyn Step>,
-                Box::new(ChooseRemoveFromMasterStep { master_index: 1 }),
-                Box::new(ChooseRemoveFromMasterStep { master_index: 2 }),
+                Box::new(ChooseRemoveFromMasterStep {
+                    master_index: 0,
+                    num_cards_remaining: 1
+                }) as Box<dyn Step>,
+                Box::new(ChooseRemoveFromMasterStep {
+                    master_index: 1,
+                    num_cards_remaining: 1
+                }),
+                Box::new(ChooseRemoveFromMasterStep {
+                    master_index: 2,
+                    num_cards_remaining: 1
+                }),
             ]
         );
     }

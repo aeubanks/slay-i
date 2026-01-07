@@ -201,8 +201,13 @@ mod tests {
             .build_combat();
         let max_hp = g.player.max_hp;
         g.player.cur_hp = max_hp - 1;
-        g.state.push_state(ChooseRemoveFromMasterGameState);
-        g.step_test_no_check_valid(ChooseRemoveFromMasterStep { master_index: 0 });
+        g.state.push_state(ChooseRemoveFromMasterGameState {
+            num_cards_remaining: 1,
+        });
+        g.step_test(ChooseRemoveFromMasterStep {
+            master_index: 0,
+            num_cards_remaining: 1,
+        });
         assert_eq!(g.player.max_hp, max_hp - 3);
         assert_eq!(g.player.cur_hp, max_hp - 3);
     }

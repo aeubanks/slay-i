@@ -43,7 +43,9 @@ impl Blessing {
                 game.state.push_state(TransformMasterGameState);
             }
             RemoveOne => {
-                game.state.push_state(ChooseRemoveFromMasterGameState);
+                game.state.push_state(ChooseRemoveFromMasterGameState {
+                    num_cards_remaining: 1,
+                });
             }
             RandomUncommonColorless => {
                 let r = random_uncommon_colorless(&mut game.rng);

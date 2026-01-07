@@ -36,7 +36,7 @@ use crate::{
     },
     cards::{CardClass, CardType},
     game::{CreatureRef, Game},
-    master_deck::DuplicateCardInMasterGameState,
+    master_deck::{ChooseRemoveFromMasterGameState, DuplicateCardInMasterGameState},
     potion::random_potion_weighted,
     queue::ActionQueue,
     rewards::{Rewards, RewardsGameState},
@@ -201,7 +201,7 @@ r!(
     CoffeeDripper => Boss,
     CursedKey => Boss, // TODO
     Ectoplasm => Boss,
-    EmptyCage => Boss, // TODO
+    EmptyCage => Boss,
     FusionHammer => Boss,
     PandorasBox => Boss, // TODO
     PhilosophersStone => Boss, // TODO
@@ -261,6 +261,7 @@ impl RelicClass {
             DollysMirror => Some(dollys_mirror),
             Orrery => Some(orrery),
             Cauldron => Some(cauldron),
+            EmptyCage => Some(empty_cage),
             _ => None,
         }
     }
@@ -534,6 +535,12 @@ impl GameState for CauldronGameState {
 
 fn cauldron(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
     state.push_state(CauldronGameState);
+}
+
+fn empty_cage(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(ChooseRemoveFromMasterGameState {
+        num_cards_remaining: 2,
+    });
 }
 
 fn necronomicon_unequip(_: &mut i32, queue: &mut ActionQueue) {
@@ -1156,7 +1163,7 @@ mod tests {
         combat::{EndTurnStep, PlayCardStep},
         game::{AscendStep, GameBuilder, GameStatus},
         map::RoomType,
-        master_deck::DuplicateCardInMasterStep,
+        master_deck::{ChooseRemoveFromMasterStep, DuplicateCardInMasterStep},
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
         rewards::RewardExitStep,
@@ -3362,5 +3369,44 @@ mod tests {
         assert_eq!(g.player.cur_hp, 60);
         g.play_card_upgraded(CardClass::Bite, Some(CreatureRef::monster(0)));
         assert_eq!(g.player.cur_hp, 65);
+    }
+
+    #[test]
+    fn test_empty_cage() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Strike)
+            .add_card(CardClass::Defend)
+            .add_card(CardClass::Bash)
+            .build();
+        g.run_action(GainRelicAction(RelicClass::EmptyCage));
+        g.step_test(ChooseRemoveFromMasterStep {
+            master_index: 2,
+            num_cards_remaining: 2,
+        });
+        g.step_test(ChooseRemoveFromMasterStep {
+            master_index: 0,
+            num_cards_remaining: 1,
+        });
+        assert_eq!(g.master_deck.len(), 1);
+        assert_eq!(g.master_deck[0].borrow().class, CardClass::Defend);
+    }
+
+    #[test]
+    fn test_empty_cage_few_cards() {
+        {
+            let mut g = GameBuilder::default()
+                .add_card(CardClass::Strike)
+                .add_card(CardClass::Defend)
+                .build();
+            g.run_action(GainRelicAction(RelicClass::EmptyCage));
+            assert!(g.master_deck.is_empty());
+        }
+        {
+            let mut g = GameBuilder::default().add_card(CardClass::Parasite).build();
+            g.player.max_hp = 50;
+            g.run_action(GainRelicAction(RelicClass::EmptyCage));
+            assert!(g.master_deck.is_empty());
+            assert_eq!(g.player.max_hp, 47);
+        }
     }
 }

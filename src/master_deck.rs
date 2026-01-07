@@ -90,23 +90,50 @@ impl Step for ChooseUpgradeMasterStep {
 }
 
 #[derive(Debug)]
-pub struct ChooseRemoveFromMasterGameState;
+pub struct ChooseRemoveFromMasterGameState {
+    pub num_cards_remaining: usize,
+}
 
 impl GameState for ChooseRemoveFromMasterGameState {
+    fn run(&self, game: &mut Game) {
+        let count = game
+            .master_deck
+            .iter()
+            .filter(|c| c.borrow().can_remove_from_master_deck())
+            .count();
+        if count <= self.num_cards_remaining {
+            for i in (0..game.master_deck.len()).rev() {
+                if game.master_deck[i].borrow().can_remove_from_master_deck() {
+                    let c = game.master_deck.remove(i);
+                    game.action_queue
+                        .push_bot(RemovedCardFromMasterDeckAction(c.borrow().class));
+                }
+            }
+            game.state.push_state(RunActionsGameState);
+        }
+    }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut moves = Steps::default();
         for (i, c) in game.master_deck.iter().enumerate() {
             if c.borrow().can_remove_from_master_deck() {
-                moves.push(ChooseRemoveFromMasterStep { master_index: i });
+                moves.push(ChooseRemoveFromMasterStep {
+                    master_index: i,
+                    num_cards_remaining: self.num_cards_remaining,
+                });
             }
         }
-        Some(moves)
+        if moves.steps.is_empty() {
+            None
+        } else {
+            Some(moves)
+        }
     }
 }
 
 #[derive(Eq, PartialEq, Debug)]
 pub struct ChooseRemoveFromMasterStep {
     pub master_index: usize,
+    pub num_cards_remaining: usize,
 }
 
 impl Step for ChooseRemoveFromMasterStep {
@@ -115,10 +142,20 @@ impl Step for ChooseRemoveFromMasterStep {
     }
 
     fn run(&self, game: &mut Game) {
-        let c = game.master_deck.remove(self.master_index);
-        game.action_queue
-            .push_bot(RemovedCardFromMasterDeckAction(c.borrow().class));
-        game.state.push_state(RunActionsGameState);
+        game.chosen_cards
+            .push(game.master_deck.remove(self.master_index));
+        let num_cards_remaining = self.num_cards_remaining - 1;
+        if num_cards_remaining == 0 {
+            while let Some(c) = game.chosen_cards.pop() {
+                game.action_queue
+                    .push_bot(RemovedCardFromMasterDeckAction(c.borrow().class));
+                game.state.push_state(RunActionsGameState);
+            }
+        } else {
+            game.state.push_state(ChooseRemoveFromMasterGameState {
+                num_cards_remaining,
+            });
+        }
     }
 
     fn description(&self, game: &Game) -> String {

@@ -356,7 +356,9 @@ impl Step for ShopRemoveCardStep {
         game.gold -= price;
         game.shop_remove_count += 1;
         game.shop.can_remove = false;
-        game.state.push_state(ChooseRemoveFromMasterGameState);
+        game.state.push_state(ChooseRemoveFromMasterGameState {
+            num_cards_remaining: 1,
+        });
     }
     fn description(&self, game: &Game) -> String {
         format!("remove card for {}", Shop::remove_cost(game))
@@ -643,7 +645,10 @@ mod tests {
         g.step_test(AscendStep { x: 0, y: 0 });
         g.gold = 1000;
         g.step_test(ShopRemoveCardStep);
-        g.step_test(ChooseRemoveFromMasterStep { master_index: 0 });
+        g.step_test(ChooseRemoveFromMasterStep {
+            master_index: 0,
+            num_cards_remaining: 1,
+        });
         assert!(
             !g.valid_steps()
                 .contains(&(Box::new(ShopRemoveCardStep) as Box<dyn Step>))
@@ -653,21 +658,30 @@ mod tests {
         g.step_test(ShopExitStep);
         g.step_test(AscendStep { x: 0, y: 1 });
         g.step_test(ShopRemoveCardStep);
-        g.step_test(ChooseRemoveFromMasterStep { master_index: 0 });
+        g.step_test(ChooseRemoveFromMasterStep {
+            master_index: 0,
+            num_cards_remaining: 1,
+        });
         assert_eq!(g.gold, 1000 - 75 - 100);
 
         g.add_relic(RelicClass::MembershipCard);
         g.step_test(ShopExitStep);
         g.step_test(AscendStep { x: 0, y: 2 });
         g.step_test(ShopRemoveCardStep);
-        g.step_test(ChooseRemoveFromMasterStep { master_index: 0 });
+        g.step_test(ChooseRemoveFromMasterStep {
+            master_index: 0,
+            num_cards_remaining: 1,
+        });
         assert_eq!(g.gold, 1000 - 75 - 100 - ((125.0_f32 * 0.5).round() as i32));
 
         g.add_relic(RelicClass::TheCourier);
         g.step_test(ShopExitStep);
         g.step_test(AscendStep { x: 0, y: 3 });
         g.step_test(ShopRemoveCardStep);
-        g.step_test(ChooseRemoveFromMasterStep { master_index: 0 });
+        g.step_test(ChooseRemoveFromMasterStep {
+            master_index: 0,
+            num_cards_remaining: 1,
+        });
         assert_eq!(
             g.gold,
             1000 - 75
