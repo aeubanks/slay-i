@@ -27,6 +27,7 @@ use crate::{
         play_card::PlayCardAction,
         preserved_insect::PreservedInsectAction,
         red_skull::RedSkullAction,
+        remove_all_debuffs::RemoveAllDebuffsAction,
         set_hp_all_monsters::SetHPAllMonstersAction,
         shuffle_card_into_draw::ShuffleCardIntoDrawAction,
         sling_of_courage::SlingOfCourageAction,
@@ -185,7 +186,7 @@ r!(
     LeesWaffle => Shop,
     MedicalKit => Shop,
     MembershipCard => Shop,
-    OrangePellets => Shop, // TODO
+    OrangePellets => Shop,
     Orrery => Shop,
     // PrismaticShard => Shop, // not supported
     SlingOfCourage => Shop,
@@ -356,13 +357,14 @@ impl RelicClass {
             PenNib => Some(pen_nib),
             Necronomicon => Some(necronomicon),
             MummifiedHand => Some(mummified_hand),
+            OrangePellets => Some(orange_pellets),
             _ => None,
         }
     }
     pub fn at_turn_begin_pre_draw(&self) -> Option<RelicCallback> {
         use RelicClass::*;
         match self {
-            Kunai | Shruiken | LetterOpener | OrnamentalFan => Some(set_value_0),
+            Kunai | Shruiken | LetterOpener | OrnamentalFan | OrangePellets => Some(set_value_0),
             Necronomicon => Some(set_value_1),
             HornCleat => Some(horn_cleat),
             CaptainsWheel => Some(captains_wheel),
@@ -626,6 +628,25 @@ fn mummified_hand(
 ) {
     if play.card.borrow().class.ty() == CardType::Power {
         queue.push_bot(DiscountRandomCardInHandAction());
+    }
+}
+
+fn orange_pellets(
+    v: &mut i32,
+    queue: &mut ActionQueue,
+    _: &mut Vec<PlayCardAction>,
+    play: &PlayCardAction,
+) {
+    let mask = match play.card.borrow().class.ty() {
+        CardType::Attack => 0b001,
+        CardType::Skill => 0b010,
+        CardType::Power => 0b100,
+        _ => 0,
+    };
+    *v |= mask;
+    if *v == 0b111 {
+        *v = 0;
+        queue.push_bot(RemoveAllDebuffsAction());
     }
 }
 
@@ -3407,6 +3428,75 @@ mod tests {
             g.run_action(GainRelicAction(RelicClass::EmptyCage));
             assert!(g.master_deck.is_empty());
             assert_eq!(g.player.max_hp, 47);
+        }
+    }
+
+    #[test]
+    fn test_orange_pellets() {
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::OrangePellets)
+                .build_combat();
+            g.run_action(GainStatusAction {
+                status: Status::Weak,
+                amount: 1,
+                target: CreatureRef::player(),
+            });
+            g.run_action(GainStatusAction {
+                status: Status::Dexterity,
+                amount: 1,
+                target: CreatureRef::player(),
+            });
+            g.run_action(GainStatusAction {
+                status: Status::Strength,
+                amount: -1,
+                target: CreatureRef::player(),
+            });
+
+            g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+            g.play_card(CardClass::FeelNoPain, None);
+            g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+            assert_eq!(g.player.get_status(Status::Weak), Some(1));
+            assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
+            assert_eq!(g.player.get_status(Status::Strength), Some(-1));
+
+            g.play_card(CardClass::GoodInstincts, None);
+            assert_eq!(g.player.get_status(Status::Weak), None);
+            assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
+            assert_eq!(g.player.get_status(Status::Strength), None);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::OrangePellets)
+                .build_combat();
+            g.run_action(GainStatusAction {
+                status: Status::Confusion,
+                amount: 1,
+                target: CreatureRef::player(),
+            });
+            g.run_action(GainStatusAction {
+                status: Status::Dexterity,
+                amount: 1,
+                target: CreatureRef::player(),
+            });
+            g.run_action(GainStatusAction {
+                status: Status::Strength,
+                amount: -1,
+                target: CreatureRef::player(),
+            });
+
+            g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+            g.play_card(CardClass::FeelNoPain, None);
+            g.play_card(CardClass::SwiftStrike, Some(CreatureRef::monster(0)));
+            assert_eq!(g.player.get_status(Status::Confusion), Some(1));
+            assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
+            assert_eq!(g.player.get_status(Status::Strength), Some(-1));
+
+            g.step_test(EndTurnStep);
+            g.play_card(CardClass::GoodInstincts, None);
+            assert_eq!(g.player.get_status(Status::Confusion), Some(1));
+            assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
+            assert_eq!(g.player.get_status(Status::Strength), Some(-1));
         }
     }
 }

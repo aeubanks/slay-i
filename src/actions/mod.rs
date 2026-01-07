@@ -74,6 +74,7 @@ pub mod preserved_insect;
 pub mod randomize_hand_cost;
 pub mod red_skull;
 pub mod reduce_status;
+pub mod remove_all_debuffs;
 pub mod remove_relic;
 pub mod remove_status;
 pub mod removed_card_from_master_deck;
