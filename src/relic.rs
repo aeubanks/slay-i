@@ -38,8 +38,8 @@ use crate::{
     cards::{CardClass, CardType},
     game::{CreatureRef, Game, RunActionsGameState},
     master_deck::{
-        ChooseRemoveFromMasterGameState, DuplicateCardInMasterGameState,
-        TransformChosenCardsGameState,
+        ChooseRemoveFromMasterGameState, ChooseTransformMasterGameState,
+        DuplicateCardInMasterGameState, TransformChosenCardsGameState,
     },
     potion::random_potion_weighted,
     queue::ActionQueue,
@@ -198,7 +198,7 @@ r!(
     Toolbox => Shop,
     Brimstone => Shop,
 
-    Astrolabe => Boss, // TODO
+    Astrolabe => Boss,
     BlackStar => Boss,
     BustedCrown => Boss,
     CallingBell => Boss,
@@ -275,6 +275,7 @@ impl RelicClass {
             EmptyCage => Some(empty_cage),
             CallingBell => Some(calling_bell),
             PandorasBox => Some(pandoras_box),
+            Astrolabe => Some(astrolabe),
             _ => None,
         }
     }
@@ -588,12 +589,20 @@ impl GameState for PandorasBoxGameState {
                 game.chosen_cards.push(c);
             }
         }
-        game.state.push_state(TransformChosenCardsGameState);
+        game.state
+            .push_state(TransformChosenCardsGameState { upgrade: false });
     }
 }
 
 fn pandoras_box(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
     state.push_state(PandorasBoxGameState);
+}
+
+fn astrolabe(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(ChooseTransformMasterGameState {
+        num_cards_remaining: 3,
+        upgrade: true,
+    });
 }
 
 fn empty_cage(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
@@ -1241,7 +1250,9 @@ mod tests {
         combat::{EndTurnStep, PlayCardStep},
         game::{AscendStep, GameBuilder, GameStatus},
         map::RoomType,
-        master_deck::{ChooseRemoveFromMasterStep, DuplicateCardInMasterStep},
+        master_deck::{
+            ChooseRemoveFromMasterStep, ChooseTransformMasterStep, DuplicateCardInMasterStep,
+        },
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
         rewards::RewardExitStep,
@@ -3569,6 +3580,45 @@ mod tests {
         assert_eq!(g.master_deck[0].borrow().class, CardClass::Bash);
         for i in 1..5 {
             assert_ne!(g.master_deck[i].borrow().class.rarity(), CardRarity::Basic);
+        }
+    }
+
+    #[test]
+    fn test_astrolabe() {
+        {
+            let mut g = GameBuilder::default()
+                // molten egg to test searing blow is +1 not +2
+                .add_relic(RelicClass::MoltenEgg)
+                .add_cards(CardClass::Strike, 2)
+                .add_card(CardClass::Bash)
+                .add_card(CardClass::AscendersBane)
+                .build();
+            g.run_action(GainRelicAction(RelicClass::Astrolabe));
+            for c in g.master_deck.iter().skip(1) {
+                assert_ne!(c.borrow().class.rarity(), CardRarity::Basic);
+                assert_eq!(c.borrow().upgrade_count, 1);
+            }
+        }
+        {
+            let mut g = GameBuilder::default()
+                // molten egg to test searing blow is +1 not +2
+                .add_relic(RelicClass::MoltenEgg)
+                .add_cards(CardClass::Strike, 2)
+                .add_card(CardClass::Defend)
+                .add_card(CardClass::Bash)
+                .build();
+            g.run_action(GainRelicAction(RelicClass::Astrolabe));
+            for i in (1..=3).rev() {
+                g.step_test(ChooseTransformMasterStep {
+                    master_index: 0,
+                    num_cards_remaining: i,
+                    upgrade: true,
+                });
+            }
+            for c in g.master_deck.iter().skip(1) {
+                assert_ne!(c.borrow().class.rarity(), CardRarity::Basic);
+                assert_eq!(c.borrow().upgrade_count, 1);
+            }
         }
     }
 }

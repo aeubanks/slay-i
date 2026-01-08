@@ -1,6 +1,5 @@
 use crate::{
     actions::{
-        add_card_class_to_master_deck::AddCardClassToMasterDeckAction,
         add_card_to_master_deck::AddCardToMasterDeckAction,
         removed_card_from_master_deck::RemovedCardFromMasterDeckAction, upgrade::UpgradeAction,
     },
@@ -11,26 +10,57 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct ChooseTransformMasterGameState;
+pub struct ChooseTransformMasterGameState {
+    pub num_cards_remaining: usize,
+    pub upgrade: bool,
+}
 
 impl GameState for ChooseTransformMasterGameState {
+    fn run(&self, game: &mut Game) {
+        let count = game
+            .master_deck
+            .iter()
+            .filter(|c| c.borrow().can_remove_from_master_deck())
+            .count();
+        if count <= self.num_cards_remaining {
+            for i in (0..game.master_deck.len()).rev() {
+                if game.master_deck[i].borrow().can_remove_from_master_deck() {
+                    let c = game.master_deck.remove(i);
+                    game.chosen_cards.push(c);
+                }
+            }
+            game.state.push_state(TransformChosenCardsGameState {
+                upgrade: self.upgrade,
+            });
+        }
+    }
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut moves = Steps::default();
         for (i, c) in game.master_deck.iter().enumerate() {
             if c.borrow().can_remove_from_master_deck() {
-                moves.push(TransformMasterStep { master_index: i });
+                moves.push(ChooseTransformMasterStep {
+                    master_index: i,
+                    num_cards_remaining: self.num_cards_remaining,
+                    upgrade: self.upgrade,
+                });
             }
         }
-        Some(moves)
+        if moves.steps.is_empty() {
+            None
+        } else {
+            Some(moves)
+        }
     }
 }
 
 #[derive(Eq, PartialEq, Debug)]
-struct TransformMasterStep {
-    master_index: usize,
+pub struct ChooseTransformMasterStep {
+    pub master_index: usize,
+    pub num_cards_remaining: usize,
+    pub upgrade: bool,
 }
 
-impl Step for TransformMasterStep {
+impl Step for ChooseTransformMasterStep {
     fn should_pop_state(&self) -> bool {
         true
     }
@@ -38,7 +68,17 @@ impl Step for TransformMasterStep {
     fn run(&self, game: &mut Game) {
         let c = game.master_deck.remove(self.master_index);
         game.chosen_cards.push(c);
-        game.state.push_state(TransformChosenCardsGameState);
+        let num_cards_remaining = self.num_cards_remaining - 1;
+        if num_cards_remaining == 0 {
+            game.state.push_state(TransformChosenCardsGameState {
+                upgrade: self.upgrade,
+            });
+        } else {
+            game.state.push_state(ChooseTransformMasterGameState {
+                num_cards_remaining,
+                upgrade: self.upgrade,
+            });
+        }
     }
 
     fn description(&self, game: &Game) -> String {
@@ -50,7 +90,9 @@ impl Step for TransformMasterStep {
 }
 
 #[derive(Debug)]
-pub struct TransformChosenCardsGameState;
+pub struct TransformChosenCardsGameState {
+    pub upgrade: bool,
+}
 
 impl GameState for TransformChosenCardsGameState {
     fn run(&self, game: &mut Game) {
@@ -60,8 +102,13 @@ impl GameState for TransformChosenCardsGameState {
             let transformed = transformed(class, &mut game.rng);
             game.action_queue
                 .push_bot(RemovedCardFromMasterDeckAction(class));
-            game.action_queue
-                .push_bot(AddCardClassToMasterDeckAction(transformed));
+
+            let c = if self.upgrade {
+                game.new_card_upgraded(transformed)
+            } else {
+                game.new_card(transformed)
+            };
+            game.action_queue.push_bot(AddCardToMasterDeckAction(c));
         }
         game.state.push_state(RunActionsGameState);
     }

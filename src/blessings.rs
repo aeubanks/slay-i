@@ -40,7 +40,10 @@ impl Blessing {
                 game.action_queue.push_bot(RemoveRelicAction(r));
             }
             TransformOne => {
-                game.state.push_state(ChooseTransformMasterGameState);
+                game.state.push_state(ChooseTransformMasterGameState {
+                    num_cards_remaining: 1,
+                    upgrade: false,
+                });
             }
             RemoveOne => {
                 game.state.push_state(ChooseRemoveFromMasterGameState {
