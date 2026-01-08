@@ -677,4 +677,18 @@ mod tests {
         assert_eq!(g.relics[2].get_class().rarity(), RelicRarity::Uncommon);
         assert_eq!(g.relics[3].get_class().rarity(), RelicRarity::Rare);
     }
+
+    #[test]
+    fn test_black_star() {
+        for _ in 0..10 {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::BlackStar)
+                .build_with_rooms(&[RoomType::Elite]);
+            g.potion_chance = 0;
+            g.step_test(AscendStep { x: 0, y: 0 });
+            g.play_card(CardClass::DebugKillAll, None);
+            assert_eq!(g.rewards.relics.len(), 2);
+            assert!(!g.rewards.relics[1].is_campfire_relic());
+        }
+    }
 }

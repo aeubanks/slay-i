@@ -196,7 +196,7 @@ r!(
     Brimstone => Shop,
 
     Astrolabe => Boss, // TODO
-    BlackStar => Boss, // TODO
+    BlackStar => Boss,
     BustedCrown => Boss,
     CallingBell => Boss,
     CoffeeDripper => Boss,
@@ -237,6 +237,13 @@ r!(
     SsserpentHead => Event,
     WarpedTongs => Event,
 );
+
+impl RelicClass {
+    pub fn is_campfire_relic(&self) -> bool {
+        use RelicClass::*;
+        matches!(self, Girya | PeacePipe | Shovel)
+    }
+}
 
 type RelicCallback = fn(&mut i32, &mut ActionQueue);
 type RelicEquipCallback = fn(&mut i32, &mut ActionQueue, &mut GameStateManager);

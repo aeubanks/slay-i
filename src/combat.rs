@@ -274,6 +274,17 @@ impl GameState for RollCombatRewardsGameState {
 
                     let r = game.next_relic_weighted();
                     game.rewards.add_relic(r);
+
+                    if game.has_relic(RelicClass::BlackStar) {
+                        let mut r;
+                        loop {
+                            r = game.next_relic_weighted();
+                            if !r.is_campfire_relic() {
+                                break;
+                            }
+                        }
+                        game.rewards.add_relic(r);
+                    }
                 }
                 RewardType::Boss => {
                     let gold = game.rng.random_range(71..=79);
