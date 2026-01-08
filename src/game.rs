@@ -10,6 +10,7 @@ use crate::actions::block::BlockAction;
 use crate::actions::damage::{DamageAction, DamageType};
 use crate::actions::discard_card::DiscardCardAction;
 use crate::actions::draw::DrawAction;
+use crate::actions::exhaust_card::ExhaustCardAction;
 use crate::actions::gain_energy::GainEnergyAction;
 use crate::actions::gain_gold::GainGoldAction;
 use crate::actions::gain_relic::GainRelicAction;
@@ -140,7 +141,11 @@ impl GameState for RunActionsGameState {
             if game.can_play_card(&play) {
                 game.action_queue.push_bot(play);
             } else if !play.is_duplicated {
-                game.action_queue.push_bot(DiscardCardAction(play.card));
+                if play.force_exhaust {
+                    game.action_queue.push_bot(ExhaustCardAction(play.card));
+                } else {
+                    game.action_queue.push_bot(DiscardCardAction(play.card));
+                }
             }
         } else if !game.monster_turn_queue_active.is_empty() {
             let monster = game.monster_turn_queue_active.remove(0);

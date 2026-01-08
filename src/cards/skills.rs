@@ -520,6 +520,7 @@ mod tests {
         game::{CreatureRef, GameBuilder},
         monster::Intent,
         monsters::test::{AttackMonster, IntentMonster, NoopMonster},
+        relic::RelicClass,
         status::Status,
         step::Step,
     };
@@ -685,6 +686,47 @@ mod tests {
         g.add_card_to_draw_pile(CardClass::Defend);
         g.play_card_upgraded(CardClass::Havoc, None);
         assert_eq!(g.player.block, 5);
+    }
+
+    #[test]
+    fn test_havoc_unplayable() {
+        {
+            let mut g = GameBuilder::default().build_combat();
+            g.add_card_to_draw_pile(CardClass::Wound);
+            g.play_card_upgraded(CardClass::Havoc, None);
+            assert_eq!(g.exhaust_pile.len(), 1);
+            assert_eq!(g.discard_pile.len(), 1);
+        }
+        {
+            let mut g = GameBuilder::default().build_combat();
+            let hp = g.player.cur_hp;
+            g.add_card_to_draw_pile(CardClass::AscendersBane);
+            g.play_card_upgraded(CardClass::Havoc, None);
+            assert_eq!(g.player.cur_hp, hp);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::BlueCandle)
+                .build_combat();
+            let hp = g.player.cur_hp;
+            g.add_card_to_draw_pile(CardClass::AscendersBane);
+            g.play_card_upgraded(CardClass::Havoc, None);
+            assert_eq!(g.player.cur_hp, hp - 1);
+        }
+        {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::VelvetChoker)
+                .build_combat();
+            let hp = g.monsters[0].creature.cur_hp;
+            for _ in 0..5 {
+                g.play_card_upgraded(CardClass::Bloodletting, None);
+            }
+            g.play_card_upgraded(CardClass::Havoc, None);
+            g.add_card_to_draw_pile(CardClass::Strike);
+            assert_eq!(g.exhaust_pile.len(), 1);
+            assert_eq!(g.discard_pile.len(), 1);
+            assert_eq!(g.monsters[0].creature.cur_hp, hp);
+        }
     }
 
     #[test]
