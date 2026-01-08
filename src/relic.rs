@@ -37,7 +37,10 @@ use crate::{
     },
     cards::{CardClass, CardType},
     game::{CreatureRef, Game, RunActionsGameState},
-    master_deck::{ChooseRemoveFromMasterGameState, DuplicateCardInMasterGameState},
+    master_deck::{
+        ChooseRemoveFromMasterGameState, DuplicateCardInMasterGameState,
+        TransformChosenCardsGameState,
+    },
     potion::random_potion_weighted,
     queue::ActionQueue,
     rewards::{Rewards, RewardsGameState},
@@ -204,7 +207,7 @@ r!(
     Ectoplasm => Boss,
     EmptyCage => Boss,
     FusionHammer => Boss,
-    PandorasBox => Boss, // TODO
+    PandorasBox => Boss,
     PhilosophersStone => Boss, // TODO
     // RunicDome => Boss, // not supported
     RunicPyramid => Boss,
@@ -271,6 +274,7 @@ impl RelicClass {
             Cauldron => Some(cauldron),
             EmptyCage => Some(empty_cage),
             CallingBell => Some(calling_bell),
+            PandorasBox => Some(pandoras_box),
             _ => None,
         }
     }
@@ -568,6 +572,28 @@ impl GameState for CallingBellGameState {
 
 fn calling_bell(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
     state.push_state(CallingBellGameState);
+}
+
+#[derive(Debug)]
+pub struct PandorasBoxGameState;
+
+impl GameState for PandorasBoxGameState {
+    fn run(&self, game: &mut Game) {
+        for i in (0..game.master_deck.len()).rev() {
+            if matches!(
+                game.master_deck[i].borrow().class,
+                CardClass::Strike | CardClass::Defend
+            ) {
+                let c = game.master_deck.remove(i);
+                game.chosen_cards.push(c);
+            }
+        }
+        game.state.push_state(TransformChosenCardsGameState);
+    }
+}
+
+fn pandoras_box(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(PandorasBoxGameState);
 }
 
 fn empty_cage(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
@@ -1211,7 +1237,7 @@ mod tests {
         },
         assert_matches,
         campfire::CampfireRestStep,
-        cards::{CardClass, CardColor},
+        cards::{CardClass, CardColor, CardRarity},
         combat::{EndTurnStep, PlayCardStep},
         game::{AscendStep, GameBuilder, GameStatus},
         map::RoomType,
@@ -3528,6 +3554,21 @@ mod tests {
             assert_eq!(g.player.get_status(Status::Confusion), Some(1));
             assert_eq!(g.player.get_status(Status::Dexterity), Some(1));
             assert_eq!(g.player.get_status(Status::Strength), Some(-1));
+        }
+    }
+
+    #[test]
+    fn test_pandoras_box() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Strike, 2)
+            .add_cards(CardClass::Defend, 2)
+            .add_card(CardClass::Bash)
+            .build();
+        g.run_action(GainRelicAction(RelicClass::PandorasBox));
+        assert_eq!(g.master_deck.len(), 5);
+        assert_eq!(g.master_deck[0].borrow().class, CardClass::Bash);
+        for i in 1..5 {
+            assert_ne!(g.master_deck[i].borrow().class.rarity(), CardRarity::Basic);
         }
     }
 }

@@ -11,9 +11,9 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct TransformMasterGameState;
+pub struct ChooseTransformMasterGameState;
 
-impl GameState for TransformMasterGameState {
+impl GameState for ChooseTransformMasterGameState {
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut moves = Steps::default();
         for (i, c) in game.master_deck.iter().enumerate() {
@@ -36,13 +36,9 @@ impl Step for TransformMasterStep {
     }
 
     fn run(&self, game: &mut Game) {
-        let class = game.master_deck.remove(self.master_index).borrow().class;
-        let transformed = transformed(class, &mut game.rng);
-        game.action_queue
-            .push_bot(RemovedCardFromMasterDeckAction(class));
-        game.action_queue
-            .push_bot(AddCardClassToMasterDeckAction(transformed));
-        game.state.push_state(RunActionsGameState);
+        let c = game.master_deck.remove(self.master_index);
+        game.chosen_cards.push(c);
+        game.state.push_state(TransformChosenCardsGameState);
     }
 
     fn description(&self, game: &Game) -> String {
@@ -50,6 +46,24 @@ impl Step for TransformMasterStep {
             "transform {:?}",
             game.master_deck[self.master_index].borrow()
         )
+    }
+}
+
+#[derive(Debug)]
+pub struct TransformChosenCardsGameState;
+
+impl GameState for TransformChosenCardsGameState {
+    fn run(&self, game: &mut Game) {
+        assert!(!game.chosen_cards.is_empty());
+        while let Some(c) = game.chosen_cards.pop() {
+            let class = c.borrow().class;
+            let transformed = transformed(class, &mut game.rng);
+            game.action_queue
+                .push_bot(RemovedCardFromMasterDeckAction(class));
+            game.action_queue
+                .push_bot(AddCardClassToMasterDeckAction(transformed));
+        }
+        game.state.push_state(RunActionsGameState);
     }
 }
 

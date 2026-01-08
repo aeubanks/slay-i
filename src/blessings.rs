@@ -6,7 +6,7 @@ use crate::{
     },
     cards::random_uncommon_colorless,
     game::{Game, RunActionsGameState},
-    master_deck::{ChooseRemoveFromMasterGameState, TransformMasterGameState},
+    master_deck::{ChooseRemoveFromMasterGameState, ChooseTransformMasterGameState},
     potion::random_common_potion,
     relic::RelicRarity,
     state::{GameState, Steps},
@@ -40,7 +40,7 @@ impl Blessing {
                 game.action_queue.push_bot(RemoveRelicAction(r));
             }
             TransformOne => {
-                game.state.push_state(TransformMasterGameState);
+                game.state.push_state(ChooseTransformMasterGameState);
             }
             RemoveOne => {
                 game.state.push_state(ChooseRemoveFromMasterGameState {
