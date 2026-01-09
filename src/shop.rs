@@ -126,17 +126,26 @@ impl Shop {
     }
 
     fn random_non_shop_relic(game: &mut Game) -> RelicClass {
-        // FIXME: no repeat relics
-        // FIXME: some relics can't spawn in shop
         // 50% common
         // 33% uncommon
         // 17% rare
-        let rarity = match game.rng.random_range(0..100) {
-            0..50 => RelicRarity::Common,
-            50..83 => RelicRarity::Uncommon,
-            _ => RelicRarity::Rare,
-        };
-        game.next_relic(rarity)
+        loop {
+            let rarity = match game.rng.random_range(0..100) {
+                0..50 => RelicRarity::Common,
+                50..83 => RelicRarity::Uncommon,
+                _ => RelicRarity::Rare,
+            };
+            let r = game.next_relic(rarity);
+            if !matches!(
+                r,
+                RelicClass::OldCoin
+                    | RelicClass::TheCourier
+                    | RelicClass::SmilingMask
+                    | RelicClass::MawBank
+            ) {
+                return r;
+            }
+        }
     }
 
     fn price_variance(game: &mut Game) -> f32 {
@@ -392,7 +401,7 @@ impl Step for ShopExitStep {
 #[cfg(test)]
 mod tests {
     use crate::{
-        assert_matches,
+        assert_matches, assert_not_matches,
         cards::{CardClass, CardColor, CardRarity, CardType},
         game::{AscendStep, GameBuilder},
         map::RoomType,
@@ -808,5 +817,21 @@ mod tests {
             }
         }
         assert!(found_rare);
+    }
+
+    #[test]
+    fn test_invalid_shop_relic() {
+        for _ in 0..10 {
+            let g = GameBuilder::default().build_shop();
+            for r in &g.shop.relics {
+                assert_not_matches!(
+                    r.0,
+                    RelicClass::OldCoin
+                        | RelicClass::TheCourier
+                        | RelicClass::SmilingMask
+                        | RelicClass::MawBank
+                );
+            }
+        }
     }
 }
