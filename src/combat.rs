@@ -20,7 +20,7 @@ use crate::{
         slime_boss::SlimeBoss, slime_spike_l::SlimeSpikeL, slime_spike_m::SlimeSpikeM,
         slime_spike_s::SlimeSpikeS, test::NoopMonster,
     },
-    potion::random_potion_weighted,
+    potion::{Potion, random_potion_weighted},
     relic::RelicClass,
     rewards::{BossRewardGameState, RewardType, Rewards, RewardsGameState},
     state::{GameState, Steps},
@@ -459,6 +459,7 @@ impl GameState for PlayerTurnGameState {
             if let Some(p) = p
                 && p.can_use()
                 && !p.can_use_outside_combat()
+                && !(*p == Potion::Smoke && game.in_combat == CombatType::Boss)
             {
                 if p.has_target() {
                     for (mi, m) in game.monsters.iter().enumerate() {

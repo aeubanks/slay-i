@@ -387,9 +387,11 @@ mod tests {
         },
         cards::{CardClass, CardColor, CardCost, CardType, random_red_in_combat},
         combat::EndTurnStep,
-        game::{DiscardPotionStep, GameBuilder, UsePotionStep},
+        game::{AscendStep, DiscardPotionStep, GameBuilder, UsePotionStep},
+        map::RoomType,
         monsters::test::{AttackMonster, NoopMonster},
         relic::RelicClass,
+        rewards::RewardExitStep,
         step::Step,
     };
 
@@ -881,5 +883,33 @@ mod tests {
             }
             assert!(found_fruit);
         }
+    }
+
+    #[test]
+    fn test_smoke_bomb_boss() {
+        let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Monster, RoomType::Boss]);
+        g.add_potion(Potion::Smoke);
+        g.step_test(AscendStep::new(0, 0));
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(EndTurnStep) as Box<dyn Step>,
+                Box::new(UsePotionStep {
+                    potion_index: 0,
+                    target: None
+                }),
+                Box::new(DiscardPotionStep { potion_index: 0 })
+            ]
+        );
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep::new(0, 1));
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(EndTurnStep) as Box<dyn Step>,
+                Box::new(DiscardPotionStep { potion_index: 0 })
+            ]
+        );
     }
 }
