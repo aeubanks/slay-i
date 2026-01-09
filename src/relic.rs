@@ -133,7 +133,7 @@ r!(
     InkBottle => Uncommon,
     Kunai => Uncommon,
     LetterOpener => Uncommon,
-    Matryoshka => Uncommon, // TODO
+    Matryoshka => Uncommon,
     MeatOnTheBone => Uncommon,
     MercuryHourglass => Uncommon,
     MoltenEgg => Uncommon,
@@ -258,7 +258,7 @@ impl RelicClass {
         use RelicClass::*;
         match self {
             LizardTail | MawBank => Some(equip_set_1),
-            Omamori => Some(equip_set_2),
+            Omamori | Matryoshka => Some(equip_set_2),
             NeowsLament | WingBoots => Some(equip_set_3),
             WarPaint => Some(war_paint),
             Whetstone => Some(whetstone),

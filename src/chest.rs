@@ -37,6 +37,23 @@ impl Step for OpenChestStep {
         true
     }
     fn run(&self, game: &mut Game) {
+        if game
+            .get_relic_value(RelicClass::Matryoshka)
+            .is_some_and(|v| v > 0)
+        {
+            let rarity = if game.rng.random_range(0..4) == 0 {
+                RelicRarity::Uncommon
+            } else {
+                RelicRarity::Common
+            };
+            let r = game.next_relic(rarity);
+            game.rewards.add_relic(r);
+            game.set_relic_value(
+                RelicClass::Matryoshka,
+                game.get_relic_value(RelicClass::Matryoshka).unwrap() - 1,
+            );
+        }
+
         let (common_chance, uncommon_chance, gold_chance, gold_amount) =
             match game.chest_size.unwrap() {
                 ChestSize::Small => (75, 25, 50, 25),
@@ -53,6 +70,7 @@ impl Step for OpenChestStep {
         };
         let r = game.next_relic(rarity);
         game.rewards.add_relic(r);
+
         if game.rng.random_range(0..100) < gold_chance {
             let amount = (gold_amount as f32 * game.rng.random_range(0.9..=1.1)).round() as i32;
             let has_golden_idol = game.has_relic(RelicClass::GoldenIdol);
@@ -92,11 +110,12 @@ impl Step for SkipChestStep {
 mod tests {
     use super::*;
     use crate::{
-        assert_not_matches,
+        assert_matches, assert_not_matches,
         cards::{CardClass, CardType},
         chest::{OpenChestStep, SkipChestStep},
         game::{AscendStep, GameBuilder},
         map::RoomType,
+        rewards::RewardExitStep,
     };
 
     #[test]
@@ -139,6 +158,42 @@ mod tests {
                 g.master_deck[0].borrow().class,
                 CardClass::Necronomicurse | CardClass::AscendersBane | CardClass::CurseOfTheBell
             );
+        }
+    }
+
+    #[test]
+    fn test_matryoshka() {
+        for _ in 0..10 {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::Matryoshka)
+                .build_with_rooms(&[RoomType::Treasure, RoomType::Treasure, RoomType::Treasure]);
+
+            g.step_test(AscendStep::new(0, 0));
+            assert_eq!(g.get_relic_value(RelicClass::Matryoshka), Some(2));
+            g.step_test(OpenChestStep);
+            assert_eq!(g.rewards.relics.len(), 2);
+            assert_matches!(
+                g.rewards.relics[0].rarity(),
+                RelicRarity::Common | RelicRarity::Uncommon
+            );
+            assert_eq!(g.get_relic_value(RelicClass::Matryoshka), Some(1));
+            g.step_test(RewardExitStep);
+
+            g.step_test(AscendStep::new(0, 1));
+            assert_eq!(g.get_relic_value(RelicClass::Matryoshka), Some(1));
+            g.step_test(OpenChestStep);
+            assert_eq!(g.rewards.relics.len(), 2);
+            assert_matches!(
+                g.rewards.relics[0].rarity(),
+                RelicRarity::Common | RelicRarity::Uncommon
+            );
+            assert_eq!(g.get_relic_value(RelicClass::Matryoshka), Some(0));
+            g.step_test(RewardExitStep);
+
+            g.step_test(AscendStep::new(0, 2));
+            assert_eq!(g.get_relic_value(RelicClass::Matryoshka), Some(0));
+            g.step_test(OpenChestStep);
+            assert_eq!(g.rewards.relics.len(), 1);
         }
     }
 }
