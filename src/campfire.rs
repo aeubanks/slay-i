@@ -1,6 +1,6 @@
 use crate::{
     actions::heal::HealAction,
-    game::{CreatureRef, Game, RunActionsGameState},
+    game::{CreatureRef, Game, RareCardBaseChance, RunActionsGameState},
     master_deck::{ChooseRemoveFromMasterGameState, ChooseUpgradeMasterGameState},
     relic::RelicClass,
     rewards::{Rewards, RewardsGameState},
@@ -57,7 +57,7 @@ impl Step for CampfireRestStep {
     fn run(&self, game: &mut Game) {
         let mut amount = (game.player.max_hp as f32 * 0.3) as i32;
         if game.has_relic(RelicClass::DreamCatcher) {
-            let cards = Rewards::gen_card_reward(game);
+            let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Normal);
             game.rewards.add_cards(cards);
             game.state.push_state(RewardsGameState);
         }

@@ -8,7 +8,7 @@ use crate::{
     },
     creature::CreatureState,
     draw_pile::DrawPile,
-    game::{CombatType, CreatureRef, Game, RunActionsGameState, UsePotionStep},
+    game::{CombatType, CreatureRef, Game, RareCardBaseChance, RunActionsGameState, UsePotionStep},
     monster::Monster,
     monsters::{
         blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast,
@@ -261,7 +261,7 @@ impl GameState for RollCombatRewardsGameState {
                         1
                     };
                     for _ in 0..count {
-                        let cards = Rewards::gen_card_reward(game);
+                        let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Normal);
                         game.rewards.add_cards(cards);
                     }
                 }
@@ -269,7 +269,7 @@ impl GameState for RollCombatRewardsGameState {
                     let gold = game.rng.random_range(25..=35);
                     game.rewards.add_gold(gold, has_golden_idol);
 
-                    let cards = Rewards::gen_card_reward(game);
+                    let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Elite);
                     game.rewards.add_cards(cards);
 
                     let r = game.next_relic_weighted();
@@ -290,7 +290,7 @@ impl GameState for RollCombatRewardsGameState {
                     let gold = game.rng.random_range(71..=79);
                     game.rewards.add_gold(gold, has_golden_idol);
 
-                    let cards = Rewards::gen_card_reward(game);
+                    let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Boss);
                     game.rewards.add_cards(cards);
                 }
             }

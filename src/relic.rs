@@ -36,7 +36,7 @@ use crate::{
         upgrade_random_in_master::{UpgradeRandomInMasterAction, UpgradeTwoRandomInMasterAction},
     },
     cards::{CardClass, CardType},
-    game::{CreatureRef, Game, RunActionsGameState},
+    game::{CreatureRef, Game, RareCardBaseChance, RunActionsGameState},
     master_deck::{
         ChooseBottledCardGameState, ChooseRemoveFromMasterGameState,
         ChooseTransformMasterGameState, DuplicateCardInMasterGameState,
@@ -230,7 +230,7 @@ r!(
     GremlinVisage => Event,
     MarkOfTheBloom => Event,
     MutagenicStrength => Event,
-    NlothsGift => Event, // TODO
+    NlothsGift => Event,
     NlothsHungryFace => Event,
     Necronomicon => Event,
     NeowsLament => Event,
@@ -527,7 +527,7 @@ pub struct OrreryGameState;
 impl GameState for OrreryGameState {
     fn run(&self, game: &mut Game) {
         for _ in 0..5 {
-            let cards = Rewards::gen_card_reward(game);
+            let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Shop);
             game.rewards.add_cards(cards);
         }
         game.state.push_state(RewardsGameState);
@@ -544,7 +544,7 @@ pub struct CauldronGameState;
 impl GameState for CauldronGameState {
     fn run(&self, game: &mut Game) {
         // the game creates and throws away a card reward
-        let _ = Rewards::gen_card_reward(game);
+        let _ = Rewards::gen_card_reward(game, RareCardBaseChance::Shop);
         for _ in 0..5 {
             game.rewards
                 .add_potion(random_potion_weighted(&mut game.rng));
@@ -633,7 +633,7 @@ pub struct TinyHouseGameState;
 
 impl GameState for TinyHouseGameState {
     fn run(&self, game: &mut Game) {
-        let cards = Rewards::gen_card_reward(game);
+        let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Normal);
         game.rewards.add_cards(cards);
         let has_golden_idol = game.has_relic(RelicClass::GoldenIdol);
         game.rewards.add_gold(50, has_golden_idol);

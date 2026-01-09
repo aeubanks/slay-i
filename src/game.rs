@@ -603,6 +603,14 @@ pub enum CombatType {
     Boss,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum RareCardBaseChance {
+    Normal,
+    Shop,
+    Elite,
+    Boss,
+}
+
 pub struct Game {
     pub rng: Rand,
 
@@ -701,7 +709,7 @@ impl Game {
             shop: Default::default(),
             shop_remove_count: 0,
             potion_chance: 40,
-            rare_card_chance: -2,
+            rare_card_chance: 0,
             turn: 0,
             in_combat: CombatType::None,
             smoke_bombed: false,
@@ -805,13 +813,22 @@ impl Game {
         Rc::new(RefCell::new(c))
     }
 
-    pub fn roll_rarity(&mut self) -> CardRarity {
+    pub fn roll_rarity(&mut self, ty: RareCardBaseChance) -> CardRarity {
+        let (mut rare_base, uncommon_base) = match ty {
+            RareCardBaseChance::Normal => (3, 37),
+            RareCardBaseChance::Shop => (9, 37),
+            RareCardBaseChance::Elite => (10, 40),
+            RareCardBaseChance::Boss => return CardRarity::Rare,
+        };
+        if self.has_relic(RelicClass::NlothsGift) {
+            rare_base *= 3;
+        }
+        rare_base -= 5;
         let roll = self.rng.random_range(0..100);
-        if roll < self.rare_card_chance {
+        if roll < rare_base + self.rare_card_chance {
             return CardRarity::Rare;
         }
-        // FIXME: 40 for elite rooms
-        if roll < self.rare_card_chance + 37 {
+        if roll < rare_base + self.rare_card_chance + uncommon_base {
             return CardRarity::Uncommon;
         }
         CardRarity::Common

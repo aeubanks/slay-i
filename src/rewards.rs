@@ -6,7 +6,7 @@ use crate::{
     },
     card::CardRef,
     cards::{CardRarity, random_common_red, random_rare_red, random_uncommon_red},
-    game::{Game, RunActionsGameState},
+    game::{Game, RareCardBaseChance, RunActionsGameState},
     potion::Potion,
     relic::{RelicClass, RelicRarity},
     state::{GameState, Steps},
@@ -31,7 +31,7 @@ pub struct Rewards {
 }
 
 impl Rewards {
-    pub fn gen_card_reward(game: &mut Game) -> Vec<CardRef> {
+    pub fn gen_card_reward(game: &mut Game, ty: RareCardBaseChance) -> Vec<CardRef> {
         let mut num = 3;
         if game.has_relic(RelicClass::BustedCrown) {
             num -= 2;
@@ -41,12 +41,11 @@ impl Rewards {
         }
         let mut cards = Vec::<CardRef>::new();
         for _ in 0..num {
-            let rarity = game.roll_rarity();
+            let rarity = game.roll_rarity(ty);
             match rarity {
                 CardRarity::Common => game.rare_card_chance += 1,
                 CardRarity::Uncommon => {}
-                // FIXME: elite room
-                CardRarity::Rare => game.rare_card_chance = -2,
+                CardRarity::Rare => game.rare_card_chance = 0,
                 CardRarity::Basic | CardRarity::Special | CardRarity::Curse => panic!(),
             };
             let mut class;
@@ -510,6 +509,27 @@ mod tests {
             );
             g.step_test(RewardExitStep);
             g.step_test(AscendStep::new(0, 1));
+            g.play_card(CardClass::DebugKillAll, None);
+            found_rare = g
+                .rewards
+                .cards
+                .iter()
+                .flatten()
+                .any(|c| c.borrow().class.rarity() == CardRarity::Rare);
+            if found_rare {
+                break;
+            }
+        }
+        assert!(found_rare);
+    }
+
+    #[test]
+    fn test_nloths_gift() {
+        let mut found_rare = false;
+        for _ in 0..50 {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::NlothsGift)
+                .build_combat();
             g.play_card(CardClass::DebugKillAll, None);
             found_rare = g
                 .rewards
