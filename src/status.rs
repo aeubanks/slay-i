@@ -1391,4 +1391,15 @@ mod tests {
         g.play_card(CardClass::Bloodletting, None);
         assert_eq!(g.player.get_status(Strength), None);
     }
+
+    #[test]
+    fn test_combust_burn() {
+        let mut g = GameBuilder::default().build_combat();
+        g.add_card_to_hand(CardClass::Burn);
+        g.play_card(CardClass::Combust, None);
+        g.monsters[0].creature.cur_hp = 5;
+        let hp = g.player.cur_hp;
+        g.step_test(EndTurnStep);
+        assert_eq!(g.player.cur_hp, hp - 1 - 2);
+    }
 }
