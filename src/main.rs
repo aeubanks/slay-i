@@ -8,6 +8,7 @@ mod chest;
 mod combat;
 mod creature;
 mod draw_pile;
+mod event;
 mod events;
 mod game;
 mod map;

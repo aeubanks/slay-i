@@ -29,6 +29,7 @@ use crate::combat::RollEliteCombatGameState;
 use crate::combat::{RollBossCombatGameState, RollCombatGameState};
 use crate::creature::{Creature, CreatureState};
 use crate::draw_pile::DrawPile;
+use crate::event::RollQuestionRoomGameState;
 use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
 use crate::events::bonfire::BonfireGameState;
 use crate::map::{MAP_WIDTH, Map, RoomType};
@@ -198,7 +199,7 @@ impl Step for AscendStep {
         match game.map.nodes[self.x][self.y].ty.unwrap() {
             RoomType::Monster => game.state.push_state(RollCombatGameState),
             RoomType::Elite => game.state.push_state(RollEliteCombatGameState),
-            RoomType::Event => game.state.push_state(RollEventGameState),
+            RoomType::Event => game.state.push_state(RollQuestionRoomGameState),
             RoomType::Campfire => game.state.push_state(RollCampfireGameState),
             RoomType::Shop => game.state.push_state(RollShopGameState),
             RoomType::Treasure => game.state.push_state(RollTreasureGameState),
@@ -257,28 +258,6 @@ impl GameState for AscendGameState {
 }
 
 #[derive(Debug)]
-pub struct RollEventGameState;
-
-impl GameState for RollEventGameState {
-    fn run(&self, game: &mut Game) {
-        if !game.event_queue.is_empty() {
-            let e = game.event_queue.remove(0);
-            game.state.push_boxed_state(e);
-        } else if game.rng.random_bool(0.5) {
-            game.state.push_state(RollCombatGameState);
-        } else {
-            let i = game.rng.random_range(0..game.event_pool.len());
-            let e = game.event_pool.remove(i);
-            game.state.push_boxed_state(e);
-        }
-        if game.has_relic(RelicClass::SsserpentHead) {
-            game.action_queue.push_bot(GainGoldAction(50));
-            game.state.push_state(RunActionsGameState);
-        }
-    }
-}
-
-#[derive(Debug)]
 pub struct RollCampfireGameState;
 
 impl GameState for RollCampfireGameState {
@@ -300,6 +279,7 @@ pub struct RollShopGameState;
 
 impl GameState for RollShopGameState {
     fn run(&self, game: &mut Game) {
+        game.cur_room = Some(RoomType::Shop);
         game.shop = Shop::new(game);
         game.state.push_state(ShopGameState);
         if game.has_relic(RelicClass::MealTicket) {
@@ -317,6 +297,7 @@ pub struct RollTreasureGameState;
 
 impl GameState for RollTreasureGameState {
     fn run(&self, game: &mut Game) {
+        game.cur_room = Some(RoomType::Treasure);
         let size = match game.rng.random_range(0..100) {
             0..50 => ChestSize::Small,
             50..83 => ChestSize::Medium,
@@ -620,6 +601,7 @@ pub struct Game {
     pub is_running: bool,
 
     pub map: Map,
+    pub cur_room: Option<RoomType>,
     pub map_position: Option<(usize, usize)>,
     pub player: Creature,
     pub has_ruby_key: bool,
@@ -633,9 +615,12 @@ pub struct Game {
     next_id: u32,
     pub force_monsters: Option<Vec<Monster>>,
     pub roll_noop_monsters: bool,
-    pub event_queue: Vec<Box<dyn GameState>>,
+    pub override_event_queue: Vec<Box<dyn GameState>>,
 
     pub event_pool: Vec<Box<dyn GameState>>,
+    pub event_monster_chance: i32,
+    pub event_chest_chance: i32,
+    pub event_shop_chance: i32,
 
     pub common_relic_pool: Vec<RelicClass>,
     pub uncommon_relic_pool: Vec<RelicClass>,
@@ -694,6 +679,7 @@ impl Game {
         let map = Map::generate(&mut rng);
         let mut g = Self {
             map,
+            cur_room: Default::default(),
             map_position: Default::default(),
             player: Creature::new("Ironclad", 80),
             relics: Default::default(),
@@ -732,7 +718,7 @@ impl Game {
             num_times_took_damage: 0,
             force_monsters: Default::default(),
             roll_noop_monsters: false,
-            event_queue: Default::default(),
+            override_event_queue: Default::default(),
             rng,
             state: Default::default(),
             chosen_cards: Default::default(),
@@ -743,6 +729,9 @@ impl Game {
             has_emerald_key: false,
             has_ruby_key: false,
             has_sapphire_key: false,
+            event_monster_chance: 10,
+            event_shop_chance: 3,
+            event_chest_chance: 2,
         };
 
         for (c, u) in master_deck {
@@ -1570,7 +1559,8 @@ mod tests {
         g.step_test(CampfireUpgradeStep);
         g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
 
-        g.event_queue.push(Box::new(AccursedBlackSmithGameState));
+        g.override_event_queue
+            .push(Box::new(AccursedBlackSmithGameState));
         g.step_test(AscendStep::new(0, 4));
         g.step_test(ContinueStep);
     }

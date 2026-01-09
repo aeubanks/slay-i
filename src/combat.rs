@@ -9,6 +9,7 @@ use crate::{
     creature::CreatureState,
     draw_pile::DrawPile,
     game::{CombatType, CreatureRef, Game, RareCardBaseChance, RunActionsGameState, UsePotionStep},
+    map::RoomType,
     monster::Monster,
     monsters::{
         blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast,
@@ -32,6 +33,7 @@ pub struct RollCombatGameState;
 
 impl GameState for RollCombatGameState {
     fn run(&self, game: &mut Game) {
+        game.cur_room = Some(RoomType::Monster);
         if let Some(m) = game.force_monsters.take() {
             game.monsters = m;
         } else if game.roll_noop_monsters {
@@ -77,6 +79,7 @@ pub struct RollEliteCombatGameState;
 
 impl GameState for RollEliteCombatGameState {
     fn run(&self, game: &mut Game) {
+        game.cur_room = Some(RoomType::Elite);
         game.monsters = match game.rng.random_range(0..4) {
             0 => vec![Monster::new(GremlinNob::new(), &mut game.rng)],
             1 => vec![Monster::new(Lagavulin::new(), &mut game.rng)],
@@ -99,6 +102,7 @@ pub struct RollBossCombatGameState;
 
 impl GameState for RollBossCombatGameState {
     fn run(&self, game: &mut Game) {
+        game.cur_room = Some(RoomType::Boss);
         game.monsters = match game.rng.random_range(0..3) {
             0 => vec![Monster::new(Guardian::new(), &mut game.rng)],
             1 => vec![Monster::new(Hexaghost::new(), &mut game.rng)],

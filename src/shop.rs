@@ -384,7 +384,7 @@ impl Step for ShopRemoveCardStep {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct ShopExitStep;
+pub struct ShopExitStep;
 
 impl Step for ShopExitStep {
     fn should_pop_state(&self) -> bool {
