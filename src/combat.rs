@@ -325,7 +325,12 @@ fn setup_combat_draw_pile(game: &mut Game) {
         }
     }
     let num_innate = innate.len() as i32;
-    game.draw_pile = DrawPile::new(innate, non_innate);
+    game.draw_pile = DrawPile::new(
+        game.has_relic(RelicClass::FrozenEye),
+        innate,
+        non_innate,
+        &mut game.rng,
+    );
     let extra_draw = num_innate - game.draw_per_turn;
     if extra_draw > 0 {
         game.action_queue.push_bot(DrawAction(extra_draw));

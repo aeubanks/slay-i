@@ -2,7 +2,169 @@ use crate::{game::Rand, rng::rand_slice};
 
 use petgraph::visit::EdgeRef;
 
+use rand::{Rng, seq::SliceRandom};
+
 use std::fmt::Debug;
+
+pub struct DrawPile<T: Debug>(DrawPileEnum<T>);
+
+enum DrawPileEnum<T: Debug> {
+    Normal(DrawPileImpl<T>),
+    FrozenEye(FrozenEyeDrawPileImpl<T>),
+}
+
+impl<T: Debug> Default for DrawPile<T> {
+    fn default() -> Self {
+        Self(DrawPileEnum::Normal(Default::default()))
+    }
+}
+
+impl<T: Debug> DrawPile<T> {
+    pub fn new(has_frozen_eye: bool, priority: Vec<T>, normal: Vec<T>, rng: &mut Rand) -> Self {
+        if has_frozen_eye {
+            Self(DrawPileEnum::FrozenEye(FrozenEyeDrawPileImpl::new(
+                priority, normal, rng,
+            )))
+        } else {
+            Self(DrawPileEnum::Normal(DrawPileImpl::new(priority, normal)))
+        }
+    }
+    pub fn push_top(&mut self, c: T) {
+        match &mut self.0 {
+            DrawPileEnum::Normal(d) => d.push_top(c),
+            DrawPileEnum::FrozenEye(d) => d.push_top(c),
+        }
+    }
+    pub fn push_bottom(&mut self, c: T) {
+        match &mut self.0 {
+            DrawPileEnum::Normal(d) => d.push_bottom(c),
+            DrawPileEnum::FrozenEye(d) => d.push_bottom(c),
+        }
+    }
+    pub fn shuffle_in_one(&mut self, c: T, rng: &mut Rand) {
+        match &mut self.0 {
+            DrawPileEnum::Normal(d) => d.shuffle_in_one(c),
+            DrawPileEnum::FrozenEye(d) => d.shuffle_in_one(c, rng),
+        }
+    }
+    pub fn shuffle_all(&mut self, rng: &mut Rand) {
+        match &mut self.0 {
+            DrawPileEnum::Normal(d) => {
+                d.shuffle_all();
+            }
+            DrawPileEnum::FrozenEye(d) => {
+                d.shuffle_all(rng);
+            }
+        }
+    }
+    pub fn take(&mut self, i: usize) -> T {
+        match &mut self.0 {
+            DrawPileEnum::Normal(d) => d.take(i),
+            DrawPileEnum::FrozenEye(d) => d.take(i),
+        }
+    }
+    pub fn get(&self, i: usize) -> &T {
+        match &self.0 {
+            DrawPileEnum::Normal(d) => d.get(i),
+            DrawPileEnum::FrozenEye(d) => d.get(i),
+        }
+    }
+    #[cfg(test)]
+    pub fn top(&self, rng: &mut Rand) -> &T {
+        match &self.0 {
+            DrawPileEnum::Normal(d) => d.top(rng),
+            DrawPileEnum::FrozenEye(d) => d.top(),
+        }
+    }
+    pub fn get_all(&self) -> Vec<&T> {
+        match &self.0 {
+            DrawPileEnum::Normal(d) => d.get_all(),
+            DrawPileEnum::FrozenEye(d) => d.get_all(),
+        }
+    }
+    pub fn clear(&mut self) {
+        match &mut self.0 {
+            DrawPileEnum::Normal(d) => d.clear(),
+            DrawPileEnum::FrozenEye(d) => d.clear(),
+        }
+    }
+    pub fn len(&self) -> usize {
+        match &self.0 {
+            DrawPileEnum::Normal(d) => d.len(),
+            DrawPileEnum::FrozenEye(d) => d.len(),
+        }
+    }
+    pub fn is_empty(&self) -> bool {
+        match &self.0 {
+            DrawPileEnum::Normal(d) => d.is_empty(),
+            DrawPileEnum::FrozenEye(d) => d.is_empty(),
+        }
+    }
+    pub fn pop(&mut self, rng: &mut Rand) -> T {
+        match &mut self.0 {
+            DrawPileEnum::Normal(d) => d.pop(rng),
+            DrawPileEnum::FrozenEye(d) => d.pop(),
+        }
+    }
+}
+
+struct FrozenEyeDrawPileImpl<T: Debug>(Vec<T>);
+
+impl<T: Debug> Default for FrozenEyeDrawPileImpl<T> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+impl<T: Debug> FrozenEyeDrawPileImpl<T> {
+    pub fn new(mut priority: Vec<T>, mut normal: Vec<T>, rng: &mut Rand) -> Self {
+        priority.shuffle(rng);
+        normal.shuffle(rng);
+        normal.append(&mut priority);
+        Self(normal)
+    }
+    pub fn push_top(&mut self, c: T) {
+        self.0.push(c);
+    }
+    pub fn push_bottom(&mut self, c: T) {
+        self.0.insert(0, c);
+    }
+    pub fn shuffle_in_one(&mut self, c: T, rng: &mut Rand) {
+        if self.0.is_empty() {
+            self.0.push(c);
+        } else {
+            self.0.insert(rng.random_range(0..self.0.len()), c);
+        }
+    }
+    pub fn shuffle_all(&mut self, rng: &mut Rand) {
+        self.0.shuffle(rng);
+    }
+    pub fn take(&mut self, i: usize) -> T {
+        self.0.remove(i)
+    }
+    pub fn get(&self, i: usize) -> &T {
+        &self.0[i]
+    }
+    #[cfg(test)]
+    pub fn top(&self) -> &T {
+        self.0.last().unwrap()
+    }
+    pub fn get_all(&self) -> Vec<&T> {
+        self.0.iter().collect()
+    }
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn pop(&mut self) -> T {
+        self.0.pop().unwrap()
+    }
+}
 
 #[derive(Debug)]
 struct Node<T: Debug> {
@@ -16,11 +178,11 @@ enum Edge {
     Ordered, // the source card must be drawn after the target card
 }
 
-pub struct DrawPile<T: Debug> {
+struct DrawPileImpl<T: Debug> {
     graph: petgraph::graph::DiGraph<Node<T>, Edge>,
 }
 
-impl<T: Debug> Default for DrawPile<T> {
+impl<T: Debug> Default for DrawPileImpl<T> {
     fn default() -> Self {
         Self {
             graph: Default::default(),
@@ -28,8 +190,8 @@ impl<T: Debug> Default for DrawPile<T> {
     }
 }
 
-impl<T: Debug> DrawPile<T> {
-    pub fn new(priority: Vec<T>, normal: Vec<T>) -> Self {
+impl<T: Debug> DrawPileImpl<T> {
+    fn new(priority: Vec<T>, normal: Vec<T>) -> Self {
         let mut ret = Self::default();
         let mut normal_nodes = Vec::new();
         let mut priority_nodes = Vec::new();
@@ -54,7 +216,7 @@ impl<T: Debug> DrawPile<T> {
         }
         ret
     }
-    pub fn push_top(&mut self, t: T) {
+    fn push_top(&mut self, t: T) {
         let all = self.graph.node_indices();
         let n = self.graph.add_node(Node {
             value: t,
@@ -64,7 +226,7 @@ impl<T: Debug> DrawPile<T> {
             self.graph.add_edge(source, n, Edge::Ordered);
         }
     }
-    pub fn push_bottom(&mut self, t: T) {
+    fn push_bottom(&mut self, t: T) {
         let all = self.graph.node_indices();
         let n = self.graph.add_node(Node {
             value: t,
@@ -74,7 +236,7 @@ impl<T: Debug> DrawPile<T> {
             self.graph.add_edge(n, target, Edge::Ordered);
         }
     }
-    pub fn shuffle_in_one(&mut self, t: T) {
+    fn shuffle_in_one(&mut self, t: T) {
         if self.is_empty() {
             self.graph.add_node(Node {
                 value: t,
@@ -91,13 +253,13 @@ impl<T: Debug> DrawPile<T> {
             }
         }
     }
-    pub fn shuffle_all(&mut self) {
+    fn shuffle_all(&mut self) {
         self.graph.clear_edges();
         for n in self.graph.node_indices() {
             self.graph[n].can_draw = true;
         }
     }
-    pub fn take(&mut self, i: usize) -> T {
+    fn take(&mut self, i: usize) -> T {
         for (ni, n) in self.graph.node_indices().enumerate() {
             if ni == i {
                 if self.graph[n].can_draw {
@@ -118,31 +280,31 @@ impl<T: Debug> DrawPile<T> {
         }
         panic!()
     }
-    pub fn get(&self, i: usize) -> &T {
+    fn get(&self, i: usize) -> &T {
         self.get_all()[i]
     }
     #[cfg(test)]
-    pub fn top(&self, rng: &mut Rand) -> &T {
+    fn top(&self, rng: &mut Rand) -> &T {
         let possible = self.possible_indexes_to_draw();
         let c = rand_slice(rng, &possible);
         self.get(possible[c])
     }
-    pub fn get_all(&self) -> Vec<&T> {
+    fn get_all(&self) -> Vec<&T> {
         self.graph
             .node_indices()
             .map(|i| &self.graph[i].value)
             .collect()
     }
-    pub fn clear(&mut self) {
+    fn clear(&mut self) {
         self.graph.clear();
     }
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.graph.node_count()
     }
-    pub fn is_empty(&self) -> bool {
+    fn is_empty(&self) -> bool {
         self.len() == 0
     }
-    pub fn pop(&mut self, rng: &mut Rand) -> T {
+    fn pop(&mut self, rng: &mut Rand) -> T {
         let possible = self.possible_indexes_to_draw();
         let c = rand_slice(rng, &possible);
         for (ni, n) in self.graph.node_indices().enumerate() {
@@ -153,7 +315,7 @@ impl<T: Debug> DrawPile<T> {
         }
         self.take(c)
     }
-    pub fn possible_indexes_to_draw(&self) -> Vec<usize> {
+    fn possible_indexes_to_draw(&self) -> Vec<usize> {
         assert!(!self.is_empty());
         let mut ret = Vec::new();
         for (i, n) in self.graph.node_indices().enumerate() {
@@ -169,7 +331,7 @@ impl<T: Debug> DrawPile<T> {
         ret
     }
     #[cfg(test)]
-    pub fn possible_values_to_draw(&self) -> Vec<&T> {
+    fn possible_values_to_draw(&self) -> Vec<&T> {
         self.possible_indexes_to_draw()
             .iter()
             .map(|i| self.get(*i))
@@ -251,7 +413,7 @@ mod tests {
         let mut rng = Rand::default();
         let mut seen = Seen::new(&[1, 2, 3]);
         for _ in 0..100 {
-            let mut d = DrawPile::<i32>::new(vec![], vec![1, 2, 3]);
+            let mut d = DrawPileImpl::<i32>::new(vec![], vec![1, 2, 3]);
             assert_eq!(d.len(), 3);
             let v = d.pop(&mut rng);
             seen.add(v);
@@ -279,7 +441,7 @@ mod tests {
     #[should_panic]
     fn test_empty() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.pop(&mut rng);
     }
 
@@ -288,7 +450,7 @@ mod tests {
         let mut rng = Rand::default();
 
         for _ in 0..10 {
-            let mut d = DrawPile::<i32>::new(vec![4, 5], vec![1, 2, 3]);
+            let mut d = DrawPileImpl::<i32>::new(vec![4, 5], vec![1, 2, 3]);
             assert_set_eq(d.possible_values_to_draw(), &[4, 5]);
             d.pop(&mut rng);
             d.pop(&mut rng);
@@ -299,7 +461,7 @@ mod tests {
     #[test]
     fn test_top() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.push_top(1);
         d.push_top(2);
         d.push_top(3);
@@ -311,7 +473,7 @@ mod tests {
     #[test]
     fn test_bottom() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.push_bottom(1);
         d.push_bottom(2);
         d.push_bottom(3);
@@ -323,7 +485,7 @@ mod tests {
     #[test]
     fn test_top_bottom() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.push_bottom(1);
         d.push_top(2);
         d.push_bottom(3);
@@ -337,7 +499,7 @@ mod tests {
     #[test]
     fn test_top_shuffle() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::new(vec![], vec![1, 2]);
+        let mut d = DrawPileImpl::<i32>::new(vec![], vec![1, 2]);
         d.push_top(3);
         assert_eq!(d.pop(&mut rng), 3);
     }
@@ -345,7 +507,7 @@ mod tests {
     #[test]
     fn test_shuffled_in_1() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::new(vec![], vec![1]);
+        let mut d = DrawPileImpl::<i32>::new(vec![], vec![1]);
         d.shuffle_in_one(2);
         assert_eq!(d.pop(&mut rng), 1);
         assert_eq!(d.pop(&mut rng), 2);
@@ -354,7 +516,7 @@ mod tests {
     #[test]
     fn test_shuffled_in_2() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::new(vec![], vec![1, 1]);
+        let mut d = DrawPileImpl::<i32>::new(vec![], vec![1, 1]);
         d.shuffle_in_one(2);
         assert_eq!(d.pop(&mut rng), 1);
         assert_set_eq(d.possible_values_to_draw(), &[1, 2]);
@@ -363,7 +525,7 @@ mod tests {
     #[test]
     fn test_shuffled_in_3() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.shuffle_in_one(1);
         assert_eq!(d.pop(&mut rng), 1);
     }
@@ -371,7 +533,7 @@ mod tests {
     #[test]
     fn test_shuffled_in_4() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.shuffle_in_one(1);
         d.shuffle_in_one(2);
         assert_eq!(d.pop(&mut rng), 1);
@@ -381,7 +543,7 @@ mod tests {
     #[test]
     fn test_shuffled_in_5() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.shuffle_in_one(1);
         d.shuffle_in_one(2);
         assert_eq!(d.take(0), 1);
@@ -391,7 +553,7 @@ mod tests {
     #[test]
     fn test_shuffled_in_6() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.shuffle_in_one(0);
         d.shuffle_in_one(1);
         d.shuffle_in_one(2);
@@ -404,7 +566,7 @@ mod tests {
     #[test]
     fn test_shuffled_in_bottom() {
         let mut rng = Rand::default();
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.push_bottom(0);
         d.shuffle_in_one(1);
         assert_eq!(d.pop(&mut rng), 0);
@@ -412,7 +574,7 @@ mod tests {
 
     #[test]
     fn test_get_all() {
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.push_bottom(0);
         d.push_top(1);
         d.shuffle_in_one(2);
@@ -422,7 +584,7 @@ mod tests {
 
     #[test]
     fn test_shuffle_all() {
-        let mut d = DrawPile::<i32>::default();
+        let mut d = DrawPileImpl::<i32>::default();
         d.shuffle_in_one(0);
         d.shuffle_in_one(1);
         d.shuffle_in_one(2);
@@ -433,39 +595,96 @@ mod tests {
 
     #[test]
     fn fuzz() {
-        let mut rng = rand::rngs::SmallRng::seed_from_u64(1);
+        let mut drng = rand::rngs::SmallRng::seed_from_u64(1);
+        let mut rng = Rand::default();
         for _ in 0..100 {
-            let mut dp = DrawPile::default();
-            let mut test_pile = Vec::new();
+            let mut dp = DrawPileImpl::<i32>::default();
+            let mut test_pile = FrozenEyeDrawPileImpl::<i32>::new(vec![], vec![], &mut rng);
             // random actions to the DrawPile as well as a mirror vector where we mirror the actions
             for x in 0..5 {
-                match rng.random_range(0..3) {
+                match drng.random_range(0..3) {
                     0 => {
                         dp.push_top(x);
-                        test_pile.push(x);
+                        test_pile.push_top(x);
                     }
                     1 => {
                         dp.push_bottom(x);
-                        test_pile.insert(0, x);
+                        test_pile.push_bottom(x);
                     }
                     2 => {
                         dp.shuffle_in_one(x);
-                        if test_pile.is_empty() {
-                            test_pile.push(x);
-                        } else {
-                            test_pile.insert(rng.random_range(0..test_pile.len()), x);
-                        }
+                        test_pile.shuffle_in_one(x, &mut rng);
                     }
                     _ => panic!(),
                 }
             }
             // check if the mirror vector is in an order that the DrawPile allows
-            while let Some(v) = test_pile.pop() {
+            while !test_pile.is_empty() {
+                let v = test_pile.pop();
                 assert!(dp.possible_values_to_draw().contains(&&v));
                 let idx = dp.get_all().into_iter().position(|e| *e == v).unwrap();
                 dp.take(idx);
             }
             assert!(dp.is_empty());
         }
+    }
+
+    #[test]
+    fn test_frozen_eye_1() {
+        let mut rng = Rand::default();
+        let mut dp = FrozenEyeDrawPileImpl::<i32>::new(vec![0], vec![1], &mut rng);
+        assert_eq!(dp.pop(), 0);
+        assert_eq!(dp.pop(), 1);
+
+        dp.shuffle_in_one(0, &mut rng);
+        assert_eq!(dp.pop(), 0);
+
+        dp.shuffle_in_one(0, &mut rng);
+        dp.shuffle_in_one(1, &mut rng);
+        assert_eq!(dp.pop(), 0);
+        assert_eq!(dp.pop(), 1);
+    }
+
+    #[test]
+    fn test_frozen_eye_2() {
+        let mut found_0_first = false;
+        let mut found_1_first = false;
+        for _ in 0..30 {
+            let mut rng = Rand::default();
+            let mut dp = FrozenEyeDrawPileImpl::<i32>::new(vec![0], vec![1], &mut rng);
+            dp.shuffle_all(&mut rng);
+            match dp.pop() {
+                0 => found_0_first = true,
+                1 => found_1_first = true,
+                _ => panic!(),
+            }
+            if found_0_first && found_1_first {
+                break;
+            }
+        }
+        assert!(found_0_first && found_1_first);
+    }
+
+    #[test]
+    fn test_frozen_eye_3() {
+        let mut found_0_first = false;
+        let mut found_1_first = false;
+        for _ in 0..30 {
+            let mut rng = Rand::default();
+            let mut dp = FrozenEyeDrawPileImpl::<i32>::default();
+            dp.push_top(1);
+            dp.push_top(2);
+            dp.shuffle_in_one(0, &mut rng);
+            assert_eq!(dp.pop(), 2);
+            match dp.pop() {
+                0 => found_0_first = true,
+                1 => found_1_first = true,
+                _ => panic!(),
+            }
+            if found_0_first && found_1_first {
+                break;
+            }
+        }
+        assert!(found_0_first && found_1_first);
     }
 }

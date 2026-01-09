@@ -17,7 +17,7 @@ impl Action for ShuffleCardIntoDrawAction {
         {
             *base_cost = 0
         }
-        game.draw_pile.shuffle_in_one(card);
+        game.draw_pile.shuffle_in_one(card, &mut game.rng);
     }
 }
 

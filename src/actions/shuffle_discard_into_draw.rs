@@ -9,7 +9,7 @@ impl Action for ShuffleDiscardIntoDrawAction {
         for c in discard {
             game.draw_pile.push_top(c);
         }
-        game.draw_pile.shuffle_all();
+        game.draw_pile.shuffle_all(&mut game.rng);
 
         // In the actual game the shuffle relics trigger on
         // ShuffleDiscardOnTopOfDrawAction creation, but they add to the bottom

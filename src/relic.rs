@@ -185,7 +185,7 @@ r!(
     ChemicalX => Shop,
     ClockworkSouvenir => Shop,
     DollysMirror => Shop,
-    FrozenEye => Shop, // TODO
+    FrozenEye => Shop,
     HandDrill => Shop,
     LeesWaffle => Shop,
     MedicalKit => Shop,
@@ -3787,5 +3787,21 @@ mod tests {
             g.valid_steps(),
             vec![Box::new(AscendStep::new(1, 5)) as Box<dyn Step>,]
         );
+    }
+
+    #[test]
+    fn test_frozen_eye() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::FrozenEye)
+            .add_cards(CardClass::Strike, 10)
+            .add_cards(CardClass::Defend, 10)
+            .add_cards(CardClass::Bash, 10)
+            .build_combat();
+        for _ in 0..10 {
+            g.hand.clear();
+            let class = g.draw_pile.get_all().last().unwrap().borrow().class;
+            g.run_action(DrawAction(1));
+            assert_eq!(g.hand[0].borrow().class, class);
+        }
     }
 }
