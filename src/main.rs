@@ -4,6 +4,7 @@ mod blessings;
 mod campfire;
 mod card;
 mod cards;
+mod chest;
 mod combat;
 mod creature;
 mod draw_pile;

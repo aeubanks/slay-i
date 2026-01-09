@@ -1,0 +1,115 @@
+use rand::Rng;
+
+use crate::{
+    game::Game,
+    relic::{RelicClass, RelicRarity},
+    rewards::RewardsGameState,
+    state::{GameState, Steps},
+    step::Step,
+};
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum ChestSize {
+    Small,
+    Medium,
+    Large,
+}
+
+#[derive(Debug)]
+pub struct ClosedChestGameState;
+
+impl GameState for ClosedChestGameState {
+    fn valid_steps(&self, _: &Game) -> Option<Steps> {
+        let mut steps = Steps::default();
+        steps.push(OpenChestStep);
+        steps.push(SkipChestStep);
+        Some(steps)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct OpenChestStep;
+
+impl Step for OpenChestStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+    fn run(&self, game: &mut Game) {
+        let (common_chance, uncommon_chance, gold_chance, gold_amount) =
+            match game.chest_size.unwrap() {
+                ChestSize::Small => (75, 25, 50, 25),
+                ChestSize::Medium => (35, 50, 35, 50),
+                ChestSize::Large => (0, 75, 50, 75),
+            };
+        let rng = game.rng.random_range(0..100);
+        let rarity = if rng < common_chance {
+            RelicRarity::Common
+        } else if rng < common_chance + uncommon_chance {
+            RelicRarity::Uncommon
+        } else {
+            RelicRarity::Rare
+        };
+        let r = game.next_relic(rarity);
+        game.rewards.add_relic(r);
+        if game.rng.random_range(0..100) < gold_chance {
+            let amount = (gold_amount as f32 * game.rng.random_range(0.9..=1.1)).round() as i32;
+            let has_golden_idol = game.has_relic(RelicClass::GoldenIdol);
+            game.rewards.add_gold(amount, has_golden_idol);
+        }
+        game.state.push_state(RewardsGameState);
+        game.chest_size = None;
+    }
+    fn description(&self, _: &Game) -> String {
+        "open chest".to_owned()
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct SkipChestStep;
+
+impl Step for SkipChestStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+    fn run(&self, game: &mut Game) {
+        game.chest_size = None;
+    }
+    fn description(&self, _: &Game) -> String {
+        "skip chest".to_owned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        chest::{OpenChestStep, SkipChestStep},
+        game::{AscendStep, GameBuilder},
+        map::RoomType,
+    };
+
+    #[test]
+    fn test_chest_open() {
+        for _ in 0..10 {
+            let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Treasure]);
+            g.step_test(AscendStep::new(0, 0));
+            let size = g.chest_size.unwrap();
+            g.step_test(OpenChestStep);
+            assert_eq!(g.rewards.relics.len(), 1);
+            match size {
+                ChestSize::Small => assert_ne!(g.rewards.relics[0].rarity(), RelicRarity::Rare),
+                ChestSize::Medium => {}
+                ChestSize::Large => assert_ne!(g.rewards.relics[0].rarity(), RelicRarity::Common),
+            }
+        }
+    }
+
+    #[test]
+    fn test_chest_skip() {
+        let mut g =
+            GameBuilder::default().build_with_rooms(&[RoomType::Treasure, RoomType::Monster]);
+        g.step_test(AscendStep::new(0, 0));
+        g.step_test(SkipChestStep);
+        g.step_test(AscendStep::new(0, 1));
+    }
+}

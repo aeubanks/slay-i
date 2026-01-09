@@ -20,13 +20,13 @@ pub enum RewardType {
     Boss,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Rewards {
-    gold: i32,
-    stolen_gold: i32,
-    potions: Vec<Potion>,
-    cards: Vec<Vec<CardRef>>,
-    relics: Vec<RelicClass>,
+    pub gold: i32,
+    pub stolen_gold: i32,
+    pub potions: Vec<Potion>,
+    pub cards: Vec<Vec<CardRef>>,
+    pub relics: Vec<RelicClass>,
 }
 
 impl Rewards {

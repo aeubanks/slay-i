@@ -24,6 +24,7 @@ use crate::blessings::ChooseBlessingGameState;
 use crate::campfire::CampfireGameState;
 use crate::card::{Card, CardPile, CardRef};
 use crate::cards::{CardClass, CardCost, CardRarity, CardType};
+use crate::chest::{ChestSize, ClosedChestGameState};
 use crate::combat::RollEliteCombatGameState;
 use crate::combat::{RollBossCombatGameState, RollCombatGameState};
 use crate::creature::{Creature, CreatureState};
@@ -316,7 +317,13 @@ pub struct RollTreasureGameState;
 
 impl GameState for RollTreasureGameState {
     fn run(&self, game: &mut Game) {
-        game.state.push_state(RollCombatGameState);
+        let size = match game.rng.random_range(0..100) {
+            0..50 => ChestSize::Small,
+            50..83 => ChestSize::Medium,
+            _ => ChestSize::Large,
+        };
+        game.chest_size = Some(size);
+        game.state.push_state(ClosedChestGameState);
     }
 }
 
@@ -631,6 +638,8 @@ pub struct Game {
 
     pub boss_rewards: Vec<RelicClass>,
 
+    pub chest_size: Option<ChestSize>,
+
     pub shop: Shop,
     pub shop_remove_count: i32,
 
@@ -696,6 +705,7 @@ impl Game {
             energy: 0,
             rewards: Default::default(),
             boss_rewards: Default::default(),
+            chest_size: Default::default(),
             draw_per_turn: 5,
             draw_pile: Default::default(),
             hand: Default::default(),
