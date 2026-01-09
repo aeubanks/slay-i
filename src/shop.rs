@@ -9,7 +9,7 @@ use crate::{
         CardClass, CardColor, CardRarity, CardType, random_rare_colorless, random_red_attack,
         random_red_power, random_red_skill, random_uncommon_colorless,
     },
-    game::{Game, RunActionsGameState},
+    game::{Game, RareCardBaseChance, RunActionsGameState},
     master_deck::ChooseRemoveFromMasterGameState,
     potion::{
         Potion, PotionRarity, random_common_potion, random_rare_potion, random_uncommon_potion,
@@ -36,23 +36,26 @@ pub struct Shop {
 impl Shop {
     pub fn new(game: &mut Game) -> Self {
         let mut shop = Self::default();
-        // FIXME: card rarity percentages
         for card_f in [
             random_red_attack,
             random_red_attack,
             random_red_skill,
             random_red_skill,
             random_red_power,
-            random_uncommon_colorless,
-            random_rare_colorless,
         ] {
             let mut class;
             loop {
+                let rarity = game.roll_rarity(RareCardBaseChance::Shop);
                 class = card_f(&mut game.rng);
-                if shop.cards.iter().all(|(c, _)| *c != class) {
+                if class.rarity() == rarity && shop.cards.iter().all(|(c, _)| *c != class) {
                     break;
                 }
             }
+            shop.cards
+                .push((class, Self::base_card_cost(game, class, true)));
+        }
+        for card_f in [random_uncommon_colorless, random_rare_colorless] {
+            let class = card_f(&mut game.rng);
             shop.cards
                 .push((class, Self::base_card_cost(game, class, true)));
         }
@@ -147,12 +150,18 @@ impl Shop {
                 _ => random_uncommon_colorless(&mut game.rng),
             }
         } else {
-            // FIXME: rarity
-            match prev_card.ty() {
-                CardType::Attack => random_red_attack(&mut game.rng),
-                CardType::Skill => random_red_skill(&mut game.rng),
-                CardType::Power => random_red_power(&mut game.rng),
+            let card_f = match prev_card.ty() {
+                CardType::Attack => random_red_attack,
+                CardType::Skill => random_red_skill,
+                CardType::Power => random_red_power,
                 _ => panic!(),
+            };
+            loop {
+                let rarity = game.roll_rarity(RareCardBaseChance::Shop);
+                let class = card_f(&mut game.rng);
+                if class.rarity() == rarity {
+                    return class;
+                }
             }
         }
     }
@@ -771,5 +780,33 @@ mod tests {
         g.step_test(ShopExitStep);
         g.step_test(AscendStep::new(0, 3));
         assert_eq!(g.gold, 500);
+    }
+
+    #[test]
+    fn test_shop_rare_chance() {
+        for _ in 0..10 {
+            let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Shop]);
+            g.rare_card_chance = -10;
+            g.step_test(AscendStep::new(0, 0));
+            assert!(!g.shop.cards.is_empty());
+            for i in 0..5 {
+                assert_ne!(g.shop.cards[i].0.rarity(), CardRarity::Rare);
+            }
+        }
+        let mut found_rare = false;
+        for _ in 0..100 {
+            let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Shop]);
+            g.step_test(AscendStep::new(0, 0));
+            found_rare = g
+                .shop
+                .cards
+                .iter()
+                .take(5)
+                .any(|c| c.0.rarity() == CardRarity::Rare);
+            if found_rare {
+                break;
+            }
+        }
+        assert!(found_rare);
     }
 }
