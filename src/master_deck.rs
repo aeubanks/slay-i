@@ -3,7 +3,7 @@ use crate::{
         add_card_to_master_deck::AddCardToMasterDeckAction,
         removed_card_from_master_deck::RemovedCardFromMasterDeckAction, upgrade::UpgradeAction,
     },
-    cards::transformed,
+    cards::{CardType, transformed},
     game::{Game, RunActionsGameState},
     state::{GameState, Steps},
     step::Step,
@@ -267,5 +267,39 @@ impl Step for DuplicateCardInMasterStep {
             "duplicate {:?}",
             game.master_deck[self.master_index].borrow()
         )
+    }
+}
+
+#[derive(Debug)]
+pub struct ChooseBottledCardGameState {
+    pub ty: CardType,
+}
+
+impl GameState for ChooseBottledCardGameState {
+    fn valid_steps(&self, game: &Game) -> Option<Steps> {
+        let mut steps = Steps::default();
+        for (i, c) in game.master_deck.iter().enumerate() {
+            if c.borrow().class.ty() == self.ty {
+                steps.push(ChooseBottledCardStep { master_index: i });
+            }
+        }
+        Some(steps)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ChooseBottledCardStep {
+    pub master_index: usize,
+}
+
+impl Step for ChooseBottledCardStep {
+    fn should_pop_state(&self) -> bool {
+        true
+    }
+    fn run(&self, game: &mut Game) {
+        game.master_deck[self.master_index].borrow_mut().is_bottled = true;
+    }
+    fn description(&self, game: &Game) -> String {
+        format!("bottle {:?}", game.master_deck[self.master_index].borrow())
     }
 }

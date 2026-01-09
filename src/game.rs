@@ -719,6 +719,7 @@ impl Game {
             class,
             upgrade_count: 0,
             cost: class.base_cost(),
+            is_bottled: false,
             exhaust: class.base_exhausts(),
             base_increase: 0,
             id,

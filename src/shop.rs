@@ -491,6 +491,9 @@ mod tests {
                 g.step_test(ShopBuyPotionStep { shop_index: i });
                 g.take_potion(0);
             }
+            g.shop.relics[0].0 = RelicClass::Akabeko;
+            g.shop.relics[1].0 = RelicClass::Anchor;
+            g.shop.relics[2].0 = RelicClass::AncientTeaSet;
             for i in 0..3 {
                 g.step_test(ShopBuyRelicStep { shop_index: i });
             }

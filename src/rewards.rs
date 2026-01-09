@@ -670,12 +670,9 @@ mod tests {
         assert_eq!(g.rewards.cards.len(), 0);
         assert_eq!(g.master_deck.len(), 1);
         assert_eq!(g.master_deck[0].borrow().class, CardClass::CurseOfTheBell);
-        for _ in 0..3 {
-            g.step_test(RelicRewardStep { relic_index: 0 });
-        }
-        assert_eq!(g.relics[1].get_class().rarity(), RelicRarity::Common);
-        assert_eq!(g.relics[2].get_class().rarity(), RelicRarity::Uncommon);
-        assert_eq!(g.relics[3].get_class().rarity(), RelicRarity::Rare);
+        assert_eq!(g.rewards.relics[0].rarity(), RelicRarity::Common);
+        assert_eq!(g.rewards.relics[1].rarity(), RelicRarity::Uncommon);
+        assert_eq!(g.rewards.relics[2].rarity(), RelicRarity::Rare);
     }
 
     #[test]

@@ -38,8 +38,9 @@ use crate::{
     cards::{CardClass, CardType},
     game::{CreatureRef, Game, RunActionsGameState},
     master_deck::{
-        ChooseRemoveFromMasterGameState, ChooseTransformMasterGameState,
-        DuplicateCardInMasterGameState, TransformChosenCardsGameState,
+        ChooseBottledCardGameState, ChooseRemoveFromMasterGameState,
+        ChooseTransformMasterGameState, DuplicateCardInMasterGameState,
+        TransformChosenCardsGameState,
     },
     potion::random_potion_weighted,
     queue::ActionQueue,
@@ -121,9 +122,9 @@ r!(
     RedSkull => Common,
 
     BlueCandle => Uncommon,
-    BottledFlame => Uncommon, // TODO
-    BottledLightning => Uncommon, // TODO
-    BottledTornado => Uncommon, // TODO
+    BottledFlame => Uncommon,
+    BottledLightning => Uncommon,
+    BottledTornado => Uncommon,
     DarkstonePeriapt => Uncommon,
     EternalFeather => Uncommon,
     FrozenEgg => Uncommon,
@@ -276,6 +277,9 @@ impl RelicClass {
             CallingBell => Some(calling_bell),
             PandorasBox => Some(pandoras_box),
             Astrolabe => Some(astrolabe),
+            BottledFlame => Some(bottled_flame),
+            BottledLightning => Some(bottled_lightning),
+            BottledTornado => Some(bottled_tornado),
             _ => None,
         }
     }
@@ -602,6 +606,24 @@ fn astrolabe(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
     state.push_state(ChooseTransformMasterGameState {
         num_cards_remaining: 3,
         upgrade: true,
+    });
+}
+
+fn bottled_flame(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(ChooseBottledCardGameState {
+        ty: CardType::Attack,
+    });
+}
+
+fn bottled_lightning(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(ChooseBottledCardGameState {
+        ty: CardType::Skill,
+    });
+}
+
+fn bottled_tornado(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(ChooseBottledCardGameState {
+        ty: CardType::Power,
     });
 }
 
@@ -1251,7 +1273,8 @@ mod tests {
         game::{AscendStep, GameBuilder, GameStatus},
         map::RoomType,
         master_deck::{
-            ChooseRemoveFromMasterStep, ChooseTransformMasterStep, DuplicateCardInMasterStep,
+            ChooseBottledCardStep, ChooseRemoveFromMasterStep, ChooseTransformMasterStep,
+            DuplicateCardInMasterStep,
         },
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
@@ -3620,5 +3643,77 @@ mod tests {
                 assert_eq!(c.borrow().upgrade_count, 1);
             }
         }
+    }
+
+    #[test]
+    fn test_bottled_flame() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Strike)
+            .add_card(CardClass::Bash)
+            .add_card(CardClass::Defend)
+            .add_card(CardClass::Impervious)
+            .add_card(CardClass::Inflame)
+            .add_card(CardClass::DemonForm)
+            .build_with_rooms(&[RoomType::Monster]);
+        g.run_action(GainRelicAction(RelicClass::BottledFlame));
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(ChooseBottledCardStep { master_index: 0 }) as Box<dyn Step>,
+                Box::new(ChooseBottledCardStep { master_index: 1 }) as Box<dyn Step>,
+            ]
+        );
+        g.step_test(ChooseBottledCardStep { master_index: 0 });
+
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
+    }
+
+    #[test]
+    fn test_bottled_lightning() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Strike)
+            .add_card(CardClass::Bash)
+            .add_card(CardClass::Defend)
+            .add_card(CardClass::Impervious)
+            .add_card(CardClass::Inflame)
+            .add_card(CardClass::DemonForm)
+            .build_with_rooms(&[RoomType::Monster]);
+        g.run_action(GainRelicAction(RelicClass::BottledLightning));
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(ChooseBottledCardStep { master_index: 2 }) as Box<dyn Step>,
+                Box::new(ChooseBottledCardStep { master_index: 3 }) as Box<dyn Step>,
+            ]
+        );
+        g.step_test(ChooseBottledCardStep { master_index: 2 });
+
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
+    }
+
+    #[test]
+    fn test_bottled_tornado() {
+        let mut g = GameBuilder::default()
+            .add_card(CardClass::Strike)
+            .add_card(CardClass::Bash)
+            .add_card(CardClass::Defend)
+            .add_card(CardClass::Impervious)
+            .add_card(CardClass::Inflame)
+            .add_card(CardClass::DemonForm)
+            .build_with_rooms(&[RoomType::Monster]);
+        g.run_action(GainRelicAction(RelicClass::BottledTornado));
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(ChooseBottledCardStep { master_index: 4 }) as Box<dyn Step>,
+                Box::new(ChooseBottledCardStep { master_index: 5 }) as Box<dyn Step>,
+            ]
+        );
+        g.step_test(ChooseBottledCardStep { master_index: 5 });
+
+        g.step_test(AscendStep { x: 0, y: 0 });
+        assert_eq!(g.hand[0].borrow().class, CardClass::DemonForm);
     }
 }

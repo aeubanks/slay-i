@@ -21,6 +21,7 @@ pub struct Card {
     pub upgrade_count: i32,
     pub cost: CardCost,
     pub exhaust: bool,
+    pub is_bottled: bool,
     pub base_increase: i32,
     pub id: u32,
 }

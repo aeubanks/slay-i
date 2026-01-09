@@ -318,7 +318,7 @@ fn setup_combat_draw_pile(game: &mut Game) {
     let mut innate = Vec::new();
     for c in &game.master_deck {
         let c = game.clone_card_ref_same_id(c);
-        if c.borrow().is_innate() {
+        if c.borrow().is_innate() || c.borrow().is_bottled {
             innate.push(c);
         } else {
             non_innate.push(c);
