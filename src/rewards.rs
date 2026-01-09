@@ -27,6 +27,7 @@ pub struct Rewards {
     pub potions: Vec<Potion>,
     pub cards: Vec<Vec<CardRef>>,
     pub relics: Vec<RelicClass>,
+    pub has_sapphire_key: bool,
 }
 
 impl Rewards {
@@ -119,6 +120,9 @@ impl GameState for RewardsGameState {
         }
         for i in 0..game.rewards.relics.len() {
             steps.push(RelicRewardStep { relic_index: i });
+        }
+        if game.rewards.has_sapphire_key && !game.rewards.relics.is_empty() {
+            steps.push(SapphireKeyStep);
         }
         steps.push(RewardExitStep);
         Some(steps)
@@ -244,12 +248,35 @@ impl Step for RelicRewardStep {
         false
     }
     fn run(&self, game: &mut Game) {
+        if game.rewards.has_sapphire_key && self.relic_index + 1 == game.rewards.relics.len() {
+            game.rewards.has_sapphire_key = false;
+        }
         let r = game.rewards.relics.remove(self.relic_index);
         game.action_queue.push_bot(GainRelicAction(r));
         game.state.push_state(RunActionsGameState);
     }
     fn description(&self, game: &Game) -> String {
         format!("gain {:?}", game.rewards.relics[self.relic_index])
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct SapphireKeyStep;
+
+impl Step for SapphireKeyStep {
+    fn should_pop_state(&self) -> bool {
+        false
+    }
+    fn run(&self, game: &mut Game) {
+        game.has_sapphire_key = true;
+        game.rewards.has_sapphire_key = false;
+        game.rewards.relics.pop().unwrap();
+    }
+    fn description(&self, game: &Game) -> String {
+        format!(
+            "gain sapphire key (lose {:?})",
+            game.rewards.relics.last().unwrap()
+        )
     }
 }
 
@@ -332,6 +359,7 @@ mod tests {
         assert_matches,
         campfire::CampfireRestStep,
         cards::CardClass,
+        chest::OpenChestStep,
         combat::EndTurnStep,
         game::{AscendStep, DiscardPotionStep, GameBuilder},
         map::RoomType,
@@ -707,5 +735,121 @@ mod tests {
         assert_eq!(g.rewards.cards.len(), 1);
         assert_eq!(g.rewards.potions.len(), 1);
         assert_eq!(g.rewards.cards[0].len(), 3);
+    }
+
+    #[test]
+    fn test_sapphire_key_1() {
+        let mut g =
+            GameBuilder::default().build_with_rooms(&[RoomType::Treasure, RoomType::Treasure]);
+        g.step_test(AscendStep::new(0, 0));
+        g.step_test(OpenChestStep);
+        g.rewards.gold = 0;
+        assert!(!g.has_sapphire_key);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(RelicRewardStep { relic_index: 0 }) as Box<dyn Step>,
+                Box::new(SapphireKeyStep),
+                Box::new(RewardExitStep),
+            ]
+        );
+        g.step_test(SapphireKeyStep);
+        assert!(g.has_sapphire_key);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep::new(0, 1));
+        g.step_test(OpenChestStep);
+        g.rewards.gold = 0;
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(RelicRewardStep { relic_index: 0 }) as Box<dyn Step>,
+                Box::new(RewardExitStep),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_sapphire_key_2() {
+        let mut g =
+            GameBuilder::default().build_with_rooms(&[RoomType::Treasure, RoomType::Treasure]);
+        g.step_test(AscendStep::new(0, 0));
+        g.step_test(OpenChestStep);
+        g.rewards.gold = 0;
+        assert!(!g.has_sapphire_key);
+        g.rewards.relics[0] = RelicClass::Akabeko;
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(RelicRewardStep { relic_index: 0 }) as Box<dyn Step>,
+                Box::new(SapphireKeyStep),
+                Box::new(RewardExitStep),
+            ]
+        );
+        g.step_test(RelicRewardStep { relic_index: 0 });
+        assert!(!g.has_sapphire_key);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(RewardExitStep) as Box<dyn Step>,]
+        );
+    }
+
+    #[test]
+    fn test_sapphire_key_3() {
+        let mut g =
+            GameBuilder::default().build_with_rooms(&[RoomType::Treasure, RoomType::Treasure]);
+        g.step_test(AscendStep::new(0, 0));
+        g.step_test(OpenChestStep);
+        g.rewards.gold = 0;
+        g.rewards.relics[0] = RelicClass::Akabeko;
+        g.rewards.add_relic(RelicClass::Anchor);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(RelicRewardStep { relic_index: 0 }) as Box<dyn Step>,
+                Box::new(RelicRewardStep { relic_index: 1 }),
+                Box::new(SapphireKeyStep),
+                Box::new(RewardExitStep),
+            ]
+        );
+        g.step_test(RelicRewardStep { relic_index: 0 });
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(RelicRewardStep { relic_index: 0 }) as Box<dyn Step>,
+                Box::new(SapphireKeyStep),
+                Box::new(RewardExitStep),
+            ]
+        );
+        assert!(!g.has_sapphire_key);
+    }
+
+    #[test]
+    fn test_sapphire_key_4() {
+        let mut g =
+            GameBuilder::default().build_with_rooms(&[RoomType::Treasure, RoomType::Treasure]);
+        g.step_test(AscendStep::new(0, 0));
+        g.step_test(OpenChestStep);
+        g.rewards.gold = 0;
+        g.rewards.relics[0] = RelicClass::Akabeko;
+        g.rewards.add_relic(RelicClass::Anchor);
+        assert_eq!(g.rewards.relics.len(), 2);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(RelicRewardStep { relic_index: 0 }) as Box<dyn Step>,
+                Box::new(RelicRewardStep { relic_index: 1 }),
+                Box::new(SapphireKeyStep),
+                Box::new(RewardExitStep),
+            ]
+        );
+        g.step_test(RelicRewardStep { relic_index: 1 });
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(RelicRewardStep { relic_index: 0 }) as Box<dyn Step>,
+                Box::new(RewardExitStep),
+            ]
+        );
+        assert!(!g.has_sapphire_key);
     }
 }

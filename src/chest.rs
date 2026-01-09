@@ -30,7 +30,7 @@ impl GameState for ClosedChestGameState {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct OpenChestStep;
+pub struct OpenChestStep;
 
 impl Step for OpenChestStep {
     fn should_pop_state(&self) -> bool {
@@ -84,6 +84,10 @@ impl Step for OpenChestStep {
             game.action_queue
                 .push_bot(AddCardClassToMasterDeckAction(c));
             game.state.push_state(RunActionsGameState);
+        }
+
+        if !game.has_sapphire_key {
+            game.rewards.has_sapphire_key = true;
         }
     }
     fn description(&self, _: &Game) -> String {

@@ -614,6 +614,9 @@ pub struct Game {
     pub map: Map,
     pub map_position: Option<(usize, usize)>,
     pub player: Creature,
+    pub has_ruby_key: bool,
+    pub has_emerald_key: bool,
+    pub has_sapphire_key: bool,
     pub relics: Vec<Relic>,
     pub potions: Vec<Option<Potion>>,
     pub gold: i32,
@@ -729,6 +732,9 @@ impl Game {
             status: GameStatus::Combat,
             is_running: false,
             event_pool,
+            has_emerald_key: false,
+            has_ruby_key: false,
+            has_sapphire_key: false,
         };
 
         for (c, u) in master_deck {
