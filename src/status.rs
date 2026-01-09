@@ -132,6 +132,7 @@ mod tests {
         game::{CreatureRef, GameBuilder},
         monsters::test::{ApplyStatusMonster, AttackMonster, NoopMonster},
         potion::Potion,
+        relic::RelicClass,
         status::Status,
         step::Step,
     };
@@ -1375,5 +1376,19 @@ mod tests {
 
         g.play_card(CardClass::Strike, Some(CreatureRef::monster(0)));
         assert_eq!(g.monsters[0].creature.get_status(Status::Strength), Some(2));
+    }
+
+    #[test]
+    fn test_rupture_tungsten_rod() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::TungstenRod)
+            .build_combat();
+        g.play_card(CardClass::Combust, None);
+        g.play_card(CardClass::Rupture, None);
+        g.step_test(EndTurnStep);
+        assert_eq!(g.player.get_status(Strength), None);
+        g.play_card(CardClass::Apparition, None);
+        g.play_card(CardClass::Bloodletting, None);
+        assert_eq!(g.player.get_status(Strength), None);
     }
 }
