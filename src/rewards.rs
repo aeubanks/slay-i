@@ -392,7 +392,7 @@ mod tests {
         for _ in 0..10 {
             let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Elite]);
             g.potion_chance = 0;
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             g.play_card(CardClass::DebugKillAll, None);
             assert_ne!(g.rewards.gold, 0);
             assert_eq!(g.rewards.stolen_gold, 0);
@@ -468,7 +468,7 @@ mod tests {
             let mut g =
                 GameBuilder::default().build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
             g.roll_noop_monsters = true;
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             g.play_card(CardClass::DebugKillAll, None);
             assert!(
                 g.rewards
@@ -478,7 +478,7 @@ mod tests {
                     .all(|c| c.borrow().class.rarity() != CardRarity::Rare)
             );
             g.step_test(RewardExitStep);
-            g.step_test(AscendStep { x: 0, y: 1 });
+            g.step_test(AscendStep::new(0, 1));
             g.play_card(CardClass::DebugKillAll, None);
             found_rare = g
                 .rewards
@@ -551,13 +551,13 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::GoldenIdol)
                 .build_with_rooms(&[RoomType::Monster, RoomType::Elite]);
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             g.play_card(CardClass::DebugKillAll, None);
             assert!(g.rewards.gold >= 13);
             assert!(g.rewards.gold <= 25);
             g.step_test(RewardExitStep);
 
-            g.step_test(AscendStep { x: 0, y: 1 });
+            g.step_test(AscendStep::new(0, 1));
             g.play_card(CardClass::DebugKillAll, None);
             assert!(g.rewards.gold >= 31);
             assert!(g.rewards.gold <= 44);
@@ -590,7 +590,7 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::PrayerWheel)
             .build_with_rooms(&[RoomType::Monster, RoomType::Elite]);
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         g.play_card(CardClass::DebugKillAll, None);
         assert_eq!(g.rewards.cards.len(), 2);
         g.step_test(CardRewardStep {
@@ -602,7 +602,7 @@ mod tests {
             card_index: 0,
         });
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         g.play_card(CardClass::DebugKillAll, None);
         assert_eq!(g.rewards.cards.len(), 1);
     }
@@ -636,7 +636,7 @@ mod tests {
     #[test]
     fn test_boss_rewards() {
         let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Boss]);
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         assert_eq!(
@@ -682,7 +682,7 @@ mod tests {
                 .add_relic(RelicClass::BlackStar)
                 .build_with_rooms(&[RoomType::Elite]);
             g.potion_chance = 0;
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             g.play_card(CardClass::DebugKillAll, None);
             assert_eq!(g.rewards.relics.len(), 2);
             assert!(!g.rewards.relics[1].is_campfire_relic());

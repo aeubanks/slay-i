@@ -1737,21 +1737,21 @@ mod tests {
                 RoomType::Monster,
             ]);
         g.roll_noop_monsters = true;
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.energy, 3);
         g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         g.step_test(CampfireRestStep);
-        g.step_test(AscendStep { x: 0, y: 2 });
+        g.step_test(AscendStep::new(0, 2));
         assert_eq!(g.energy, 5);
         g.step_test(EndTurnStep);
         assert_eq!(g.energy, 3);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 3 });
+        g.step_test(AscendStep::new(0, 3));
         assert_eq!(g.energy, 3);
     }
 
@@ -1781,7 +1781,7 @@ mod tests {
 
         g.roll_noop_monsters = true;
 
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
 
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(1));
         assert_eq!(g.player.get_status(Status::Intangible), None);
@@ -1805,7 +1805,7 @@ mod tests {
         assert_eq!(g.player.get_status(Status::Intangible), None);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         assert_eq!(g.get_relic_value(RelicClass::IncenseBurner), Some(2));
     }
 
@@ -2265,21 +2265,21 @@ mod tests {
                 .add_relic(RelicClass::PenNib)
                 .build_with_rooms(&[RoomType::Monster, RoomType::Monster, RoomType::Monster]);
             g.roll_noop_monsters = true;
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             for _ in 0..8 {
                 g.play_card(CardClass::Anger, Some(CreatureRef::monster(0)));
             }
             assert_eq!(g.player.get_status(Status::PenNib), None);
             g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
             g.step_test(RewardExitStep);
-            g.step_test(AscendStep { x: 0, y: 1 });
+            g.step_test(AscendStep::new(0, 1));
 
             assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
             assert_eq!(g.player.get_status(Status::PenNib), Some(1));
             assert_eq!(g.get_relic_value(RelicClass::PenNib), Some(9));
             g.play_card(CardClass::DebugKill, Some(CreatureRef::monster(0)));
             g.step_test(RewardExitStep);
-            g.step_test(AscendStep { x: 0, y: 2 });
+            g.step_test(AscendStep::new(0, 2));
 
             assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
             assert_eq!(g.get_relic_value(RelicClass::PenNib), Some(0));
@@ -2998,7 +2998,7 @@ mod tests {
             .add_relic(RelicClass::RedSkull)
             .build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
         g.roll_noop_monsters = true;
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         g.player.cur_hp = g.player.max_hp / 2 + 1;
         assert_eq!(g.player.get_status(Status::Strength), None);
         g.play_card(CardClass::Bloodletting, None);
@@ -3011,7 +3011,7 @@ mod tests {
         // start new combat bloodied
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         assert!(g.player.is_bloodied());
         assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
         assert_eq!(g.player.get_status(Status::Strength), Some(3));
@@ -3113,28 +3113,28 @@ mod tests {
                 RoomType::Monster,
             ]);
 
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
 
         assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(2));
         assert_eq!(g.monsters[0].creature.cur_hp, 1);
         g.play_card(CardClass::Thunderclap, None);
 
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
 
         assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(1));
         assert_eq!(g.monsters[0].creature.cur_hp, 1);
         g.play_card(CardClass::Thunderclap, None);
 
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 2 });
+        g.step_test(AscendStep::new(0, 2));
 
         assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(0));
         assert_eq!(g.monsters[0].creature.cur_hp, 1);
         g.play_card(CardClass::Thunderclap, None);
 
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 3 });
+        g.step_test(AscendStep::new(0, 3));
 
         assert_eq!(g.get_relic_value(RelicClass::NeowsLament), Some(0));
         assert_eq!(g.monsters[0].creature.cur_hp, g.monsters[0].creature.max_hp);
@@ -3289,7 +3289,7 @@ mod tests {
             .add_relic(RelicClass::MealTicket)
             .build_with_rooms(&[RoomType::Shop, RoomType::Campfire]);
         g.player.cur_hp = 10;
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.player.cur_hp, 25);
     }
 
@@ -3299,7 +3299,7 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::PreservedInsect)
                 .build_with_rooms(&[RoomType::Monster]);
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             assert!(!g.monsters.is_empty());
             for m in &g.monsters {
                 assert_eq!(m.creature.cur_hp, m.creature.max_hp);
@@ -3309,7 +3309,7 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::PreservedInsect)
                 .build_with_rooms(&[RoomType::Elite]);
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             assert!(!g.monsters.is_empty());
             for m in &g.monsters {
                 assert_eq!(m.creature.cur_hp, (m.creature.max_hp as f32 * 0.75) as i32);
@@ -3323,14 +3323,14 @@ mod tests {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::SlingOfCourage)
                 .build_with_rooms(&[RoomType::Monster]);
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             assert_eq!(g.player.get_status(Status::Strength), None);
         }
         {
             let mut g = GameBuilder::default()
                 .add_relic(RelicClass::SlingOfCourage)
                 .build_with_rooms(&[RoomType::Elite]);
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             assert_eq!(g.player.get_status(Status::Strength), Some(2));
         }
     }
@@ -3383,11 +3383,11 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::SsserpentHead)
             .build_with_rooms(&[RoomType::Monster, RoomType::Event]);
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
         assert_eq!(g.gold, 0);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         assert_eq!(g.gold, 50);
     }
 
@@ -3418,7 +3418,7 @@ mod tests {
                 .add_relic(RelicClass::EternalFeather)
                 .build_with_rooms(&[RoomType::Campfire]);
             g.player.cur_hp = 20;
-            g.step_test(AscendStep { x: 0, y: 0 });
+            g.step_test(AscendStep::new(0, 0));
             assert_eq!(g.player.cur_hp, 20 + heal);
         }
     }
@@ -3464,15 +3464,15 @@ mod tests {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::SlaversCollar)
             .build_with_rooms(&[RoomType::Monster, RoomType::Elite, RoomType::Boss]);
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.energy, 3);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         assert_eq!(g.energy, 4);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 2 });
+        g.step_test(AscendStep::new(0, 2));
         assert_eq!(g.energy, 4);
     }
 
@@ -3482,11 +3482,11 @@ mod tests {
             .add_relic(RelicClass::Pantograph)
             .build_with_rooms(&[RoomType::Elite, RoomType::Boss]);
         g.player.cur_hp = 10;
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.player.cur_hp, 10);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         assert_eq!(g.player.cur_hp, 35);
     }
 
@@ -3499,7 +3499,7 @@ mod tests {
         g.player.max_hp = 100;
         g.throw_potion(Potion::Blood, None);
         assert_eq!(g.player.cur_hp, 30);
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         g.throw_potion(Potion::Blood, None);
         assert_eq!(g.player.cur_hp, 60);
         g.play_card_upgraded(CardClass::Bite, Some(CreatureRef::monster(0)));
@@ -3688,7 +3688,7 @@ mod tests {
         );
         g.step_test(ChooseBottledCardStep { master_index: 0 });
 
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.hand[0].borrow().class, CardClass::Strike);
     }
 
@@ -3712,7 +3712,7 @@ mod tests {
         );
         g.step_test(ChooseBottledCardStep { master_index: 2 });
 
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.hand[0].borrow().class, CardClass::Defend);
     }
 
@@ -3736,7 +3736,7 @@ mod tests {
         );
         g.step_test(ChooseBottledCardStep { master_index: 5 });
 
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.hand[0].borrow().class, CardClass::DemonForm);
     }
 }

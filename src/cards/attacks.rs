@@ -936,14 +936,14 @@ mod tests {
             GameBuilder::default().build_with_rooms(&[RoomType::Monster, RoomType::Monster]);
         g.roll_noop_monsters = true;
 
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         g.play_card(CardClass::Bloodletting, None);
         g.play_card(CardClass::Bloodletting, None);
         g.add_card_to_hand(CardClass::BloodForBlood);
         assert_eq!(g.hand[0].borrow().get_base_cost(), 2);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         g.add_card_to_hand(CardClass::BloodForBlood);
         assert_eq!(g.hand[0].borrow().get_base_cost(), 4);
     }

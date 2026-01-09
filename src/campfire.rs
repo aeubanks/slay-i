@@ -243,27 +243,27 @@ mod tests {
 
         g.roll_noop_monsters = true;
 
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.player.get_status(Status::Strength), None);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         g.step_test(CampfireLiftStep);
-        g.step_test(AscendStep { x: 0, y: 2 });
+        g.step_test(AscendStep::new(0, 2));
         assert_eq!(g.player.get_status(Status::Strength), Some(1));
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 3 });
+        g.step_test(AscendStep::new(0, 3));
         g.step_test(CampfireLiftStep);
-        g.step_test(AscendStep { x: 0, y: 4 });
+        g.step_test(AscendStep::new(0, 4));
         g.step_test(CampfireLiftStep);
-        g.step_test(AscendStep { x: 0, y: 5 });
+        g.step_test(AscendStep::new(0, 5));
         assert_eq!(
             g.valid_steps(),
             vec![Box::new(CampfireRestStep) as Box<dyn Step>,]
         );
         g.step_test(CampfireRestStep);
-        g.step_test(AscendStep { x: 0, y: 6 });
+        g.step_test(AscendStep::new(0, 6));
         assert_eq!(g.player.get_status(Status::Strength), Some(3));
     }
 

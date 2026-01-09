@@ -166,8 +166,14 @@ impl GameState for RunActionsGameState {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct AscendStep {
-    pub x: usize,
-    pub y: usize,
+    x: usize,
+    y: usize,
+}
+
+impl AscendStep {
+    pub fn new(x: usize, y: usize) -> Self {
+        Self { x, y }
+    }
 }
 
 impl Step for AscendStep {
@@ -204,7 +210,7 @@ impl GameState for AscendGameState {
         match game.map_position {
             Some(p) => {
                 for e in &game.map.nodes[p.0][p.1].edges {
-                    steps.push(AscendStep { x: *e, y: p.1 + 1 });
+                    steps.push(AscendStep::new(*e, p.1 + 1));
                 }
             }
             None => {
@@ -1483,26 +1489,26 @@ mod tests {
         ]);
 
         g.step_test(ChooseBlessingStep(Blessing::GainMaxHPSmall));
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         g.step_test(PlayCardStep {
             hand_index: 0,
             target: Some(0),
         });
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         g.step_test(CampfireRestStep);
-        g.step_test(AscendStep { x: 0, y: 2 });
+        g.step_test(AscendStep::new(0, 2));
         g.step_test(PlayCardStep {
             hand_index: 0,
             target: Some(0),
         });
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 3 });
+        g.step_test(AscendStep::new(0, 3));
         g.step_test(CampfireUpgradeStep);
         g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
 
         g.event_queue.push(Box::new(AccursedBlackSmithGameState));
-        g.step_test(AscendStep { x: 0, y: 4 });
+        g.step_test(AscendStep::new(0, 4));
         g.step_test(ContinueStep);
     }
 }

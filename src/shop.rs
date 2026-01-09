@@ -645,7 +645,7 @@ mod tests {
                 RoomType::Shop,
                 RoomType::Shop,
             ]);
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         g.gold = 1000;
         g.step_test(ShopRemoveCardStep);
         g.step_test(ChooseRemoveFromMasterStep {
@@ -659,7 +659,7 @@ mod tests {
         assert_eq!(g.gold, 1000 - 75);
 
         g.step_test(ShopExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         g.step_test(ShopRemoveCardStep);
         g.step_test(ChooseRemoveFromMasterStep {
             master_index: 0,
@@ -669,7 +669,7 @@ mod tests {
 
         g.add_relic(RelicClass::MembershipCard);
         g.step_test(ShopExitStep);
-        g.step_test(AscendStep { x: 0, y: 2 });
+        g.step_test(AscendStep::new(0, 2));
         g.step_test(ShopRemoveCardStep);
         g.step_test(ChooseRemoveFromMasterStep {
             master_index: 0,
@@ -679,7 +679,7 @@ mod tests {
 
         g.add_relic(RelicClass::TheCourier);
         g.step_test(ShopExitStep);
-        g.step_test(AscendStep { x: 0, y: 3 });
+        g.step_test(AscendStep::new(0, 3));
         g.step_test(ShopRemoveCardStep);
         g.step_test(ChooseRemoveFromMasterStep {
             master_index: 0,
@@ -755,21 +755,21 @@ mod tests {
                 RoomType::Monster,
             ]);
         g.gold = 500;
-        g.step_test(AscendStep { x: 0, y: 0 });
+        g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.gold, 512);
         g.play_card(CardClass::DebugKillAll, None);
         g.step_test(RewardExitStep);
-        g.step_test(AscendStep { x: 0, y: 1 });
+        g.step_test(AscendStep::new(0, 1));
         assert_eq!(g.gold, 524);
         g.step_test(ShopExitStep);
-        g.step_test(AscendStep { x: 0, y: 2 });
+        g.step_test(AscendStep::new(0, 2));
         assert_eq!(g.gold, 536);
         assert_eq!(g.get_relic_value(RelicClass::MawBank), Some(1));
         g.step_test(ShopBuyPotionStep { shop_index: 0 });
         assert_eq!(g.get_relic_value(RelicClass::MawBank), Some(0));
         g.gold = 500;
         g.step_test(ShopExitStep);
-        g.step_test(AscendStep { x: 0, y: 3 });
+        g.step_test(AscendStep::new(0, 3));
         assert_eq!(g.gold, 500);
     }
 }
