@@ -204,7 +204,7 @@ r!(
     BustedCrown => Boss,
     CallingBell => Boss,
     CoffeeDripper => Boss,
-    CursedKey => Boss, // TODO
+    CursedKey => Boss,
     Ectoplasm => Boss,
     EmptyCage => Boss,
     FusionHammer => Boss,

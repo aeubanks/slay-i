@@ -396,7 +396,9 @@ lazy_static! {
         .iter()
         .copied()
         .filter(|c| c.ty() == CardType::Curse)
-        .filter(|&c| c != CardClass::AscendersBane && c != CardClass::CurseOfTheBell)
+        .filter(|&c| c != CardClass::AscendersBane
+            && c != CardClass::CurseOfTheBell
+            && c != CardClass::Necronomicurse)
         .collect();
 }
 
@@ -460,7 +462,7 @@ pub fn random_rare_colorless(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_RARE_COLORLESS)
 }
 
-fn random_curse(rng: &mut Rand) -> CardClass {
+pub fn random_curse(rng: &mut Rand) -> CardClass {
     rand_slice(rng, &ALL_CURSES)
 }
 

@@ -1,7 +1,9 @@
 use rand::Rng;
 
 use crate::{
-    game::Game,
+    actions::add_card_class_to_master_deck::AddCardClassToMasterDeckAction,
+    cards::random_curse,
+    game::{Game, RunActionsGameState},
     relic::{RelicClass, RelicRarity},
     rewards::RewardsGameState,
     state::{GameState, Steps},
@@ -58,6 +60,13 @@ impl Step for OpenChestStep {
         }
         game.state.push_state(RewardsGameState);
         game.chest_size = None;
+
+        if game.has_relic(RelicClass::CursedKey) {
+            let c = random_curse(&mut game.rng);
+            game.action_queue
+                .push_bot(AddCardClassToMasterDeckAction(c));
+            game.state.push_state(RunActionsGameState);
+        }
     }
     fn description(&self, _: &Game) -> String {
         "open chest".to_owned()
@@ -83,6 +92,8 @@ impl Step for SkipChestStep {
 mod tests {
     use super::*;
     use crate::{
+        assert_not_matches,
+        cards::{CardClass, CardType},
         chest::{OpenChestStep, SkipChestStep},
         game::{AscendStep, GameBuilder},
         map::RoomType,
@@ -111,5 +122,23 @@ mod tests {
         g.step_test(AscendStep::new(0, 0));
         g.step_test(SkipChestStep);
         g.step_test(AscendStep::new(0, 1));
+    }
+
+    #[test]
+    fn test_cursed_key() {
+        for _ in 0..10 {
+            let mut g = GameBuilder::default()
+                .add_relic(RelicClass::CursedKey)
+                .build_with_rooms(&[RoomType::Treasure]);
+            g.step_test(AscendStep::new(0, 0));
+            assert_eq!(g.master_deck.len(), 0);
+            g.step_test(OpenChestStep);
+            assert_eq!(g.master_deck.len(), 1);
+            assert_eq!(g.master_deck[0].borrow().class.ty(), CardType::Curse);
+            assert_not_matches!(
+                g.master_deck[0].borrow().class,
+                CardClass::Necronomicurse | CardClass::AscendersBane | CardClass::CurseOfTheBell
+            );
+        }
     }
 }
