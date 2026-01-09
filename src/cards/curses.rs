@@ -195,6 +195,21 @@ mod tests {
     }
 
     #[test]
+    fn test_necronomicurse_dark_embrace_dead_branch() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::BlueCandle)
+            .add_relic(RelicClass::DeadBranch)
+            .add_player_status(Status::DarkEmbrace, 1)
+            .build_combat();
+        g.add_card_to_draw_pile(CardClass::Strike);
+        g.play_card(CardClass::Necronomicurse, None);
+
+        assert_eq!(g.hand.len(), 3);
+        assert_eq!(g.hand[1].borrow().class, CardClass::Strike);
+        assert_eq!(g.hand[2].borrow().class, CardClass::Necronomicurse);
+    }
+
+    #[test]
     fn test_parasite() {
         let mut g = GameBuilder::default()
             .add_card(CardClass::Parasite)
