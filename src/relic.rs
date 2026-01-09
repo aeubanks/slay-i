@@ -3086,6 +3086,16 @@ mod tests {
     }
 
     #[test]
+    fn test_hand_drill_dropkick() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::HandDrill)
+            .build_combat();
+        g.monsters[0].creature.block = 1;
+        g.play_card(CardClass::Dropkick, Some(CreatureRef::monster(0)));
+        assert_eq!(g.energy, 2);
+    }
+
+    #[test]
     fn test_charons_ashes() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::CharonsAshes)
