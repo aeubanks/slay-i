@@ -86,6 +86,9 @@ impl Rewards {
     pub fn add_relic(&mut self, relic: RelicClass) {
         self.relics.push(relic);
     }
+    pub fn remove_one_relic(&mut self) {
+        self.relics.remove(0);
+    }
 }
 
 #[derive(Debug)]
@@ -851,5 +854,46 @@ mod tests {
             ]
         );
         assert!(!g.has_sapphire_key);
+    }
+
+    #[test]
+    fn test_nloths_hungry_face() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::NlothsHungryFace)
+            .build_with_rooms(&[RoomType::Treasure, RoomType::Treasure]);
+        g.step_test(AscendStep::new(0, 0));
+        assert_eq!(g.get_relic_value(RelicClass::NlothsHungryFace), Some(1));
+        g.step_test(OpenChestStep);
+        assert_eq!(g.get_relic_value(RelicClass::NlothsHungryFace), Some(0));
+        g.rewards.gold = 0;
+        assert_eq!(g.rewards.relics.len(), 0);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(RewardExitStep) as Box<dyn Step>,]
+        );
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep::new(0, 1));
+        g.step_test(OpenChestStep);
+        assert_eq!(g.rewards.relics.len(), 1);
+    }
+
+    #[test]
+    fn test_nloths_hungry_face_matryoshka() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::NlothsHungryFace)
+            .add_relic(RelicClass::Matryoshka)
+            .build_with_rooms(&[RoomType::Treasure]);
+        g.step_test(AscendStep::new(0, 0));
+        g.step_test(OpenChestStep);
+        g.rewards.gold = 0;
+        assert_eq!(g.rewards.relics.len(), 1);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(RelicRewardStep { relic_index: 0 }) as Box<dyn Step>,
+                Box::new(SapphireKeyStep),
+                Box::new(RewardExitStep),
+            ]
+        );
     }
 }

@@ -231,7 +231,7 @@ r!(
     MarkOfTheBloom => Event,
     MutagenicStrength => Event,
     NlothsGift => Event, // TODO
-    NlothsHungryFace => Event, // TODO
+    NlothsHungryFace => Event,
     Necronomicon => Event,
     NeowsLament => Event,
     NilrysCodex => Event,
@@ -257,7 +257,7 @@ impl RelicClass {
     pub fn on_equip(&self) -> Option<RelicEquipCallback> {
         use RelicClass::*;
         match self {
-            LizardTail | MawBank => Some(equip_set_1),
+            LizardTail | MawBank | NlothsHungryFace => Some(equip_set_1),
             Omamori | Matryoshka => Some(equip_set_2),
             NeowsLament | WingBoots => Some(equip_set_3),
             WarPaint => Some(war_paint),

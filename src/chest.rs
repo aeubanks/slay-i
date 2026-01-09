@@ -86,6 +86,11 @@ impl Step for OpenChestStep {
             game.state.push_state(RunActionsGameState);
         }
 
+        if game.get_relic_value(RelicClass::NlothsHungryFace) == Some(1) {
+            game.set_relic_value(RelicClass::NlothsHungryFace, 0);
+            game.rewards.remove_one_relic();
+        }
+
         if !game.has_sapphire_key {
             game.rewards.has_sapphire_key = true;
         }
