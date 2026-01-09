@@ -121,7 +121,7 @@ impl Card {
         !matches!(
             self.class,
             CardClass::AscendersBane | CardClass::CurseOfTheBell
-        )
+        ) && !self.is_bottled
     }
 }
 

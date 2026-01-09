@@ -275,6 +275,10 @@ mod tests {
             .add_card(CardClass::CurseOfTheBell)
             .add_relic(RelicClass::PeacePipe)
             .build_campfire();
+        let c = g.new_card(CardClass::Bash);
+        c.borrow_mut().is_bottled = true;
+        g.master_deck.push(c);
+        assert_eq!(g.master_deck.len(), 5);
         g.step_test(CampfireTokeStep);
         assert_eq!(
             g.valid_steps(),
@@ -297,7 +301,6 @@ mod tests {
 
     #[test]
     fn test_campfire_toke_none_to_toke() {
-        // TODO: test bottled
         let g = GameBuilder::default()
             .add_card(CardClass::CurseOfTheBell)
             .add_relic(RelicClass::PeacePipe)
