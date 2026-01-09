@@ -247,6 +247,45 @@ impl RelicClass {
         use RelicClass::*;
         matches!(self, Girya | PeacePipe | Shovel)
     }
+
+    pub fn can_spawn(&self, game: &Game) -> bool {
+        if self.is_campfire_relic() {
+            if game
+                .relics
+                .iter()
+                .filter(|r| r.get_class().is_campfire_relic())
+                .count()
+                >= 2
+            {
+                return false;
+            }
+        }
+        use RelicClass::*;
+        match self {
+            BlackBlood => game.has_relic(BurningBlood),
+            Ectoplasm => game.floor <= 20,
+            TinyChest => game.floor <= 35,
+            WingBoots | Matryoshka => game.floor <= 40,
+            TheCourier | PotionBelt | ToxicEgg | FrozenEgg | MoltenEgg | MealTicket
+            | SingingBowl | DreamCatcher | MawBank | OldCoin | Shovel | Girya | PeacePipe
+            | CeramicFish | Omamori | PrayerWheel | MeatOnTheBone | DarkstonePeriapt
+            | AncientTeaSet | RegalPillow => game.floor <= 48,
+            PreservedInsect => game.floor <= 52,
+            BottledFlame => game
+                .master_deck
+                .iter()
+                .any(|c| c.borrow().class.ty() == CardType::Attack),
+            BottledLightning => game
+                .master_deck
+                .iter()
+                .any(|c| c.borrow().class.ty() == CardType::Skill),
+            BottledTornado => game
+                .master_deck
+                .iter()
+                .any(|c| c.borrow().class.ty() == CardType::Power),
+            _ => true,
+        }
+    }
 }
 
 type RelicCallback = fn(&mut i32, &mut ActionQueue);
@@ -1289,7 +1328,7 @@ mod tests {
             choose_gamble::{GambleEndStep, GambleStep},
             gain_relic::GainRelicAction,
         },
-        assert_matches,
+        assert_matches, assert_not_matches,
         campfire::CampfireRestStep,
         cards::{CardClass, CardColor, CardRarity},
         combat::{EndTurnStep, PlayCardStep},
@@ -3802,6 +3841,20 @@ mod tests {
             let class = g.draw_pile.get_all().last().unwrap().borrow().class;
             g.run_action(DrawAction(1));
             assert_eq!(g.hand[0].borrow().class, class);
+        }
+    }
+
+    #[test]
+    fn test_can_spawn() {
+        let mut g = GameBuilder::default().build();
+        for _ in 0..20 {
+            let r = g.next_relic(RelicRarity::Uncommon);
+            assert_not_matches!(
+                r,
+                RelicClass::BottledFlame
+                    | RelicClass::BottledLightning
+                    | RelicClass::BottledTornado
+            );
         }
     }
 }

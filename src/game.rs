@@ -195,6 +195,7 @@ impl Step for AscendStep {
         false
     }
     fn run(&self, game: &mut Game) {
+        game.floor += 1;
         game.map_position = Some((self.x, self.y));
         match game.map.nodes[self.x][self.y].ty.unwrap() {
             RoomType::Monster => game.state.push_state(RollCombatGameState),
@@ -602,6 +603,7 @@ pub struct Game {
 
     pub map: Map,
     pub cur_room: Option<RoomType>,
+    pub floor: i32,
     pub map_position: Option<(usize, usize)>,
     pub player: Creature,
     pub has_ruby_key: bool,
@@ -680,6 +682,7 @@ impl Game {
         let mut g = Self {
             map,
             cur_room: Default::default(),
+            floor: 0,
             map_position: Default::default(),
             player: Creature::new("Ironclad", 80),
             relics: Default::default(),
@@ -1439,15 +1442,20 @@ impl Game {
         p
     }
     pub fn next_relic(&mut self, rarity: RelicRarity) -> RelicClass {
-        let pool = match rarity {
-            RelicRarity::Common => &mut self.common_relic_pool,
-            RelicRarity::Uncommon => &mut self.uncommon_relic_pool,
-            RelicRarity::Rare => &mut self.rare_relic_pool,
-            RelicRarity::Shop => &mut self.shop_relic_pool,
-            RelicRarity::Boss => &mut self.boss_relic_pool,
-            _ => panic!(),
-        };
-        pool.pop().unwrap()
+        loop {
+            let pool = match rarity {
+                RelicRarity::Common => &mut self.common_relic_pool,
+                RelicRarity::Uncommon => &mut self.uncommon_relic_pool,
+                RelicRarity::Rare => &mut self.rare_relic_pool,
+                RelicRarity::Shop => &mut self.shop_relic_pool,
+                RelicRarity::Boss => &mut self.boss_relic_pool,
+                _ => panic!(),
+            };
+            let r = pool.pop().unwrap();
+            if r.can_spawn(self) {
+                return r;
+            }
+        }
     }
     pub fn next_relic_weighted(&mut self) -> RelicClass {
         // 50% common
