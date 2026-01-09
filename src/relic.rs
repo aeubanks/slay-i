@@ -33,7 +33,7 @@ use crate::{
         sling_of_courage::SlingOfCourageAction,
         try_remove_card_from_master_deck::TryRemoveCardFromMasterDeckAction,
         upgrade_random_in_hand::UpgradeRandomInHandAction,
-        upgrade_random_in_master::UpgradeRandomInMasterAction,
+        upgrade_random_in_master::{UpgradeRandomInMasterAction, UpgradeTwoRandomInMasterAction},
     },
     cards::{CardClass, CardType},
     game::{CreatureRef, Game, RunActionsGameState},
@@ -216,7 +216,7 @@ r!(
     SlaversCollar => Boss,
     SneckoEye => Boss,
     Sozu => Boss,
-    TinyHouse => Boss, // TODO
+    TinyHouse => Boss,
     VelvetChoker => Boss,
     BlackBlood => Boss,
     MarkOfPain => Boss,
@@ -280,6 +280,7 @@ impl RelicClass {
             BottledFlame => Some(bottled_flame),
             BottledLightning => Some(bottled_lightning),
             BottledTornado => Some(bottled_tornado),
+            TinyHouse => Some(tiny_house),
             _ => None,
         }
     }
@@ -625,6 +626,28 @@ fn bottled_tornado(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManage
     state.push_state(ChooseBottledCardGameState {
         ty: CardType::Power,
     });
+}
+
+#[derive(Debug)]
+pub struct TinyHouseGameState;
+
+impl GameState for TinyHouseGameState {
+    fn run(&self, game: &mut Game) {
+        let cards = Rewards::gen_card_reward(game);
+        game.rewards.add_cards(cards);
+        let has_golden_idol = game.has_relic(RelicClass::GoldenIdol);
+        game.rewards.add_gold(50, has_golden_idol);
+        let p = random_potion_weighted(&mut game.rng);
+        game.rewards.add_potion(p);
+        game.state.push_state(RewardsGameState);
+
+        game.action_queue.push_bot(UpgradeRandomInMasterAction);
+        game.state.push_state(RunActionsGameState);
+    }
+}
+
+fn tiny_house(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
+    state.push_state(TinyHouseGameState);
 }
 
 fn empty_cage(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
@@ -1135,11 +1158,11 @@ fn snecko_eye_unequip(_: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn war_paint(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
-    queue.push_bot(UpgradeRandomInMasterAction(CardType::Skill));
+    queue.push_bot(UpgradeTwoRandomInMasterAction(CardType::Skill));
 }
 
 fn whetstone(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
-    queue.push_bot(UpgradeRandomInMasterAction(CardType::Attack));
+    queue.push_bot(UpgradeTwoRandomInMasterAction(CardType::Attack));
 }
 
 pub struct Relic {

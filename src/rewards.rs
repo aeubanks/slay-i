@@ -688,4 +688,24 @@ mod tests {
             assert!(!g.rewards.relics[1].is_campfire_relic());
         }
     }
+
+    #[test]
+    fn test_tiny_house() {
+        let mut g = GameBuilder::default()
+            .add_cards(CardClass::Strike, 2)
+            .build();
+        g.run_action(GainRelicAction(RelicClass::TinyHouse));
+        assert_eq!(
+            g.master_deck
+                .iter()
+                .map(|c| c.borrow().upgrade_count)
+                .sum::<i32>(),
+            1
+        );
+        assert_eq!(g.rewards.gold, 50);
+        assert_eq!(g.rewards.stolen_gold, 0);
+        assert_eq!(g.rewards.cards.len(), 1);
+        assert_eq!(g.rewards.potions.len(), 1);
+        assert_eq!(g.rewards.cards[0].len(), 3);
+    }
 }
