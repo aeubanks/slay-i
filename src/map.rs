@@ -76,12 +76,15 @@ impl Print {
     }
 }
 
-impl Map {
-    fn new() -> Self {
+impl Default for Map {
+    fn default() -> Self {
         Self {
             nodes: vec![vec![Node::default(); MAP_HEIGHT]; MAP_WIDTH],
         }
     }
+}
+
+impl Map {
     fn ancestor_depth(
         &self,
         mut y: usize,
@@ -323,13 +326,13 @@ impl Map {
         }
     }
     pub fn generate(rng: &mut Rand) -> Self {
-        let mut map = Map::new();
+        let mut map = Map::default();
         Map::generate_nodes(rng, &mut map);
         Map::generate_rooms(rng, &mut map);
         map
     }
     pub fn straight_single_path(rooms: &[RoomType]) -> Self {
-        let mut map = Map::new();
+        let mut map = Map::default();
         for (i, room) in rooms.iter().enumerate() {
             map.nodes[0][i].ty = Some(*room);
             map.nodes[0][i].edges = vec![0];
@@ -346,7 +349,7 @@ mod tests {
 
     #[test]
     fn test_ancestor_depth() {
-        let mut map = Map::new();
+        let mut map = Map::default();
         // (0, 0) -> (0, 1)
         // (0, 0) -> (1, 1)
         // (0, 1) -> (0, 2)
@@ -382,7 +385,7 @@ mod tests {
 
     #[test]
     fn test_node_indexes() {
-        let mut map = Map::new();
+        let mut map = Map::default();
         // (0, 0) -> (0, 1)
         // (0, 0) -> (1, 1)
         // (0, 1) -> (0, 2)

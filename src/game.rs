@@ -168,11 +168,23 @@ impl GameState for RunActionsGameState {
 pub struct AscendStep {
     x: usize,
     y: usize,
+    use_wing_boots: bool,
 }
 
 impl AscendStep {
     pub fn new(x: usize, y: usize) -> Self {
-        Self { x, y }
+        Self {
+            x,
+            y,
+            use_wing_boots: false,
+        }
+    }
+    pub fn wing_boots(x: usize, y: usize) -> Self {
+        Self {
+            x,
+            y,
+            use_wing_boots: true,
+        }
     }
 }
 
@@ -191,6 +203,12 @@ impl Step for AscendStep {
             RoomType::Treasure => game.state.push_state(RollTreasureGameState),
             RoomType::Boss => game.state.push_state(RollBossCombatGameState),
         };
+        if self.use_wing_boots {
+            game.set_relic_value(
+                RelicClass::WingBoots,
+                game.get_relic_value(RelicClass::WingBoots).unwrap() - 1,
+            );
+        }
         if game.get_relic_value(RelicClass::MawBank) == Some(1) {
             game.action_queue.push_bot(GainGoldAction(12));
             game.state.push_state(RunActionsGameState);
@@ -212,11 +230,23 @@ impl GameState for AscendGameState {
                 for e in &game.map.nodes[p.0][p.1].edges {
                     steps.push(AscendStep::new(*e, p.1 + 1));
                 }
+                if game
+                    .get_relic_value(RelicClass::WingBoots)
+                    .is_some_and(|v| v > 0)
+                {
+                    for x in 0..MAP_WIDTH {
+                        if game.map.nodes[x][p.1 + 1].ty.is_some()
+                            && !game.map.nodes[p.0][p.1].edges.contains(&x)
+                        {
+                            steps.push(AscendStep::wing_boots(x, p.1 + 1));
+                        }
+                    }
+                }
             }
             None => {
                 for x in 0..MAP_WIDTH {
                     if !game.map.nodes[x][0].edges.is_empty() {
-                        steps.push(AscendStep { x, y: 0 });
+                        steps.push(AscendStep::new(x, 0));
                     }
                 }
             }

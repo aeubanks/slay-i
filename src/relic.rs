@@ -176,7 +176,7 @@ r!(
     TungstenRod => Rare,
     Turnip => Rare,
     UnceasingTop => Rare,
-    WingBoots => Rare, // TODO
+    WingBoots => Rare,
     ChampionBelt => Rare,
     CharonsAshes => Rare,
     MagicFlower => Rare,
@@ -259,7 +259,7 @@ impl RelicClass {
         match self {
             LizardTail | MawBank => Some(equip_set_1),
             Omamori => Some(equip_set_2),
-            NeowsLament => Some(equip_set_3),
+            NeowsLament | WingBoots => Some(equip_set_3),
             WarPaint => Some(war_paint),
             Whetstone => Some(whetstone),
             SneckoEye => Some(snecko_eye_equip),
@@ -1294,7 +1294,7 @@ mod tests {
         cards::{CardClass, CardColor, CardRarity},
         combat::{EndTurnStep, PlayCardStep},
         game::{AscendStep, GameBuilder, GameStatus},
-        map::RoomType,
+        map::{Map, RoomType},
         master_deck::{
             ChooseBottledCardStep, ChooseRemoveFromMasterStep, ChooseTransformMasterStep,
             DuplicateCardInMasterStep,
@@ -3738,5 +3738,54 @@ mod tests {
 
         g.step_test(AscendStep::new(0, 0));
         assert_eq!(g.hand[0].borrow().class, CardClass::DemonForm);
+    }
+
+    #[test]
+    fn test_wing_boots() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::WingBoots)
+            .build_with_rooms(&[]);
+        g.map = Map::default();
+        for x in 0..=1 {
+            for y in 0..=5 {
+                g.map.nodes[x][y].ty = Some(RoomType::Monster);
+                g.map.nodes[x][y].edges = vec![x];
+            }
+        }
+        assert_eq!(g.get_relic_value(RelicClass::WingBoots), Some(3));
+        g.step_test(AscendStep::new(0, 0));
+        assert_eq!(g.get_relic_value(RelicClass::WingBoots), Some(3));
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        assert_eq!(
+            g.valid_steps(),
+            vec![
+                Box::new(AscendStep::new(0, 1)) as Box<dyn Step>,
+                Box::new(AscendStep::wing_boots(1, 1)) as Box<dyn Step>,
+            ]
+        );
+        g.step_test(AscendStep::wing_boots(1, 1));
+        assert_eq!(g.get_relic_value(RelicClass::WingBoots), Some(2));
+
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep::new(1, 2));
+        assert_eq!(g.get_relic_value(RelicClass::WingBoots), Some(2));
+
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep::wing_boots(0, 3));
+        assert_eq!(g.get_relic_value(RelicClass::WingBoots), Some(1));
+
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        g.step_test(AscendStep::wing_boots(1, 4));
+        assert_eq!(g.get_relic_value(RelicClass::WingBoots), Some(0));
+        g.play_card(CardClass::DebugKillAll, None);
+        g.step_test(RewardExitStep);
+        assert_eq!(
+            g.valid_steps(),
+            vec![Box::new(AscendStep::new(1, 5)) as Box<dyn Step>,]
+        );
     }
 }
