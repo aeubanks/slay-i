@@ -280,6 +280,7 @@ impl GameState for EnterActGameState {
                 Event::Lab,
                 Event::WeMeetAgain,
                 Event::Duplicator,
+                Event::WomanInBlue,
             ];
         } else {
             game.action_queue.push_bot(HealAction::player(

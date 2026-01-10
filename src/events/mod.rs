@@ -6,6 +6,7 @@ use crate::{
         duplicator::DuplicatorGameState, face_trader::FaceTraderGameState, lab::LabGameState,
         purifier::PurifierGameState, transmorgrifier::TransmorgrifierGameState,
         upgrade::UpgradeShrineGameState, we_meet_again::WeMeetAgainGameState,
+        woman_in_blue::WomanInBlueGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -23,6 +24,7 @@ pub mod purifier;
 pub mod transmorgrifier;
 pub mod upgrade;
 pub mod we_meet_again;
+pub mod woman_in_blue;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Event {
@@ -39,7 +41,7 @@ pub enum Event {
     KnowingSkull, // TODO
     Nloth,        // TODO
     Joust,        // TODO
-    WomanInBlue,  // TODO
+    WomanInBlue,
     Lab,
     WeMeetAgain,
     Falling,           // TODO
@@ -92,6 +94,7 @@ impl Event {
             Lab => Box::new(LabGameState),
             WeMeetAgain => Box::new(WeMeetAgainGameState::new(game)),
             Duplicator => Box::new(DuplicatorGameState),
+            WomanInBlue => Box::new(WomanInBlueGameState),
             _ => todo!(),
         }
     }
@@ -111,6 +114,7 @@ impl Event {
             DeadAdventurer | Mushrooms => game.floor > 6,
             Cleric => game.gold >= 35,
             Beggar => game.gold >= 75,
+            WomanInBlue => game.gold >= 50,
             Colosseum => game.floor > 26,
             MoaiHead => {
                 game.has_relic(RelicClass::GoldenIdol)
