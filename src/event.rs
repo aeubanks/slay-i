@@ -25,9 +25,8 @@ impl GameState for RollEventGameState {
     fn run(&self, game: &mut Game) {
         game.cur_room = Some(RoomType::Event);
         // for testing only
-        if !game.override_event_queue.is_empty() {
-            let e = game.override_event_queue.remove(0);
-            game.state.push_boxed_state(e.game_state(game));
+        let e = if !game.override_event_queue.is_empty() {
+            game.override_event_queue.remove(0)
         } else {
             // 25% for shrine or one time event
             // 75% for act-specific event
@@ -45,8 +44,11 @@ impl GameState for RollEventGameState {
             game.event_act_pool.retain(|&e2| e2 != e);
             game.event_one_time_pool.retain(|&e2| e2 != e);
             game.event_shrine_pool.retain(|&e2| e2 != e);
-            game.state.push_boxed_state(e.game_state(game));
-        }
+            e
+        };
+        game.cur_event = Some(e);
+        let e = e.game_state(game);
+        game.state.push_boxed_state(e);
     }
 }
 

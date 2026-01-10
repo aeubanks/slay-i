@@ -5,6 +5,7 @@ use crate::{
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
         face_trader::FaceTraderGameState, lab::LabGameState, purifier::PurifierGameState,
         transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
+        we_meet_again::WeMeetAgainGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -20,6 +21,7 @@ pub mod lab;
 pub mod purifier;
 pub mod transmorgrifier;
 pub mod upgrade;
+pub mod we_meet_again;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Event {
@@ -38,7 +40,7 @@ pub enum Event {
     Joust,        // TODO
     WomanInBlue,  // TODO
     Lab,
-    WeMeetAgain,       // TODO
+    WeMeetAgain,
     Falling,           // TODO
     MindBloom,         // TODO
     MoaiHead,          // TODO
@@ -75,7 +77,7 @@ pub enum Event {
 }
 
 impl Event {
-    pub fn game_state(&self, game: &Game) -> Box<dyn GameState> {
+    pub fn game_state(&self, game: &mut Game) -> Box<dyn GameState> {
         use Event::*;
         match self {
             AccursedBlackSmith => Box::new(AccursedBlackSmithGameState),
@@ -87,6 +89,7 @@ impl Event {
             Upgrade => Box::new(UpgradeShrineGameState),
             FaceTrader => Box::new(FaceTraderGameState::new(game)),
             Lab => Box::new(LabGameState),
+            WeMeetAgain => Box::new(WeMeetAgainGameState::new(game)),
             _ => todo!(),
         }
     }

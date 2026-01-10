@@ -199,6 +199,7 @@ impl Step for AscendStep {
     fn run(&self, game: &mut Game) {
         game.floor += 1;
         game.map_position = Some((self.x, self.y));
+        game.cur_event = None;
         match game.map.nodes[self.x][self.y].ty.unwrap() {
             RoomType::Monster => game.state.push_state(RollCombatGameState),
             RoomType::Elite => game.state.push_state(RollEliteCombatGameState),
@@ -273,8 +274,12 @@ impl GameState for EnterActGameState {
         game.map_position = None;
         game.map = Map::generate(&mut game.rng);
         if game.is_in_act(1) {
-            game.event_one_time_pool =
-                vec![Event::AccursedBlackSmith, Event::FaceTrader, Event::Lab];
+            game.event_one_time_pool = vec![
+                Event::AccursedBlackSmith,
+                Event::FaceTrader,
+                Event::Lab,
+                Event::WeMeetAgain,
+            ];
         } else {
             game.action_queue.push_bot(HealAction::player(
                 ((game.player.max_hp - game.player.cur_hp) as f32 * 0.75) as i32,
@@ -705,6 +710,7 @@ pub struct Game {
 
     pub map: Map,
     pub cur_room: Option<RoomType>,
+    pub cur_event: Option<Event>,
     pub floor: i32,
     pub map_position: Option<(usize, usize)>,
     pub player: Creature,
@@ -789,6 +795,7 @@ impl Game {
         let mut g = Self {
             map: Default::default(),
             cur_room: Default::default(),
+            cur_event: Default::default(),
             num_combats_this_act: 0,
             combat_history: Default::default(),
             last_elite: None,
@@ -1363,19 +1370,21 @@ impl Game {
 
     pub fn valid_steps(&self) -> Vec<Box<dyn Step>> {
         let mut steps = self.state.peek().valid_steps(self).unwrap();
-        for (pi, p) in self.potions.iter().enumerate() {
-            if let Some(p) = p
-                && p.can_use_outside_combat()
-            {
-                steps.push(UsePotionStep {
-                    potion_index: pi,
-                    target: None,
-                });
+        if self.cur_event != Some(Event::WeMeetAgain) {
+            for (pi, p) in self.potions.iter().enumerate() {
+                if let Some(p) = p
+                    && p.can_use_outside_combat()
+                {
+                    steps.push(UsePotionStep {
+                        potion_index: pi,
+                        target: None,
+                    });
+                }
             }
-        }
-        for (pi, p) in self.potions.iter().enumerate() {
-            if p.is_some() {
-                steps.push(DiscardPotionStep { potion_index: pi });
+            for (pi, p) in self.potions.iter().enumerate() {
+                if p.is_some() {
+                    steps.push(DiscardPotionStep { potion_index: pi });
+                }
             }
         }
         steps.steps
