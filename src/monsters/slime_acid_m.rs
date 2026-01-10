@@ -125,6 +125,7 @@ mod tests {
             .build_combat_with_monster(SlimeAcidM::new());
         let mut found_slimed = false;
         for _ in 0..50 {
+            g.player.cur_hp = 50;
             g.step_test(EndTurnStep);
             if !g.discard_pile.is_empty() && g.discard_pile[0].borrow().class == CardClass::Slimed {
                 found_slimed = true;
