@@ -35,6 +35,7 @@ use crate::map::{MAP_WIDTH, Map, RoomType};
 #[cfg(test)]
 use crate::monster::MonsterBehavior;
 use crate::monster::{Monster, MonsterInfo};
+use crate::monsters::Combat;
 use crate::potion::Potion;
 use crate::queue::ActionQueue;
 use crate::relic::{
@@ -266,6 +267,9 @@ pub struct EnterActGameState;
 impl GameState for EnterActGameState {
     fn run(&self, game: &mut Game) {
         game.potion_chance = 40;
+        game.num_combats_this_act = 0;
+        game.last_elite = None;
+        game.combat_history.clear();
         game.map_position = None;
         game.map = Map::generate(&mut game.rng);
         if game.is_in_act(1) {
@@ -287,10 +291,54 @@ impl GameState for EnterActGameState {
         ];
         if game.is_in_act(1) {
             game.event_act_pool = vec![Event::BigFish];
+            game.easy_pool_combats = vec![
+                Combat::Cultist,
+                Combat::JawWorm,
+                Combat::TwoLouses,
+                Combat::SmallSlimes,
+            ];
+            game.add_hard_pool_combat(Combat::BlueSlaver, 4);
+            game.add_hard_pool_combat(Combat::GremlinGang, 2);
+            game.add_hard_pool_combat(Combat::Looter, 4);
+            game.add_hard_pool_combat(Combat::LargeSlime, 4);
+            game.add_hard_pool_combat(Combat::LotsOfSlimes, 2);
+            game.add_hard_pool_combat(Combat::ExordiumThugs, 3);
+            game.add_hard_pool_combat(Combat::ExordiumWildlife, 3);
+            game.add_hard_pool_combat(Combat::RedSlaver, 2);
+            game.add_hard_pool_combat(Combat::ThreeLouses, 4);
+            game.add_hard_pool_combat(Combat::TwoFungiBeasts, 4);
         } else if game.is_in_act(2) {
             game.event_act_pool = vec![];
+            game.easy_pool_combats = vec![
+                Combat::SphericGuardian,
+                Combat::Chosen,
+                Combat::ShellParasite,
+                Combat::ThreeByrds,
+                Combat::TwoThieves,
+            ];
+            game.add_hard_pool_combat(Combat::ChosenAndByrd, 2);
+            game.add_hard_pool_combat(Combat::ChosenAndCultist, 3);
+            game.add_hard_pool_combat(Combat::SentryAndSphericGuardian, 2);
+            game.add_hard_pool_combat(Combat::SnakePlant, 6);
+            game.add_hard_pool_combat(Combat::Snecko, 4);
+            game.add_hard_pool_combat(Combat::CenturionAndMystic, 6);
+            game.add_hard_pool_combat(Combat::ThreeCultists, 3);
+            game.add_hard_pool_combat(Combat::ShelledParasiteAndFungiBeast, 3);
         } else if game.is_in_act(3) {
-            todo!();
+            game.event_act_pool = vec![];
+            game.easy_pool_combats = vec![
+                Combat::ThreeDarklings,
+                Combat::OrbWalker,
+                Combat::ThreeShapes,
+            ];
+            game.add_hard_pool_combat(Combat::FourShapes, 1);
+            game.add_hard_pool_combat(Combat::Maw, 1);
+            game.add_hard_pool_combat(Combat::SphereAndTwoShapes, 1);
+            game.add_hard_pool_combat(Combat::ThreeDarklings, 1);
+            game.add_hard_pool_combat(Combat::SpireGrowth, 1);
+            game.add_hard_pool_combat(Combat::Transient, 1);
+            game.add_hard_pool_combat(Combat::JawWormHorde, 1);
+            game.add_hard_pool_combat(Combat::WrithingMass, 1);
         }
     }
 }
@@ -656,6 +704,12 @@ pub struct Game {
     pub roll_noop_monsters: bool,
     pub override_event_queue: Vec<Event>,
 
+    pub num_combats_this_act: i32,
+    pub combat_history: Vec<Combat>,
+    pub last_elite: Option<Combat>,
+    pub easy_pool_combats: Vec<Combat>,
+    pub hard_pool_combats: Vec<Combat>,
+
     pub event_shrine_pool: Vec<Event>,
     pub event_one_time_pool: Vec<Event>,
     pub event_act_pool: Vec<Event>,
@@ -716,6 +770,11 @@ impl Game {
         let mut g = Self {
             map: Default::default(),
             cur_room: Default::default(),
+            num_combats_this_act: 0,
+            combat_history: Default::default(),
+            last_elite: None,
+            easy_pool_combats: Default::default(),
+            hard_pool_combats: Default::default(),
             floor: 0,
             map_position: Default::default(),
             player: Creature::new("Ironclad", 80),
@@ -839,6 +898,12 @@ impl Game {
         let mut c = c.clone();
         c.id = self.new_card_id(c.class);
         Rc::new(RefCell::new(c))
+    }
+
+    pub fn add_hard_pool_combat(&mut self, combat: Combat, weight: i32) {
+        for _ in 0..weight {
+            self.hard_pool_combats.push(combat);
+        }
     }
 
     pub fn roll_rarity(&mut self, ty: RareCardBaseChance) -> CardRarity {

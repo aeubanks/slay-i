@@ -31,23 +31,30 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            let combats = vec![
-                Combat::Cultist,
-                Combat::JawWorm,
-                Combat::TwoLouses,
-                Combat::SmallSlimes,
-                Combat::BlueSlaver,
-                Combat::GremlinGang,
-                Combat::Looter,
-                Combat::LargeSlime,
-                Combat::LotsOfSlimes,
-                Combat::ExordiumThugs,
-                Combat::ExordiumWildlife,
-                Combat::RedSlaver,
-                Combat::ThreeLouses,
-                Combat::TwoFungiBeasts,
-            ];
-            game.monsters = rand_slice(&mut game.rng, &combats).monsters(game);
+            let num_easy_pool_combats = if game.is_in_act(1) { 3 } else { 2 };
+
+            let mut combat;
+            loop {
+                combat = if game.num_combats_this_act < num_easy_pool_combats {
+                    rand_slice(&mut game.rng, &game.easy_pool_combats)
+                } else {
+                    rand_slice(&mut game.rng, &game.hard_pool_combats)
+                };
+                if game.combat_history.len() >= 2
+                    && game.combat_history[game.combat_history.len() - 2] == combat
+                {
+                    continue;
+                }
+                if game.combat_history.len() >= 1
+                    && game.combat_history[game.combat_history.len() - 1] == combat
+                {
+                    continue;
+                }
+                break;
+            }
+            game.combat_history.push(combat);
+            game.num_combats_this_act += 1;
+            game.monsters = combat.monsters(game);
         }
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Monster));
@@ -514,14 +521,15 @@ impl Step for PlayCardStep {
 mod tests {
     use crate::{
         actions::block::BlockAction,
-        assert_matches,
+        assert_matches, assert_not_matches,
         cards::{CardClass, CardCost},
-        game::{DiscardPotionStep, GameBuilder, GameStatus},
+        game::{AscendStep, DiscardPotionStep, GameBuilder, GameStatus},
         monsters::{
             looter::Looter,
             test::{AttackMonster, NoopMonster},
         },
         potion::Potion,
+        rewards::RewardExitStep,
         status::Status,
     };
 
@@ -744,5 +752,42 @@ mod tests {
             g.monsters[1].creature.cur_hp,
             g.monsters[1].creature.max_hp - 4
         );
+    }
+
+    #[test]
+    fn test_act_1_combats() {
+        let mut g = GameBuilder::default().build_with_rooms(&[
+            RoomType::Monster,
+            RoomType::Monster,
+            RoomType::Monster,
+            RoomType::Monster,
+            RoomType::Monster,
+            RoomType::Monster,
+            RoomType::Monster,
+            RoomType::Monster,
+        ]);
+        for i in 0..8 {
+            g.step_test(AscendStep::new(0, i));
+            g.play_card(CardClass::DebugKillAll, None);
+            g.step_test(RewardExitStep);
+        }
+        assert_eq!(g.combat_history.len(), 8);
+        for i in 0..3 {
+            assert_matches!(
+                g.combat_history[i],
+                Combat::Cultist | Combat::TwoLouses | Combat::SmallSlimes | Combat::JawWorm
+            );
+        }
+        for i in 3..8 {
+            assert_not_matches!(
+                g.combat_history[i],
+                Combat::Cultist | Combat::TwoLouses | Combat::SmallSlimes | Combat::JawWorm
+            );
+        }
+        for window in g.combat_history.windows(3) {
+            assert_ne!(window[0], window[1]);
+            assert_ne!(window[0], window[2]);
+            assert_ne!(window[1], window[2]);
+        }
     }
 }

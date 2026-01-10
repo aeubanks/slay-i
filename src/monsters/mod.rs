@@ -86,6 +86,7 @@ pub enum Combat {
     Snecko,
     ThreeCultists,
     ShelledParasiteAndFungiBeast,
+    CenturionAndMystic,
     // act 2 events
     MaskedBandits,
     TwoSlavers,
