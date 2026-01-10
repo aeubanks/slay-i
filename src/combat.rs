@@ -14,7 +14,7 @@ use crate::{
     monsters::{Combat, looter::Looter, test::NoopMonster},
     potion::{Potion, random_potion_weighted},
     relic::RelicClass,
-    rewards::{BossRewardGameState, RewardType, Rewards, RewardsGameState},
+    rewards::{RewardType, Rewards, RewardsGameState},
     rng::rand_slice,
     state::{GameState, Steps},
     step::Step,
@@ -79,7 +79,6 @@ impl GameState for RollBossCombatGameState {
         game.cur_room = Some(RoomType::Boss);
         let combats = vec![Combat::Guardian, Combat::Hexaghost, Combat::SlimeBoss];
         game.monsters = rand_slice(&mut game.rng, &combats).monsters(game);
-        game.state.push_state(BossRewardGameState);
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Boss));
         game.state

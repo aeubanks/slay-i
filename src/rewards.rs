@@ -6,7 +6,7 @@ use crate::{
     },
     card::CardRef,
     cards::{CardRarity, random_common_red, random_rare_red, random_uncommon_red},
-    game::{Game, RareCardBaseChance, RunActionsGameState},
+    game::{EnterActGameState, Game, RareCardBaseChance, RunActionsGameState},
     potion::Potion,
     relic::{RelicClass, RelicRarity},
     state::{GameState, Steps},
@@ -330,6 +330,8 @@ impl Step for BossRewardChooseStep {
         true
     }
     fn run(&self, game: &mut Game) {
+        game.state.push_state(EnterActGameState);
+
         let r = game.boss_rewards[self.boss_reward_index];
         game.boss_rewards.clear();
         game.action_queue.push_bot(GainRelicAction(r));
@@ -341,13 +343,14 @@ impl Step for BossRewardChooseStep {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct BossRewardSkipStep;
+pub struct BossRewardSkipStep;
 
 impl Step for BossRewardSkipStep {
     fn should_pop_state(&self) -> bool {
         true
     }
     fn run(&self, game: &mut Game) {
+        game.state.push_state(EnterActGameState);
         game.boss_rewards.clear();
     }
     fn description(&self, _: &Game) -> String {
@@ -686,10 +689,8 @@ mod tests {
 
     #[test]
     fn test_boss_rewards() {
-        let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Boss]);
+        let mut g = GameBuilder::default().build_with_rooms(&[RoomType::BossTreasure]);
         g.step_test(AscendStep::new(0, 0));
-        g.play_card(CardClass::DebugKillAll, None);
-        g.step_test(RewardExitStep);
         assert_eq!(
             g.valid_steps(),
             vec![

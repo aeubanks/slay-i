@@ -41,7 +41,7 @@ use crate::relic::{
     Relic, RelicClass, RelicRarity, all_boss_relics, all_common_relics, all_rare_relics,
     all_shop_relics, all_uncommon_relics,
 };
-use crate::rewards::Rewards;
+use crate::rewards::{BossRewardGameState, Rewards};
 use crate::rng::rand_slice;
 use crate::shop::{Shop, ShopGameState};
 use crate::state::{GameState, GameStateManager, Steps};
@@ -86,6 +86,7 @@ impl GameState for GameStartGameState {
     fn run(&self, game: &mut Game) {
         game.state.push_state(AscendGameState);
         game.state.push_state(ChooseBlessingGameState);
+        game.state.push_state(EnterActGameState);
     }
 }
 
@@ -97,6 +98,7 @@ struct TestStartNoBlessingGameState;
 impl GameState for TestStartNoBlessingGameState {
     fn run(&self, game: &mut Game) {
         game.state.push_state(AscendGameState);
+        game.state.push_state(EnterActGameState);
     }
 }
 
@@ -204,6 +206,7 @@ impl Step for AscendStep {
             RoomType::Shop => game.state.push_state(RollShopGameState),
             RoomType::Treasure => game.state.push_state(RollTreasureGameState),
             RoomType::Boss => game.state.push_state(RollBossCombatGameState),
+            RoomType::BossTreasure => game.state.push_state(BossRewardGameState),
         };
         if self.use_wing_boots {
             game.set_relic_value(
@@ -254,6 +257,41 @@ impl GameState for AscendGameState {
             }
         }
         Some(steps)
+    }
+}
+
+#[derive(Debug)]
+pub struct EnterActGameState;
+
+impl GameState for EnterActGameState {
+    fn run(&self, game: &mut Game) {
+        game.potion_chance = 40;
+        game.map_position = None;
+        game.map = Map::generate(&mut game.rng);
+        if game.is_in_act(1) {
+            game.event_one_time_pool = vec![Event::AccursedBlackSmith];
+        } else {
+            game.action_queue.push_bot(HealAction::player(
+                ((game.player.max_hp - game.player.cur_hp) as f32 * 0.75) as i32,
+            ));
+            game.state.push_state(RunActionsGameState);
+        }
+        game.event_act_pool.clear();
+        game.event_shrine_pool = vec![
+            // Event::WheelOfChange,
+            Event::Transmorgrifier,
+            // Event::MatchAndKeep,
+            Event::Purifier,
+            // Event::GoldenShrine,
+            // Event::Upgrade,
+        ];
+        if game.is_in_act(1) {
+            game.event_act_pool = vec![Event::BigFish];
+        } else if game.is_in_act(2) {
+            game.event_act_pool = vec![];
+        } else if game.is_in_act(3) {
+            todo!();
+        }
     }
 }
 
@@ -675,9 +713,8 @@ impl Game {
         rare_relic_pool.shuffle(&mut rng);
         shop_relic_pool.shuffle(&mut rng);
         boss_relic_pool.shuffle(&mut rng);
-        let map = Map::generate(&mut rng);
         let mut g = Self {
-            map,
+            map: Default::default(),
             cur_room: Default::default(),
             floor: 0,
             map_position: Default::default(),
@@ -694,7 +731,7 @@ impl Game {
             master_deck: Default::default(),
             shop: Default::default(),
             shop_remove_count: 0,
-            potion_chance: 40,
+            potion_chance: 0,
             rare_card_chance: 0,
             turn: 0,
             in_combat: CombatType::None,
@@ -725,13 +762,9 @@ impl Game {
             next_id: 1,
             status: GameStatus::Combat,
             is_running: false,
-            event_act_pool: vec![Event::BigFish],
-            event_one_time_pool: vec![
-                Event::Bonfire,
-                Event::AccursedBlackSmith,
-                Event::DivineFountain,
-            ],
-            event_shrine_pool: vec![Event::Purifier, Event::Transmorgrifier],
+            event_act_pool: Default::default(),
+            event_one_time_pool: Default::default(),
+            event_shrine_pool: Default::default(),
             has_emerald_key: false,
             has_ruby_key: false,
             has_sapphire_key: false,
@@ -1561,9 +1594,9 @@ mod tests {
         combat::PlayCardStep,
         events::Event,
         game::{AscendStep, GameBuilder},
-        map::{Map, RoomType},
+        map::{MAP_WIDTH, Map, RoomType},
         master_deck::ChooseUpgradeMasterStep,
-        rewards::RewardExitStep,
+        rewards::{BossRewardSkipStep, RewardExitStep},
         state::ContinueStep,
     };
 
@@ -1603,5 +1636,21 @@ mod tests {
         g.override_event_queue.push(Event::AccursedBlackSmith);
         g.step_test(AscendStep::new(0, 4));
         g.step_test(ContinueStep);
+    }
+
+    #[test]
+    fn test_enter_act_2() {
+        let mut g = GameBuilder::default().build_with_rooms(&[RoomType::BossTreasure]);
+        g.floor = 16;
+        g.step_test(AscendStep::new(0, 0));
+        g.step_test(BossRewardSkipStep);
+        let count_nodes = (0..MAP_WIDTH)
+            .filter(|x| !g.map.nodes[*x][0].edges.is_empty())
+            .count();
+        assert!(count_nodes > 1);
+        assert_eq!(count_nodes, g.valid_steps().len());
+        assert_eq!(g.floor, 17);
+        g.step(0);
+        assert_eq!(g.floor, 18);
     }
 }

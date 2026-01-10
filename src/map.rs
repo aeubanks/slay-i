@@ -17,6 +17,7 @@ pub enum RoomType {
     Shop,
     Treasure,
     Boss,
+    BossTreasure,
 }
 
 impl RoomType {
@@ -27,8 +28,9 @@ impl RoomType {
             RoomType::Event => '?',
             RoomType::Campfire => '*',
             RoomType::Shop => '$',
-            RoomType::Treasure => 'X',
+            RoomType::Treasure => 'x',
             RoomType::Boss => 'B',
+            RoomType::BossTreasure => 'X',
         }
     }
 }
@@ -41,7 +43,7 @@ pub struct Node {
 }
 
 pub const MAP_WIDTH: usize = 7;
-pub const MAP_HEIGHT: usize = 15;
+pub const MAP_HEIGHT: usize = 17;
 const PRINT_WIDTH: usize = MAP_WIDTH * 2 - 1;
 const PRINT_HEIGHT: usize = MAP_HEIGHT * 2 - 1;
 const PRINT_TOTAL: usize = PRINT_WIDTH * PRINT_HEIGHT;
@@ -158,10 +160,10 @@ impl Map {
                 if !self.nodes[x][y].edges.is_empty() || !self.parents(x, y).is_empty() {
                     print.set(x * 2, y * 2, self.nodes[x][y].ty.unwrap().char());
                     for &e in &self.nodes[x][y].edges {
-                        if e + 1 == x {
-                            print.set(x * 2 - 1, y * 2 + 1, '\\');
-                        } else if e == x {
+                        if e == x || y == MAP_HEIGHT - 3 || y == MAP_HEIGHT - 2 {
                             print.set(x * 2, y * 2 + 1, '|');
+                        } else if e + 1 == x {
+                            print.set(x * 2 - 1, y * 2 + 1, '\\');
                         } else if e == x + 1 {
                             print.set(x * 2 + 1, y * 2 + 1, '/');
                         } else {
@@ -189,7 +191,7 @@ impl Map {
                 }
                 None => first_x = Some(cur_x),
             }
-            for y in 0..(MAP_HEIGHT - 1) {
+            for y in 0..(MAP_HEIGHT - 3) {
                 // choose one of three closest x values
                 let mut next_x = rand_slice(rng, &Map::x_neighbors(cur_x));
                 // reroll if ancestors are too close
@@ -226,6 +228,14 @@ impl Map {
                 cur_x = next_x;
             }
         }
+        for x in 0..MAP_WIDTH {
+            if !map.parents(x, MAP_HEIGHT - 3).is_empty() {
+                map.nodes[x][MAP_HEIGHT - 3].edges.push(0);
+            }
+        }
+        map.nodes[0][MAP_HEIGHT - 2].ty = Some(RoomType::Boss);
+        map.nodes[0][MAP_HEIGHT - 2].edges.push(0);
+        map.nodes[0][MAP_HEIGHT - 1].ty = Some(RoomType::BossTreasure);
     }
     fn generate_rooms_bag(rng: &mut Rand, map: &Map) -> Vec<RoomType> {
         let mut ret = Vec::new();
@@ -300,7 +310,7 @@ impl Map {
         for x in 0..MAP_WIDTH {
             map.nodes[x][0].ty = Some(RoomType::Monster);
             map.nodes[x][8].ty = Some(RoomType::Treasure);
-            map.nodes[x][MAP_HEIGHT - 1].ty = Some(RoomType::Campfire);
+            map.nodes[x][MAP_HEIGHT - 3].ty = Some(RoomType::Campfire);
         }
         let mut rooms = Map::generate_rooms_bag(rng, map);
         for (x, y) in map.node_indexes() {
@@ -452,6 +462,7 @@ mod tests {
                 }
             }
 
+            map.print();
             for (x, y) in map.node_indexes() {
                 let ty = map.nodes[x][y].ty.unwrap();
                 match y {
