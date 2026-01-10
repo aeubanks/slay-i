@@ -27,10 +27,10 @@ impl GameState for RollEventGameState {
         // for testing only
         if !game.override_event_queue.is_empty() {
             let e = game.override_event_queue.remove(0);
-            game.state.push_boxed_state(e);
+            game.state.push_boxed_state(e.game_state(game));
         } else {
             let e = remove_random(&mut game.rng, &mut game.event_pool);
-            game.state.push_boxed_state(e);
+            game.state.push_boxed_state(e.game_state(game));
         }
     }
 }
@@ -102,7 +102,7 @@ impl GameState for RollQuestionRoomGameState {
 mod tests {
     use crate::{
         chest::OpenChestStep,
-        events::transmorgrifier::TransmorgrifierGameState,
+        events::Event,
         game::{AscendStep, GameBuilder},
         map::RoomType,
         relic::RelicClass,
@@ -137,8 +137,7 @@ mod tests {
                 RoomType::Event,
             ]);
         for _ in 0..4 {
-            g.override_event_queue
-                .push(Box::new(TransmorgrifierGameState));
+            g.override_event_queue.push(Event::Transmorgrifier);
         }
         assert_eq!(g.get_relic_value(RelicClass::TinyChest), Some(0));
         g.step_test(AscendStep::new(0, 0));

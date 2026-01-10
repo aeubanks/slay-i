@@ -30,11 +30,7 @@ use crate::combat::{RollBossCombatGameState, RollCombatGameState};
 use crate::creature::{Creature, CreatureState};
 use crate::draw_pile::DrawPile;
 use crate::event::RollQuestionRoomGameState;
-use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
-use crate::events::bonfire::BonfireGameState;
-use crate::events::divine_fountain::DivineFountainGameState;
-use crate::events::purifier::PurifierGameState;
-use crate::events::transmorgrifier::TransmorgrifierGameState;
+use crate::events::Event;
 use crate::map::{MAP_WIDTH, Map, RoomType};
 #[cfg(test)]
 use crate::monster::MonsterBehavior;
@@ -620,9 +616,9 @@ pub struct Game {
     next_id: u32,
     pub force_monsters: Option<Vec<Monster>>,
     pub roll_noop_monsters: bool,
-    pub override_event_queue: Vec<Box<dyn GameState>>,
+    pub override_event_queue: Vec<Event>,
 
-    pub event_pool: Vec<Box<dyn GameState>>,
+    pub event_pool: Vec<Event>,
     pub event_monster_chance: i32,
     pub event_chest_chance: i32,
     pub event_shop_chance: i32,
@@ -668,11 +664,11 @@ impl Game {
 
     fn new(mut rng: Rand, master_deck: &[(CardClass, bool)]) -> Self {
         let event_pool = vec![
-            Box::new(BonfireGameState) as Box<dyn GameState>,
-            Box::new(AccursedBlackSmithGameState),
-            Box::new(PurifierGameState),
-            Box::new(TransmorgrifierGameState),
-            Box::new(DivineFountainGameState),
+            Event::Bonfire,
+            Event::AccursedBlackSmith,
+            Event::Purifier,
+            Event::Transmorgrifier,
+            Event::DivineFountain,
         ];
         let mut common_relic_pool = all_common_relics();
         let mut uncommon_relic_pool = all_uncommon_relics();
@@ -1480,6 +1476,20 @@ impl Game {
         };
         self.next_relic(rarity)
     }
+    pub fn next_relic_weighted_screenless(&mut self) -> RelicClass {
+        loop {
+            let r = self.next_relic_weighted();
+            if !matches!(
+                r,
+                RelicClass::BottledFlame
+                    | RelicClass::BottledLightning
+                    | RelicClass::BottledTornado
+                    | RelicClass::Whetstone
+            ) {
+                return r;
+            }
+        }
+    }
 
     #[cfg(test)]
     pub fn add_relic(&mut self, class: RelicClass) {
@@ -1538,7 +1548,7 @@ mod tests {
         campfire::{CampfireRestStep, CampfireUpgradeStep},
         cards::CardClass,
         combat::PlayCardStep,
-        events::accursed_blacksmith::AccursedBlackSmithGameState,
+        events::Event,
         game::{AscendStep, GameBuilder},
         map::{Map, RoomType},
         master_deck::ChooseUpgradeMasterStep,
@@ -1579,8 +1589,7 @@ mod tests {
         g.step_test(CampfireUpgradeStep);
         g.step_test(ChooseUpgradeMasterStep { master_index: 0 });
 
-        g.override_event_queue
-            .push(Box::new(AccursedBlackSmithGameState));
+        g.override_event_queue.push(Event::AccursedBlackSmith);
         g.step_test(AscendStep::new(0, 4));
         g.step_test(ContinueStep);
     }
