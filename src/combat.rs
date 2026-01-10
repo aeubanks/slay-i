@@ -11,7 +11,7 @@ use crate::{
     game::{CombatType, CreatureRef, Game, RareCardBaseChance, RunActionsGameState, UsePotionStep},
     map::RoomType,
     monster::Monster,
-    monsters::{Combat, looter::Looter, test::NoopMonster},
+    monsters::{Combat, test::NoopMonster},
     potion::{Potion, random_potion_weighted},
     relic::RelicClass,
     rewards::{RewardType, Rewards, RewardsGameState},
@@ -517,7 +517,10 @@ mod tests {
         assert_matches,
         cards::{CardClass, CardCost},
         game::{DiscardPotionStep, GameBuilder, GameStatus},
-        monsters::test::{AttackMonster, NoopMonster},
+        monsters::{
+            looter::Looter,
+            test::{AttackMonster, NoopMonster},
+        },
         potion::Potion,
         status::Status,
     };
