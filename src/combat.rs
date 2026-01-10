@@ -11,7 +11,7 @@ use crate::{
     game::{CombatType, CreatureRef, Game, RareCardBaseChance, RunActionsGameState, UsePotionStep},
     map::RoomType,
     monster::Monster,
-    monsters::test::NoopMonster,
+    monsters::{Combat, test::NoopMonster},
     potion::{Potion, random_potion_weighted},
     relic::RelicClass,
     rewards::{RewardType, Rewards, RewardsGameState},
@@ -48,6 +48,34 @@ impl GameState for RollCombatGameState {
                 if game.combat_history.len() >= 1
                     && game.combat_history[game.combat_history.len() - 1] == combat
                 {
+                    continue;
+                }
+                let invalid = match combat {
+                    Combat::LargeSlime => game.combat_history.last() == Some(&Combat::SmallSlimes),
+                    Combat::LotsOfSlimes => {
+                        game.combat_history.last() == Some(&Combat::SmallSlimes)
+                    }
+                    Combat::ThreeLouses => game.combat_history.last() == Some(&Combat::TwoLouses),
+                    Combat::ExordiumThugs => {
+                        game.combat_history.last() == Some(&Combat::Looter)
+                            || game.combat_history.last() == Some(&Combat::BlueSlaver)
+                    }
+                    Combat::RedSlaver => game.combat_history.last() == Some(&Combat::BlueSlaver),
+                    Combat::ChosenAndByrd => {
+                        game.combat_history.last() == Some(&Combat::ThreeByrds)
+                            || game.combat_history.last() == Some(&Combat::Chosen)
+                    }
+                    Combat::ChosenAndCultist => game.combat_history.last() == Some(&Combat::Chosen),
+                    Combat::SentryAndSphericGuardian => {
+                        game.combat_history.last() == Some(&Combat::SphericGuardian)
+                    }
+                    Combat::ThreeDarklings => {
+                        game.combat_history.last() == Some(&Combat::ThreeDarklings)
+                    }
+                    Combat::FourShapes => game.combat_history.last() == Some(&Combat::ThreeShapes),
+                    _ => false,
+                };
+                if invalid {
                     continue;
                 }
                 break;
@@ -763,38 +791,45 @@ mod tests {
 
     #[test]
     fn test_act_1_combats() {
-        let mut g = GameBuilder::default().build_with_rooms(&[
-            RoomType::Monster,
-            RoomType::Monster,
-            RoomType::Monster,
-            RoomType::Monster,
-            RoomType::Monster,
-            RoomType::Monster,
-            RoomType::Monster,
-            RoomType::Monster,
-        ]);
-        for i in 0..8 {
-            g.step_test(AscendStep::new(0, i));
-            g.play_card(CardClass::DebugKillAll, None);
-            g.step_test(RewardExitStep);
-        }
-        assert_eq!(g.combat_history.len(), 8);
-        for i in 0..3 {
-            assert_matches!(
-                g.combat_history[i],
-                Combat::Cultist | Combat::TwoLouses | Combat::SmallSlimes | Combat::JawWorm
-            );
-        }
-        for i in 3..8 {
-            assert_not_matches!(
-                g.combat_history[i],
-                Combat::Cultist | Combat::TwoLouses | Combat::SmallSlimes | Combat::JawWorm
-            );
-        }
-        for window in g.combat_history.windows(3) {
-            assert_ne!(window[0], window[1]);
-            assert_ne!(window[0], window[2]);
-            assert_ne!(window[1], window[2]);
+        for _ in 0..10 {
+            let mut g = GameBuilder::default().build_with_rooms(&[
+                RoomType::Monster,
+                RoomType::Monster,
+                RoomType::Monster,
+                RoomType::Monster,
+                RoomType::Monster,
+                RoomType::Monster,
+                RoomType::Monster,
+                RoomType::Monster,
+            ]);
+            for i in 0..8 {
+                g.step_test(AscendStep::new(0, i));
+                g.play_card(CardClass::DebugKillAll, None);
+                g.step_test(RewardExitStep);
+            }
+            assert_eq!(g.combat_history.len(), 8);
+            for i in 0..3 {
+                assert_matches!(
+                    g.combat_history[i],
+                    Combat::Cultist | Combat::TwoLouses | Combat::SmallSlimes | Combat::JawWorm
+                );
+            }
+            for i in 3..8 {
+                assert_not_matches!(
+                    g.combat_history[i],
+                    Combat::Cultist | Combat::TwoLouses | Combat::SmallSlimes | Combat::JawWorm
+                );
+            }
+            for window in g.combat_history.windows(3) {
+                assert_ne!(window[0], window[1]);
+                assert_ne!(window[0], window[2]);
+                assert_ne!(window[1], window[2]);
+            }
+            for window in g.combat_history.windows(2) {
+                assert!(!(window[0] == Combat::TwoLouses && window[1] == Combat::ThreeLouses));
+                assert!(!(window[0] == Combat::SmallSlimes && window[1] == Combat::LargeSlime));
+                assert!(!(window[0] == Combat::SmallSlimes && window[1] == Combat::LotsOfSlimes));
+            }
         }
     }
 
