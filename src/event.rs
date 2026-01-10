@@ -59,6 +59,14 @@ impl GameState for RollQuestionRoomGameState {
         if !game.override_event_queue.is_empty() {
             ty = EventType::Event;
         }
+        if let Some(mut v) = game.get_relic_value(RelicClass::TinyChest) {
+            v += 1;
+            if v == 4 {
+                v = 0;
+                ty = EventType::Chest;
+            }
+            game.set_relic_value(RelicClass::TinyChest, v);
+        }
         if ty == EventType::Monster {
             game.event_monster_chance = 10;
             if game.has_relic(RelicClass::JuzuBracelet) {
@@ -93,9 +101,13 @@ impl GameState for RollQuestionRoomGameState {
 #[cfg(test)]
 mod tests {
     use crate::{
+        chest::OpenChestStep,
+        events::transmorgrifier::TransmorgrifierGameState,
         game::{AscendStep, GameBuilder},
         map::RoomType,
+        relic::RelicClass,
         shop::ShopExitStep,
+        state::ContinueStep,
         step::Step,
     };
 
@@ -112,5 +124,34 @@ mod tests {
                     .contains(&(Box::new(ShopExitStep) as Box<dyn Step>))
             )
         }
+    }
+
+    #[test]
+    fn test_tiny_chest() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::TinyChest)
+            .build_with_rooms(&[
+                RoomType::Event,
+                RoomType::Event,
+                RoomType::Event,
+                RoomType::Event,
+            ]);
+        for _ in 0..4 {
+            g.override_event_queue
+                .push(Box::new(TransmorgrifierGameState));
+        }
+        assert_eq!(g.get_relic_value(RelicClass::TinyChest), Some(0));
+        g.step_test(AscendStep::new(0, 0));
+        assert_eq!(g.get_relic_value(RelicClass::TinyChest), Some(1));
+        g.step_test(ContinueStep);
+        g.step_test(AscendStep::new(0, 1));
+        assert_eq!(g.get_relic_value(RelicClass::TinyChest), Some(2));
+        g.step_test(ContinueStep);
+        g.step_test(AscendStep::new(0, 2));
+        assert_eq!(g.get_relic_value(RelicClass::TinyChest), Some(3));
+        g.step_test(ContinueStep);
+        g.step_test(AscendStep::new(0, 3));
+        assert_eq!(g.get_relic_value(RelicClass::TinyChest), Some(0));
+        g.step_test(OpenChestStep);
     }
 }

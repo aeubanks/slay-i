@@ -99,7 +99,7 @@ r!(
     CeramicFish => Common,
     DreamCatcher => Common,
     HappyFlower => Common,
-    JuzuBracelet => Common, // TODO
+    JuzuBracelet => Common,
     Lantern => Common,
     MawBank => Common,
     MealTicket => Common,
@@ -114,7 +114,7 @@ r!(
     SmilingMask => Common,
     Strawberry => Common,
     Boot => Common,
-    TinyChest => Common, // TODO
+    TinyChest => Common,
     ToyOrnithopter => Common,
     Vajra => Common,
     WarPaint => Common,
