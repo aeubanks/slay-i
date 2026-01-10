@@ -45,9 +45,7 @@ impl GameState for RollCombatGameState {
                 {
                     continue;
                 }
-                if game.combat_history.len() >= 1
-                    && game.combat_history[game.combat_history.len() - 1] == combat
-                {
+                if game.combat_history.last() == Some(&combat) {
                     continue;
                 }
                 let invalid = match combat {
