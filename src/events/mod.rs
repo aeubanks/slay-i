@@ -6,6 +6,7 @@ use crate::{
         purifier::PurifierGameState, transmorgrifier::TransmorgrifierGameState,
     },
     game::Game,
+    relic::RelicClass,
     state::GameState,
 };
 
@@ -24,6 +25,49 @@ pub enum Event {
     DivineFountain,
     Purifier,
     Transmorgrifier,
+    Upgrade,           // TODO
+    Duplicator,        // TODO
+    Designer,          // TODO
+    FaceTrader,        // TODO
+    KnowingSkull,      // TODO
+    Nloth,             // TODO
+    Joust,             // TODO
+    WomanInBlue,       // TODO
+    Lab,               // TODO
+    WeMeetAgain,       // TODO
+    Falling,           // TODO
+    MindBloom,         // TODO
+    MoaiHead,          // TODO
+    MysteriousSphere,  // TODO
+    SensoryStone,      // TODO
+    TombOfLordRedMask, // TODO
+    WindingHalls,      // TODO
+    MatchAndKeep,      // TODO
+    WheelOfChange,     // TODO
+    GoldenShrine,      // TODO
+    Cleric,            // TODO
+    DeadAdventurer,    // TODO
+    GoldenIdol,        // TODO
+    GoldenWing,        // TODO
+    WorldOfGoop,       // TODO
+    Sssserpent,        // TODO
+    LivingWall,        // TODO
+    Mushrooms,         // TODO
+    ScrapOoze,         // TODO
+    ShiningLight,      // TODO
+    Addict,            // TODO
+    BackToBasics,      // TODO
+    Beggar,            // TODO
+    Colosseum,         // TODO
+    CursedTome,        // TODO
+    DrugDealer,        // TODO
+    ForgottenAltar,    // TODO
+    Ghosts,            // TODO
+    MaskedBandits,     // TODO
+    Nest,              // TODO
+    Library,           // TODO
+    Mausoleum,         // TODO
+    Vampires,          // TODO
 }
 
 impl Event {
@@ -36,6 +80,7 @@ impl Event {
             DivineFountain => Box::new(DivineFountainGameState),
             Purifier => Box::new(PurifierGameState),
             Transmorgrifier => Box::new(TransmorgrifierGameState),
+            _ => todo!(),
         }
     }
     pub fn can_spawn(&self, game: &Game) -> bool {
@@ -45,6 +90,20 @@ impl Event {
                 let c = c.borrow();
                 c.can_remove_from_master_deck() && c.class.ty() == CardType::Curse
             }),
+            FaceTrader => game.is_in_act(1),
+            Duplicator => !game.is_in_act(1),
+            KnowingSkull => game.is_in_act(2) && game.player.cur_hp > 12,
+            Designer => !game.is_in_act(1) && game.gold >= 75,
+            Nloth => game.is_in_act(3) && game.relics.len() >= 2,
+            Joust => game.is_in_act(3) && game.gold >= 50,
+            DeadAdventurer | Mushrooms => game.floor > 6,
+            Cleric => game.gold >= 35,
+            Beggar => game.gold >= 75,
+            Colosseum => game.floor > 26,
+            MoaiHead => {
+                game.has_relic(RelicClass::GoldenIdol)
+                    || game.player.cur_hp as f32 / game.player.max_hp as f32 <= 0.5
+            }
             _ => true,
         }
     }

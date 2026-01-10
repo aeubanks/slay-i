@@ -1439,6 +1439,16 @@ impl Game {
         self.heal(CreatureRef::player(), amount);
     }
 
+    pub fn is_in_act(&self, act: i32) -> bool {
+        match act {
+            1 => (0..=17).contains(&self.floor),
+            2 => (18..=34).contains(&self.floor),
+            3 => (35..=51).contains(&self.floor),
+            4 => self.floor >= 52,
+            _ => panic!(),
+        }
+    }
+
     #[cfg(test)]
     pub fn add_potion(&mut self, potion: Potion) {
         use crate::actions::gain_potion::GainPotionAction;
