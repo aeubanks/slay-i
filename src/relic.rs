@@ -3451,10 +3451,25 @@ mod tests {
             assert_eq!(g.master_deck.len(), 3);
         }
         {
-            let mut g = GameBuilder::default().add_card(CardClass::Rampage).build();
+            let mut g = GameBuilder::default()
+                .add_card(CardClass::RitualDagger)
+                .build();
+            g.master_deck[0].borrow_mut().base_increase = 5;
             g.run_action(GainRelicAction(RelicClass::DollysMirror));
             g.step_test(DuplicateCardInMasterStep { master_index: 0 });
             assert_ne!(g.master_deck[0].borrow().id, g.master_deck[1].borrow().id);
+            assert_eq!(
+                g.master_deck[0].borrow().base_increase,
+                g.master_deck[1].borrow().base_increase
+            );
+        }
+        {
+            let mut g = GameBuilder::default().add_card(CardClass::Strike).build();
+            g.master_deck[0].borrow_mut().is_bottled = true;
+            g.run_action(GainRelicAction(RelicClass::DollysMirror));
+            g.step_test(DuplicateCardInMasterStep { master_index: 0 });
+            assert!(g.master_deck[0].borrow().is_bottled);
+            assert!(!g.master_deck[1].borrow().is_bottled);
         }
     }
 

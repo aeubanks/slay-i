@@ -258,6 +258,7 @@ impl Step for DuplicateCardInMasterStep {
     fn run(&self, game: &mut Game) {
         let original = game.master_deck[self.master_index].clone();
         let c = game.clone_card_ref_new_id(&original);
+        c.borrow_mut().is_bottled = false;
         game.action_queue.push_bot(AddCardToMasterDeckAction(c));
         game.state.push_state(RunActionsGameState);
     }
