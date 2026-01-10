@@ -1,4 +1,5 @@
 use crate::{
+    cards::CardType,
     events::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
@@ -35,6 +36,16 @@ impl Event {
             DivineFountain => Box::new(DivineFountainGameState),
             Purifier => Box::new(PurifierGameState),
             Transmorgrifier => Box::new(TransmorgrifierGameState),
+        }
+    }
+    pub fn can_spawn(&self, game: &Game) -> bool {
+        use Event::*;
+        match self {
+            DivineFountain => game.master_deck.iter().any(|c| {
+                let c = c.borrow();
+                c.can_remove_from_master_deck() && c.class.ty() == CardType::Curse
+            }),
+            _ => true,
         }
     }
 }

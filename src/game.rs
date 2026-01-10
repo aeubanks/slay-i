@@ -618,7 +618,9 @@ pub struct Game {
     pub roll_noop_monsters: bool,
     pub override_event_queue: Vec<Event>,
 
-    pub event_pool: Vec<Event>,
+    pub event_shrine_pool: Vec<Event>,
+    pub event_one_time_pool: Vec<Event>,
+    pub event_act_pool: Vec<Event>,
     pub event_monster_chance: i32,
     pub event_chest_chance: i32,
     pub event_shop_chance: i32,
@@ -663,13 +665,6 @@ impl Game {
     pub const MAX_HAND_SIZE: i32 = 10;
 
     fn new(mut rng: Rand, master_deck: &[(CardClass, bool)]) -> Self {
-        let event_pool = vec![
-            Event::Bonfire,
-            Event::AccursedBlackSmith,
-            Event::Purifier,
-            Event::Transmorgrifier,
-            Event::DivineFountain,
-        ];
         let mut common_relic_pool = all_common_relics();
         let mut uncommon_relic_pool = all_uncommon_relics();
         let mut rare_relic_pool = all_rare_relics();
@@ -730,7 +725,13 @@ impl Game {
             next_id: 1,
             status: GameStatus::Combat,
             is_running: false,
-            event_pool,
+            event_act_pool: vec![Event::BigFish],
+            event_one_time_pool: vec![
+                Event::Bonfire,
+                Event::AccursedBlackSmith,
+                Event::DivineFountain,
+            ],
+            event_shrine_pool: vec![Event::Purifier, Event::Transmorgrifier],
             has_emerald_key: false,
             has_ruby_key: false,
             has_sapphire_key: false,

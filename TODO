@@ -4,3 +4,4 @@ test vampire player/enemy with thorns
 test enemy ritual
 test gremlin horn/shuffle relics
 test remove multiple cards parasite/ceramic fish/bloody idol
+test that we don't see duplicate events

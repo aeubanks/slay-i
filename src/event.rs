@@ -29,7 +29,22 @@ impl GameState for RollEventGameState {
             let e = game.override_event_queue.remove(0);
             game.state.push_boxed_state(e.game_state(game));
         } else {
-            let e = remove_random(&mut game.rng, &mut game.event_pool);
+            // 25% for shrine or one time event
+            // 75% for act-specific event
+            let mut events;
+            if game.rng.random_range(0..4) == 0 {
+                events = game.event_shrine_pool.clone();
+                for e in &game.event_one_time_pool {
+                    events.push(*e);
+                }
+            } else {
+                events = game.event_act_pool.clone();
+            }
+            events.retain(|e| e.can_spawn(game));
+            let e = remove_random(&mut game.rng, &mut events);
+            game.event_act_pool.retain(|&e2| e2 != e);
+            game.event_one_time_pool.retain(|&e2| e2 != e);
+            game.event_shrine_pool.retain(|&e2| e2 != e);
             game.state.push_boxed_state(e.game_state(game));
         }
     }
