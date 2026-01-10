@@ -273,7 +273,8 @@ impl GameState for EnterActGameState {
         game.map_position = None;
         game.map = Map::generate(&mut game.rng);
         if game.is_in_act(1) {
-            game.event_one_time_pool = vec![Event::AccursedBlackSmith, Event::FaceTrader];
+            game.event_one_time_pool =
+                vec![Event::AccursedBlackSmith, Event::FaceTrader, Event::Lab];
         } else {
             game.action_queue.push_bot(HealAction::player(
                 ((game.player.max_hp - game.player.cur_hp) as f32 * 0.75) as i32,

@@ -3,7 +3,7 @@ use crate::{
     events::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
-        face_trader::FaceTraderGameState, purifier::PurifierGameState,
+        face_trader::FaceTraderGameState, lab::LabGameState, purifier::PurifierGameState,
         transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
     },
     game::Game,
@@ -16,6 +16,7 @@ pub mod big_fish;
 pub mod bonfire;
 pub mod divine_fountain;
 pub mod face_trader;
+pub mod lab;
 pub mod purifier;
 pub mod transmorgrifier;
 pub mod upgrade;
@@ -32,11 +33,11 @@ pub enum Event {
     Duplicator, // TODO
     Designer,   // TODO
     FaceTrader,
-    KnowingSkull,      // TODO
-    Nloth,             // TODO
-    Joust,             // TODO
-    WomanInBlue,       // TODO
-    Lab,               // TODO
+    KnowingSkull, // TODO
+    Nloth,        // TODO
+    Joust,        // TODO
+    WomanInBlue,  // TODO
+    Lab,
     WeMeetAgain,       // TODO
     Falling,           // TODO
     MindBloom,         // TODO
@@ -85,6 +86,7 @@ impl Event {
             Transmorgrifier => Box::new(TransmorgrifierGameState),
             Upgrade => Box::new(UpgradeShrineGameState),
             FaceTrader => Box::new(FaceTraderGameState::new(game)),
+            Lab => Box::new(LabGameState),
             _ => todo!(),
         }
     }
