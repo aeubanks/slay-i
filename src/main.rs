@@ -84,18 +84,28 @@ fn print_state(g: &Game) {
     }
 }
 
-fn read_int_from_stdin(max: usize) -> usize {
+enum UserInput {
+    Step(usize),
+    PrintMap,
+}
+
+fn read_user_input(max: usize) -> UserInput {
     let mut s = String::new();
     loop {
         s.clear();
         std::io::stdin().read_line(&mut s).unwrap();
-        if let Ok(v) = s.trim().parse()
+        s = s.trim().to_owned();
+        if s == "m" {
+            return UserInput::PrintMap;
+        }
+        if let Ok(v) = s.parse()
             && v < max
         {
-            return v;
+            return UserInput::Step(v);
         }
         if !s.trim().is_empty() {
             println!("invalid num \"{}\"", s.trim());
+            println!("number to choose action, \"m\" to print map");
         }
     }
 }
@@ -108,7 +118,6 @@ fn main() {
         .add_card_upgraded(CardClass::Inflame)
         .add_relic(RelicClass::BurningBlood)
         .build();
-    game.map.print();
     loop {
         match game.status {
             GameStatus::Defeat => {
@@ -122,8 +131,11 @@ fn main() {
             GameStatus::Combat => {
                 print_state(&game);
                 let valid_steps = game.valid_steps();
-                let i = read_int_from_stdin(valid_steps.len());
-                game.step(i);
+                let i = read_user_input(valid_steps.len());
+                match i {
+                    UserInput::Step(s) => game.step(s),
+                    UserInput::PrintMap => game.map.print(),
+                }
                 println!("-----------------------------");
             }
         }
