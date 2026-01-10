@@ -309,6 +309,8 @@ impl GameState for EnterActGameState {
             game.add_hard_pool_combat(Combat::TwoFungiBeasts, 4);
 
             game.elites = vec![Combat::GremlinNob, Combat::Lagavulin, Combat::ThreeSentries];
+
+            game.set_boss(&[Combat::Hexaghost, Combat::SlimeBoss, Combat::Guardian]);
         } else if game.is_in_act(2) {
             game.event_act_pool = vec![];
             game.easy_pool_combats = vec![
@@ -332,6 +334,8 @@ impl GameState for EnterActGameState {
                 Combat::BookOfStabbing,
                 Combat::Slavers,
             ];
+
+            game.set_boss(&[Combat::Collector, Combat::Automaton, Combat::Champ]);
         } else if game.is_in_act(3) {
             game.event_act_pool = vec![];
             game.easy_pool_combats = vec![
@@ -349,6 +353,8 @@ impl GameState for EnterActGameState {
             game.add_hard_pool_combat(Combat::WrithingMass, 1);
 
             game.elites = vec![Combat::Nemesis, Combat::Reptomancer, Combat::GiantHead];
+
+            game.set_boss(&[Combat::TimeEater, Combat::AwakenedOne, Combat::DonuDeca]);
         }
     }
 }
@@ -720,6 +726,7 @@ pub struct Game {
     pub elites: Vec<Combat>,
     pub easy_pool_combats: Vec<Combat>,
     pub hard_pool_combats: Vec<Combat>,
+    pub boss: Option<Combat>,
 
     pub event_shrine_pool: Vec<Event>,
     pub event_one_time_pool: Vec<Event>,
@@ -787,6 +794,7 @@ impl Game {
             elites: Default::default(),
             easy_pool_combats: Default::default(),
             hard_pool_combats: Default::default(),
+            boss: None,
             floor: 0,
             map_position: Default::default(),
             player: Creature::new("Ironclad", 80),
@@ -916,6 +924,10 @@ impl Game {
         for _ in 0..weight {
             self.hard_pool_combats.push(combat);
         }
+    }
+
+    pub fn set_boss(&mut self, bosses: &[Combat]) {
+        self.boss = Some(rand_slice(&mut self.rng, bosses));
     }
 
     pub fn roll_rarity(&mut self, ty: RareCardBaseChance) -> CardRarity {

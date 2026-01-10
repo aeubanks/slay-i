@@ -11,7 +11,7 @@ use crate::{
     game::{CombatType, CreatureRef, Game, RareCardBaseChance, RunActionsGameState, UsePotionStep},
     map::RoomType,
     monster::Monster,
-    monsters::{Combat, test::NoopMonster},
+    monsters::test::NoopMonster,
     potion::{Potion, random_potion_weighted},
     relic::RelicClass,
     rewards::{RewardType, Rewards, RewardsGameState},
@@ -91,8 +91,7 @@ pub struct RollBossCombatGameState;
 impl GameState for RollBossCombatGameState {
     fn run(&self, game: &mut Game) {
         game.cur_room = Some(RoomType::Boss);
-        let combats = vec![Combat::Guardian, Combat::Hexaghost, Combat::SlimeBoss];
-        game.monsters = rand_slice(&mut game.rng, &combats).monsters(game);
+        game.monsters = game.boss.unwrap().monsters(game);
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Boss));
         game.state
@@ -532,6 +531,7 @@ mod tests {
         cards::{CardClass, CardCost},
         game::{AscendStep, DiscardPotionStep, GameBuilder, GameStatus},
         monsters::{
+            Combat,
             looter::Looter,
             test::{AttackMonster, NoopMonster},
         },
@@ -821,6 +821,20 @@ mod tests {
             last_name = g.monsters[0].behavior.name().to_owned();
             g.play_card(CardClass::DebugKillAll, None);
             g.step_test(RewardExitStep);
+        }
+    }
+
+    #[test]
+    fn test_act_1_boss() {
+        for _ in 0..5 {
+            let mut g = GameBuilder::default().build_with_rooms(&[RoomType::Boss]);
+            g.step_test(AscendStep::new(0, 0));
+            match g.boss.unwrap() {
+                Combat::Hexaghost => assert!(g.monsters[0].behavior.name().contains("hexa")),
+                Combat::SlimeBoss => assert!(g.monsters[0].behavior.name().contains("slime")),
+                Combat::Guardian => assert!(g.monsters[0].behavior.name().contains("guardian")),
+                _ => panic!(),
+            }
         }
     }
 }
