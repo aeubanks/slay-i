@@ -249,16 +249,15 @@ impl RelicClass {
     }
 
     pub fn can_spawn(&self, game: &Game) -> bool {
-        if self.is_campfire_relic() {
-            if game
+        if self.is_campfire_relic()
+            && game
                 .relics
                 .iter()
                 .filter(|r| r.get_class().is_campfire_relic())
                 .count()
                 >= 2
-            {
-                return false;
-            }
+        {
+            return false;
         }
         use RelicClass::*;
         match self {

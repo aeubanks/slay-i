@@ -32,6 +32,8 @@ use crate::draw_pile::DrawPile;
 use crate::event::RollQuestionRoomGameState;
 use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
 use crate::events::bonfire::BonfireGameState;
+use crate::events::purifier::PurifierGameState;
+use crate::events::transmorgrifier::TransmorgrifierGameState;
 use crate::map::{MAP_WIDTH, Map, RoomType};
 #[cfg(test)]
 use crate::monster::MonsterBehavior;
@@ -667,6 +669,8 @@ impl Game {
         let event_pool = vec![
             Box::new(BonfireGameState) as Box<dyn GameState>,
             Box::new(AccursedBlackSmithGameState),
+            Box::new(PurifierGameState),
+            Box::new(TransmorgrifierGameState),
         ];
         let mut common_relic_pool = all_common_relics();
         let mut uncommon_relic_pool = all_uncommon_relics();
@@ -1379,6 +1383,12 @@ impl Game {
             .collect::<Vec<_>>();
         assert_eq!(cards.len(), 1);
         cards[0]
+    }
+
+    pub fn has_removable_cards(&self) -> bool {
+        self.master_deck
+            .iter()
+            .any(|c| c.borrow().can_remove_from_master_deck())
     }
 
     pub fn clear_all_piles(&mut self) {
