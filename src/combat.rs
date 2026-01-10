@@ -69,8 +69,15 @@ pub struct RollEliteCombatGameState;
 impl GameState for RollEliteCombatGameState {
     fn run(&self, game: &mut Game) {
         game.cur_room = Some(RoomType::Elite);
-        let combats = vec![Combat::GremlinNob, Combat::Lagavulin, Combat::ThreeSentries];
-        game.monsters = rand_slice(&mut game.rng, &combats).monsters(game);
+        let mut combat;
+        loop {
+            combat = rand_slice(&mut game.rng, &game.elites);
+            if Some(combat) != game.last_elite {
+                break;
+            }
+        }
+        game.monsters = combat.monsters(game);
+        game.last_elite = Some(combat);
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Elite));
         game.state
@@ -788,6 +795,32 @@ mod tests {
             assert_ne!(window[0], window[1]);
             assert_ne!(window[0], window[2]);
             assert_ne!(window[1], window[2]);
+        }
+    }
+
+    #[test]
+    fn test_act_1_elites() {
+        let mut g = GameBuilder::default().build_with_rooms(&[
+            RoomType::Elite,
+            RoomType::Elite,
+            RoomType::Elite,
+            RoomType::Elite,
+            RoomType::Elite,
+            RoomType::Elite,
+            RoomType::Elite,
+            RoomType::Elite,
+        ]);
+        let mut last_name = "".to_owned();
+        for i in 0..8 {
+            g.step_test(AscendStep::new(0, i));
+            assert_matches!(
+                g.last_elite.unwrap(),
+                Combat::Lagavulin | Combat::GremlinNob | Combat::ThreeSentries
+            );
+            assert_ne!(last_name, g.monsters[0].behavior.name());
+            last_name = g.monsters[0].behavior.name().to_owned();
+            g.play_card(CardClass::DebugKillAll, None);
+            g.step_test(RewardExitStep);
         }
     }
 }

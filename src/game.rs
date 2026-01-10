@@ -307,6 +307,8 @@ impl GameState for EnterActGameState {
             game.add_hard_pool_combat(Combat::RedSlaver, 2);
             game.add_hard_pool_combat(Combat::ThreeLouses, 4);
             game.add_hard_pool_combat(Combat::TwoFungiBeasts, 4);
+
+            game.elites = vec![Combat::GremlinNob, Combat::Lagavulin, Combat::ThreeSentries];
         } else if game.is_in_act(2) {
             game.event_act_pool = vec![];
             game.easy_pool_combats = vec![
@@ -324,6 +326,12 @@ impl GameState for EnterActGameState {
             game.add_hard_pool_combat(Combat::CenturionAndMystic, 6);
             game.add_hard_pool_combat(Combat::ThreeCultists, 3);
             game.add_hard_pool_combat(Combat::ShelledParasiteAndFungiBeast, 3);
+
+            game.elites = vec![
+                Combat::GremlinLeader,
+                Combat::BookOfStabbing,
+                Combat::Slavers,
+            ];
         } else if game.is_in_act(3) {
             game.event_act_pool = vec![];
             game.easy_pool_combats = vec![
@@ -339,6 +347,8 @@ impl GameState for EnterActGameState {
             game.add_hard_pool_combat(Combat::Transient, 1);
             game.add_hard_pool_combat(Combat::JawWormHorde, 1);
             game.add_hard_pool_combat(Combat::WrithingMass, 1);
+
+            game.elites = vec![Combat::Nemesis, Combat::Reptomancer, Combat::GiantHead];
         }
     }
 }
@@ -707,6 +717,7 @@ pub struct Game {
     pub num_combats_this_act: i32,
     pub combat_history: Vec<Combat>,
     pub last_elite: Option<Combat>,
+    pub elites: Vec<Combat>,
     pub easy_pool_combats: Vec<Combat>,
     pub hard_pool_combats: Vec<Combat>,
 
@@ -773,6 +784,7 @@ impl Game {
             num_combats_this_act: 0,
             combat_history: Default::default(),
             last_elite: None,
+            elites: Default::default(),
             easy_pool_combats: Default::default(),
             hard_pool_combats: Default::default(),
             floor: 0,
