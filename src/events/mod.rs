@@ -4,6 +4,7 @@ use crate::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
         purifier::PurifierGameState, transmorgrifier::TransmorgrifierGameState,
+        upgrade::UpgradeShrineGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -16,6 +17,7 @@ pub mod bonfire;
 pub mod divine_fountain;
 pub mod purifier;
 pub mod transmorgrifier;
+pub mod upgrade;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Event {
@@ -25,7 +27,7 @@ pub enum Event {
     DivineFountain,
     Purifier,
     Transmorgrifier,
-    Upgrade,           // TODO
+    Upgrade,
     Duplicator,        // TODO
     Designer,          // TODO
     FaceTrader,        // TODO
@@ -80,6 +82,7 @@ impl Event {
             DivineFountain => Box::new(DivineFountainGameState),
             Purifier => Box::new(PurifierGameState),
             Transmorgrifier => Box::new(TransmorgrifierGameState),
+            Upgrade => Box::new(UpgradeShrineGameState),
             _ => todo!(),
         }
     }

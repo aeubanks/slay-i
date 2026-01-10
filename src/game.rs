@@ -287,7 +287,7 @@ impl GameState for EnterActGameState {
             // Event::MatchAndKeep,
             Event::Purifier,
             // Event::GoldenShrine,
-            // Event::Upgrade,
+            Event::Upgrade,
         ];
         if game.is_in_act(1) {
             game.event_act_pool = vec![Event::BigFish];
@@ -1510,6 +1510,10 @@ impl Game {
         self.master_deck
             .iter()
             .any(|c| c.borrow().can_remove_from_master_deck())
+    }
+
+    pub fn has_upgradable_cards(&self) -> bool {
+        self.master_deck.iter().any(|c| c.borrow().can_upgrade())
     }
 
     pub fn clear_all_piles(&mut self) {
