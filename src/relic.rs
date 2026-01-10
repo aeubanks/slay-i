@@ -38,8 +38,8 @@ use crate::{
     cards::{CardClass, CardType},
     game::{CreatureRef, Game, RareCardBaseChance, RunActionsGameState},
     master_deck::{
-        ChooseBottledCardGameState, ChooseRemoveFromMasterGameState,
-        ChooseTransformMasterGameState, DuplicateCardInMasterGameState,
+        ChooseBottledCardGameState, ChooseDuplicateCardInMasterGameState,
+        ChooseRemoveFromMasterGameState, ChooseTransformMasterGameState,
         TransformChosenCardsGameState,
     },
     potion::random_potion_weighted,
@@ -556,7 +556,7 @@ fn necronomicon_equip(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateMan
 }
 
 fn dollys_mirror(_: &mut i32, _: &mut ActionQueue, state: &mut GameStateManager) {
-    state.push_state(DuplicateCardInMasterGameState);
+    state.push_state(ChooseDuplicateCardInMasterGameState);
 }
 
 #[derive(Debug)]

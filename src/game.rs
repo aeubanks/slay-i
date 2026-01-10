@@ -279,6 +279,7 @@ impl GameState for EnterActGameState {
                 Event::FaceTrader,
                 Event::Lab,
                 Event::WeMeetAgain,
+                Event::Duplicator,
             ];
         } else {
             game.action_queue.push_bot(HealAction::player(

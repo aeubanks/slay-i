@@ -3,9 +3,9 @@ use crate::{
     events::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
-        face_trader::FaceTraderGameState, lab::LabGameState, purifier::PurifierGameState,
-        transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
-        we_meet_again::WeMeetAgainGameState,
+        duplicator::DuplicatorGameState, face_trader::FaceTraderGameState, lab::LabGameState,
+        purifier::PurifierGameState, transmorgrifier::TransmorgrifierGameState,
+        upgrade::UpgradeShrineGameState, we_meet_again::WeMeetAgainGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -16,6 +16,7 @@ pub mod accursed_blacksmith;
 pub mod big_fish;
 pub mod bonfire;
 pub mod divine_fountain;
+pub mod duplicator;
 pub mod face_trader;
 pub mod lab;
 pub mod purifier;
@@ -32,8 +33,8 @@ pub enum Event {
     Purifier,
     Transmorgrifier,
     Upgrade,
-    Duplicator, // TODO
-    Designer,   // TODO
+    Duplicator,
+    Designer, // TODO
     FaceTrader,
     KnowingSkull, // TODO
     Nloth,        // TODO
@@ -90,6 +91,7 @@ impl Event {
             FaceTrader => Box::new(FaceTraderGameState::new(game)),
             Lab => Box::new(LabGameState),
             WeMeetAgain => Box::new(WeMeetAgainGameState::new(game)),
+            Duplicator => Box::new(DuplicatorGameState),
             _ => todo!(),
         }
     }

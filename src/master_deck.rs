@@ -233,9 +233,9 @@ impl GameState for RemoveChosenCardsGameState {
 }
 
 #[derive(Debug)]
-pub struct DuplicateCardInMasterGameState;
+pub struct ChooseDuplicateCardInMasterGameState;
 
-impl GameState for DuplicateCardInMasterGameState {
+impl GameState for ChooseDuplicateCardInMasterGameState {
     fn valid_steps(&self, game: &Game) -> Option<Steps> {
         let mut moves = Steps::default();
         for i in 0..game.master_deck.len() {
