@@ -32,6 +32,7 @@ use crate::draw_pile::DrawPile;
 use crate::event::RollQuestionRoomGameState;
 use crate::events::accursed_blacksmith::AccursedBlackSmithGameState;
 use crate::events::bonfire::BonfireGameState;
+use crate::events::divine_fountain::DivineFountainGameState;
 use crate::events::purifier::PurifierGameState;
 use crate::events::transmorgrifier::TransmorgrifierGameState;
 use crate::map::{MAP_WIDTH, Map, RoomType};
@@ -671,6 +672,7 @@ impl Game {
             Box::new(AccursedBlackSmithGameState),
             Box::new(PurifierGameState),
             Box::new(TransmorgrifierGameState),
+            Box::new(DivineFountainGameState),
         ];
         let mut common_relic_pool = all_common_relics();
         let mut uncommon_relic_pool = all_uncommon_relics();

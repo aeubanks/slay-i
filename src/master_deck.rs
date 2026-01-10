@@ -220,7 +220,7 @@ impl Step for ChooseRemoveFromMasterStep {
 }
 
 #[derive(Debug)]
-struct RemoveChosenCardsGameState;
+pub struct RemoveChosenCardsGameState;
 
 impl GameState for RemoveChosenCardsGameState {
     fn run(&self, game: &mut Game) {
