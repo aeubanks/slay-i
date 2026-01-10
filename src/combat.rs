@@ -11,19 +11,11 @@ use crate::{
     game::{CombatType, CreatureRef, Game, RareCardBaseChance, RunActionsGameState, UsePotionStep},
     map::RoomType,
     monster::Monster,
-    monsters::{
-        blue_slaver::BlueSlaver, cultist::Cultist, fungi_beast::FungiBeast,
-        gremlin_fat::GremlinFat, gremlin_mad::GremlinMad, gremlin_nob::GremlinNob,
-        gremlin_shield::GremlinShield, gremlin_sneaky::GremlinSneaky,
-        gremlin_wizard::GremlinWizard, guardian::Guardian, hexaghost::Hexaghost, jawworm::JawWorm,
-        lagavulin::Lagavulin, looter::Looter, louse::Louse, red_slaver::RedSlaver, sentry::Sentry,
-        slime_acid_l::SlimeAcidL, slime_acid_m::SlimeAcidM, slime_acid_s::SlimeAcidS,
-        slime_boss::SlimeBoss, slime_spike_l::SlimeSpikeL, slime_spike_m::SlimeSpikeM,
-        slime_spike_s::SlimeSpikeS, test::NoopMonster,
-    },
+    monsters::{Combat, looter::Looter, test::NoopMonster},
     potion::{Potion, random_potion_weighted},
     relic::RelicClass,
     rewards::{BossRewardGameState, RewardType, Rewards, RewardsGameState},
+    rng::rand_slice,
     state::{GameState, Steps},
     step::Step,
 };
@@ -39,33 +31,23 @@ impl GameState for RollCombatGameState {
         } else if game.roll_noop_monsters {
             game.monsters = vec![Monster::new(NoopMonster::new(), &mut game.rng)];
         } else {
-            game.monsters = match game.rng.random_range(0..11) {
-                0 => vec![Monster::new(JawWorm::new(), &mut game.rng)],
-                1 => vec![Monster::new(Cultist::new(), &mut game.rng)],
-                2 => vec![
-                    Monster::new(Louse::green(&mut game.rng), &mut game.rng),
-                    Monster::new(Louse::red(&mut game.rng), &mut game.rng),
-                ],
-                3 => vec![Monster::new(SlimeAcidM::new(), &mut game.rng)],
-                4 => vec![Monster::new(SlimeSpikeM::new(), &mut game.rng)],
-                5 => vec![Monster::new(FungiBeast::new(), &mut game.rng)],
-                6 => vec![
-                    Monster::new(SlimeSpikeS::new(), &mut game.rng),
-                    Monster::new(SlimeAcidS::new(), &mut game.rng),
-                ],
-                7 => vec![Monster::new(RedSlaver::new(), &mut game.rng)],
-                8 => vec![Monster::new(BlueSlaver::new(), &mut game.rng)],
-                9 => vec![
-                    Monster::new(GremlinFat::new(), &mut game.rng),
-                    Monster::new(GremlinMad::new(), &mut game.rng),
-                    Monster::new(GremlinShield::new(), &mut game.rng),
-                    Monster::new(GremlinSneaky::new(), &mut game.rng),
-                    Monster::new(GremlinWizard::new(), &mut game.rng),
-                ],
-                10 => vec![Monster::new(SlimeAcidL::new(), &mut game.rng)],
-                11 => vec![Monster::new(SlimeSpikeL::new(), &mut game.rng)],
-                _ => vec![Monster::new(Looter::new(), &mut game.rng)],
-            };
+            let combats = vec![
+                Combat::Cultist,
+                Combat::JawWorm,
+                Combat::TwoLouses,
+                Combat::SmallSlimes,
+                Combat::BlueSlaver,
+                Combat::GremlinGang,
+                Combat::Looter,
+                Combat::LargeSlime,
+                Combat::LotsOfSlimes,
+                Combat::ExordiumThugs,
+                Combat::ExordiumWildlife,
+                Combat::RedSlaver,
+                Combat::ThreeLouses,
+                Combat::TwoFungiBeasts,
+            ];
+            game.monsters = rand_slice(&mut game.rng, &combats).monsters(game);
         }
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Monster));
@@ -80,16 +62,8 @@ pub struct RollEliteCombatGameState;
 impl GameState for RollEliteCombatGameState {
     fn run(&self, game: &mut Game) {
         game.cur_room = Some(RoomType::Elite);
-        game.monsters = match game.rng.random_range(0..4) {
-            0 => vec![Monster::new(GremlinNob::new(), &mut game.rng)],
-            1 => vec![Monster::new(Lagavulin::new(), &mut game.rng)],
-            2 => vec![Monster::new(Lagavulin::new_event(), &mut game.rng)],
-            _ => vec![
-                Monster::new(Sentry::new_debuff_first(), &mut game.rng),
-                Monster::new(Sentry::new_attack_first(), &mut game.rng),
-                Monster::new(Sentry::new_debuff_first(), &mut game.rng),
-            ],
-        };
+        let combats = vec![Combat::GremlinNob, Combat::Lagavulin, Combat::ThreeSentries];
+        game.monsters = rand_slice(&mut game.rng, &combats).monsters(game);
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Elite));
         game.state
@@ -103,11 +77,8 @@ pub struct RollBossCombatGameState;
 impl GameState for RollBossCombatGameState {
     fn run(&self, game: &mut Game) {
         game.cur_room = Some(RoomType::Boss);
-        game.monsters = match game.rng.random_range(0..3) {
-            0 => vec![Monster::new(Guardian::new(), &mut game.rng)],
-            1 => vec![Monster::new(Hexaghost::new(), &mut game.rng)],
-            _ => vec![Monster::new(SlimeBoss::new(), &mut game.rng)],
-        };
+        let combats = vec![Combat::Guardian, Combat::Hexaghost, Combat::SlimeBoss];
+        game.monsters = rand_slice(&mut game.rng, &combats).monsters(game);
         game.state.push_state(BossRewardGameState);
         game.state
             .push_state(RollCombatRewardsGameState(RewardType::Boss));
