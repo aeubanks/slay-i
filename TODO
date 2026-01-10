@@ -5,3 +5,4 @@ test enemy ritual
 test gremlin horn/shuffle relics
 test remove multiple cards parasite/ceramic fish/bloody idol
 test that we don't see duplicate events
+implement some combats not able to be seen directly after another combat
