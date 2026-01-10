@@ -1402,4 +1402,48 @@ mod tests {
         g.step_test(EndTurnStep);
         assert_eq!(g.player.cur_hp, hp - 1 - 2);
     }
+
+    #[test]
+    fn test_thorns_bite() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Thorns, 5)
+            .build_combat();
+        g.player.cur_hp = g.player.max_hp;
+        g.play_card(CardClass::Bite, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.cur_hp, g.player.max_hp - 3);
+    }
+
+    #[test]
+    fn test_thorns_reaper() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Thorns, 5)
+            .add_player_status(Strength, 20)
+            .build_combat();
+        g.player.cur_hp = g.player.max_hp;
+        g.play_card(CardClass::Reaper, None);
+        assert_eq!(g.player.cur_hp, g.player.max_hp);
+    }
+
+    #[test]
+    fn test_thorns_hand_of_greed_bloody_idol() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Thorns, 5)
+            .add_relic(RelicClass::BloodyIdol)
+            .build_combat();
+        g.player.cur_hp = 4;
+        g.monsters[0].creature.cur_hp = 1;
+        g.play_card(CardClass::HandOfGreed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.cur_hp, 4);
+    }
+
+    #[test]
+    fn test_thorns_feed() {
+        let mut g = GameBuilder::default()
+            .add_monster_status(Thorns, 5)
+            .build_combat();
+        g.player.cur_hp = 4;
+        g.monsters[0].creature.cur_hp = 1;
+        g.play_card(CardClass::Feed, Some(CreatureRef::monster(0)));
+        assert_eq!(g.player.cur_hp, 2);
+    }
 }
