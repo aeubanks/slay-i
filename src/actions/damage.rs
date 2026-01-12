@@ -58,6 +58,9 @@ pub struct DamageAction {
 }
 
 impl DamageAction {
+    pub fn event(amount: i32) -> Self {
+        Self::thorns_no_rupture(amount, CreatureRef::player())
+    }
     pub fn from_player(base_amount: i32, target: CreatureRef) -> Self {
         Self {
             target,

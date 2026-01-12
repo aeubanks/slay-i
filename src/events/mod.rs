@@ -7,6 +7,7 @@ use crate::{
         noop::NoopEventGameState, purifier::PurifierGameState,
         transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
         we_meet_again::WeMeetAgainGameState, woman_in_blue::WomanInBlueGameState,
+        world_of_goop::WorldOfGoopGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -26,6 +27,7 @@ pub mod transmorgrifier;
 pub mod upgrade;
 pub mod we_meet_again;
 pub mod woman_in_blue;
+pub mod world_of_goop;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Event {
@@ -60,25 +62,25 @@ pub enum Event {
     DeadAdventurer,    // TODO
     GoldenIdol,        // TODO
     GoldenWing,        // TODO
-    WorldOfGoop,       // TODO
-    Sssserpent,        // TODO
-    LivingWall,        // TODO
-    Mushrooms,         // TODO
-    ScrapOoze,         // TODO
-    ShiningLight,      // TODO
-    Addict,            // TODO
-    BackToBasics,      // TODO
-    Beggar,            // TODO
-    Colosseum,         // TODO
-    CursedTome,        // TODO
-    DrugDealer,        // TODO
-    ForgottenAltar,    // TODO
-    Ghosts,            // TODO
-    MaskedBandits,     // TODO
-    Nest,              // TODO
-    Library,           // TODO
-    Mausoleum,         // TODO
-    Vampires,          // TODO
+    WorldOfGoop,
+    Sssserpent,     // TODO
+    LivingWall,     // TODO
+    Mushrooms,      // TODO
+    ScrapOoze,      // TODO
+    ShiningLight,   // TODO
+    Addict,         // TODO
+    BackToBasics,   // TODO
+    Beggar,         // TODO
+    Colosseum,      // TODO
+    CursedTome,     // TODO
+    DrugDealer,     // TODO
+    ForgottenAltar, // TODO
+    Ghosts,         // TODO
+    MaskedBandits,  // TODO
+    Nest,           // TODO
+    Library,        // TODO
+    Mausoleum,      // TODO
+    Vampires,       // TODO
 }
 
 impl Event {
@@ -98,6 +100,7 @@ impl Event {
             WeMeetAgain => Box::new(WeMeetAgainGameState::new(game)),
             Duplicator => Box::new(DuplicatorGameState),
             WomanInBlue => Box::new(WomanInBlueGameState),
+            WorldOfGoop => Box::new(WorldOfGoopGameState::new(game)),
             _ => todo!(),
         }
     }
