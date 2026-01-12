@@ -4,9 +4,9 @@ use crate::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
         duplicator::DuplicatorGameState, face_trader::FaceTraderGameState, lab::LabGameState,
-        purifier::PurifierGameState, transmorgrifier::TransmorgrifierGameState,
-        upgrade::UpgradeShrineGameState, we_meet_again::WeMeetAgainGameState,
-        woman_in_blue::WomanInBlueGameState,
+        noop::NoopEventGameState, purifier::PurifierGameState,
+        transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
+        we_meet_again::WeMeetAgainGameState, woman_in_blue::WomanInBlueGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -20,6 +20,7 @@ pub mod divine_fountain;
 pub mod duplicator;
 pub mod face_trader;
 pub mod lab;
+pub mod noop;
 pub mod purifier;
 pub mod transmorgrifier;
 pub mod upgrade;
@@ -28,6 +29,7 @@ pub mod woman_in_blue;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Event {
+    Noop,
     AccursedBlackSmith,
     BigFish,
     Bonfire,
@@ -83,6 +85,7 @@ impl Event {
     pub fn game_state(&self, game: &mut Game) -> Box<dyn GameState> {
         use Event::*;
         match self {
+            Noop => Box::new(NoopEventGameState),
             AccursedBlackSmith => Box::new(AccursedBlackSmithGameState),
             BigFish => Box::new(BigFishGameState::new(game)),
             Bonfire => Box::new(BonfireGameState),
