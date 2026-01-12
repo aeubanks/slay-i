@@ -298,7 +298,7 @@ impl GameState for EnterActGameState {
             Event::Upgrade,
         ];
         if game.is_in_act(1) {
-            game.event_act_pool = vec![Event::BigFish, Event::WorldOfGoop];
+            game.event_act_pool = vec![Event::BigFish, Event::WorldOfGoop, Event::Sssserpent];
             game.easy_pool_combats = vec![
                 Combat::Cultist,
                 Combat::JawWorm,

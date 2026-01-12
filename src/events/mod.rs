@@ -4,7 +4,7 @@ use crate::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
         duplicator::DuplicatorGameState, face_trader::FaceTraderGameState, lab::LabGameState,
-        noop::NoopEventGameState, purifier::PurifierGameState,
+        noop::NoopEventGameState, purifier::PurifierGameState, sssserpent::SssserpentGameState,
         transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
         we_meet_again::WeMeetAgainGameState, woman_in_blue::WomanInBlueGameState,
         world_of_goop::WorldOfGoopGameState,
@@ -23,6 +23,7 @@ pub mod face_trader;
 pub mod lab;
 pub mod noop;
 pub mod purifier;
+pub mod sssserpent;
 pub mod transmorgrifier;
 pub mod upgrade;
 pub mod we_meet_again;
@@ -101,6 +102,7 @@ impl Event {
             Duplicator => Box::new(DuplicatorGameState),
             WomanInBlue => Box::new(WomanInBlueGameState),
             WorldOfGoop => Box::new(WorldOfGoopGameState::new(game)),
+            Sssserpent => Box::new(SssserpentGameState),
             _ => todo!(),
         }
     }
