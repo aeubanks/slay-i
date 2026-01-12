@@ -2,7 +2,7 @@ use rand::Rng;
 
 use crate::{action::Action, cards::CardType, game::Game, rng::rand_slice};
 
-pub struct UpgradeTwoRandomInMasterAction(pub CardType);
+pub struct UpgradeTwoRandomInMasterAction(pub Option<CardType>);
 
 impl Action for UpgradeTwoRandomInMasterAction {
     fn run(&self, game: &mut Game) {
@@ -11,7 +11,12 @@ impl Action for UpgradeTwoRandomInMasterAction {
             .iter()
             .filter(|c| {
                 let c = c.borrow();
-                c.class.ty() == self.0 && c.can_upgrade()
+                if let Some(ty) = self.0
+                    && ty != c.class.ty()
+                {
+                    return false;
+                }
+                c.can_upgrade()
             })
             .collect::<Vec<_>>();
         if cards.len() > 2 {

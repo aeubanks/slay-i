@@ -4,7 +4,8 @@ use crate::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
         duplicator::DuplicatorGameState, face_trader::FaceTraderGameState, lab::LabGameState,
-        noop::NoopEventGameState, purifier::PurifierGameState, sssserpent::SssserpentGameState,
+        noop::NoopEventGameState, purifier::PurifierGameState,
+        shining_light::ShiningLightGameState, sssserpent::SssserpentGameState,
         transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
         we_meet_again::WeMeetAgainGameState, woman_in_blue::WomanInBlueGameState,
         world_of_goop::WorldOfGoopGameState,
@@ -23,6 +24,7 @@ pub mod face_trader;
 pub mod lab;
 pub mod noop;
 pub mod purifier;
+pub mod shining_light;
 pub mod sssserpent;
 pub mod transmorgrifier;
 pub mod upgrade;
@@ -64,11 +66,11 @@ pub enum Event {
     GoldenIdol,        // TODO
     GoldenWing,        // TODO
     WorldOfGoop,
-    Sssserpent,     // TODO
-    LivingWall,     // TODO
-    Mushrooms,      // TODO
-    ScrapOoze,      // TODO
-    ShiningLight,   // TODO
+    Sssserpent, // TODO
+    LivingWall, // TODO
+    Mushrooms,  // TODO
+    ScrapOoze,  // TODO
+    ShiningLight,
     Addict,         // TODO
     BackToBasics,   // TODO
     Beggar,         // TODO
@@ -103,6 +105,7 @@ impl Event {
             WomanInBlue => Box::new(WomanInBlueGameState),
             WorldOfGoop => Box::new(WorldOfGoopGameState::new(game)),
             Sssserpent => Box::new(SssserpentGameState),
+            ShiningLight => Box::new(ShiningLightGameState::new(game)),
             _ => todo!(),
         }
     }

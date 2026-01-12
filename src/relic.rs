@@ -1196,11 +1196,11 @@ fn snecko_eye_unequip(_: &mut i32, queue: &mut ActionQueue) {
 }
 
 fn war_paint(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
-    queue.push_bot(UpgradeTwoRandomInMasterAction(CardType::Skill));
+    queue.push_bot(UpgradeTwoRandomInMasterAction(Some(CardType::Skill)));
 }
 
 fn whetstone(_: &mut i32, queue: &mut ActionQueue, _: &mut GameStateManager) {
-    queue.push_bot(UpgradeTwoRandomInMasterAction(CardType::Attack));
+    queue.push_bot(UpgradeTwoRandomInMasterAction(Some(CardType::Attack)));
 }
 
 pub struct Relic {
