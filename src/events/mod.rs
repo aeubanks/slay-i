@@ -4,11 +4,11 @@ use crate::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
         duplicator::DuplicatorGameState, face_trader::FaceTraderGameState, lab::LabGameState,
-        living_wall::LivingWallGameState, noop::NoopEventGameState, purifier::PurifierGameState,
-        shining_light::ShiningLightGameState, sssserpent::SssserpentGameState,
-        transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
-        we_meet_again::WeMeetAgainGameState, woman_in_blue::WomanInBlueGameState,
-        world_of_goop::WorldOfGoopGameState,
+        living_wall::LivingWallGameState, mushrooms::MushroomsGameState, noop::NoopEventGameState,
+        purifier::PurifierGameState, shining_light::ShiningLightGameState,
+        sssserpent::SssserpentGameState, transmorgrifier::TransmorgrifierGameState,
+        upgrade::UpgradeShrineGameState, we_meet_again::WeMeetAgainGameState,
+        woman_in_blue::WomanInBlueGameState, world_of_goop::WorldOfGoopGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -23,6 +23,7 @@ pub mod duplicator;
 pub mod face_trader;
 pub mod lab;
 pub mod living_wall;
+pub mod mushrooms;
 pub mod noop;
 pub mod purifier;
 pub mod shining_light;
@@ -67,10 +68,10 @@ pub enum Event {
     GoldenIdol,        // TODO
     GoldenWing,        // TODO
     WorldOfGoop,
-    Sssserpent, // TODO
-    LivingWall, // TODO
-    Mushrooms,  // TODO
-    ScrapOoze,  // TODO
+    Sssserpent,
+    LivingWall,
+    Mushrooms,
+    ScrapOoze, // TODO
     ShiningLight,
     Addict,         // TODO
     BackToBasics,   // TODO
@@ -108,6 +109,7 @@ impl Event {
             Sssserpent => Box::new(SssserpentGameState),
             ShiningLight => Box::new(ShiningLightGameState::new(game)),
             LivingWall => Box::new(LivingWallGameState),
+            Mushrooms => Box::new(MushroomsGameState),
             _ => todo!(),
         }
     }

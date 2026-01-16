@@ -18,6 +18,7 @@ pub enum RewardType {
     Monster,
     Elite,
     Boss,
+    Mushrooms,
 }
 
 #[derive(Default, Debug)]

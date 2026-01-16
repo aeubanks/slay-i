@@ -82,10 +82,10 @@ impl GameState for RollCombatGameState {
             game.num_combats_this_act += 1;
             game.monsters = combat.monsters(game);
         }
-        game.state
-            .push_state(RollCombatRewardsGameState(RewardType::Monster));
-        game.state
-            .push_state(CombatBeginGameState(CombatType::Normal));
+        game.state.push_state(CombatBeginGameState(
+            CombatType::Normal,
+            RewardType::Monster,
+        ));
     }
 }
 
@@ -105,9 +105,7 @@ impl GameState for RollEliteCombatGameState {
         game.monsters = combat.monsters(game);
         game.last_elite = Some(combat);
         game.state
-            .push_state(RollCombatRewardsGameState(RewardType::Elite));
-        game.state
-            .push_state(CombatBeginGameState(CombatType::Elite));
+            .push_state(CombatBeginGameState(CombatType::Elite, RewardType::Elite));
     }
 }
 
@@ -119,9 +117,7 @@ impl GameState for RollBossCombatGameState {
         game.cur_room = Some(RoomType::Boss);
         game.monsters = game.boss.unwrap().monsters(game);
         game.state
-            .push_state(RollCombatRewardsGameState(RewardType::Boss));
-        game.state
-            .push_state(CombatBeginGameState(CombatType::Boss));
+            .push_state(CombatBeginGameState(CombatType::Boss, RewardType::Boss));
     }
 }
 
@@ -278,6 +274,17 @@ impl GameState for RollCombatRewardsGameState {
                         game.rewards.add_cards(cards);
                     }
                 }
+                RewardType::Mushrooms => {
+                    if !all_escaped {
+                        let gold = game.rng.random_range(20..=30);
+                        game.rewards.add_gold(gold, has_golden_idol);
+                    }
+
+                    let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Normal);
+                    game.rewards.add_cards(cards);
+
+                    game.rewards.add_relic(RelicClass::OddMushroom);
+                }
                 RewardType::Elite => {
                     let gold = game.rng.random_range(25..=35);
                     game.rewards.add_gold(gold, has_golden_idol);
@@ -351,10 +358,14 @@ fn setup_combat_draw_pile(game: &mut Game) {
 }
 
 #[derive(Debug)]
-pub struct CombatBeginGameState(pub CombatType);
+pub struct CombatBeginGameState(pub CombatType, pub RewardType);
 
 impl GameState for CombatBeginGameState {
     fn run(&self, game: &mut Game) {
+        game.state.push_state(RollCombatRewardsGameState(self.1));
+
+        assert!(!game.monsters.is_empty());
+
         game.in_combat = self.0;
         game.turn = 0;
         game.should_add_extra_decay_status = false;
