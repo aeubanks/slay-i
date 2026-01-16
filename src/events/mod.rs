@@ -3,13 +3,13 @@ use crate::{
     events::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
-        duplicator::DuplicatorGameState, face_trader::FaceTraderGameState, lab::LabGameState,
-        living_wall::LivingWallGameState, mushrooms::MushroomsGameState, noop::NoopEventGameState,
-        purifier::PurifierGameState, scrap_ooze::ScrapOozeGameState,
-        shining_light::ShiningLightGameState, sssserpent::SssserpentGameState,
-        transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
-        we_meet_again::WeMeetAgainGameState, woman_in_blue::WomanInBlueGameState,
-        world_of_goop::WorldOfGoopGameState,
+        duplicator::DuplicatorGameState, face_trader::FaceTraderGameState,
+        golden_idol::GoldenIdolGameState, lab::LabGameState, living_wall::LivingWallGameState,
+        mushrooms::MushroomsGameState, noop::NoopEventGameState, purifier::PurifierGameState,
+        scrap_ooze::ScrapOozeGameState, shining_light::ShiningLightGameState,
+        sssserpent::SssserpentGameState, transmorgrifier::TransmorgrifierGameState,
+        upgrade::UpgradeShrineGameState, we_meet_again::WeMeetAgainGameState,
+        woman_in_blue::WomanInBlueGameState, world_of_goop::WorldOfGoopGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -22,6 +22,7 @@ pub mod bonfire;
 pub mod divine_fountain;
 pub mod duplicator;
 pub mod face_trader;
+pub mod golden_idol;
 pub mod lab;
 pub mod living_wall;
 pub mod mushrooms;
@@ -67,8 +68,8 @@ pub enum Event {
     GoldenShrine,      // TODO
     Cleric,            // TODO
     DeadAdventurer,    // TODO
-    GoldenIdol,        // TODO
-    GoldenWing,        // TODO
+    GoldenIdol,
+    GoldenWing, // TODO
     WorldOfGoop,
     Sssserpent,
     LivingWall,
@@ -113,6 +114,7 @@ impl Event {
             LivingWall => Box::new(LivingWallGameState),
             Mushrooms => Box::new(MushroomsGameState),
             ScrapOoze => Box::new(ScrapOozeGameState { relic_chance: 25 }),
+            GoldenIdol => Box::new(GoldenIdolGameState::new(game)),
             _ => todo!(),
         }
     }
