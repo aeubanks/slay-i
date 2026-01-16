@@ -5,10 +5,11 @@ use crate::{
         bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
         duplicator::DuplicatorGameState, face_trader::FaceTraderGameState, lab::LabGameState,
         living_wall::LivingWallGameState, mushrooms::MushroomsGameState, noop::NoopEventGameState,
-        purifier::PurifierGameState, shining_light::ShiningLightGameState,
-        sssserpent::SssserpentGameState, transmorgrifier::TransmorgrifierGameState,
-        upgrade::UpgradeShrineGameState, we_meet_again::WeMeetAgainGameState,
-        woman_in_blue::WomanInBlueGameState, world_of_goop::WorldOfGoopGameState,
+        purifier::PurifierGameState, scrap_ooze::ScrapOozeGameState,
+        shining_light::ShiningLightGameState, sssserpent::SssserpentGameState,
+        transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
+        we_meet_again::WeMeetAgainGameState, woman_in_blue::WomanInBlueGameState,
+        world_of_goop::WorldOfGoopGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -26,6 +27,7 @@ pub mod living_wall;
 pub mod mushrooms;
 pub mod noop;
 pub mod purifier;
+pub mod scrap_ooze;
 pub mod shining_light;
 pub mod sssserpent;
 pub mod transmorgrifier;
@@ -71,7 +73,7 @@ pub enum Event {
     Sssserpent,
     LivingWall,
     Mushrooms,
-    ScrapOoze, // TODO
+    ScrapOoze,
     ShiningLight,
     Addict,         // TODO
     BackToBasics,   // TODO
@@ -110,6 +112,7 @@ impl Event {
             ShiningLight => Box::new(ShiningLightGameState::new(game)),
             LivingWall => Box::new(LivingWallGameState),
             Mushrooms => Box::new(MushroomsGameState),
+            ScrapOoze => Box::new(ScrapOozeGameState { relic_chance: 25 }),
             _ => todo!(),
         }
     }
