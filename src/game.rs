@@ -1550,6 +1550,10 @@ impl Game {
         self.monsters.iter().all(|m| !m.creature.is_actionable()) || self.smoke_bombed
     }
 
+    pub fn no_monsters_targetable(&self) -> bool {
+        self.monsters.iter().all(|m| !m.creature.is_actionable())
+    }
+
     pub fn monster_str(&self, c: CreatureRef) -> String {
         let mut i = self.monsters[c.monster_index()].behavior.get_intent();
         i.modify_damage(c, self);

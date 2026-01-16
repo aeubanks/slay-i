@@ -567,6 +567,13 @@ mod tests {
     }
 
     #[test]
+    fn test_sword_boomerang_kill() {
+        let mut g = GameBuilder::default().build_combat();
+        g.monsters[0].creature.cur_hp = 1;
+        g.play_card(CardClass::SwordBoomerang, None);
+    }
+
+    #[test]
     fn test_perfected_strike() {
         let mut g = GameBuilder::default().build_combat();
         g.energy = 99;

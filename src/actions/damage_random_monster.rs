@@ -7,6 +7,9 @@ pub struct DamageRandomMonsterAction {
 
 impl Action for DamageRandomMonsterAction {
     fn run(&self, game: &mut Game) {
+        if game.no_monsters_targetable() {
+            return;
+        }
         let alive = game.get_random_alive_monster();
         if self.thorns {
             game.action_queue
