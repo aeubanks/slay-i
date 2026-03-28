@@ -2,7 +2,7 @@ use crate::{game::Rand, rng::rand_slice};
 
 use petgraph::visit::EdgeRef;
 
-use rand::{Rng, seq::SliceRandom};
+use rand::{RngExt, seq::SliceRandom};
 
 use std::fmt::Debug;
 
@@ -346,7 +346,7 @@ mod tests {
     use std::fmt::Debug;
     use std::hash::Hash;
 
-    use rand::{Rng, SeedableRng};
+    use rand::SeedableRng;
 
     use crate::test::assert_set_eq;
 

@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 
 use crate::{
     actions::{damage::DamageAction, gain_status::GainStatusAction},

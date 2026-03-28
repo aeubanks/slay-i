@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use rand::{Rng, seq::SliceRandom};
+use rand::{RngExt, seq::SliceRandom};
 
 use crate::{game::Rand, rng::rand_slice};
 

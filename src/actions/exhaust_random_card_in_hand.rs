@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 
 use crate::{action::Action, actions::exhaust_card::ExhaustCardAction, game::Game};
 

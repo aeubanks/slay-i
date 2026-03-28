@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use rand::Rng;
+use rand::RngExt;
 use rand::seq::SliceRandom;
 
 use crate::action::Action;

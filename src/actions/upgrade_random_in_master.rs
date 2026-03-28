@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 
 use crate::{action::Action, cards::CardType, game::Game, rng::rand_slice};
 

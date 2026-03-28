@@ -23,7 +23,7 @@ use crate::{
     status::Status,
 };
 use lazy_static::lazy_static;
-use rand::Rng;
+use rand::RngExt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PotionRarity {

@@ -83,8 +83,6 @@ mod tests {
         },
     };
 
-    
-
     #[test]
     fn test_forget() {
         let mut g = GameBuilder::default()
