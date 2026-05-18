@@ -2,14 +2,15 @@ use crate::{
     cards::CardType,
     events::{
         accursed_blacksmith::AccursedBlackSmithGameState, big_fish::BigFishGameState,
-        bonfire::BonfireGameState, divine_fountain::DivineFountainGameState,
-        duplicator::DuplicatorGameState, face_trader::FaceTraderGameState,
-        golden_idol::GoldenIdolGameState, lab::LabGameState, living_wall::LivingWallGameState,
-        mushrooms::MushroomsGameState, noop::NoopEventGameState, purifier::PurifierGameState,
-        scrap_ooze::ScrapOozeGameState, shining_light::ShiningLightGameState,
-        sssserpent::SssserpentGameState, transmorgrifier::TransmorgrifierGameState,
-        upgrade::UpgradeShrineGameState, we_meet_again::WeMeetAgainGameState,
-        woman_in_blue::WomanInBlueGameState, world_of_goop::WorldOfGoopGameState,
+        bonfire::BonfireGameState, dead_adventurer::DeadAdventurerGameState,
+        divine_fountain::DivineFountainGameState, duplicator::DuplicatorGameState,
+        face_trader::FaceTraderGameState, golden_idol::GoldenIdolGameState, lab::LabGameState,
+        living_wall::LivingWallGameState, mushrooms::MushroomsGameState, noop::NoopEventGameState,
+        purifier::PurifierGameState, scrap_ooze::ScrapOozeGameState,
+        shining_light::ShiningLightGameState, sssserpent::SssserpentGameState,
+        transmorgrifier::TransmorgrifierGameState, upgrade::UpgradeShrineGameState,
+        we_meet_again::WeMeetAgainGameState, woman_in_blue::WomanInBlueGameState,
+        world_of_goop::WorldOfGoopGameState,
     },
     game::Game,
     relic::RelicClass,
@@ -19,6 +20,7 @@ use crate::{
 pub mod accursed_blacksmith;
 pub mod big_fish;
 pub mod bonfire;
+pub mod dead_adventurer;
 pub mod divine_fountain;
 pub mod duplicator;
 pub mod face_trader;
@@ -67,7 +69,7 @@ pub enum Event {
     WheelOfChange,     // TODO
     GoldenShrine,      // TODO
     Cleric,            // TODO
-    DeadAdventurer,    // TODO
+    DeadAdventurer,
     GoldenIdol,
     GoldenWing, // TODO
     WorldOfGoop,
@@ -115,6 +117,7 @@ impl Event {
             Mushrooms => Box::new(MushroomsGameState),
             ScrapOoze => Box::new(ScrapOozeGameState { relic_chance: 25 }),
             GoldenIdol => Box::new(GoldenIdolGameState::new(game)),
+            DeadAdventurer => Box::new(DeadAdventurerGameState::new(game)),
             _ => todo!(),
         }
     }

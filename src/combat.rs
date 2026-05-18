@@ -275,15 +275,31 @@ impl GameState for RollCombatRewardsGameState {
                     }
                 }
                 RewardType::Mushrooms => {
-                    if !all_escaped {
-                        let gold = game.rng.random_range(20..=30);
-                        game.rewards.add_gold(gold, has_golden_idol);
-                    }
+                    let gold = game.rng.random_range(20..=30);
+                    game.rewards.add_gold(gold, has_golden_idol);
 
                     let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Normal);
                     game.rewards.add_cards(cards);
 
                     game.rewards.add_relic(RelicClass::OddMushroom);
+                }
+                RewardType::DeadAdventurer {
+                    gold_reward,
+                    relic_reward,
+                } => {
+                    let gold = game.rng.random_range(25..=35);
+                    game.rewards.add_gold(gold, has_golden_idol);
+                    if gold_reward {
+                        game.rewards.add_gold(30, has_golden_idol);
+                    }
+
+                    let cards = Rewards::gen_card_reward(game, RareCardBaseChance::Normal);
+                    game.rewards.add_cards(cards);
+
+                    if relic_reward {
+                        let r = game.next_relic_weighted();
+                        game.rewards.add_relic(r);
+                    }
                 }
                 RewardType::Elite => {
                     let gold = game.rng.random_range(25..=35);

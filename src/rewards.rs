@@ -19,6 +19,10 @@ pub enum RewardType {
     Elite,
     Boss,
     Mushrooms,
+    DeadAdventurer {
+        gold_reward: bool,
+        relic_reward: bool,
+    },
 }
 
 #[derive(Default, Debug)]
