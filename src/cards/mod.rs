@@ -149,7 +149,7 @@ c!(
     Shockwave => (Uncommon, Skill, Red, cost(2), skills::shockwave_behavior, true),
     Entrench => (Uncommon, Skill, Red, cost(2), skills::entrench_behavior, false),
     BurningPact => (Uncommon, Skill, Red, cost(1), skills::burning_pact_behavior, false),
-    SeeingRed => (Uncommon, Skill, Red, cost(1), skills::shockwave_behavior, true),
+    SeeingRed => (Uncommon, Skill, Red, cost(1), skills::seeing_red_behavior, true),
     PowerThrough => (Uncommon, Skill, Red, cost(1), skills::power_through_behavior, false),
     InfernalBlade => (Uncommon, Skill, Red, cost(1), skills::infernal_blade_behavior, true),
     SecondWind => (Uncommon, Skill, Red, cost(1), skills::second_wind_behavior, false),
@@ -206,7 +206,7 @@ c!(
     // Colorless rare attacks
     HandOfGreed => (Rare, Attack, Colorless, cost(2), attacks::hand_of_greed_behavior, false),
     // Colorless rare skills
-    Bomb => (Uncommon, Skill, Colorless, cost(2), skills::bomb_behavior, false),
+    Bomb => (Rare, Skill, Colorless, cost(2), skills::bomb_behavior, false),
     Apotheosis => (Rare, Skill, Colorless, cost(2), skills::apotheosis_behavior, true),
     ThinkingAhead => (Rare, Skill, Colorless, cost(0), skills::thinking_ahead_behavior, true),
     SecretTechnique => (Rare, Skill, Colorless, cost(0), skills::secret_technique_behavior, true),

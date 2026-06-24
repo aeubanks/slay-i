@@ -232,6 +232,10 @@ pub fn second_wind_behavior(game: &mut Game, info: &CardPlayInfo) {
     game.action_queue.push_bot(ExhaustNonAttackInHandAction());
 }
 
+pub fn seeing_red_behavior(game: &mut Game, _: &CardPlayInfo) {
+    game.action_queue.push_bot(GainEnergyAction(2));
+}
+
 pub fn impervious_behavior(game: &mut Game, info: &CardPlayInfo) {
     push_block(game, info, 30, 40);
 }
