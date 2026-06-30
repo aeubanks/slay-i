@@ -40,18 +40,14 @@ impl GameState for RollEventGameState {
                 events = game.event_act_pool.clone();
             }
             events.retain(|e| e.can_spawn(game));
-            // A long climb can exhaust the chosen pool (each seen event is
-            // removed from every pool below), leaving nothing to sample. Fall
-            // back to whatever spawnable events remain across all pools so the
-            // room still resolves instead of panicking on an empty range.
+            // The chosen pool can be exhausted on a long climb; fall back to
+            // any spawnable event in the other pools.
             if events.is_empty() {
                 events = game.event_act_pool.clone();
                 events.extend(game.event_shrine_pool.iter().copied());
                 events.extend(game.event_one_time_pool.iter().copied());
                 events.retain(|e| e.can_spawn(game));
             }
-            // No spawnable event anywhere (pathological): resolve as an empty
-            // room rather than crash.
             if events.is_empty() {
                 return;
             }
@@ -142,6 +138,14 @@ mod tests {
         state::ContinueStep,
         step::Step,
     };
+
+    #[test]
+    fn test_event_pool_exhausted() {
+        // With every event pool empty, rolling an event must resolve the room
+        // rather than sample an empty range.
+        let g = GameBuilder::default().build_with_game_state(super::RollEventGameState);
+        assert!(g.cur_event.is_none());
+    }
 
     #[test]
     fn test_event_shop() {
