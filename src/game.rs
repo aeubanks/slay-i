@@ -117,6 +117,7 @@ impl GameState for TestCombatStartGameState {
 
 fn unceasing_top_should_trigger(game: &Game) -> bool {
     game.in_combat != CombatType::None
+        && !game.combat_finished()
         && game.hand.is_empty()
         && game.has_relic(RelicClass::UnceasingTop)
         && !game.player.has_status(Status::NoDraw)

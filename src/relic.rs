@@ -3427,6 +3427,21 @@ mod tests {
     }
 
     #[test]
+    fn test_unceasing_top_lethal_with_empty_hand() {
+        let mut g = GameBuilder::default()
+            .add_relic(RelicClass::UnceasingTop)
+            .add_card(CardClass::DebugKillAll)
+            .build_combat();
+        g.add_card_to_discard_pile(CardClass::Strike);
+        g.step_test(PlayCardStep {
+            hand_index: 0,
+            target: None,
+        });
+        assert!(g.combat_finished());
+        assert!(g.hand.is_empty());
+    }
+
+    #[test]
     fn test_ssserpent_head() {
         let mut g = GameBuilder::default()
             .add_relic(RelicClass::SsserpentHead)
