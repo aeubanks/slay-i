@@ -1058,9 +1058,6 @@ impl Game {
             if !self.get_creature(source).is_actionable() {
                 return;
             }
-            // calculate_damage applies Strength etc. and clamps to >= 0, so a
-            // negative pre-calc amount (e.g. Heavy Blade with negative Strength)
-            // is fine here.
             amount = self.calculate_damage(amount, source, target);
             if let Some(a) = self
                 .get_creature(target)
