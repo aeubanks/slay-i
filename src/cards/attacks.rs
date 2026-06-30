@@ -629,7 +629,6 @@ mod tests {
     fn test_heavy_blade_negative_strength() {
         let mut g = GameBuilder::default().build_combat();
         g.energy = 99;
-        // 14 + (-10) * 2 is negative; it should clamp to 0, not panic.
         g.player.set_status(Status::Strength, -10);
         g.monsters[0].creature.cur_hp = 100;
         g.play_card(CardClass::HeavyBlade, Some(CreatureRef::monster(0)));
