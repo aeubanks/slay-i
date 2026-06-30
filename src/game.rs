@@ -117,9 +117,6 @@ impl GameState for TestCombatStartGameState {
 
 fn unceasing_top_should_trigger(game: &Game) -> bool {
     game.in_combat != CombatType::None
-        // DrawAction is a no-op once combat is finished; without this guard the
-        // relic keeps requesting a draw that never lands, spinning forever with
-        // an empty hand after the last monster dies.
         && !game.combat_finished()
         && game.hand.is_empty()
         && game.has_relic(RelicClass::UnceasingTop)
