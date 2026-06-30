@@ -40,6 +40,17 @@ impl GameState for RollEventGameState {
                 events = game.event_act_pool.clone();
             }
             events.retain(|e| e.can_spawn(game));
+            // The chosen pool can be exhausted on a long climb; fall back to
+            // any spawnable event in the other pools.
+            if events.is_empty() {
+                events = game.event_act_pool.clone();
+                events.extend(game.event_shrine_pool.iter().copied());
+                events.extend(game.event_one_time_pool.iter().copied());
+                events.retain(|e| e.can_spawn(game));
+            }
+            if events.is_empty() {
+                return;
+            }
             let e = remove_random(&mut game.rng, &mut events);
             game.event_act_pool.retain(|&e2| e2 != e);
             game.event_one_time_pool.retain(|&e2| e2 != e);
@@ -127,6 +138,12 @@ mod tests {
         state::ContinueStep,
         step::Step,
     };
+
+    #[test]
+    fn test_event_pool_exhausted() {
+        let g = GameBuilder::default().build_with_game_state(super::RollEventGameState);
+        assert!(g.cur_event.is_none());
+    }
 
     #[test]
     fn test_event_shop() {
