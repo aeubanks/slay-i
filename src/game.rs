@@ -1051,7 +1051,6 @@ impl Game {
 
     pub fn damage(&mut self, target: CreatureRef, mut amount: i32, ty: DamageType) {
         assert!(self.get_creature(target).is_actionable());
-        assert!(amount >= 0);
         if let DamageType::Attack {
             source,
             on_fatal: _,
@@ -1076,6 +1075,7 @@ impl Game {
                 self.action_queue.push_top(a);
             }
         }
+        assert!(amount >= 0);
         let c = self.get_creature_mut(target);
         if !c.is_actionable() {
             return;
