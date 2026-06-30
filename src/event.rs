@@ -141,8 +141,6 @@ mod tests {
 
     #[test]
     fn test_event_pool_exhausted() {
-        // With every event pool empty, rolling an event must resolve the room
-        // rather than sample an empty range.
         let g = GameBuilder::default().build_with_game_state(super::RollEventGameState);
         assert!(g.cur_event.is_none());
     }
