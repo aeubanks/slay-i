@@ -1312,7 +1312,7 @@ pub fn all_shop_relics() -> Vec<RelicClass> {
 }
 
 pub fn all_boss_relics() -> Vec<RelicClass> {
-    ALL_SHOP.clone()
+    ALL_BOSS.clone()
 }
 
 #[cfg(test)]
@@ -1344,6 +1344,15 @@ mod tests {
         status::Status,
         step::Step,
     };
+
+    #[test]
+    fn test_boss_relic_pool_contains_only_boss_relics() {
+        let pool = all_boss_relics();
+        assert!(!pool.is_empty());
+        for r in pool {
+            assert_eq!(r.rarity(), RelicRarity::Boss);
+        }
+    }
 
     #[test]
     fn test_burning_blood() {
