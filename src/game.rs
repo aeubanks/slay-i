@@ -305,6 +305,10 @@ impl GameState for EnterActGameState {
                 Event::Sssserpent,
                 Event::ShiningLight,
                 Event::LivingWall,
+                Event::DeadAdventurer,
+                Event::GoldenIdol,
+                Event::Mushrooms,
+                Event::ScrapOoze,
             ];
             game.easy_pool_combats = vec![
                 Combat::Cultist,
